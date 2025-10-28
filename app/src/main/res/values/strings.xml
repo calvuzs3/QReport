@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App name -->
+    <string name="app_name">QReport</string>
+    <string name="app_description">Sistema digitalizzato per check-up isole robotizzate industriali</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_checkups">Check-up</string>
+    <string name="nav_photos">Foto</string>
+    <string name="nav_spare_parts">Ricambi</string>
+    <string name="nav_export">Export</string>
+    <string name="nav_settings">Impostazioni</string>
+
+    <!-- Check-up status -->
+    <string name="status_draft">Bozza</string>
+    <string name="status_in_progress">In Corso</string>
+    <string name="status_completed">Completato</string>
+    <string name="status_exported">Esportato</string>
+
+    <!-- Check item status -->
+    <string name="check_status_ok">OK</string>
+    <string name="check_status_nok">NOK</string>
+    <string name="check_status_pending">In Attesa</string>
+    <string name="check_status_na">N/A</string>
+
+    <!-- Island types -->
+    <string name="island_welding">Isola Saldatura</string>
+    <string name="island_assembly">Isola Assemblaggio</string>
+    <string name="island_painting">Isola Verniciatura</string>
+    <string name="island_handling">Isola Movimentazione</string>
+    <string name="island_quality_control">Controllo Qualità</string>
+    <string name="island_packaging">Confezionamento</string>
+
+    <!-- Criticality levels -->
+    <string name="criticality_critical">Critico</string>
+    <string name="criticality_important">Importante</string>
+    <string name="criticality_routine">Routine</string>
+    <string name="criticality_na">N/A</string>
+
+    <!-- Modules -->
+    <string name="module_safety">Sicurezza</string>
+    <string name="module_mechanical">Meccanico</string>
+    <string name="module_electrical">Elettrico</string>
+    <string name="module_software">Software</string>
+    <string name="module_welding">Saldatura</string>
+    <string name="module_assembly">Assemblaggio</string>
+    <string name="module_painting">Verniciatura</string>
+    <string name="module_handling">Movimentazione</string>
+    <string name="module_quality">Controllo Qualità</string>
+    <string name="module_packaging">Confezionamento</string>
+
+    <!-- Actions -->
+    <string name="action_create">Crea</string>
+    <string name="action_edit">Modifica</string>
+    <string name="action_delete">Elimina</string>
+    <string name="action_save">Salva</string>
+    <string name="action_cancel">Annulla</string>
+    <string name="action_confirm">Conferma</string>
+    <string name="action_export">Esporta</string>
+    <string name="action_share">Condividi</string>
+    <string name="action_take_photo">Scatta Foto</string>
+    <string name="action_add_note">Aggiungi Nota</string>
+    <string name="action_view_details">Visualizza Dettagli</string>
+
+    <!-- Forms -->
+    <string name="field_title">Titolo</string>
+    <string name="field_description">Descrizione</string>
+    <string name="field_notes">Note</string>
+    <string name="field_company_name">Nome Azienda</string>
+    <string name="field_contact_person">Persona di Contatto</string>
+    <string name="field_email">Email</string>
+    <string name="field_phone">Telefono</string>
+    <string name="field_address">Indirizzo</string>
+    <string name="field_technician_name">Nome Tecnico</string>
+    <string name="field_employee_id">ID Dipendente</string>
+    <string name="field_island_id">ID Isola</string>
+    <string name="field_location">Ubicazione</string>
+    <string name="field_installation_date">Data Installazione</string>
+    <string name="field_last_maintenance">Ultima Manutenzione</string>
+    <string name="field_warranty_status">Stato Garanzia</string>
+    <string name="field_maintenance_type">Tipo Manutenzione</string>
+    <string name="field_scheduled_date">Data Programmata</string>
+    <string name="field_duration">Durata</string>
+
+    <!-- Messages -->
+    <string name="msg_checkup_created">Check-up creato con successo</string>
+    <string name="msg_checkup_updated">Check-up aggiornato</string>
+    <string name="msg_checkup_deleted">Check-up eliminato</string>
+    <string name="msg_photo_added">Foto aggiunta</string>
+    <string name="msg_photo_deleted">Foto eliminata</string>
+    <string name="msg_export_success">Export completato con successo</string>
+    <string name="msg_export_error">Errore durante l\'export</string>
+    <string name="msg_saving">Salvataggio in corso…</string>
+    <string name="msg_loading">Caricamento…</string>
+
+    <!-- Errors -->
+    <string name="error_generic">Si è verificato un errore</string>
+    <string name="error_network">Errore di connessione</string>
+    <string name="error_permission_camera">Permesso camera necessario</string>
+    <string name="error_permission_storage">Permesso storage necessario</string>
+    <string name="error_file_not_found">File non trovato</string>
+    <string name="error_invalid_data">Dati non validi</string>
+    <string name="error_export_failed">Export fallito</string>
+
+    <!-- Empty states -->
+    <string name="empty_checkups">Nessun check-up disponibile</string>
+    <string name="empty_photos">Nessuna foto</string>
+    <string name="empty_spare_parts">Nessun ricambio</string>
+    <string name="empty_notes">Nessuna nota</string>
+
+    <!-- Progress -->
+    <string name="progress_completion">Completamento: %1$d%%</string>
+    <string name="progress_items_completed">%1$d di %2$d completati</string>
+
+    <!-- Export -->
+    <string name="export_title">Esporta Report</string>
+    <string name="export_format_word">Documento Word</string>
+    <string name="export_format_pdf">Documento PDF</string>
+    <string name="export_include_photos">Includi foto nel documento</string>
+    <string name="export_filename">Nome file</string>
+
+    <!-- Spare parts -->
+    <string name="spare_part_code">Codice Ricambio</string>
+    <string name="spare_part_name">Nome Ricambio</string>
+    <string name="spare_part_quantity">Quantità</string>
+    <string name="spare_part_price">Prezzo Unitario</string>
+    <string name="spare_part_supplier">Fornitore</string>
+    <string name="spare_part_category">Categoria</string>
+    <string name="spare_part_urgency">Urgenza</string>
+
+    <!-- Spare part categories -->
+    <string name="category_mechanical">Meccanici</string>
+    <string name="category_electrical">Elettrici</string>
+    <string name="category_pneumatic">Pneumatici</string>
+    <string name="category_hydraulic">Idraulici</string>
+    <string name="category_electronic">Elettronici</string>
+    <string name="category_software">Software</string>
+    <string name="category_consumable">Consumabili</string>
+    <string name="category_tool">Utensili</string>
+    <string name="category_other">Altri</string>
+
+    <!-- Urgency levels -->
+    <string name="urgency_low">Bassa</string>
+    <string name="urgency_medium">Media</string>
+    <string name="urgency_high">Alta</string>
+    <string name="urgency_critical">Critica</string>
+
+    <!-- Photo captions -->
+    <string name="photo_caption_hint">Aggiungi didascalia...</string>
+    <string name="photo_timestamp">Scattata il %1$s</string>
+    <string name="photo_filesize">Dimensione: %1$s</string>
+
+    <!-- Accessibility -->
+    <string name="cd_photo">Foto del check item</string>
+    <string name="cd_status_icon">Icona stato</string>
+    <string name="cd_criticality_icon">Icona criticità</string>
+    <string name="cd_module_icon">Icona modulo</string>
+    <string name="cd_delete_photo">Elimina foto</string>
+    <string name="cd_edit_photo">Modifica foto</string>
+    <string name="cd_take_photo">Scatta foto</string>
+
+    <!-- Content descriptions for screen readers -->
+    <string name="cd_navigation_home">Naviga alla home</string>
+    <string name="cd_navigation_checkups">Naviga ai check-up</string>
+    <string name="cd_create_checkup">Crea nuovo check-up</string>
+    <string name="cd_checkup_progress">Progresso check-up</string>
+</resources>
