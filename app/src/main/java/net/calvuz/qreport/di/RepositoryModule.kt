@@ -4,7 +4,9 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import net.calvuz.qreport.data.repository.CheckItemRepositoryImpl
 import net.calvuz.qreport.data.repository.CheckUpRepositoryImpl
+import net.calvuz.qreport.domain.repository.CheckItemRepository
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import javax.inject.Singleton
 
@@ -18,13 +20,15 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 abstract class RepositoryModule {
 
-    /**
-     * Binding per CheckUpRepository
-     * Lega l'interfaccia all'implementazione concreta
-     */
     @Binds
     @Singleton
     abstract fun bindCheckUpRepository(
         checkUpRepositoryImpl: CheckUpRepositoryImpl
     ): CheckUpRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCheckItemRepository(
+        checkItemRepositoryImpl: CheckItemRepositoryImpl
+    ): CheckItemRepository
 }

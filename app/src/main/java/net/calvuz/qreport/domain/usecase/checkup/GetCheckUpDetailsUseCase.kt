@@ -1,26 +1,53 @@
 package net.calvuz.qreport.domain.usecase.checkup
 
+import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.repository.CheckUpRepository
+import net.calvuz.qreport.domain.repository.CheckItemRepository
 import javax.inject.Inject
 
+/**
+ * Use Case per ottenere tutti i dettagli di un check-up
+ *
+ * Combina:
+ * - Dati del check-up
+ * - Check items
+ * - Spare parts
+ * - Statistiche
+ * - Progresso
+ */
+
+/**
+ * Data class per i dettagli completi del check-up
+ */
+data class CheckUpDetails(
+    val checkUp: CheckUp,
+    val checkItems: List<CheckItem>,
+    val spareParts: List<SparePart>,
+    val statistics: CheckUpStatistics,
+    val progress: CheckUpProgress
+)
+
 class GetCheckUpDetailsUseCase @Inject constructor(
-    private val repository: CheckUpRepository
+    private val checkUpRepository: CheckUpRepository,
+    private val checkItemRepository: CheckItemRepository
 ) {
     suspend operator fun invoke(checkUpId: String): Result<CheckUpDetails> {
         return try {
-            val checkUp = repository.getCheckUpWithDetails(checkUpId)
-                ?: return Result.failure(Exception("CheckUp not found: $checkUpId"))
+            // Ottieni il check-up base
+            val checkUp = checkUpRepository.getCheckUpWithDetails(checkUpId)
+                ?: return Result.failure(Exception("Check-up non trovato"))
 
-            // Get all required data
-            val checkItems = checkUp.checkItems // Assuming checkUp has checkItems
-            val spareParts = checkUp.spareParts // Assuming checkUp has spareParts
-            val statistics = repository.getCheckUpStatistics(checkUpId)
-            val progress = repository.getCheckUpProgress(checkUpId)
+            // Ottieni le statistiche
+            val statistics = checkUpRepository.getCheckUpStatistics(checkUpId)
 
+            // Ottieni il progresso
+            val progress = checkUpRepository.getCheckUpProgress(checkUpId)
+
+            // Crea l'oggetto completo
             val details = CheckUpDetails(
                 checkUp = checkUp,
-                checkItems = checkItems,
-                spareParts = spareParts,
+                checkItems = checkUp.checkItems,
+                spareParts = checkUp.spareParts,
                 statistics = statistics,
                 progress = progress
             )

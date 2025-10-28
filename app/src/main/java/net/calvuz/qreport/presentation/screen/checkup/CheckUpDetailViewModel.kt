@@ -5,14 +5,13 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.usecase.checkup.*
 import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * ViewModel per CheckUpDetailScreen
+ * ViewModel per CheckUpDetailScreen - VERSIONE COMPLETA
  *
  * Gestisce:
  * - Caricamento check-up details
@@ -20,6 +19,7 @@ import javax.inject.Inject
  * - Gestione note e foto
  * - Calcolo statistiche e progresso
  * - Export functionality
+ * - Gestione spare parts
  */
 
 data class CheckUpDetailUiState(
@@ -30,7 +30,9 @@ data class CheckUpDetailUiState(
     val statistics: CheckUpStatistics = CheckUpStatistics(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val isUpdating: Boolean = false
+    val isUpdating: Boolean = false,
+    val isAddingSparePart: Boolean = false,
+    val showAddSparePartDialog: Boolean = false
 ) {
     val checkItemsByModule: Map<ModuleType, List<CheckItem>>
         get() = checkItems.groupBy { it.moduleType }
@@ -40,6 +42,9 @@ data class CheckUpDetailUiState(
 class CheckUpDetailViewModel @Inject constructor(
     private val getCheckUpDetailsUseCase: GetCheckUpDetailsUseCase,
     private val updateCheckUpStatusUseCase: UpdateCheckUpStatusUseCase,
+    private val updateCheckItemStatusUseCase: UpdateCheckItemStatusUseCase,
+    private val updateCheckItemNotesUseCase: UpdateCheckItemNotesUseCase,
+    private val addSparePartUseCase: AddSparePartUseCase,
     private val exportCheckUpUseCase: ExportCheckUpUseCase
 ) : ViewModel() {
 
@@ -99,71 +104,131 @@ class CheckUpDetailViewModel @Inject constructor(
 
     fun updateItemStatus(itemId: String, newStatus: CheckItemStatus) {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isUpdating = true)
+
             try {
                 Timber.d("Updating item status: $itemId -> $newStatus")
 
-                // Optimistic update
-                val currentItems = _uiState.value.checkItems
-                val updatedItems = currentItems.map { item ->
-                    if (item.id == itemId) {
-                        item.copy(
-                            status = newStatus,
-                            checkedAt = if (newStatus != CheckItemStatus.PENDING) {
-                                Clock.System.now()
-                            } else null
+                updateCheckItemStatusUseCase(itemId, newStatus).fold(
+                    onSuccess = {
+                        Timber.d("Item status updated successfully")
+                        // Ricarica i dati per sincronizzare tutto
+                        val checkUpId = _uiState.value.checkUp?.id
+                        if (checkUpId != null) {
+                            reloadCheckUpData(checkUpId)
+                        }
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to update item status")
+                        _uiState.value = _uiState.value.copy(
+                            isUpdating = false,
+                            error = "Errore aggiornamento status: ${error.message}"
                         )
-                    } else item
-                }
-
-                // Update UI immediately
-                val progress = calculateProgress(updatedItems)
-                val statistics = calculateStatistics(updatedItems, _uiState.value.spareParts)
-
-                _uiState.value = _uiState.value.copy(
-                    checkItems = updatedItems,
-                    progress = progress,
-                    statistics = statistics
+                    }
                 )
 
-                // TODO: Persist to database
-                // updateCheckItemStatusUseCase(itemId, newStatus)
-
             } catch (e: Exception) {
-                Timber.e(e, "Failed to update item status")
-                // Revert optimistic update on error
-                loadCheckUp(_uiState.value.checkUp?.id ?: "")
+                Timber.e(e, "Exception updating item status")
+                _uiState.value = _uiState.value.copy(
+                    isUpdating = false,
+                    error = "Errore imprevisto: ${e.message}"
+                )
             }
         }
     }
 
     fun updateItemNotes(itemId: String, notes: String) {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isUpdating = true)
+
             try {
                 Timber.d("Updating item notes: $itemId")
 
-                // Optimistic update
-                val currentItems = _uiState.value.checkItems
-                val updatedItems = currentItems.map { item ->
-                    if (item.id == itemId) {
-                        item.copy(notes = notes)
-                    } else item
-                }
-
-                _uiState.value = _uiState.value.copy(checkItems = updatedItems)
-
-                // TODO: Persist to database
-                // updateCheckItemNotesUseCase(itemId, notes)
+                updateCheckItemNotesUseCase(itemId, notes).fold(
+                    onSuccess = {
+                        Timber.d("Item notes updated successfully")
+                        // Ricarica i dati per sincronizzare tutto
+                        val checkUpId = _uiState.value.checkUp?.id
+                        if (checkUpId != null) {
+                            reloadCheckUpData(checkUpId)
+                        }
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to update item notes")
+                        _uiState.value = _uiState.value.copy(
+                            isUpdating = false,
+                            error = "Errore aggiornamento note: ${error.message}"
+                        )
+                    }
+                )
 
             } catch (e: Exception) {
-                Timber.e(e, "Failed to update item notes")
-                loadCheckUp(_uiState.value.checkUp?.id ?: "")
+                Timber.e(e, "Exception updating item notes")
+                _uiState.value = _uiState.value.copy(
+                    isUpdating = false,
+                    error = "Errore imprevisto: ${e.message}"
+                )
             }
         }
     }
 
-    fun addSparePart() {
-        // TODO: Implement spare part addition
-        Timber.d("Add spare part requested")
+    fun addSparePart(
+        partNumber: String,
+        description: String,
+        quantity: Int,
+        urgency: SparePartUrgency,
+        category: SparePartCategory,
+        estimatedCost: Double? = null,
+        notes: String = "",
+        supplierInfo: String = ""
+    ) {
+        viewModelScope.launch {
+            val checkUpId = _uiState.value.checkUp?.id
+            if (checkUpId == null) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Check-up non disponibile"
+                )
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(isAddingSparePart = true)
+
+            try {
+                Timber.d("Adding spare part to check-up: $checkUpId")
+
+                addSparePartUseCase(
+                    checkUpId = checkUpId,
+                    partNumber = partNumber,
+                    description = description,
+                    quantity = quantity,
+                    urgency = urgency,
+                    category = category,
+                    estimatedCost = estimatedCost,
+                    notes = notes,
+                    supplierInfo = supplierInfo
+                ).fold(
+                    onSuccess = { sparePartId ->
+                        Timber.d("Spare part added successfully: $sparePartId")
+                        // Ricarica i dati per includere il nuovo spare part
+                        reloadCheckUpData(checkUpId)
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to add spare part")
+                        _uiState.value = _uiState.value.copy(
+                            isAddingSparePart = false,
+                            error = "Errore aggiunta ricambio: ${error.message}"
+                        )
+                    }
+                )
+
+            } catch (e: Exception) {
+                Timber.e(e, "Exception adding spare part")
+                _uiState.value = _uiState.value.copy(
+                    isAddingSparePart = false,
+                    error = "Errore imprevisto: ${e.message}"
+                )
+            }
+        }
     }
 
     fun completeCheckUp() {
@@ -177,8 +242,8 @@ class CheckUpDetailViewModel @Inject constructor(
                 updateCheckUpStatusUseCase(checkUpId, CheckUpStatus.COMPLETED).fold(
                     onSuccess = {
                         Timber.d("Check-up completed successfully")
-                        // Reload to get updated status
-                        loadCheckUp(checkUpId)
+                        // Ricarica per aggiornare il status
+                        reloadCheckUpData(checkUpId)
                     },
                     onFailure = { error ->
                         Timber.e(error, "Failed to complete check-up")
@@ -209,7 +274,7 @@ class CheckUpDetailViewModel @Inject constructor(
 
                 exportCheckUpUseCase(checkUpId).fold(
                     onSuccess = { exportedFile ->
-                        Timber.d("Report exported: __temp__") // (notImpl>>) ${exportedFile.filePath}")
+                        Timber.d("Report exported successfully")
                         _uiState.value = _uiState.value.copy(isUpdating = false)
                         // TODO: Show success message or open file
                     },
@@ -236,87 +301,51 @@ class CheckUpDetailViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(error = null)
     }
 
+    fun showAddSparePartDialog() {
+        _uiState.value = _uiState.value.copy(showAddSparePartDialog = true)
+    }
+
+    fun hideAddSparePartDialog() {
+        _uiState.value = _uiState.value.copy(showAddSparePartDialog = false)
+    }
+
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
 
-    private fun calculateProgress(checkItems: List<CheckItem>): CheckUpProgress {
-        val totalItems = checkItems.size
-        val completedItems = checkItems.count {
-            it.status in listOf(CheckItemStatus.OK, CheckItemStatus.NOK, CheckItemStatus.NA)
-        }
-
-        val overallProgress = if (totalItems > 0) {
-            completedItems.toFloat() / totalItems
-        } else 0f
-
-        // Calcola progresso per modulo usando il ModuleProgress reale (4 campi)
-        val moduleProgress = checkItems.groupBy { it.moduleType }
-            .mapValues { (_, items) ->
-                val moduleCompleted = items.count {
-                    it.status in listOf(CheckItemStatus.OK, CheckItemStatus.NOK, CheckItemStatus.NA)
+    /**
+     * Ricarica i dati del check-up senza mostrare il loading
+     */
+    private suspend fun reloadCheckUpData(checkUpId: String) {
+        try {
+            getCheckUpDetailsUseCase(checkUpId).fold(
+                onSuccess = { checkUpDetails ->
+                    _uiState.value = _uiState.value.copy(
+                        checkUp = checkUpDetails.checkUp,
+                        checkItems = checkUpDetails.checkItems,
+                        spareParts = checkUpDetails.spareParts,
+                        progress = checkUpDetails.progress,
+                        statistics = checkUpDetails.statistics,
+                        isUpdating = false,
+                        isAddingSparePart = false
+                    )
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to reload check-up data")
+                    _uiState.value = _uiState.value.copy(
+                        isUpdating = false,
+                        isAddingSparePart = false,
+                        error = "Errore ricaricamento dati: ${error.message}"
+                    )
                 }
-                val moduleCriticalIssues = items.count {
-                    it.status == CheckItemStatus.NOK && it.criticality == CriticalityLevel.CRITICAL
-                }
-                val moduleProgressPercentage = if (items.isNotEmpty()) {
-                    (moduleCompleted.toFloat() / items.size) * 100f
-                } else 0f
-
-                ModuleProgress(
-                    totalItems = items.size,
-                    completedItems = moduleCompleted,
-                    criticalIssues = moduleCriticalIssues,
-                    progressPercentage = moduleProgressPercentage
-                )
-            }
-            .mapKeys { it.key.name }
-
-        return CheckUpProgress(
-            checkUpId = checkItems.firstOrNull()?.checkUpId ?: "",
-            moduleProgress = moduleProgress,
-            overallProgress = overallProgress,
-            estimatedTimeRemaining = if (overallProgress > 0) {
-                ((totalItems - completedItems) * 2) // Stima 2 minuti per item
-            } else null
-        )
-    }
-
-    private fun calculateStatistics(
-        checkItems: List<CheckItem>,
-        spareParts: List<SparePart>
-    ): CheckUpStatistics {
-        val completedItems = checkItems.count {
-            it.status in listOf(CheckItemStatus.OK, CheckItemStatus.NOK, CheckItemStatus.NA)
+            )
+        } catch (e: Exception) {
+            Timber.e(e, "Exception reloading check-up data")
+            _uiState.value = _uiState.value.copy(
+                isUpdating = false,
+                isAddingSparePart = false,
+                error = "Errore imprevisto: ${e.message}"
+            )
         }
-        val okItems = checkItems.count { it.status == CheckItemStatus.OK }
-        val nokItems = checkItems.count { it.status == CheckItemStatus.NOK }
-        val pendingItems = checkItems.count { it.status == CheckItemStatus.PENDING }
-        val naItems = checkItems.count { it.status == CheckItemStatus.NA }
-        val photosCount = checkItems.sumOf { it.photos.size }
-
-        // Gestione sicura della criticità
-        val criticalIssues = checkItems.count { item ->
-            item.status == CheckItemStatus.NOK &&
-                    (item.criticality == CriticalityLevel.CRITICAL)
-        }
-        val importantIssues = checkItems.count { item ->
-            item.status == CheckItemStatus.NOK &&
-                    (item.criticality == CriticalityLevel.IMPORTANT)
-        }
-
-        return CheckUpStatistics(
-            totalItems = checkItems.size,
-            completedItems = completedItems,
-            okItems = okItems,
-            nokItems = nokItems,
-            pendingItems = pendingItems,
-            naItems = naItems,
-            criticalIssues = criticalIssues,
-            importantIssues = importantIssues,
-            photosCount = photosCount,
-            sparePartsCount = spareParts.size,
-            completionPercentage = if (checkItems.isNotEmpty()) (completedItems.toFloat() / checkItems.size) * 100f else 0f
-        )
     }
 }

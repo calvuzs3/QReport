@@ -28,5 +28,11 @@ interface CheckUpRepository {
     suspend fun getCheckUpStatistics(id: String): CheckUpStatistics
 
     suspend fun getCheckUpProgress(id: String): CheckUpProgress
+
+    // SPARE PARTS
+    suspend fun addSparePart(sparePart: SparePart): String
+    suspend fun updateSparePart(sparePart: SparePart)
+    suspend fun deleteSparePart(id: String)
+    suspend fun getSparePartsByCheckUp(checkUpId: String): List<SparePart>
 }
 

@@ -237,4 +237,26 @@ class CheckUpRepositoryImpl @Inject constructor(
     private fun calculateEstimatedTime(pendingItems: Int): Int? {
         return if (pendingItems > 0) pendingItems * 2 else null // 2 minuti per item
     }
+
+
+    // SPARE PARTS
+
+    override suspend fun addSparePart(sparePart: SparePart): String {
+        val entity = sparePart.toEntity()
+        sparePartDao.insertSparePart(entity)
+        return sparePart.id
+    }
+
+    override suspend fun updateSparePart(sparePart: SparePart) {
+        val entity = sparePart.toEntity()
+        sparePartDao.updateSparePart(entity)
+    }
+
+    override suspend fun deleteSparePart(id: String) {
+        sparePartDao.deleteSparePartById(id)
+    }
+
+    override suspend fun getSparePartsByCheckUp(checkUpId: String): List<SparePart> {
+        return sparePartDao.getSparePartsByCheckUp(checkUpId).map { it.toDomain() }
+    }
 }

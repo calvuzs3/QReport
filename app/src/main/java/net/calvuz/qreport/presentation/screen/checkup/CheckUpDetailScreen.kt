@@ -18,7 +18,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.*
 
 /**
- * Screen per la visualizzazione e interazione con un check-up
+ * Screen per la visualizzazione e interazione con un check-up - AGGIORNATO
  *
  * Features:
  * - Header info (cliente, isola, tecnico)
@@ -26,6 +26,7 @@ import net.calvuz.qreport.domain.model.*
  * - Interactive checklist con moduli espandibili
  * - Quick status change per check items
  * - Aggiunta foto e note
+ * - Dialog per aggiungere spare parts
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,8 +40,11 @@ fun CheckUpDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     // Initialize with checkUpId
+    // CORRETTO - Una sola volta per checkUpId
     LaunchedEffect(checkUpId) {
-        viewModel.loadCheckUp(checkUpId)
+        if (checkUpId.isNotBlank()) {
+            viewModel.loadCheckUp(checkUpId)
+        }
     }
 
     Column(
@@ -57,7 +61,7 @@ fun CheckUpDetailScreen(
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.Default.ArrowBackIosNew,
                         contentDescription = "Indietro"
                     )
                 }
@@ -172,20 +176,253 @@ fun CheckUpDetailScreen(
                         }
                     }
 
-                    // Spare Parts Section (if any)
-                    if (uiState.spareParts.isNotEmpty()) {
-                        item {
-                            SparePartsSection(
-                                spareParts = uiState.spareParts,
-                                onAddSparePart = viewModel::addSparePart
-                            )
-                        }
+                    // Spare Parts Section (always show, even if empty)
+                    item {
+                        SparePartsSection(
+                            spareParts = uiState.spareParts,
+                            onAddSparePart = viewModel::showAddSparePartDialog  // ✅ CORRETTO
+                        )
                     }
                 }
             }
         }
     }
+
+    // Add Spare Part Dialog
+    if (uiState.showAddSparePartDialog) {
+        AddSparePartDialog(
+            onDismiss = viewModel::hideAddSparePartDialog,
+            onConfirm = { partNumber, description, quantity, urgency, category, estimatedCost, notes, supplierInfo ->
+                viewModel.addSparePart(
+                    partNumber = partNumber,
+                    description = description,
+                    quantity = quantity,
+                    urgency = urgency,
+                    category = category,
+                    estimatedCost = estimatedCost,
+                    notes = notes,
+                    supplierInfo = supplierInfo
+                )
+                viewModel.hideAddSparePartDialog()
+            },
+            isLoading = uiState.isAddingSparePart
+        )
+    }
 }
+
+/**
+ * Dialog per aggiungere spare parts
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun AddSparePartDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String, String, Int, SparePartUrgency, SparePartCategory, Double?, String, String) -> Unit,
+    isLoading: Boolean,
+    modifier: Modifier = Modifier
+) {
+    var partNumber by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var quantity by remember { mutableStateOf("1") }
+    var selectedUrgency by remember { mutableStateOf(SparePartUrgency.MEDIUM) }
+    var selectedCategory by remember { mutableStateOf(SparePartCategory.OTHER) }
+    var estimatedCost by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
+    var supplierInfo by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+        title = { Text("Aggiungi Ricambio") },
+        text = {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.heightIn(max = 400.dp)
+            ) {
+                item {
+                    OutlinedTextField(
+                        value = partNumber,
+                        onValueChange = { partNumber = it },
+                        label = { Text("Numero Parte *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = description,
+                        onValueChange = { description = it },
+                        label = { Text("Descrizione *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 2
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = quantity,
+                        onValueChange = { if (it.all { char -> char.isDigit() }) quantity = it },
+                        label = { Text("Quantità *") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+
+                item {
+                    var urgencyExpanded by remember { mutableStateOf(false) }
+
+                    ExposedDropdownMenuBox(
+                        expanded = urgencyExpanded,
+                        onExpandedChange = { urgencyExpanded = !urgencyExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedUrgency.displayName,
+                            onValueChange = { },
+                            readOnly = true,
+                            label = { Text("Urgenza") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = urgencyExpanded)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = urgencyExpanded,
+                            onDismissRequest = { urgencyExpanded = false }
+                        ) {
+                            SparePartUrgency.entries.forEach { urgency ->
+                                DropdownMenuItem(
+                                    text = { Text(urgency.displayName) },
+                                    onClick = {
+                                        selectedUrgency = urgency
+                                        urgencyExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    var categoryExpanded by remember { mutableStateOf(false) }
+
+                    ExposedDropdownMenuBox(
+                        expanded = categoryExpanded,
+                        onExpandedChange = { categoryExpanded = !categoryExpanded }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedCategory.displayName,
+                            onValueChange = { },
+                            readOnly = true,
+                            label = { Text("Categoria") },
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+
+                        ExposedDropdownMenu(
+                            expanded = categoryExpanded,
+                            onDismissRequest = { categoryExpanded = false }
+                        ) {
+                            SparePartCategory.entries.forEach { category ->
+                                DropdownMenuItem(
+                                    text = { Text(category.displayName) },
+                                    onClick = {
+                                        selectedCategory = category
+                                        categoryExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = estimatedCost,
+                        onValueChange = {
+                            // Allow only numbers and decimal point
+                            if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) {
+                                estimatedCost = it
+                            }
+                        },
+                        label = { Text("Costo Stimato (€)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        prefix = { Text("€ ") }
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        label = { Text("Note") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 3
+                    )
+                }
+
+                item {
+                    OutlinedTextField(
+                        value = supplierInfo,
+                        onValueChange = { supplierInfo = it },
+                        label = { Text("Info Fornitore") },
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 2
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val quantityInt = quantity.toIntOrNull() ?: 1
+                    val costDouble = estimatedCost.toDoubleOrNull()
+
+                    onConfirm(
+                        partNumber.trim(),
+                        description.trim(),
+                        quantityInt,
+                        selectedUrgency,
+                        selectedCategory,
+                        costDouble,
+                        notes.trim(),
+                        supplierInfo.trim()
+                    )
+                },
+                enabled = !isLoading && partNumber.isNotBlank() && description.isNotBlank()
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Aggiungi")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isLoading
+            ) {
+                Text("Annulla")
+            }
+        }
+    )
+}
+
+// ============================================================
+// COMPONENTI ESISTENTI (copiati dal file originale)
+// ============================================================
 
 @Composable
 private fun CheckUpHeaderCard(
@@ -257,7 +494,7 @@ private fun ProgressOverviewCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Panoramica",
+                text = "Panoramica Progresso",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -266,55 +503,56 @@ private fun ProgressOverviewCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatisticItem(
+                StatItem(
+                    icon = Icons.Default.Assignment,
+                    value = statistics.totalItems.toString(),
+                    label = "Totali"
+                )
+
+                StatItem(
                     icon = Icons.Default.CheckCircle,
                     value = statistics.completedItems.toString(),
                     label = "Completati",
-                    color = MaterialTheme.colorScheme.primary
+                    color = Color(0xFF4CAF50)
                 )
 
-                StatisticItem(
+                StatItem(
                     icon = Icons.Default.Error,
                     value = statistics.nokItems.toString(),
                     label = "NOK",
-                    color = MaterialTheme.colorScheme.error
+                    color = Color(0xFFF44336)
                 )
 
-                StatisticItem(
-                    icon = Icons.Default.Schedule,
-                    value = statistics.pendingItems.toString(),
-                    label = "In sospeso",
-                    color = MaterialTheme.colorScheme.secondary
-                )
-
-                StatisticItem(
-                    icon = Icons.Default.PhotoCamera,
-                    value = statistics.photosCount.toString(),
-                    label = "Foto",
-                    color = MaterialTheme.colorScheme.tertiary
-                )
+                if (statistics.criticalIssues > 0) {
+                    StatItem(
+                        icon = Icons.Default.Warning,
+                        value = statistics.criticalIssues.toString(),
+                        label = "Critici",
+                        color = Color(0xFFFF5722)
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun StatisticItem(
+private fun StatItem(
     icon: ImageVector,
     value: String,
     label: String,
-    color: Color,
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = color
+            tint = color,
+            modifier = Modifier.size(24.dp)
         )
         Text(
             text = value,
@@ -330,6 +568,7 @@ private fun StatisticItem(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ModuleSection(
     moduleType: ModuleType,
@@ -339,56 +578,42 @@ private fun ModuleSection(
     onUpdateNotes: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier.fillMaxWidth()
     ) {
         Column {
-            // Header
-            Card(
-                onClick = { expanded = !expanded },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(
-                    topStart = 12.dp,
-                    topEnd = 12.dp,
-                    bottomStart = if (expanded) 0.dp else 12.dp,
-                    bottomEnd = if (expanded) 0.dp else 12.dp
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = moduleType.icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-
+            // Module header
+            ListItem(
+                headlineContent = {
                     Text(
                         text = moduleType.displayName,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.weight(1f)
+                        fontWeight = FontWeight.SemiBold
                     )
+                },
+                supportingContent = {
+                    val completed = items.count {
+                        it.status in listOf(CheckItemStatus.OK, CheckItemStatus.NOK, CheckItemStatus.NA)
+                    }
+                    Text("${completed}/${items.size} completati")
+                },
+                trailingContent = {
+                    IconButton(onClick = { isExpanded = !isExpanded }) {
+                        Icon(
+                            imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (isExpanded) "Chiudi" else "Espandi"
+                        )
+                    }
+                },
+                colors = ListItemDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                )
+            )
 
-                    Text(
-                        text = "${items.count { it.status == CheckItemStatus.OK }}/${items.size}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Icon(
-                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (expanded) "Comprimi" else "Espandi"
-                    )
-                }
-            }
-
-            // Items
-            if (expanded) {
+            // Module items
+            if (isExpanded) {
                 items.forEach { item ->
                     CheckItemCard(
                         item = item,
@@ -524,32 +749,96 @@ private fun SparePartItem(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = sparePart.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.weight(1f)
+                )
+
+                UrgencyChip(urgency = sparePart.urgency)
+            }
+
             Text(
-                text = sparePart.description,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
+                text = "P/N: ${sparePart.partNumber}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Quantità: ${sparePart.quantity}",
+                    text = "Qtà: ${sparePart.quantity}",
                     style = MaterialTheme.typography.bodySmall
                 )
 
                 Text(
-                    text = "•",
+                    text = sparePart.category.displayName,
                     style = MaterialTheme.typography.bodySmall
                 )
 
+                sparePart.estimatedCost?.let { cost ->
+                    Text(
+                        text = "€ ${String.format("%.2f", cost)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            if (sparePart.notes.isNotBlank()) {
                 Text(
-                    text = "Urgenza: ${sparePart.urgency}",
-                    style = MaterialTheme.typography.bodySmall
+                    text = sparePart.notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
         }
     }
+}
+
+@Composable
+private fun UrgencyChip(
+    urgency: SparePartUrgency,
+    modifier: Modifier = Modifier
+) {
+    val colors = when (urgency) {
+        SparePartUrgency.LOW -> AssistChipDefaults.assistChipColors(
+            containerColor = Color(0xFF4CAF50).copy(alpha = 0.2f),
+            labelColor = Color(0xFF2E7D32)
+        )
+        SparePartUrgency.MEDIUM -> AssistChipDefaults.assistChipColors(
+            containerColor = Color(0xFFFF9800).copy(alpha = 0.2f),
+            labelColor = Color(0xFFE65100)
+        )
+        SparePartUrgency.HIGH -> AssistChipDefaults.assistChipColors(
+            containerColor = Color(0xFFF44336).copy(alpha = 0.2f),
+            labelColor = Color(0xFFC62828)
+        )
+        SparePartUrgency.IMMEDIATE -> AssistChipDefaults.assistChipColors(
+            containerColor = Color(0xFF9C27B0).copy(alpha = 0.2f),
+            labelColor = Color(0xFF6A1B9A)
+        )
+    }
+
+    AssistChip(
+        onClick = { },
+        label = {
+            Text(
+                text = urgency.displayName,
+                style = MaterialTheme.typography.labelSmall
+            )
+        },
+        colors = colors,
+        modifier = modifier
+    )
 }
 
 @Composable
