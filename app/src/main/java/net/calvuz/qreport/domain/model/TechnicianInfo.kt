@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class TechnicianInfo(
     val name: String,
-    val company: String = "Polytec",
+    val company: String = "",
     val certification: String = "",
     val phone: String = "",
     val email: String = ""
