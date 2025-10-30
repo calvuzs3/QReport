@@ -151,7 +151,8 @@ fun CheckUpDetailScreen(
                     item {
                         CheckUpHeaderCard(
                             checkUp = uiState.checkUp!!,
-                            progress = uiState.progress
+                            progress = uiState.progress,
+                            onEditHeader = viewModel::showEditHeaderDialog
                         )
                     }
 
@@ -206,6 +207,16 @@ fun CheckUpDetailScreen(
                 viewModel.hideAddSparePartDialog()
             },
             isLoading = uiState.isAddingSparePart
+        )
+    }
+
+    // Edit Header Dialog
+    if (uiState.showEditHeaderDialog && uiState.checkUp != null) {
+        EditHeaderDialog(
+            header = uiState.checkUp!!.header,
+            onDismiss = viewModel::hideEditHeaderDialog,
+            onConfirm = viewModel::updateCheckUpHeader,
+            isLoading = uiState.isUpdatingHeader
         )
     }
 }
@@ -897,7 +908,7 @@ private fun getNextStatus(currentStatus: CheckItemStatus): CheckItemStatus {
 }
 
 @Composable
-private fun StatusChipForCheckUp(
+fun StatusChipForCheckUp(
     status: CheckUpStatus,
     modifier: Modifier = Modifier
 ) {

@@ -118,7 +118,7 @@ fun CheckUpListScreen(
 
         // Reset refresh state when not refreshing
         LaunchedEffect(uiState.isRefreshing) {
-            if (!uiState.isRefreshing) {
+            if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
                 pullToRefreshState.endRefresh()
             }
         }
@@ -174,11 +174,13 @@ fun CheckUpListScreen(
                 }
             }
 
-            // Pull to refresh indicator
-            PullToRefreshContainer(
-                state = pullToRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
+            // Pull to refresh indicator - only show when actively refreshing
+            if (pullToRefreshState.isRefreshing || uiState.isRefreshing) {
+                PullToRefreshContainer(
+                    state = pullToRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+            }
 
             // FAB
             FloatingActionButton(

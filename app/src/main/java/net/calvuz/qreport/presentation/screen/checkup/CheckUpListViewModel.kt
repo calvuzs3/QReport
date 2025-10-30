@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.usecase.checkup.*
@@ -71,15 +74,24 @@ class CheckUpListViewModel @Inject constructor(
 
                 getCheckUpsUseCase()
                     .catch { exception ->
+                        if (exception is CancellationException) throw exception
                         Timber.e(exception, "Error in getCheckUpsUseCase flow")
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            isRefreshing = false,
-                            error = "Errore caricamento check-ups: ${exception.message}"
-                        )
+                        if (currentCoroutineContext().isActive) {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                isRefreshing = false,
+                                error = "Errore caricamento check-ups: ${exception.message}"
+                            )
+                        }
                     }
                     .collect { checkUps ->
-                        // Enrich with statistics
+                        // ✅ CORRETTO: Controlla cancellazione prima di processare
+                        if (!currentCoroutineContext().isActive) {
+                            Timber.d("Skipping check-ups processing - job cancelled")
+                            return@collect
+                        }
+
+                        // Enrich with statistics - TUTTO DENTRO IL COLLECT
                         val checkUpsWithStats = checkUps.map { checkUp ->
                             val stats = try {
                                 getCheckUpStatsUseCase(checkUp.id).getOrElse {
@@ -121,37 +133,177 @@ class CheckUpListViewModel @Inject constructor(
                             )
                         }
 
-                        val currentState = _uiState.value
-                        val filteredAndSorted = applyFiltersAndSort(
-                            checkUpsWithStats,
-                            currentState.searchQuery,
-                            currentState.selectedFilter,
-                            currentState.sortOrder
-                        )
+                        // ✅ CORRETTO: Aggiorna UI solo se ancora attivo, TUTTO DENTRO COLLECT
+                        if (currentCoroutineContext().isActive) {
+                            val currentState = _uiState.value
+                            val filteredAndSorted = applyFiltersAndSort(
+                                checkUpsWithStats,
+                                currentState.searchQuery,
+                                currentState.selectedFilter,
+                                currentState.sortOrder
+                            )
 
-                        _uiState.value = currentState.copy(
-                            checkUps = checkUpsWithStats,
-                            filteredCheckUps = filteredAndSorted,
-                            isLoading = false,
-                            isRefreshing = false,
-                            error = null
-                        )
+                            _uiState.value = currentState.copy(
+                                checkUps = checkUpsWithStats,
+                                filteredCheckUps = filteredAndSorted,
+                                isLoading = false,
+                                isRefreshing = false,
+                                error = null
+                            )
+                        } else {
+                            Timber.d("Skipping UI update - job cancelled")
+                        }
                     }
 
+            } catch (e: CancellationException) {
+                // ✅ CORRETTO: Gestione cancellazione
+                Timber.d("Check-ups loading cancelled (normal during navigation)")
+                // Non aggiornare UI se cancellato
             } catch (e: Exception) {
-                Timber.e(e, "Failed to load check-ups")
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    isRefreshing = false,
-                    error = "Errore caricamento check-ups: ${e.message}"
-                )
+                // ✅ CORRETTO: Usa currentCoroutineContext().isActive
+                if (currentCoroutineContext().isActive) {
+                    Timber.e(e, "Failed to load check-ups")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        isRefreshing = false,
+                        error = "Errore caricamento check-ups: ${e.message}"
+                    )
+                } else {
+                    Timber.d("Error handling skipped - job cancelled")
+                }
             }
         }
     }
 
     fun refresh() {
-        _uiState.value = _uiState.value.copy(isRefreshing = true)
-        loadCheckUps()
+        viewModelScope.launch {
+            try {
+                _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
+
+                Timber.d("Refreshing check-ups list")
+
+                // Use .first() for one-shot operation instead of .collect
+                val checkUps = getCheckUpsUseCase().first()
+
+                if (!currentCoroutineContext().isActive) {
+                    Timber.d("Skipping refresh processing - job cancelled")
+                    return@launch
+                }
+
+                // Enrich with statistics
+                val checkUpsWithStats = checkUps.map { checkUp ->
+                    val stats = try {
+                        getCheckUpStatsUseCase(checkUp.id).getOrElse {
+                            Timber.w("Failed to get stats for check-up ${checkUp.id}: ${it.message}")
+                            CheckUpStatistics(
+                                totalItems = 0,
+                                completedItems = 0,
+                                okItems = 0,
+                                nokItems = 0,
+                                naItems = 0,
+                                pendingItems = 0,
+                                criticalIssues = 0,
+                                importantIssues = 0,
+                                photosCount = 0,
+                                sparePartsCount = 0,
+                                completionPercentage = 0f
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "Exception getting stats for check-up ${checkUp.id}")
+                        CheckUpStatistics(
+                            totalItems = 0,
+                            completedItems = 0,
+                            okItems = 0,
+                            nokItems = 0,
+                            naItems = 0,
+                            pendingItems = 0,
+                            criticalIssues = 0,
+                            importantIssues = 0,
+                            photosCount = 0,
+                            sparePartsCount = 0,
+                            completionPercentage = 0f
+                        )
+                    }
+
+                    CheckUpWithStats(
+                        checkUp = checkUp,
+                        statistics = stats
+                    )
+                }
+
+                if (currentCoroutineContext().isActive) {
+                    val currentState = _uiState.value
+                    val filteredAndSorted = applyFiltersAndSort(
+                        checkUpsWithStats,
+                        currentState.searchQuery,
+                        currentState.selectedFilter,
+                        currentState.sortOrder
+                    )
+
+                    _uiState.value = currentState.copy(
+                        checkUps = checkUpsWithStats,
+                        filteredCheckUps = filteredAndSorted,
+                        isRefreshing = false,  // ✅ SEMPRE resettato
+                        error = null
+                    )
+
+                    Timber.d("Refresh completed successfully")
+                } else {
+                    Timber.d("Skipping refresh UI update - job cancelled")
+                }
+
+            } catch (e: CancellationException) {
+                Timber.d("Refresh cancelled")
+                // Reset isRefreshing state even if cancelled
+                if (currentCoroutineContext().isActive) {
+                    _uiState.value = _uiState.value.copy(isRefreshing = false)
+                }
+            } catch (e: Exception) {
+                if (currentCoroutineContext().isActive) {
+                    Timber.e(e, "Failed to refresh check-ups")
+                    _uiState.value = _uiState.value.copy(
+                        isRefreshing = false,
+                        error = "Errore refresh: ${e.message}"
+                    )
+                } else {
+                    Timber.d("Refresh error handling skipped - job cancelled")
+                }
+            }
+        }
+    }
+
+    fun deleteCheckUp(checkUpId: String) {
+        viewModelScope.launch {
+            try {
+                Timber.d("Deleting check-up: $checkUpId")
+
+                deleteCheckUpUseCase(checkUpId).fold(
+                    onSuccess = {
+                        Timber.d("Check-up deleted successfully")
+                        // The list will be automatically updated via Flow
+                    },
+                    onFailure = { error ->
+                        if (currentCoroutineContext().isActive) {
+                            Timber.e(error, "Failed to delete check-up")
+                            _uiState.value = _uiState.value.copy(
+                                error = "Errore eliminazione check-up: ${error.message}"
+                            )
+                        }
+                    }
+                )
+
+            } catch (e: CancellationException) {
+                Timber.d("Delete operation cancelled")
+            } catch (e: Exception) {
+                if (currentCoroutineContext().isActive) {
+                    Timber.e(e, "Exception deleting check-up")
+                    _uiState.value = _uiState.value.copy(
+                        error = "Errore imprevisto: ${e.message}"
+                    )
+                }
+            }
+        }
     }
 
     fun updateSearchQuery(query: String) {
@@ -197,33 +349,6 @@ class CheckUpListViewModel @Inject constructor(
             sortOrder = sortOrder,
             filteredCheckUps = filteredAndSorted
         )
-    }
-
-    fun deleteCheckUp(checkUpId: String) {
-        viewModelScope.launch {
-            try {
-                Timber.d("Deleting check-up: $checkUpId")
-
-                deleteCheckUpUseCase(checkUpId).fold(
-                    onSuccess = {
-                        Timber.d("Check-up deleted successfully")
-                        // The list will be automatically updated via Flow
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to delete check-up")
-                        _uiState.value = _uiState.value.copy(
-                            error = "Errore eliminazione check-up: ${error.message}"
-                        )
-                    }
-                )
-
-            } catch (e: Exception) {
-                Timber.e(e, "Exception deleting check-up")
-                _uiState.value = _uiState.value.copy(
-                    error = "Errore imprevisto: ${e.message}"
-                )
-            }
-        }
     }
 
     fun dismissError() {

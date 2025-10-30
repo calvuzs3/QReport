@@ -301,17 +301,28 @@ fun QReportBottomNavigation(
                 },
                 selected = isSelected,
                 onClick = {
-                    navController.navigate(destination.route) {
-                        // Pop up to the start destination of the graph to
-                        // avoid building up a large stack of destinations
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                    if (destination.route == QReportRoutes.HOME) {
+                        // Per Home, naviga senza salvare/ripristinare stato
+                        navController.navigate(destination.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                inclusive = false
+                            }
+                            launchSingleTop = true
+                            // NO saveState né restoreState per Home
                         }
-                        // Avoid multiple copies of the same destination when
-                        // reselecting the same item
-                        launchSingleTop = true
-                        // Restore state when reselecting a previously selected item
-                        restoreState = true
+                    } else {
+                        navController.navigate(destination.route) {
+                            // Pop up to the start destination of the graph to
+                            // avoid building up a large stack of destinations
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            // Avoid multiple copies of the same destination when
+                            // reselecting the same item
+                            launchSingleTop = true
+                            // Restore state when reselecting a previously selected item
+                            restoreState = true
+                        }
                     }
                 },
                 colors = NavigationBarItemDefaults.colors(
@@ -344,7 +355,7 @@ private fun CameraPlaceholderScreen(
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.Default.ArrowBackIosNew,
                         contentDescription = "Indietro"
                     )
                 }

@@ -32,7 +32,10 @@ data class CheckUpDetailUiState(
     val error: String? = null,
     val isUpdating: Boolean = false,
     val isAddingSparePart: Boolean = false,
-    val showAddSparePartDialog: Boolean = false
+    val showAddSparePartDialog: Boolean = false,
+    // Header editing state
+    val showEditHeaderDialog: Boolean = false,
+    val isUpdatingHeader: Boolean = false
 ) {
     val checkItemsByModule: Map<ModuleType, List<CheckItem>>
         get() = checkItems.groupBy { it.moduleType }
@@ -45,7 +48,8 @@ class CheckUpDetailViewModel @Inject constructor(
     private val updateCheckItemStatusUseCase: UpdateCheckItemStatusUseCase,
     private val updateCheckItemNotesUseCase: UpdateCheckItemNotesUseCase,
     private val addSparePartUseCase: AddSparePartUseCase,
-    private val exportCheckUpUseCase: ExportCheckUpUseCase
+    private val exportCheckUpUseCase: ExportCheckUpUseCase,
+    private val updateCheckUpHeaderUseCase: UpdateCheckUpHeaderUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
@@ -310,6 +314,61 @@ class CheckUpDetailViewModel @Inject constructor(
     }
 
     // ============================================================
+    // HEADER EDITING METHODS
+    // ============================================================
+
+    fun showEditHeaderDialog() {
+        _uiState.value = _uiState.value.copy(showEditHeaderDialog = true)
+    }
+
+    fun hideEditHeaderDialog() {
+        _uiState.value = _uiState.value.copy(showEditHeaderDialog = false)
+    }
+
+    fun updateCheckUpHeader(newHeader: CheckUpHeader) {
+        viewModelScope.launch {
+            val checkUpId = _uiState.value.checkUp?.id
+            if (checkUpId == null) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Check-up non disponibile"
+                )
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(isUpdatingHeader = true)
+
+            try {
+                Timber.d("Updating check-up header: $checkUpId")
+
+                updateCheckUpHeaderUseCase(checkUpId, newHeader).fold(
+                    onSuccess = {
+                        Timber.d("Header updated successfully")
+                        // Ricarica i dati per sincronizzare tutto
+                        reloadCheckUpData(checkUpId)
+                        _uiState.value = _uiState.value.copy(
+                            showEditHeaderDialog = false
+                        )
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to update header")
+                        _uiState.value = _uiState.value.copy(
+                            isUpdatingHeader = false,
+                            error = "Errore aggiornamento header: ${error.message}"
+                        )
+                    }
+                )
+
+            } catch (e: Exception) {
+                Timber.e(e, "Exception updating header")
+                _uiState.value = _uiState.value.copy(
+                    isUpdatingHeader = false,
+                    error = "Errore imprevisto: ${e.message}"
+                )
+            }
+        }
+    }
+
+    // ============================================================
     // PRIVATE METHODS
     // ============================================================
 
@@ -327,7 +386,8 @@ class CheckUpDetailViewModel @Inject constructor(
                         progress = checkUpDetails.progress,
                         statistics = checkUpDetails.statistics,
                         isUpdating = false,
-                        isAddingSparePart = false
+                        isAddingSparePart = false,
+                        isUpdatingHeader = false
                     )
                 },
                 onFailure = { error ->
@@ -335,6 +395,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isUpdating = false,
                         isAddingSparePart = false,
+                        isUpdatingHeader = false,
                         error = "Errore ricaricamento dati: ${error.message}"
                     )
                 }
@@ -344,6 +405,7 @@ class CheckUpDetailViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(
                 isUpdating = false,
                 isAddingSparePart = false,
+                isUpdatingHeader = false,
                 error = "Errore imprevisto: ${e.message}"
             )
         }
