@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
+import net.calvuz.qreport.domain.model.island.IslandInfo
 
 /**
  * Dialog per l'editing delle informazioni dell'header del check-up

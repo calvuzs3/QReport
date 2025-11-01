@@ -6,8 +6,10 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.data.repository.CheckItemRepositoryImpl
 import net.calvuz.qreport.data.repository.CheckUpRepositoryImpl
+import net.calvuz.qreport.data.repository.PhotoRepositoryImpl
 import net.calvuz.qreport.domain.repository.CheckItemRepository
 import net.calvuz.qreport.domain.repository.CheckUpRepository
+import net.calvuz.qreport.domain.repository.PhotoRepository
 import javax.inject.Singleton
 
 /**
@@ -31,4 +33,11 @@ abstract class RepositoryModule {
     abstract fun bindCheckItemRepository(
         checkItemRepositoryImpl: CheckItemRepositoryImpl
     ): CheckItemRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindPhotoRepository(
+        photoRepositoryImpl: PhotoRepositoryImpl
+    ): PhotoRepository
+
 }

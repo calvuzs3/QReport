@@ -4,9 +4,16 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.data.local.entity.CheckItemEntity
+import net.calvuz.qreport.data.local.entity.CheckItemWithPhotos
 
 @Dao
 interface CheckItemDao {
+
+    data class CheckItemPhotoCount(
+        val id: String,           // check_item_id
+        @ColumnInfo(name = "photo_count")
+        val photoCount: Int
+    )
 
     @Query("SELECT * FROM check_items WHERE checkup_id = :checkUpId ORDER BY order_index ASC")
     fun getCheckItemsByCheckUpFlow(checkUpId: String): Flow<List<CheckItemEntity>>
@@ -83,4 +90,32 @@ interface CheckItemDao {
 
     @Query("SELECT DISTINCT module_type FROM check_items WHERE checkup_id = :checkUpId")
     suspend fun getModuleTypesForCheckUp(checkUpId: String): List<String>
+
+    // AGGIUNTE PER FOTO
+
+    /**
+     * Recupera tutti i CheckItems di un CheckUp con le loro foto
+     */
+    @Transaction
+    @Query("SELECT * FROM check_items WHERE checkup_id = :checkUpId ORDER BY order_index ASC")
+    fun getCheckItemsWithPhotos(checkUpId: String): Flow<List<CheckItemWithPhotos>>
+
+    /**
+     * Recupera un singolo CheckItem con le sue foto
+     */
+    @Transaction
+    @Query("SELECT * FROM check_items WHERE id = :checkItemId")
+    suspend fun getCheckItemWithPhotos(checkItemId: String): CheckItemWithPhotos?
+
+    /**
+     * Conta le foto per CheckItem
+     */
+    @Query("""
+    SELECT check_items.id, COUNT(photos.id) as photo_count 
+    FROM check_items 
+    LEFT JOIN photos ON check_items.id = photos.check_item_id 
+    WHERE check_items.checkup_id = :checkUpId 
+    GROUP BY check_items.id
+""")
+    suspend fun getPhotoCountsByCheckUp(checkUpId: String): List<CheckItemPhotoCount>
 }

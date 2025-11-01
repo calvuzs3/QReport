@@ -5,7 +5,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
+import net.calvuz.qreport.domain.model.island.IslandInfo
+import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.usecase.checkup.*
 import timber.log.Timber
 import javax.inject.Inject
@@ -188,7 +192,7 @@ class NewCheckUpViewModel @Inject constructor(
                 phone = "",
                 email = ""
             ),
-            checkUpDate = kotlinx.datetime.Clock.System.now(),
+            checkUpDate = Clock.System.now(),
             notes = "Check-up creato tramite wizard guidato"
         )
     }

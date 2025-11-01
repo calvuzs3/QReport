@@ -1,9 +1,9 @@
 package net.calvuz.qreport.domain.usecase.checkup
 
 import kotlinx.coroutines.flow.Flow
-import net.calvuz.qreport.domain.model.CheckUp
-import net.calvuz.qreport.domain.model.CheckUpStatus
-import net.calvuz.qreport.domain.model.IslandType
+import net.calvuz.qreport.domain.model.checkup.CheckUp
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import javax.inject.Inject
 

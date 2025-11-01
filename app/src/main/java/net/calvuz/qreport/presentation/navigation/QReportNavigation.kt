@@ -8,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -23,6 +22,8 @@ import net.calvuz.qreport.presentation.screen.checkup.CheckUpListScreen
 import net.calvuz.qreport.presentation.screen.checkup.NewCheckUpScreen
 import net.calvuz.qreport.presentation.screen.checkup.CheckUpDetailScreen
 import net.calvuz.qreport.presentation.screen.archive.ArchiveScreen
+import net.calvuz.qreport.presentation.screen.camera.CameraScreen
+import net.calvuz.qreport.presentation.screen.photo.PhotoGalleryScreen
 import net.calvuz.qreport.presentation.screen.settings.SettingsScreen
 
 /**
@@ -92,10 +93,12 @@ object QReportRoutes {
     const val CHECKUP_CREATE = "checkup_create"
     const val CHECKUP_DETAIL = "checkup_detail/{checkUpId}"
     const val CAMERA = "camera/{checkItemId}"
+    const val PHOTO_GALLERY = "photo_gallery/{checkItemId}"
 
     // Helper functions for parameters
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
+    fun photoGallery(checkItemId: String) = "photo_gallery/$checkItemId"
 }
 
 /**
@@ -211,11 +214,15 @@ fun QReportNavigation(
                         },
                         onNavigateToCamera = { checkItemId ->
                             navController.navigate(QReportRoutes.camera(checkItemId))
+                        },
+                        // ✅ NUOVO: Aggiungi navigation per PhotoGallery
+                        onNavigateToPhotoGallery = { checkItemId ->
+                            navController.navigate(QReportRoutes.photoGallery(checkItemId))
                         }
                     )
                 }
 
-                // Camera (Future implementation)
+                // Camera
                 composable(
                     route = QReportRoutes.CAMERA,
                     arguments = listOf(
@@ -226,12 +233,34 @@ fun QReportNavigation(
                 ) { backStackEntry ->
                     val checkItemId = backStackEntry.arguments?.getString("checkItemId") ?: ""
 
-                    // TODO: Implement CameraScreen in Phase 4
-                    // For now, just show a placeholder
-                    CameraPlaceholderScreen(
+                    CameraScreen(
+                        checkItemId = checkItemId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onPhotoSaved = {
+                            // Torna indietro dopo aver salvato la foto
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                // ✅ NUOVO: Aggiungi route per PhotoGallery
+                composable(
+                    route = QReportRoutes.PHOTO_GALLERY,
+                    arguments = listOf(
+                        navArgument("checkItemId") {
+                            type = NavType.StringType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val checkItemId = backStackEntry.arguments?.getString("checkItemId") ?: ""
+
+                    PhotoGalleryScreen(
                         checkItemId = checkItemId,
                         onNavigateBack = {
                             navController.popBackStack()
+                        },
+                        onNavigateToCamera = {
+                            navController.navigate(QReportRoutes.camera(checkItemId))
                         }
                     )
                 }
@@ -333,71 +362,6 @@ fun QReportBottomNavigation(
                     unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
-        }
-    }
-}
-
-/**
- * Placeholder per CameraScreen (da implementare in Fase 4)
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CameraPlaceholderScreen(
-    checkItemId: String,
-    onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        TopAppBar(
-            title = { Text("Fotocamera") },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Indietro"
-                    )
-                }
-            }
-        )
-
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = androidx.compose.ui.Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.CameraAlt,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-
-                Text(
-                    text = "Fotocamera",
-                    style = MaterialTheme.typography.titleLarge
-                )
-
-                Text(
-                    text = "Funzionalità disponibile in Fase 4",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = "Check Item ID: $checkItemId",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Button(onClick = onNavigateBack) {
-                    Text("Torna Indietro")
-                }
-            }
         }
     }
 }

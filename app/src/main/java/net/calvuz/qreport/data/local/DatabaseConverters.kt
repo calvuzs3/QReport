@@ -4,7 +4,10 @@ import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.datetime.Instant
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.camera.CameraSettings
+import net.calvuz.qreport.domain.model.photo.PhotoLocation
+import net.calvuz.qreport.domain.model.photo.PhotoPerspective
+import net.calvuz.qreport.domain.model.photo.PhotoResolution
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 

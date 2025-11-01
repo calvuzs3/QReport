@@ -1,7 +1,7 @@
 package net.calvuz.qreport.domain.usecase.checkup
 
 import kotlinx.datetime.Clock
-import net.calvuz.qreport.domain.model.CheckUpHeader
+import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import javax.inject.Inject
 

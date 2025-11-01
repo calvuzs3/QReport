@@ -10,7 +10,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
+import net.calvuz.qreport.domain.model.checkup.CheckUp
+import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
 
 /**
  * Header card con informazioni del check-up e pulsante edit

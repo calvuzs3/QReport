@@ -3,10 +3,10 @@ package net.calvuz.qreport.data.repository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.data.local.dao.CheckItemDao
-import net.calvuz.qreport.domain.model.CheckItem
-import net.calvuz.qreport.domain.model.CheckItemStatus
-import net.calvuz.qreport.domain.model.IslandType
-import net.calvuz.qreport.domain.model.ModuleProgress
+import net.calvuz.qreport.domain.model.checkup.CheckItem
+import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
+import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.domain.model.module.ModuleProgress
 import net.calvuz.qreport.domain.repository.CheckItemRepository
 import javax.inject.Inject
 import javax.inject.Singleton

@@ -9,6 +9,14 @@ import net.calvuz.qreport.data.local.dao.SparePartDao
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.data.mapper.*
 import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
+import net.calvuz.qreport.domain.model.checkup.CheckUp
+import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.domain.model.module.ModuleProgress
+import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import javax.inject.Inject
 import javax.inject.Singleton

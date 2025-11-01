@@ -1,7 +1,12 @@
 package net.calvuz.qreport.domain.repository
 
 import kotlinx.coroutines.flow.Flow
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckUp
+import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.domain.model.spare.SparePart
 
 interface CheckUpRepository {
 

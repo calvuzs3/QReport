@@ -5,8 +5,18 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
+import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.photo.Photo
+import net.calvuz.qreport.domain.model.photo.PhotoResult
+import net.calvuz.qreport.domain.model.spare.SparePartCategory
+import net.calvuz.qreport.domain.model.spare.SparePartUrgency
 import net.calvuz.qreport.domain.usecase.checkup.*
+import net.calvuz.qreport.domain.usecase.photo.CapturePhotoUseCase
+import net.calvuz.qreport.domain.usecase.photo.DeletePhotoUseCase
+import net.calvuz.qreport.domain.usecase.photo.GetCheckItemPhotosUseCase
+import net.calvuz.qreport.presentation.model.checkup.CheckUpDetailUiState
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -22,23 +32,12 @@ import javax.inject.Inject
  * - Gestione spare parts
  */
 
-data class CheckUpDetailUiState(
-    val checkUp: CheckUp? = null,
-    val checkItems: List<CheckItem> = emptyList(),
-    val spareParts: List<SparePart> = emptyList(),
-    val progress: CheckUpProgress = CheckUpProgress(),
-    val statistics: CheckUpStatistics = CheckUpStatistics(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val isUpdating: Boolean = false,
-    val isAddingSparePart: Boolean = false,
-    val showAddSparePartDialog: Boolean = false,
-    // Header editing state
-    val showEditHeaderDialog: Boolean = false,
-    val isUpdatingHeader: Boolean = false
-) {
-    val checkItemsByModule: Map<ModuleType, List<CheckItem>>
-        get() = checkItems.groupBy { it.moduleType }
+
+// ✅ NUOVO: Actions per foto
+sealed class PhotoAction {
+    data class NavigateToCamera(val checkItemId: String) : PhotoAction()
+    data class NavigateToGallery(val checkItemId: String) : PhotoAction()
+    data class LoadItemPhotos(val checkItemId: String) : PhotoAction()
 }
 
 @HiltViewModel
@@ -49,7 +48,11 @@ class CheckUpDetailViewModel @Inject constructor(
     private val updateCheckItemNotesUseCase: UpdateCheckItemNotesUseCase,
     private val addSparePartUseCase: AddSparePartUseCase,
     private val exportCheckUpUseCase: ExportCheckUpUseCase,
-    private val updateCheckUpHeaderUseCase: UpdateCheckUpHeaderUseCase
+    private val updateCheckUpHeaderUseCase: UpdateCheckUpHeaderUseCase,
+    // New
+    private val getCheckItemPhotosUseCase: GetCheckItemPhotosUseCase,  // ✅ NUOVO
+    private val capturePhotoUseCase: CapturePhotoUseCase,              // ✅ NUOVO
+    private val deletePhotoUseCase: DeletePhotoUseCase                 // ✅ NUOVO
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
@@ -74,6 +77,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.d("Loading check-up details: $checkUpId")
 
                 getCheckUpDetailsUseCase(checkUpId).fold(
+
                     onSuccess = { checkUpDetails ->
                         Timber.d("Check-up loaded: ${checkUpDetails.checkUp.id}")
 
@@ -86,6 +90,8 @@ class CheckUpDetailViewModel @Inject constructor(
                             isLoading = false,
                             error = null
                         )
+                        // ✅ AGGIUNGI QUESTA CHIAMATA:
+                        loadPhotosForCheckUp()
                     },
                     onFailure = { error ->
                         Timber.e(error, "Failed to load check-up details")
@@ -313,6 +319,176 @@ class CheckUpDetailViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(showAddSparePartDialog = false)
     }
 
+    /**
+     * Carica le foto per tutti i CheckItems del CheckUp
+     */
+    fun loadPhotosForCheckUp() {
+        viewModelScope.launch {
+            val checkItems = _uiState.value.checkItems
+            if (checkItems.isEmpty()) {
+                Timber.d("Nessun check item trovato, skip caricamento foto")
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(isLoadingPhotos = true)
+            Timber.d("Caricamento foto per ${checkItems.size} check items")
+
+
+            try {
+                val photosByItem = mutableMapOf<String, List<Photo>>()
+                val photoCountsByItem = mutableMapOf<String, Int>()
+
+                // ✅ CORRETTO: Usa first() invece di collect per evitare loop infiniti
+                checkItems.forEach { checkItem ->
+                    try {
+                        val photosResult = getCheckItemPhotosUseCase(checkItem.id).first()
+
+                        when (photosResult) {
+                            is PhotoResult.Success -> {
+                                photosByItem[checkItem.id] = photosResult.data
+                                photoCountsByItem[checkItem.id] = photosResult.data.size
+                                Timber.d("Caricate ${photosResult.data.size} foto per item ${checkItem.id}")
+                            }
+                            is PhotoResult.Error -> {
+                                Timber.e("Errore caricamento foto per item ${checkItem.id}: ${photosResult.exception}")
+                                photosByItem[checkItem.id] = emptyList()
+                                photoCountsByItem[checkItem.id] = 0
+                            }
+                            is PhotoResult.Loading -> {
+                                Timber.d("Loading foto per item ${checkItem.id}")
+                                photosByItem[checkItem.id] = emptyList()
+                                photoCountsByItem[checkItem.id] = 0
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Timber.e(e, "Eccezione caricamento foto per item ${checkItem.id}")
+                        photosByItem[checkItem.id] = emptyList()
+                        photoCountsByItem[checkItem.id] = 0
+                    }
+                }
+
+                // ✅ Aggiorna lo stato con tutte le foto caricate
+                _uiState.value = _uiState.value.copy(
+                    photosByCheckItem = photosByItem,
+                    photoCountsByCheckItem = photoCountsByItem,
+                    isLoadingPhotos = false
+                )
+
+                val totalPhotos = photoCountsByItem.values.sum()
+                Timber.d("Caricamento foto completato: $totalPhotos foto totali")
+
+            } catch (e: Exception) {
+                Timber.e(e, "Eccezione durante caricamento foto del check-up")
+                _uiState.value = _uiState.value.copy(
+                    isLoadingPhotos = false,
+                    error = "Errore caricamento foto: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Carica le foto per un singolo CheckItem (utile dopo scatto foto)
+     */
+    suspend fun loadPhotosForCheckItem(checkItemId: String) {
+        try {
+            Timber.d("Ricaricamento foto per item: $checkItemId")
+
+            // ✅ CORRETTO: Usa first() invece di collect
+            val photosResult = getCheckItemPhotosUseCase(checkItemId).first()
+
+            when (photosResult) {
+                is PhotoResult.Success -> {
+                    val currentPhotos = _uiState.value.photosByCheckItem.toMutableMap()
+                    val currentCounts = _uiState.value.photoCountsByCheckItem.toMutableMap()
+
+                    currentPhotos[checkItemId] = photosResult.data
+                    currentCounts[checkItemId] = photosResult.data.size
+
+                    _uiState.value = _uiState.value.copy(
+                        photosByCheckItem = currentPhotos,
+                        photoCountsByCheckItem = currentCounts
+                    )
+
+                    Timber.d("Ricaricate ${photosResult.data.size} foto per item $checkItemId")
+                }
+                is PhotoResult.Error -> {
+                    Timber.e("Errore ricaricamento foto per item $checkItemId: ${photosResult.exception}")
+                }
+                is PhotoResult.Loading -> {
+                    Timber.d("Loading ricaricamento foto per item $checkItemId")
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Eccezione ricaricamento foto per item $checkItemId")
+        }
+    }
+
+    /**
+     * Refresh delle foto dopo operazioni camera/gallery
+     */
+    fun refreshPhotosAfterCameraReturn() {
+        loadPhotosForCheckUp()
+    }
+
+    fun refreshPhotosForItem(checkItemId: String) {
+        viewModelScope.launch {
+            loadPhotosForCheckItem(checkItemId)
+        }
+    }
+
+    /**
+     * DEBUG: Mostra lo stato attuale delle foto
+     */
+    fun debugPhotoState() {
+        val state = _uiState.value
+        Timber.d("=== DEBUG PHOTO STATE ===")
+        Timber.d("Total photos: ${state.totalPhotoCount}")
+        Timber.d("Loading photos: ${state.isLoadingPhotos}")
+        state.photosByCheckItem.forEach { (itemId, photos) ->
+            Timber.d("Item $itemId: ${photos.size} foto")
+            photos.forEach { photo ->
+                Timber.d("  - ${photo.fileName}: ${photo.filePath}")
+            }
+        }
+        Timber.d("========================")
+    }
+
+    // ============================================================
+    // NUOVO METODO OPZIONALE: Observa foto in tempo reale
+    // ============================================================
+
+    /**
+     * ✅ NUOVO: Metodo per osservare foto in tempo reale (se necessario)
+     * Usa questo SOLO se vuoi updates automatici quando le foto cambiano
+     */
+    fun startObservingPhotos() {
+        viewModelScope.launch {
+            val checkItems = _uiState.value.checkItems
+            if (checkItems.isEmpty()) return@launch
+
+            checkItems.forEach { checkItem ->
+                // Osserva ogni check item separatamente
+                getCheckItemPhotosUseCase(checkItem.id)
+                    .onEach { photosResult ->
+                        if (photosResult is PhotoResult.Success) {
+                            val currentPhotos = _uiState.value.photosByCheckItem.toMutableMap()
+                            val currentCounts = _uiState.value.photoCountsByCheckItem.toMutableMap()
+
+                            currentPhotos[checkItem.id] = photosResult.data
+                            currentCounts[checkItem.id] = photosResult.data.size
+
+                            _uiState.value = _uiState.value.copy(
+                                photosByCheckItem = currentPhotos,
+                                photoCountsByCheckItem = currentCounts
+                            )
+                        }
+                    }
+                    .launchIn(viewModelScope)
+            }
+        }
+    }
+
     // ============================================================
     // HEADER EDITING METHODS
     // ============================================================
@@ -389,6 +565,8 @@ class CheckUpDetailViewModel @Inject constructor(
                         isAddingSparePart = false,
                         isUpdatingHeader = false
                     )
+                    // ✅ AGGIUNGI REFRESH FOTO:
+                    loadPhotosForCheckUp()
                 },
                 onFailure = { error ->
                     Timber.e(error, "Failed to reload check-up data")

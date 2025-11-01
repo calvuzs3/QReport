@@ -1,6 +1,10 @@
 package net.calvuz.qreport.domain.usecase.checkup
 
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckItem
+import net.calvuz.qreport.domain.model.checkup.CheckUp
+import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
+import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import net.calvuz.qreport.domain.repository.CheckItemRepository
 import javax.inject.Inject

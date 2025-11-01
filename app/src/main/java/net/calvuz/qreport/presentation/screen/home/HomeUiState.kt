@@ -1,6 +1,6 @@
 package net.calvuz.qreport.presentation.screen.home
 
-import net.calvuz.qreport.domain.model.CheckUp
+import net.calvuz.qreport.domain.model.checkup.CheckUp
 
 /**
  * Stato UI per la Home Screen

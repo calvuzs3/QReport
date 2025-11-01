@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
 
 /**
  * Screen per la lista check-up con dati reali

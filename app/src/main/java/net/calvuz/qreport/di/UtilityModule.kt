@@ -6,6 +6,9 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import net.calvuz.qreport.data.local.file.FileManagerImpl
+import net.calvuz.qreport.data.photo.PhotoStorageManager
+import net.calvuz.qreport.domain.model.file.FileManager
 import javax.inject.Singleton
 
 /**
@@ -27,4 +30,11 @@ object UtilityModule {
     ): FileManager {
         return FileManagerImpl(context)
     }
+
+    @Provides
+    @Singleton
+    fun providePhotoStorageManager(
+        @ApplicationContext context: Context,
+        fileManager: FileManager // ✅ Riusa esistente
+    ): PhotoStorageManager = PhotoStorageManager(context, fileManager)
 }

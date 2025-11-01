@@ -1,7 +1,7 @@
 package net.calvuz.qreport.domain.repository
 
-import net.calvuz.qreport.domain.model.CheckItemTemplate
-import net.calvuz.qreport.domain.model.IslandType
+import net.calvuz.qreport.domain.model.checkup.CheckItemTemplate
+import net.calvuz.qreport.domain.model.island.IslandType
 
 /**
  * Repository per i template di controllo

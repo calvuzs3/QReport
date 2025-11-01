@@ -1,9 +1,9 @@
 package net.calvuz.qreport.domain.repository
 
 import kotlinx.coroutines.flow.Flow
-import net.calvuz.qreport.domain.model.SparePart
-import net.calvuz.qreport.domain.model.SparePartCategory
-import net.calvuz.qreport.domain.model.SparePartUrgency
+import net.calvuz.qreport.domain.model.spare.SparePart
+import net.calvuz.qreport.domain.model.spare.SparePartCategory
+import net.calvuz.qreport.domain.model.spare.SparePartUrgency
 
 interface SparePartRepository {
 

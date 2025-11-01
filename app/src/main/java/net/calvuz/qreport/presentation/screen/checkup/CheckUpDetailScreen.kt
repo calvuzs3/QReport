@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package net.calvuz.qreport.presentation.screen.checkup
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,13 +12,28 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.checkup.CheckItem
+import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
+import net.calvuz.qreport.domain.model.checkup.CheckUp
+import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.module.ModuleType
+import net.calvuz.qreport.domain.model.photo.Photo
+import net.calvuz.qreport.domain.model.spare.SparePart
+import net.calvuz.qreport.domain.model.spare.SparePartCategory
+import net.calvuz.qreport.domain.model.spare.SparePartUrgency
 
 /**
  * Screen per la visualizzazione e interazione con un check-up - AGGIORNATO
@@ -28,12 +46,12 @@ import net.calvuz.qreport.domain.model.*
  * - Aggiunta foto e note
  * - Dialog per aggiungere spare parts
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckUpDetailScreen(
     checkUpId: String,
     onNavigateBack: () -> Unit,
     onNavigateToCamera: (String) -> Unit,
+    onNavigateToPhotoGallery: (String) -> Unit, // ✅ NUOVO PARAMETRO
     modifier: Modifier = Modifier,
     viewModel: CheckUpDetailViewModel = hiltViewModel()
 ) {
@@ -45,6 +63,12 @@ fun CheckUpDetailScreen(
         if (checkUpId.isNotBlank()) {
             viewModel.loadCheckUp(checkUpId)
         }
+    }
+
+    // Refresh foto quando si torna dalla camera/gallery
+    LaunchedEffect(uiState.photoCountsByCheckItem) {
+        // Questo trigger quando cambiano i conteggi foto
+        // Utile per refresh automatico
     }
 
     Column(
@@ -167,11 +191,14 @@ fun CheckUpDetailScreen(
                     // Check Items by Module
                     uiState.checkItemsByModule.forEach { (moduleType, items) ->
                         item {
-                            ModuleSection(
+                            ModuleSectionWithPhotos( // ✅ NUOVO COMPONENTE
                                 moduleType = moduleType,
                                 items = items,
+                                photosByItem = uiState.photosByCheckItem,
+                                photoCountsByItem = uiState.photoCountsByCheckItem,
                                 onItemStatusChange = viewModel::updateItemStatus,
                                 onAddPhoto = { itemId -> onNavigateToCamera(itemId) },
+                                onViewPhotos = { itemId -> onNavigateToPhotoGallery(itemId) }, // ✅ NUOVO
                                 onUpdateNotes = viewModel::updateItemNotes
                             )
                         }
@@ -224,7 +251,6 @@ fun CheckUpDetailScreen(
 /**
  * Dialog per aggiungere spare parts
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddSparePartDialog(
     onDismiss: () -> Unit,
@@ -579,58 +605,69 @@ private fun StatItem(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun ModuleSection(
+private fun ModuleSectionWithPhotos(
     moduleType: ModuleType,
     items: List<CheckItem>,
+    photosByItem: Map<String, List<Photo>>,
+    photoCountsByItem: Map<String, Int>,
     onItemStatusChange: (String, CheckItemStatus) -> Unit,
     onAddPhoto: (String) -> Unit,
+    onViewPhotos: (String) -> Unit,
     onUpdateNotes: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
+    var isExpanded by remember { mutableStateOf(true) }
 
     Card(
         modifier = modifier.fillMaxWidth()
     ) {
-        Column {
-            // Module header
-            ListItem(
-                headlineContent = {
-                    Text(
-                        text = moduleType.displayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                },
-                supportingContent = {
-                    val completed = items.count {
-                        it.status in listOf(CheckItemStatus.OK, CheckItemStatus.NOK, CheckItemStatus.NA)
-                    }
-                    Text("${completed}/${items.size} completati")
-                },
-                trailingContent = {
-                    IconButton(onClick = { isExpanded = !isExpanded }) {
-                        Icon(
-                            imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = if (isExpanded) "Chiudi" else "Espandi"
-                        )
-                    }
-                },
-                colors = ListItemDefaults.colors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Module Header
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = moduleType.displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
                 )
-            )
 
-            // Module items
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Photo count badge
+                    val totalPhotos = items.sumOf { photoCountsByItem[it.id] ?: 0 }
+                    if (totalPhotos > 0) {
+                        PhotoCountBadge(count = totalPhotos)
+                    }
+
+                    Icon(
+                        imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (isExpanded) "Comprimi" else "Espandi"
+                    )
+                }
+            }
+
+            // Module Content
             if (isExpanded) {
                 items.forEach { item ->
-                    CheckItemCard(
-                        item = item,
-                        onStatusChange = { status -> onItemStatusChange(item.id, status) },
-                        onAddPhoto = { onAddPhoto(item.id) },
-                        onUpdateNotes = { notes -> onUpdateNotes(item.id, notes) }
+                    CheckItemCardWithPhotos(
+                        checkItem = item,
+                        photos = photosByItem[item.id] ?: emptyList(),
+                        photoCount = photoCountsByItem[item.id] ?: 0,
+                        onStatusChange = onItemStatusChange,
+                        onAddPhoto = onAddPhoto,
+                        onViewPhotos = onViewPhotos,
+                        onUpdateNotes = onUpdateNotes
                     )
                 }
             }
@@ -639,64 +676,290 @@ private fun ModuleSection(
 }
 
 @Composable
-private fun CheckItemCard(
-    item: CheckItem,
-    onStatusChange: (CheckItemStatus) -> Unit,
-    onAddPhoto: () -> Unit,
-    onUpdateNotes: (String) -> Unit,
+private fun CheckItemCardWithPhotos(
+    checkItem: CheckItem,
+    photos: List<Photo>,
+    photoCount: Int,
+    onStatusChange: (String, CheckItemStatus) -> Unit,
+    onAddPhoto: (String) -> Unit,
+    onViewPhotos: (String) -> Unit,
+    onUpdateNotes: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var showNotesDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(0.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Title and status
+            // Check Item Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = item.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = checkItem.itemCode,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = checkItem.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
 
                 StatusChip(
-                    status = item.status,
-                    onClick = { onStatusChange(getNextStatus(item.status)) }
+                    status = checkItem.status,
+                    onClick = {
+                        val nextStatus = getNextStatus(checkItem.status)
+                        onStatusChange(checkItem.id, nextStatus)
+                    }
                 )
             }
 
-            // Action buttons
+            // ✅ NUOVO: Photo Section
+            PhotoSection(
+                photos = photos,
+                photoCount = photoCount,
+                onAddPhoto = { onAddPhoto(checkItem.id) },
+                onViewPhotos = { onViewPhotos(checkItem.id) }
+            )
+
+            // Actions Row
             Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                OutlinedButton(
-                    onClick = onAddPhoto,
-                    modifier = Modifier.weight(1f)
+                // Notes button
+                TextButton(
+                    onClick = { showNotesDialog = true }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.PhotoCamera,
+                        imageVector = Icons.Default.Notes,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Foto (${item.photos.size})")
+                    Text("Note")
                 }
 
-                if (item.notes.isNotBlank()) {
+                // Criticality indicator
+                if (checkItem.criticality == CriticalityLevel.CRITICAL) {
                     Icon(
-                        imageVector = Icons.Default.Note,
-                        contentDescription = "Ha note",
-                        tint = MaterialTheme.colorScheme.primary
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Critico",
+                        tint = MaterialTheme.colorScheme.error
                     )
                 }
             }
+
+            // Notes preview
+            if (checkItem.notes.isNotBlank()) {
+                Text(
+                    text = checkItem.notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+
+    // Notes Dialog
+    if (showNotesDialog) {
+        NotesDialog(
+            currentNotes = checkItem.notes,
+            onDismiss = { showNotesDialog = false },
+            onConfirm = { newNotes ->
+                onUpdateNotes(checkItem.id, newNotes)
+                showNotesDialog = false
+            }
+        )
+    }
+}
+
+@Composable
+private fun NotesDialog(
+    currentNotes: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var notes by remember { mutableStateOf(currentNotes) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Modifica Note") },
+        text = {
+            TextField(
+                value = notes,
+                onValueChange = { notes = it },
+                label = { Text("Note") },
+                placeholder = { Text("Inserisci note per questo check item...") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3,
+                maxLines = 5
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(notes) }) {
+                Text("Salva")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Annulla")
+            }
+        }
+    )
+}
+
+@Composable
+private fun PhotoSection(
+    photos: List<Photo>,
+    photoCount: Int,
+    onAddPhoto: () -> Unit,
+    onViewPhotos: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Photo preview (first 3 photos)
+        if (photos.isNotEmpty()) {
+            PhotoPreviewRow(
+                photos = photos.take(3),
+                totalCount = photoCount,
+                onViewAll = onViewPhotos,
+                modifier = Modifier.weight(1f)
+            )
+        } else {
+            Text(
+                text = "Nessuna foto",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        // Action buttons
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            // Add photo button
+            IconButton(
+                onClick = onAddPhoto,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CameraAlt,
+                    contentDescription = "Scatta foto",
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+
+            // View photos button (only if has photos)
+            if (photos.isNotEmpty()) {
+                IconButton(
+                    onClick = onViewPhotos,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PhotoLibrary,
+                        contentDescription = "Visualizza foto",
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PhotoCountBadge(
+    count: Int,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = MaterialTheme.colorScheme.primaryContainer
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.PhotoCamera,
+                contentDescription = null,
+                modifier = Modifier.size(12.dp),
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            Text(
+                text = count.toString(),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        }
+    }
+}
+
+@Composable
+private fun PhotoPreviewRow(
+    photos: List<Photo>,
+    totalCount: Int,
+    onViewAll: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Photo thumbnails (max 3)
+        photos.take(3).forEach { photo ->
+            AsyncImage(
+                model = photo.thumbnailPath ?: photo.filePath,
+                contentDescription = photo.caption.ifBlank { "Foto check item" },
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(RoundedCornerShape(4.dp)),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        // Count indicator
+        if (totalCount > 3) {
+            Text(
+                text = "+${totalCount - 3}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        // View all button
+        TextButton(
+            onClick = onViewAll,
+            modifier = Modifier.height(24.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp)
+        ) {
+            Text(
+                text = "Vedi tutto",
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }

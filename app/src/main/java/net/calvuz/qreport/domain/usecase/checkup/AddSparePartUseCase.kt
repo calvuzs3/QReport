@@ -1,7 +1,9 @@
 package net.calvuz.qreport.domain.usecase.checkup
 
 import kotlinx.datetime.Clock
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.domain.model.spare.SparePart
+import net.calvuz.qreport.domain.model.spare.SparePartCategory
+import net.calvuz.qreport.domain.model.spare.SparePartUrgency
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import java.util.UUID
 import javax.inject.Inject

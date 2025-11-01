@@ -1,10 +1,10 @@
 package net.calvuz.qreport.domain.repository
 
 import kotlinx.coroutines.flow.Flow
-import net.calvuz.qreport.domain.model.CheckItem
-import net.calvuz.qreport.domain.model.CheckItemStatus
-import net.calvuz.qreport.domain.model.IslandType
-import net.calvuz.qreport.domain.model.ModuleProgress
+import net.calvuz.qreport.domain.model.checkup.CheckItem
+import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
+import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.domain.model.module.ModuleProgress
 
 interface CheckItemRepository {
 

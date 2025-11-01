@@ -1,14 +1,14 @@
 package net.calvuz.qreport.domain.usecase.checkup
 
 import kotlinx.datetime.Clock
-import net.calvuz.qreport.domain.model.CheckItem
-import net.calvuz.qreport.domain.model.CheckItemModules
-import net.calvuz.qreport.domain.model.CheckItemStatus
-import net.calvuz.qreport.domain.model.CheckUp
-import net.calvuz.qreport.domain.model.CheckUpHeader
-import net.calvuz.qreport.domain.model.CheckUpStatus
-import net.calvuz.qreport.domain.model.IslandType
-import net.calvuz.qreport.domain.model.ModuleType
+import net.calvuz.qreport.domain.model.checkup.CheckItem
+import net.calvuz.qreport.domain.model.checkup.CheckItemModules
+import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
+import net.calvuz.qreport.domain.model.checkup.CheckUp
+import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.domain.model.module.ModuleType
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import java.util.UUID
 import javax.inject.Inject
