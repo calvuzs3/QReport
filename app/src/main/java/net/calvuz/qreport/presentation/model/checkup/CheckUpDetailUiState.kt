@@ -50,7 +50,7 @@ data class CheckUpDetailUiState(
     val isExporting: Boolean = false,
     val isAddingSparePart: Boolean = false,
     val isUpdatingHeader: Boolean = false,
-
+    val expandedModules: Set<String> = emptySet(),  // ✅ NUOVO
 
     // ============================================================
     // DIALOG STATES

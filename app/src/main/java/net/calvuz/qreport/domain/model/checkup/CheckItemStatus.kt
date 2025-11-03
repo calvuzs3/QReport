@@ -8,10 +8,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class CheckItemStatus(
     val displayName: String,
-    val color: String
+    val color: String,
+    val icon: String
 ) {
-    PENDING("In Attesa", "#FFA726"),  // Orange
-    OK("OK", "#66BB6A"),             // Green
-    NOK("NOK", "#EF5350"),           // Red
-    NA("N/A", "#78909C")             // Blue Grey
+    PENDING("In Attesa", "#FFA726", "⏳"), // Orange
+    OK("OK", "#66BB6A", "✓"),             // Green
+    NOK("NOK", "#EF5350", "✗"),           // Red
+    NA("N/A", "#78909C", "➖")             // Blue Grey
 }

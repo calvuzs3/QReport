@@ -185,7 +185,7 @@ Il database utilizza Room con le seguenti entità principali:
 
 - [UI/UX Guidelines](docs/ui-ux-guidelines.md)
 - [Sistema Export Word](docs/export-word-system.md)
-- [Gestione Foto](docs/photo-management.md)
+- [Gestione Foto](docs/3_photo-management.md)
 - [API Documentation](docs/api-documentation.md)
 
 ## 🤝 Contributi

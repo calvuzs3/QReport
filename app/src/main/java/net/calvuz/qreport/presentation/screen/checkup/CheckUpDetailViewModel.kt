@@ -8,6 +8,7 @@ import kotlinx.coroutines.launch
 import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
 import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.module.ModuleType
 import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.photo.PhotoResult
 import net.calvuz.qreport.domain.model.spare.SparePartCategory
@@ -57,6 +58,11 @@ class CheckUpDetailViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
     val uiState: StateFlow<CheckUpDetailUiState> = _uiState.asStateFlow()
+
+    // ✅ NUOVO: Gestione stati espansione moduli
+    private val _expandedModules = MutableStateFlow<Set<String>>(emptySet())
+    val expandedModules: StateFlow<Set<String>> = _expandedModules.asStateFlow()
+
 
     init {
         Timber.d("CheckUpDetailViewModel initialized")
@@ -587,5 +593,21 @@ class CheckUpDetailViewModel @Inject constructor(
                 error = "Errore imprevisto: ${e.message}"
             )
         }
+    }
+
+    // Funzione per toggle espansione modulo
+    fun toggleModuleExpansion(moduleType: ModuleType) {
+        val moduleKey = moduleType.name
+        val current = _expandedModules.value
+        _expandedModules.value = if (moduleKey in current) {
+            current - moduleKey  // Chiudi modulo
+        } else {
+            current + moduleKey  // Apri modulo
+        }
+    }
+
+    // Funzione per controllare se un modulo è espanso
+    fun isModuleExpanded(moduleType: ModuleType): Boolean {
+        return moduleType.name in _expandedModules.value
     }
 }

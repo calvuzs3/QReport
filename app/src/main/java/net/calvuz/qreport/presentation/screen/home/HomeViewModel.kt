@@ -134,6 +134,10 @@ class HomeViewModel @Inject constructor(
         )
     }
 
+    fun clearSelectedCheckUp() {
+        _uiState.value = _uiState.value.copy(selectedCheckUpId = null)
+    }
+
     // ============================================================
     // PRIVATE METHODS
     // ============================================================

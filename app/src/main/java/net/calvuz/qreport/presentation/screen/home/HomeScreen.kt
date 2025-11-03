@@ -51,6 +51,7 @@ fun HomeScreen(
     LaunchedEffect(uiState.selectedCheckUpId) {
         uiState.selectedCheckUpId?.let { checkUpId ->
             onNavigateToCheckUpDetail(checkUpId)  // ✅ USA il parametro corretto
+            viewModel.clearSelectedCheckUp()  // ✅ Reset dopo navigazione
         }
     }
 
@@ -58,6 +59,7 @@ fun HomeScreen(
     LaunchedEffect(uiState.quickCreatedCheckUpId) {
         uiState.quickCreatedCheckUpId?.let { checkUpId ->
             onNavigateToCheckUpDetail(checkUpId)  // ✅ AGGIUNTO
+            viewModel.clearSelectedCheckUp()  // ✅ Reset dopo navigazione
         }
     }
 

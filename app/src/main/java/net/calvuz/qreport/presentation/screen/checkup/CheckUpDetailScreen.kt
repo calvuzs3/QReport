@@ -2,6 +2,11 @@
 
 package net.calvuz.qreport.presentation.screen.checkup
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,7 +30,6 @@ import coil.compose.AsyncImage
 import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.model.checkup.CheckItem
 import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
-import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
@@ -34,6 +38,7 @@ import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.model.spare.SparePartCategory
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency
+import net.calvuz.qreport.presentation.components.checkup.CheckUpHeaderCard
 
 /**
  * Screen per la visualizzazione e interazione con un check-up - AGGIORNATO
@@ -51,14 +56,15 @@ fun CheckUpDetailScreen(
     checkUpId: String,
     onNavigateBack: () -> Unit,
     onNavigateToCamera: (String) -> Unit,
-    onNavigateToPhotoGallery: (String) -> Unit, // ✅ NUOVO PARAMETRO
+    onNavigateToPhotoGallery: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CheckUpDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val expandedModules by viewModel.expandedModules.collectAsStateWithLifecycle()
 
     // Initialize with checkUpId
-    // CORRETTO - Una sola volta per checkUpId
+    // Una sola volta per checkUpId
     LaunchedEffect(checkUpId) {
         if (checkUpId.isNotBlank()) {
             viewModel.loadCheckUp(checkUpId)
@@ -190,15 +196,17 @@ fun CheckUpDetailScreen(
 
                     // Check Items by Module
                     uiState.checkItemsByModule.forEach { (moduleType, items) ->
-                        item {
-                            ModuleSectionWithPhotos( // ✅ NUOVO COMPONENTE
+                        item(key = "module_${moduleType.name}") {  // ✅ Chiave stabile
+                            ModuleSectionWithPhotos(
                                 moduleType = moduleType,
                                 items = items,
+                                isExpanded = moduleType.name in expandedModules,
+                                onToggleExpansion = { viewModel.toggleModuleExpansion(moduleType) },
                                 photosByItem = uiState.photosByCheckItem,
                                 photoCountsByItem = uiState.photoCountsByCheckItem,
                                 onItemStatusChange = viewModel::updateItemStatus,
                                 onAddPhoto = { itemId -> onNavigateToCamera(itemId) },
-                                onViewPhotos = { itemId -> onNavigateToPhotoGallery(itemId) }, // ✅ NUOVO
+                                onViewPhotos = { itemId -> onNavigateToPhotoGallery(itemId) },
                                 onUpdateNotes = viewModel::updateItemNotes
                             )
                         }
@@ -462,62 +470,6 @@ private fun AddSparePartDialog(
 // ============================================================
 
 @Composable
-private fun CheckUpHeaderCard(
-    checkUp: CheckUp,
-    progress: CheckUpProgress,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = checkUp.header.clientInfo.companyName,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-
-                StatusChipForCheckUp(status = checkUp.status)
-            }
-
-            Text(
-                text = "Isola: ${checkUp.header.islandInfo.model} - ${checkUp.header.islandInfo.serialNumber}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (checkUp.header.clientInfo.site.isNotBlank()) {
-                Text(
-                    text = "Sede: ${checkUp.header.clientInfo.site}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Progress bar
-            LinearProgressIndicator(
-                progress = { progress.overallProgress },
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            Text(
-                text = "Progresso: ${(progress.overallProgress * 100).toInt()}%",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
 private fun ProgressOverviewCard(
     progress: CheckUpProgress,
     statistics: CheckUpStatistics,
@@ -609,6 +561,8 @@ private fun StatItem(
 private fun ModuleSectionWithPhotos(
     moduleType: ModuleType,
     items: List<CheckItem>,
+    isExpanded: Boolean,  // ✅ NUOVO: riceve stato da outside
+    onToggleExpansion: () -> Unit,  // ✅ NUOVO: callback per toggle expansion
     photosByItem: Map<String, List<Photo>>,
     photoCountsByItem: Map<String, Int>,
     onItemStatusChange: (String, CheckItemStatus) -> Unit,
@@ -617,7 +571,6 @@ private fun ModuleSectionWithPhotos(
     onUpdateNotes: (String, String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var isExpanded by remember { mutableStateOf(true) }
 
     Card(
         modifier = modifier.fillMaxWidth()
@@ -630,7 +583,7 @@ private fun ModuleSectionWithPhotos(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { isExpanded = !isExpanded },
+                    .clickable { onToggleExpansion() },
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -657,18 +610,24 @@ private fun ModuleSectionWithPhotos(
                 }
             }
 
-            // Module Content
-            if (isExpanded) {
-                items.forEach { item ->
-                    CheckItemCardWithPhotos(
-                        checkItem = item,
-                        photos = photosByItem[item.id] ?: emptyList(),
-                        photoCount = photoCountsByItem[item.id] ?: 0,
-                        onStatusChange = onItemStatusChange,
-                        onAddPhoto = onAddPhoto,
-                        onViewPhotos = onViewPhotos,
-                        onUpdateNotes = onUpdateNotes
-                    )
+            // Module Content con animazione
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items.forEach { item ->
+                        CheckItemCardWithPhotos(
+                            checkItem = item,
+                            photos = photosByItem[item.id] ?: emptyList(),
+                            photoCount = photoCountsByItem[item.id] ?: 0,
+                            onStatusChange = onItemStatusChange,
+                            onAddPhoto = onAddPhoto,
+                            onViewPhotos = onViewPhotos,
+                            onUpdateNotes = onUpdateNotes
+                        )
+                    }
                 }
             }
         }
