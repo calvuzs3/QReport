@@ -1,11 +1,14 @@
 package net.calvuz.qreport.domain.model.photo
 
 import net.calvuz.qreport.domain.model.export.PhotoNamingStrategy
+import net.calvuz.qreport.domain.model.module.ModuleType
 import java.time.LocalDateTime
 
 /**
  * Rappresenta una foto esportata nella cartella FOTO
  * Mantiene il collegamento con la foto originale e i dettagli dell'export
+ *
+ * VERSIONE AGGIORNATA: Usa PhotoModuleInfo (modules) invece di PhotoSectionInfo (sections)
  */
 data class ExportedPhoto(
     /**
@@ -39,9 +42,9 @@ data class ExportedPhoto(
     val exportedAt: LocalDateTime = LocalDateTime.now(),
 
     /**
-     * Informazioni sulla sezione di appartenenza
+     * Informazioni sul modulo di appartenenza (AGGIORNATO)
      */
-    val sectionInfo: PhotoSectionInfo,
+    val moduleInfo: PhotoModuleInfo,
 
     /**
      * Informazioni sul check item di appartenenza
@@ -88,20 +91,21 @@ data class ExportedPhoto(
 }
 
 /**
- * Informazioni sulla sezione per l'export foto
+ * Informazioni sul modulo per l'export foto
+ * NUOVA: Sostituisce PhotoSectionInfo per allineamento con architettura modules
  */
-data class PhotoSectionInfo(
-    val sectionId: String,
-    val sectionTitle: String,
-    val sectionIndex: Int,
-    val sectionPrefix: String // es. "01", "02", etc.
+data class PhotoModuleInfo(
+    val moduleType: ModuleType,
+    val moduleDisplayName: String,
+    val moduleIndex: Int,
+    val modulePrefix: String // es. "01", "02", etc.
 ) {
 
     /**
-     * Nome sezione normalizzato per file system
+     * Nome modulo normalizzato per file system
      */
     val normalizedName: String
-        get() = sectionTitle
+        get() = moduleDisplayName
             .replace(" ", "-")
             .replace(Regex("[^a-zA-Z0-9\\-]"), "")
             .lowercase()
@@ -196,10 +200,10 @@ sealed class PhotoExportResult {
     ) : PhotoExportResult() {
 
         /**
-         * Raggruppa foto per sezione
+         * Raggruppa foto per modulo (AGGIORNATO)
          */
-        val photosBySection: Map<String, List<ExportedPhoto>>
-            get() = exportedPhotos.groupBy { it.sectionInfo.sectionId }
+        val photosByModule: Map<ModuleType, List<ExportedPhoto>>
+            get() = exportedPhotos.groupBy { it.moduleInfo.moduleType }
 
         /**
          * Raggruppa foto per check item
@@ -219,7 +223,7 @@ sealed class PhotoExportResult {
         val statistics: PhotoExportStatistics
             get() = PhotoExportStatistics(
                 totalPhotos = exportedPhotos.size,
-                uniqueSections = photosBySection.size,
+                uniqueModules = photosByModule.size, // AGGIORNATO: uniqueModules invece di uniqueSections
                 uniqueCheckItems = photosByCheckItem.size,
                 totalSizeBytes = totalSize,
                 averageFileSize = if (exportedPhotos.isNotEmpty()) totalSize / exportedPhotos.size else 0,
@@ -249,10 +253,11 @@ sealed class PhotoExportResult {
 
 /**
  * Statistiche dell'export foto
+ * AGGIORNATA: uniqueModules invece di uniqueSections
  */
 data class PhotoExportStatistics(
     val totalPhotos: Int,
-    val uniqueSections: Int,
+    val uniqueModules: Int, // AGGIORNATO: modules invece di sections
     val uniqueCheckItems: Int,
     val totalSizeBytes: Long,
     val averageFileSize: Long,

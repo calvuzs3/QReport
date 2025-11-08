@@ -28,9 +28,9 @@ import javax.inject.Singleton
 data class CombinedPackageResult(
     val success: Boolean,
     val packageDirectory: String,
-    val wordResult: ExportResult.Success? = null,
-    val textResult: ExportResult.Success? = null,
-    val photoFolderResult: ExportResult.Success? = null,
+    val wordResult: Success? = null,
+    val textResult: Success? = null,
+    val photoFolderResult: Success? = null,
     val error: Throwable? = null
 )
 
@@ -195,7 +195,7 @@ class ExportRepositoryImpl @Inject constructor(
             Timber.d("Generazione Word report")
 
             // Genera report usando WordReportGenerator esistente
-            val result = wordReportGenerator.generateReport(exportData, options)
+            val result = wordReportGenerator.generateWordReport(exportData, options)
 
             when (result) {
                 is ExportResult.Success -> {
@@ -305,7 +305,7 @@ class ExportRepositoryImpl @Inject constructor(
         return try {
             Timber.d("Generazione cartella foto")
 
-            photoExportManager.exportPhotosToFolder(
+            return photoExportManager.exportPhotosToFolder(
                 exportData = exportData,
                 targetDirectory = targetDirectory,
                 namingStrategy = options.photoNamingStrategy,

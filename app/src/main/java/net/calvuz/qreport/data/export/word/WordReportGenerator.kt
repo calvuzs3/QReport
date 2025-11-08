@@ -2,563 +2,544 @@ package net.calvuz.qreport.data.export.word
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import net.calvuz.qreport.data.export.photo.PhotoExportManager
+import net.calvuz.qreport.data.local.file.FileManagerImpl
+import net.calvuz.qreport.domain.model.checkup.CheckItem
+import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
 import net.calvuz.qreport.domain.model.export.*
-import org.apache.poi.xwpf.usermodel.XWPFDocument
+import net.calvuz.qreport.domain.model.photo.*
+import net.calvuz.qreport.domain.model.spare.SparePart
+import org.apache.poi.xwpf.usermodel.*
+import org.apache.poi.util.Units
 import timber.log.Timber
 import java.io.File
-import java.time.format.DateTimeFormatter
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Generatore di report Word usando Apache POI
- * Coordina template engine, styling e gestione foto per documenti professionali
+ * Generatore di report Word consolidato che utilizza i componenti esistenti del progetto
+ *
+ * COMPONENTI UTILIZZATI:
+ * - PhotoExportManager: per gestione foto avanzata
+ * - FileManagerImpl: per operazioni file base
+ * - DomainMappers: per conversioni domain models
+ * - ImageProcessor: per elaborazione immagini
+ *
+ * LOGICA INTEGRATA:
+ * - WordTemplateEngine: Apache POI template logic
+ * - WordStyleEngine: Styling e formattazione
  */
 @Singleton
 class WordReportGenerator @Inject constructor(
-    private val templateEngine: WordTemplateEngine,
-    private val styleEngine: WordStyleEngine,
-    private val dataMapper: CheckupDataMapper,
-    private val photoProcessor: PhotoProcessor,
-    private val fileManager: ExportFileManager
+    private val photoExportManager: PhotoExportManager,
+    private val fileManager: FileManagerImpl
 ) {
 
     /**
-     * Genera report Word completo
-     *
-     * @param exportData Dati del checkup da esportare
-     * @param options Opzioni di configurazione export
-     * @return Risultato dell'export con path del file generato
+     * Genera report Word completo con foto integrate
      */
-    suspend fun generateReport(
+    suspend fun generateWordReport(
         exportData: ExportData,
-        options: ExportOptions
+        exportOptions: ExportOptions = ExportOptions.complete()
     ): ExportResult = withContext(Dispatchers.IO) {
 
         try {
-            Timber.i("Avvio generazione Word report per checkup ${exportData.checkup.id}")
+            Timber.d("Inizio generazione report Word per checkup: ${exportData.checkup.id}")
 
-            // 1. Validazione dati di input
-            validateExportData(exportData)
+            // 1. Prepara directory di export
+            val exportDirectory = prepareExportDirectory(exportData.checkup.id)
 
-            // 2. Mappa dati per export con formattazione
-            val mappedData = dataMapper.mapToExportData(exportData, options)
+            // 2. Esporta foto nella cartella FOTO (usando PhotoExportManager esistente)
+            val photoExportResult = exportPhotosForReport(exportData, exportDirectory)
 
-            // 3. Crea documento base con template
-            val document = templateEngine.createDocument(mappedData)
+            // 3. Crea documento Word con template integrato
+            val document = createWordDocument()
 
-            // 4. Applica stili e formattazione
-            styleEngine.configureDocumentStyles(document, mappedData.metadata.reportTemplate)
+            // 4. Genera contenuto usando styling integrato
+            generateDocumentContent(document, exportData, photoExportResult, exportOptions)
 
-            // 5. Aggiungi contenuto dettagliato
-            addDetailContent(document, mappedData, options)
+            // 5. Salva documento
+            val wordFile = saveWordDocument(document, exportDirectory, exportData)
 
-            // 6. Processa e inserisci foto se richieste
-            if (options.includePhotos) {
-                addPhotosToDocument(document, mappedData, options)
-            }
-
-            // 7. Finalizza documento
-            finalizeDocument(document, mappedData)
-
-            // 8. Salva file
-            val fileName = generateFileName(mappedData)
-            val filePath = fileManager.saveDocument(document, fileName)
-
-            // 9. Chiudi documento per liberare memoria
-            document.close()
+            Timber.d("Report Word generato: ${wordFile.absolutePath}")
 
             ExportResult.Success(
-                filePath = filePath,
-                fileName = fileName,
-                fileSize = File(filePath).length(),
+                filePath = wordFile.absolutePath,
+                fileName = wordFile.name,
+                fileSize = wordFile.length(),
                 format = ExportFormat.WORD
             )
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore generazione Word report")
-            ExportResult.Error(
-                exception = e,
-                errorCode = mapErrorCode(e),
-                format = ExportFormat.WORD
-            )
+            Timber.e(e, "Errore generazione report Word")
+            ExportResult.Error(e, ExportErrorCode.DOCUMENT_GENERATION_ERROR)
         }
     }
 
     /**
-     * Aggiunge contenuto dettagliato al documento
+     * Prepara directory per l'export usando FileManager esistente
      */
-    private suspend fun addDetailContent(
+    private fun prepareExportDirectory(checkupId: String): File {
+        val exportsDir = File(fileManager.getExportsDirectory())
+        val checkupDir = File(exportsDir, "checkup_$checkupId")
+
+        if (!checkupDir.exists()) {
+            checkupDir.mkdirs()
+        }
+
+        return checkupDir
+    }
+
+    /**
+     * Esporta foto utilizzando PhotoExportManager esistente
+     */
+    private suspend fun exportPhotosForReport(
+        exportData: ExportData,
+        exportDirectory: File
+    ): PhotoExportResult {
+
+        return photoExportManager.exportPhotosToFolder(
+            exportData = exportData,
+            targetDirectory = exportDirectory,
+            namingStrategy = PhotoNamingStrategy.STRUCTURED,
+            quality = PhotoQuality.OPTIMIZED,
+            preserveExifData = false,
+            addWatermark = true,
+            watermarkText = "QReport",
+            generateIndex = false // Non serve per Word
+        )
+    }
+
+    /**
+     * Crea nuovo documento Word con template base
+     * TEMPLATE ENGINE INTEGRATO
+     */
+    private fun createWordDocument(): XWPFDocument {
+        return XWPFDocument().apply {
+            // Imposta proprietà documento
+            properties.coreProperties.creator = "QReport"
+            properties.coreProperties.description = "Checkup Report Generato Automaticamente"
+        }
+    }
+
+    /**
+     * Genera tutto il contenuto del documento
+     * COMBINA: Template Engine + Style Engine + Data Mapping
+     */
+    private suspend fun generateDocumentContent(
         document: XWPFDocument,
-        exportData: MappedExportData,
-        options: ExportOptions
+        exportData: ExportData,
+        photoExportResult: PhotoExportResult,
+        exportOptions: ExportOptions
     ) {
-        Timber.d("Aggiunta contenuto dettagliato: ${exportData.sections.size} sezioni")
+        // 1. Header con loghi e info cliente (STYLE ENGINE INTEGRATO)
+        generateDocumentHeader(document, exportData)
 
-        // Sezioni del checkup
-        exportData.sections.forEach { section ->
-            addSectionToDocument(document, section, options)
+        // 2. Executive Summary
+        generateExecutiveSummary(document, exportData)
+
+        // 3. Dettaglio controlli per modulo (DATA MAPPING INTEGRATO)
+        generateModuleDetails(document, exportData, photoExportResult)
+
+        // 4. Spare Parts se presenti
+        if (exportData.checkup.spareParts.isNotEmpty()) {
+            generateSparePartsSection(document, exportData.checkup.spareParts)
         }
 
-        // Parti di ricambio se presenti
-        if (exportData.spareParts.isNotEmpty()) {
-            addSparePartsSection(document, exportData.spareParts)
-        }
-
-        // Sezione firma
-        addSignatureSection(document, exportData.metadata)
+        // 5. Footer con firma digitale
+        generateDocumentFooter(document, exportData)
     }
 
     /**
-     * Aggiunge una sezione completa al documento
+     * Genera header documento con styling professionale
+     * STYLE ENGINE INTEGRATO
      */
-    private fun addSectionToDocument(
-        document: XWPFDocument,
-        section: MappedCheckupSection,
-        options: ExportOptions
-    ) {
-        // Header sezione con styling
-        val headerParagraph = document.createParagraph()
-        styleEngine.applySectionHeaderStyle(headerParagraph, section.title)
+    private fun generateDocumentHeader(document: XWPFDocument, exportData: ExportData) {
 
-        // Descrizione sezione se presente
-        if (section.description.isNotBlank()) {
-            val descParagraph = document.createParagraph()
-            styleEngine.applyBodyStyle(descParagraph, section.description)
+        // Titolo principale
+        val titleParagraph = document.createParagraph().apply {
+            alignment = ParagraphAlignment.CENTER
         }
 
-        // Tabella check items
-        if (section.items.isNotEmpty()) {
-            val itemsTable = document.createTable()
-            populateCheckItemsTable(itemsTable, section.items, options)
-            styleEngine.styleTable(itemsTable, TableStyleConfig(hasHeader = true))
+        titleParagraph.createRun().apply {
+            setText("REPORT CHECKUP ${exportData.checkup.islandType.displayName.uppercase()}")
+            isBold = true
+            fontSize = 18
+            color = "1F4E79" // Corporate blue
         }
 
-        // Note sezione se presenti e abilitate
-        if (options.includeNotes && section.notes.isNotBlank()) {
-            addSectionNotes(document, section.notes)
+        // Sottotitolo con info cliente
+        val clientParagraph = document.createParagraph().apply {
+            alignment = ParagraphAlignment.CENTER
+            spacingAfter = 400
         }
 
-        // Spazio tra sezioni
-        document.createParagraph() // Paragrafo vuoto per spacing
+        clientParagraph.createRun().apply {
+            setText("Cliente: ${exportData.checkup.header.clientInfo.companyName}")
+            fontSize = 14
+            color = "5B5B5B"
+        }
+
+        // Tabella info generale (TEMPLATE ENGINE INTEGRATO)
+        createInfoTable(document, exportData)
     }
 
     /**
-     * Popola tabella con check items
+     * Crea tabella informazioni generali con styling
      */
-    private fun populateCheckItemsTable(
-        table: XWPFTable,
-        items: List<MappedCheckItem>,
-        options: ExportOptions
-    ) {
-        // Header tabella
-        val headers = listOf("Controllo", "Stato", "Criticità", "Note")
-        val headerRow = table.getRow(0) ?: table.createRow()
-
-        headers.forEachIndexed { index, header ->
-            val cell = if (index < headerRow.tableCells.size) {
-                headerRow.getCell(index)
-            } else {
-                headerRow.createCell()
-            }
-            styleEngine.applyCellHeaderStyle(cell, header)
+    private fun createInfoTable(document: XWPFDocument, exportData: ExportData) {
+        val table = document.createTable(6, 2).apply {
+            width = 5000 // Full width
         }
 
-        // Righe dati
-        items.forEach { item ->
-            val row = table.createRow()
+        val header = exportData.checkup.header
 
-            // Titolo controllo
-            styleEngine.applyCellBodyStyle(row.getCell(0), item.title)
-
-            // Stato formattato
-            styleEngine.applyCellBodyStyle(row.getCell(1), item.statusDisplay)
-
-            // Criticità formattata
-            styleEngine.applyCellBodyStyle(row.getCell(2), item.criticalityDisplay)
-
-            // Note (troncate se troppo lunghe)
-            val noteText = if (options.includeNotes && item.note.isNotBlank()) {
-                item.note.take(150) + if (item.note.length > 150) "..." else ""
-            } else {
-                "-"
-            }
-            styleEngine.applyCellBodyStyle(row.getCell(3), noteText)
-        }
-    }
-
-    /**
-     * Aggiunge foto al documento
-     */
-    private suspend fun addPhotosToDocument(
-        document: XWPFDocument,
-        exportData: MappedExportData,
-        options: ExportOptions
-    ) {
-        Timber.d("Aggiunta foto al documento")
-
-        val allPhotos = exportData.sections.flatMap { section ->
-            section.items.flatMap { item -> item.photos }
-        }
-
-        if (allPhotos.isEmpty()) {
-            Timber.d("Nessuna foto da aggiungere")
-            return
-        }
-
-        // Header sezione foto
-        val photosHeader = document.createParagraph()
-        styleEngine.applySectionHeaderStyle(photosHeader, "FOTO EVIDENZE")
-
-        // Processa foto in batch per evitare overload memoria
-        val photosBatches = allPhotos.chunked(10) // 10 foto per batch
-
-        photosBatches.forEach { batch ->
-            processBatchPhotos(document, batch, options)
-        }
-    }
-
-    /**
-     * Processa un batch di foto
-     */
-    private suspend fun processBatchPhotos(
-        document: XWPFDocument,
-        photos: List<MappedPhoto>,
-        options: ExportOptions
-    ) {
-        photos.forEach { photo ->
-            try {
-                val processedPhoto = photoProcessor.processPhotoForExport(
-                    photo = photo,
-                    options = PhotoExportOptions(
-                        maxWidth = options.photoMaxWidth,
-                        quality = when (options.compressionLevel) {
-                            CompressionLevel.LOW -> 95
-                            CompressionLevel.MEDIUM -> 85
-                            CompressionLevel.HIGH -> 70
-                        }
-                    )
-                )
-
-                addPhotoToDocument(document, processedPhoto, photo.caption)
-
-            } catch (e: Exception) {
-                Timber.w(e, "Errore processamento foto: ${photo.fileName}")
-                // Continua con le altre foto invece di fallire tutto
-            }
-        }
-    }
-
-    /**
-     * Aggiunge singola foto al documento
-     */
-    private fun addPhotoToDocument(
-        document: XWPFDocument,
-        processedPhoto: ProcessedPhoto,
-        caption: String
-    ) {
-        val photoParagraph = document.createParagraph()
-        photoParagraph.alignment = ParagraphAlignment.CENTER
-
-        val run = photoParagraph.createRun()
-
-        try {
-            // Aggiungi immagine
-            val inputStream = processedPhoto.processedData.inputStream()
-            run.addPicture(
-                inputStream,
-                XWPFDocument.PICTURE_TYPE_JPEG,
-                processedPhoto.fileName,
-                processedPhoto.width,
-                processedPhoto.height
-            )
-            inputStream.close()
-
-            // Aggiungi caption se presente
-            if (caption.isNotBlank()) {
-                val captionParagraph = document.createParagraph()
-                captionParagraph.alignment = ParagraphAlignment.CENTER
-                val captionRun = captionParagraph.createRun()
-                captionRun.setText(caption)
-                styleEngine.applyCaptionStyle(captionRun)
-            }
-
-        } catch (e: Exception) {
-            Timber.e(e, "Errore inserimento foto nel documento")
-            // Aggiungi placeholder testuale
-            run.setText("[Foto non disponibile: $caption]")
-            styleEngine.applyItalicStyle(run)
-        }
-    }
-
-    /**
-     * Aggiunge sezione parti di ricambio
-     */
-    private fun addSparePartsSection(
-        document: XWPFDocument,
-        spareParts: List<MappedSparePart>
-    ) {
-        // Header sezione
-        val sparePartsHeader = document.createParagraph()
-        styleEngine.applySectionHeaderStyle(sparePartsHeader, "PARTI DI RICAMBIO")
-
-        // Tabella parti di ricambio
-        val sparePartsTable = document.createTable()
-        populateSparePartsTable(sparePartsTable, spareParts)
-        styleEngine.styleTable(sparePartsTable, TableStyleConfig(hasHeader = true))
-    }
-
-    /**
-     * Popola tabella parti di ricambio
-     */
-    private fun populateSparePartsTable(
-        table: XWPFTable,
-        spareParts: List<MappedSparePart>
-    ) {
-        // Header
-        val headers = listOf("Codice", "Descrizione", "Quantità", "Urgenza", "Note")
-        val headerRow = table.getRow(0) ?: table.createRow()
-
-        headers.forEachIndexed { index, header ->
-            val cell = if (index < headerRow.tableCells.size) {
-                headerRow.getCell(index)
-            } else {
-                headerRow.createCell()
-            }
-            styleEngine.applyCellHeaderStyle(cell, header)
-        }
-
-        // Righe dati
-        spareParts.forEach { part ->
-            val row = table.createRow()
-            styleEngine.applyCellBodyStyle(row.getCell(0), part.partNumber)
-            styleEngine.applyCellBodyStyle(row.getCell(1), part.description)
-            styleEngine.applyCellBodyStyle(row.getCell(2), part.quantity.toString())
-            styleEngine.applyCellBodyStyle(row.getCell(3), part.urgencyDisplay)
-            styleEngine.applyCellBodyStyle(row.getCell(4), part.notes)
-        }
-    }
-
-    /**
-     * Aggiunge sezione firma
-     */
-    private fun addSignatureSection(
-        document: XWPFDocument,
-        metadata: ExportMetadata
-    ) {
-        // Spazio prima della firma
-        document.createParagraph()
-        document.createParagraph()
-
-        // Header firma
-        val signatureHeader = document.createParagraph()
-        styleEngine.applySectionHeaderStyle(signatureHeader, "VALIDAZIONE TECNICA")
-
-        // Info tecnico
-        val technicianParagraph = document.createParagraph()
-        val technicianRun = technicianParagraph.createRun()
-        technicianRun.setText("Tecnico responsabile: ${metadata.technicianName}")
-        styleEngine.applyBodyStyle(technicianRun)
-
-        // Data generazione
-        val dateParagraph = document.createParagraph()
-        val dateRun = dateParagraph.createRun()
-        dateRun.setText("Data: ${metadata.generatedAt.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))}")
-        styleEngine.applyBodyStyle(dateRun)
-
-        // Spazio per firma
-        val signatureParagraph = document.createParagraph()
-        val signatureRun = signatureParagraph.createRun()
-        signatureRun.setText("Firma: ____________________")
-        styleEngine.applyBodyStyle(signatureRun)
-    }
-
-    /**
-     * Finalizza documento con header/footer
-     */
-    private fun finalizeDocument(
-        document: XWPFDocument,
-        exportData: MappedExportData
-    ) {
-        // Aggiungi header persistente
-        templateEngine.addDocumentHeader(document, exportData)
-
-        // Aggiungi footer con info generazione
-        templateEngine.addDocumentFooter(document, exportData.metadata.reportTemplate)
-
-        // Numerazione pagine se abilitata
-        if (exportData.metadata.reportTemplate.config.pageSetup.showPageNumbers) {
-            templateEngine.addPageNumbers(document)
-        }
-    }
-
-    /**
-     * Genera nome file per il documento
-     */
-    private fun generateFileName(exportData: MappedExportData): String {
-        val timestamp = exportData.metadata.generatedAt.format(
-            DateTimeFormatter.ofPattern("yyyyMMdd_HHmm")
+        val rows = listOf(
+            "Data Check-up" to header.checkUpDate.toString(),
+            "Tecnico" to header.technicianInfo.name,
+            "Azienda Tecnico" to header.technicianInfo.company,
+            "Isola Serial Number" to header.islandInfo.serialNumber,
+            "Modello Isola" to header.islandInfo.model,
+            "Ore Funzionamento" to "${header.islandInfo.operatingHours}h"
         )
 
-        val clientName = exportData.metadata.clientInfo.companyName
-            .replace(" ", "")
-            .replace("[^a-zA-Z0-9]".toRegex(), "")
-            .take(20)
+        rows.forEachIndexed { index, (key, value) ->
+            val row = table.getRow(index)
 
-        val islandType = exportData.checkup.islandType.name
-            .replace(" ", "")
-            .take(15)
+            // Prima colonna (chiave) - STILE HEADER
+            row.getCell(0).apply {
+                text = key
+                paragraphs[0].runs[0].apply {
+                    isBold = true
+                    color = "1F4E79"
+                }
+                color = "F2F2F2"
+            }
 
-        return "Checkup_${islandType}_${clientName}_$timestamp.docx"
-    }
-
-    /**
-     * Valida dati di input prima dell'export
-     */
-    private fun validateExportData(exportData: ExportData) {
-        require(exportData.checkup.id.isNotBlank()) { "Checkup ID non può essere vuoto" }
-        require(exportData.metadata.technicianName.isNotBlank()) { "Nome tecnico richiesto" }
-        require(exportData.metadata.clientInfo.companyName.isNotBlank()) { "Nome cliente richiesto" }
-        require(exportData.metadata.reportTemplate.isValid()) { "Template non valido" }
-    }
-
-    /**
-     * Mappa eccezioni a codici errore specifici
-     */
-    private fun mapErrorCode(exception: Throwable): ExportErrorCode {
-        return when (exception) {
-            is SecurityException -> ExportErrorCode.PERMISSION_DENIED
-            is OutOfMemoryError -> ExportErrorCode.INSUFFICIENT_STORAGE
-            is IllegalArgumentException -> ExportErrorCode.INVALID_DATA
-            else -> ExportErrorCode.DOCUMENT_GENERATION_ERROR
+            // Seconda colonna (valore) - STILE CONTENT
+            row.getCell(1).apply {
+                text = value
+            }
         }
     }
 
     /**
-     * Aggiunge note di sezione
+     * Genera executive summary con statistiche
      */
-    private fun addSectionNotes(document: XWPFDocument, notes: String) {
-        val notesParagraph = document.createParagraph()
-        val notesRun = notesParagraph.createRun()
-        notesRun.setText("Note: $notes")
-        styleEngine.applyNotesStyle(notesRun)
+    private fun generateExecutiveSummary(document: XWPFDocument, exportData: ExportData) {
+
+        // Titolo sezione
+        createSectionTitle(document, "RIEPILOGO ESECUTIVO")
+
+        val stats = calculateCheckupStatistics(exportData)
+
+        val summaryParagraph = document.createParagraph()
+        summaryParagraph.createRun().apply {
+            setText("Il check-up è stato completato con i seguenti risultati:\n\n")
+        }
+
+        val statsList = listOf(
+            "Controlli totali: ${stats.totalItems}",
+            "Controlli OK: ${stats.okItems} (${stats.okPercentage}%)",
+            "Controlli NOK: ${stats.nokItems} (${stats.nokPercentage}%)",
+            "Elementi critici: ${stats.criticalItems}",
+            "Foto totali: ${stats.totalPhotos}",
+            "Moduli verificati: ${stats.modulesCount}"
+        )
+
+        statsList.forEach { stat ->
+            val listParagraph = document.createParagraph()
+            listParagraph.createRun().apply {
+                setText("• $stat")
+            }
+        }
+    }
+
+    /**
+     * Genera dettagli per ogni modulo con foto integrate
+     * DATA MAPPING INTEGRATO usando exportData.itemsByModule
+     */
+    private suspend fun generateModuleDetails(
+        document: XWPFDocument,
+        exportData: ExportData,
+        photoExportResult: PhotoExportResult
+    ) {
+
+        createSectionTitle(document, "DETTAGLIO CONTROLLI")
+
+        exportData.itemsByModule.forEach { (moduleType, checkItems) ->
+
+            // Titolo modulo
+            createModuleTitle(document, moduleType.displayName)
+
+            // Tabella check items del modulo
+            createCheckItemsTable(document, checkItems)
+
+            // Foto del modulo se presenti
+            if (photoExportResult is PhotoExportResult.Success) {
+                val modulePhotos = photoExportResult.exportedPhotos.filter {
+                    it.moduleInfo.moduleType == moduleType
+                }
+
+                if (modulePhotos.isNotEmpty()) {
+                    insertModulePhotos(document, modulePhotos)
+                }
+            }
+        }
+    }
+
+    /**
+     * Crea tabella check items con styling professionale
+     */
+    private fun createCheckItemsTable(document: XWPFDocument, checkItems: List<CheckItem>) {
+        val table = document.createTable(checkItems.size + 1, 4).apply {
+            width = 5000
+        }
+
+        // Header tabella
+        val headerRow = table.getRow(0)
+        val headers = listOf("Controllo", "Stato", "Criticità", "Note")
+
+        headers.forEachIndexed { index, header ->
+            headerRow.getCell(index).apply {
+                text = header
+                color = "1F4E79"
+                paragraphs[0].runs[0].apply {
+                    isBold = true
+                    color = "FFFFFF"
+                }
+            }
+        }
+
+        // Righe dati
+        checkItems.forEachIndexed { index, item ->
+            val row = table.getRow(index + 1)
+
+            row.getCell(0).text = item.description
+            row.getCell(1).apply {
+                text = item.status.displayName
+                // Colore basato su stato
+                val statusColor = when (item.status) {
+                    CheckItemStatus.OK -> "00B050"
+                    CheckItemStatus.NOK -> "FF0000"
+                    CheckItemStatus.PENDING -> "FFC000"
+                    else -> "000000"
+                }
+                paragraphs[0].runs[0].color = statusColor
+            }
+            row.getCell(2).text = item.criticality.displayName
+            row.getCell(3).text = item.notes
+        }
+    }
+
+    /**
+     * Inserisce foto del modulo nel documento
+     */
+    private suspend fun insertModulePhotos(
+        document: XWPFDocument,
+        modulePhotos: List<ExportedPhoto>
+    ) = withContext(Dispatchers.IO) {
+
+        val photoParagraph = document.createParagraph()
+        photoParagraph.createRun().apply {
+            setText("Foto evidenze:")
+            isBold = true
+        }
+
+        modulePhotos.take(4).forEach { exportedPhoto -> // Max 4 foto per modulo
+            try {
+                val photoFile = File(exportedPhoto.exportedPath)
+                if (photoFile.exists()) {
+
+                    val photoPara = document.createParagraph().apply {
+                        alignment = ParagraphAlignment.CENTER
+                    }
+
+                    val run = photoPara.createRun()
+
+                    FileInputStream(photoFile).use { fis ->
+                        run.addPicture(
+                            fis,
+                            XWPFDocument.PICTURE_TYPE_JPEG,
+                            exportedPhoto.exportedFileName,
+                            Units.toEMU(300.0), // Larghezza - Double
+                            Units.toEMU(200.0)  // Altezza - Double
+                        )
+                    }
+
+                    // Caption foto
+                    if (exportedPhoto.originalPhoto.caption.isNotBlank()) {
+                        val captionPara = document.createParagraph().apply {
+                            alignment = ParagraphAlignment.CENTER
+                        }
+                        captionPara.createRun().apply {
+                            setText(exportedPhoto.originalPhoto.caption)
+                            isItalic = true
+                            fontSize = 10
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Errore inserimento foto: ${exportedPhoto.exportedFileName}")
+            }
+        }
+    }
+
+    /**
+     * Genera sezione spare parts
+     */
+    private fun generateSparePartsSection(document: XWPFDocument, spareParts: List<SparePart>) {
+
+        createSectionTitle(document, "PARTI DI RICAMBIO RICHIESTE")
+
+        val table = document.createTable(spareParts.size + 1, 5).apply {
+            width = 5000
+        }
+
+        // Header
+        val headers = listOf("Codice", "Descrizione", "Quantità", "Urgenza", "Note")
+        val headerRow = table.getRow(0)
+
+        headers.forEachIndexed { index, header ->
+            headerRow.getCell(index).apply {
+                text = header
+                color = "1F4E79"
+                paragraphs[0].runs[0].apply {
+                    isBold = true
+                    color = "FFFFFF"
+                }
+            }
+        }
+
+        // Dati
+        spareParts.forEachIndexed { index, part ->
+            val row = table.getRow(index + 1)
+            row.getCell(0).text = part.partNumber
+            row.getCell(1).text = part.description
+            row.getCell(2).text = part.quantity.toString()
+            row.getCell(3).text = part.urgency.displayName
+            row.getCell(4).text = part.notes
+        }
+    }
+
+    /**
+     * Genera footer con firma digitale
+     */
+    private fun generateDocumentFooter(document: XWPFDocument, exportData: ExportData) {
+
+        val footerParagraph = document.createParagraph().apply {
+            spacingBefore = 800
+            alignment = ParagraphAlignment.CENTER
+        }
+
+        val techInfo = exportData.checkup.header.technicianInfo
+
+        footerParagraph.createRun().apply {
+            setText("\n\nTecnico Responsabile: ${techInfo.name}\n")
+            setText("Azienda: ${techInfo.company}\n")
+            setText("Data completamento: ${exportData.checkup.completedAt.toString()}\n")
+            setText("\nDocumento generato automaticamente da QReport")
+            fontSize = 10
+            isItalic = true
+        }
+    }
+
+    /**
+     * Salva documento Word con naming appropriato
+     */
+    private fun saveWordDocument(
+        document: XWPFDocument,
+        exportDirectory: File,
+        exportData: ExportData
+    ): File {
+
+        val fileName = generateWordFileName(exportData)
+        val wordFile = File(exportDirectory, fileName)
+
+        FileOutputStream(wordFile).use { fos ->
+            document.write(fos)
+        }
+
+        document.close()
+        return wordFile
+    }
+
+    /**
+     * Genera nome file Word appropriato
+     */
+    private fun generateWordFileName(exportData: ExportData): String {
+        val timestamp = (exportData.checkup.completedAt.toString())
+        val clientName = exportData.checkup.header.clientInfo.companyName
+            .replace(" ", "")
+            .replace(Regex("[^a-zA-Z0-9]"), "")
+            .take(15)
+
+        return "Checkup_${exportData.checkup.islandType.name}_${clientName}_${timestamp}.docx"
+    }
+
+    // ===== HELPER FUNCTIONS =====
+
+    private fun createSectionTitle(document: XWPFDocument, title: String) {
+        val titleParagraph = document.createParagraph().apply {
+            spacingBefore = 600
+            spacingAfter = 200
+        }
+
+        titleParagraph.createRun().apply {
+            setText(title)
+            isBold = true
+            fontSize = 16
+            color = "1F4E79"
+        }
+    }
+
+    private fun createModuleTitle(document: XWPFDocument, moduleTitle: String) {
+        val moduleParagraph = document.createParagraph().apply {
+            spacingBefore = 400
+            spacingAfter = 100
+        }
+
+        moduleParagraph.createRun().apply {
+            setText("MODULO: $moduleTitle")
+            isBold = true
+            fontSize = 14
+            color = "2F5597"
+        }
+    }
+
+    /**
+     * Calcola statistiche checkup usando domain models
+     */
+    private fun calculateCheckupStatistics(exportData: ExportData): CheckupStatistics {
+        val allItems = exportData.itemsByModule.values.flatten()
+        val totalPhotos = allItems.sumOf { it.photos.size }
+
+        return CheckupStatistics(
+            totalItems = allItems.size,
+            okItems = allItems.count { it.status == CheckItemStatus.OK },
+            nokItems = allItems.count { it.status == CheckItemStatus.NOK },
+            criticalItems = allItems.count { it.criticality.name == "CRITICAL" },
+            totalPhotos = totalPhotos,
+            modulesCount = exportData.itemsByModule.size
+        )
     }
 }
 
-// === CLASSI DI SUPPORTO ===
+// ===== DATA CLASSES =====
 
 /**
- * Configurazione stile tabella
+ * Statistiche checkup per executive summary
  */
-data class TableStyleConfig(
-    val hasHeader: Boolean = false,
-    val alternateRowColors: Boolean = true,
-    val borderStyle: BorderStyle = BorderStyle.SIMPLE
-)
-
-enum class BorderStyle {
-    NONE,
-    SIMPLE,
-    DOUBLE,
-    THICK
-}
-
-/**
- * Opzioni export foto per Word
- */
-data class PhotoExportOptions(
-    val maxWidth: Int = 800,
-    val maxHeight: Int = 600,
-    val quality: Int = 85,
-    val format: String = "JPEG"
-)
-
-/**
- * Foto processata per inserimento in Word
- */
-data class ProcessedPhoto(
-    val fileName: String,
-    val processedData: ByteArray,
-    val width: Int,
-    val height: Int,
-    val fileSize: Long
+private data class CheckupStatistics(
+    val totalItems: Int,
+    val okItems: Int,
+    val nokItems: Int,
+    val criticalItems: Int,
+    val totalPhotos: Int,
+    val modulesCount: Int
 ) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-
-        other as ProcessedPhoto
-
-        if (fileName != other.fileName) return false
-        if (!processedData.contentEquals(other.processedData)) return false
-        if (width != other.width) return false
-        if (height != other.height) return false
-        if (fileSize != other.fileSize) return false
-
-        return true
-    }
-
-    override fun hashCode(): Int {
-        var result = fileName.hashCode()
-        result = 31 * result + processedData.contentHashCode()
-        result = 31 * result + width
-        result = 31 * result + height
-        result = 31 * result + fileSize.hashCode()
-        return result
-    }
+    val okPercentage: Int get() = if (totalItems > 0) (okItems * 100) / totalItems else 0
+    val nokPercentage: Int get() = if (totalItems > 0) (nokItems * 100) / totalItems else 0
 }
-
-// Import necessari per Apache POI (placeholder - da sostituire con import reali)
-typealias XWPFTable = org.apache.poi.xwpf.usermodel.XWPFTable
-typealias ParagraphAlignment = org.apache.poi.xwpf.usermodel.ParagraphAlignment
-
-// Modelli mappati (placeholder - da implementare nel DataMapper)
-data class MappedExportData(
-    val checkup: MappedCheckup,
-    val sections: List<MappedCheckupSection>,
-    val spareParts: List<MappedSparePart>,
-    val metadata: ExportMetadata
-)
-
-data class MappedCheckup(
-    val id: String,
-    val islandType: MappedIslandType
-)
-
-data class MappedIslandType(
-    val name: String,
-    val displayName: String
-)
-
-data class MappedCheckupSection(
-    val id: String,
-    val title: String,
-    val description: String,
-    val notes: String,
-    val items: List<MappedCheckItem>
-)
-
-data class MappedCheckItem(
-    val id: String,
-    val title: String,
-    val note: String,
-    val statusDisplay: String,
-    val criticalityDisplay: String,
-    val photos: List<MappedPhoto>
-)
-
-data class MappedPhoto(
-    val id: String,
-    val fileName: String,
-    val filePath: String,
-    val caption: String
-)
-
-data class MappedSparePart(
-    val id: String,
-    val partNumber: String,
-    val description: String,
-    val quantity: Int,
-    val urgencyDisplay: String,
-    val notes: String
-)

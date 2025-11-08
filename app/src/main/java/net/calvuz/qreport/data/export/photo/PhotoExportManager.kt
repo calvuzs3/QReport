@@ -2,11 +2,12 @@ package net.calvuz.qreport.data.export.photo
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.calvuz.qreport.domain.model.checkup.CheckupSection
 import net.calvuz.qreport.domain.model.export.ExportData
 import net.calvuz.qreport.domain.model.export.PhotoNamingStrategy
 import net.calvuz.qreport.domain.model.export.PhotoQuality
 import net.calvuz.qreport.domain.model.photo.*
+import net.calvuz.qreport.domain.model.module.ModuleType
+import net.calvuz.qreport.domain.model.checkup.CheckItem
 import net.calvuz.qreport.domain.repository.PhotoRepository
 import timber.log.Timber
 import java.io.File
@@ -20,6 +21,8 @@ import javax.inject.Singleton
 /**
  * Manager per l'export delle foto nella cartella FOTO separata
  * Gestisce naming, qualità, organizzazione e metadati delle foto esportate
+ *
+ * VERSIONE CORRETTA: Usa SOLO domain models, nessun data class duplicato
  */
 @Singleton
 class PhotoExportManager @Inject constructor(
@@ -30,7 +33,7 @@ class PhotoExportManager @Inject constructor(
     /**
      * Esporta tutte le foto del checkup nella cartella target
      *
-     * @param exportData Dati completi del checkup
+     * @param exportData Dati completi del checkup (con itemsByModule)
      * @param targetDirectory Directory di destinazione per la cartella FOTO
      * @param namingStrategy Strategia di naming per i file
      * @param quality Qualità delle foto esportate
@@ -49,13 +52,13 @@ class PhotoExportManager @Inject constructor(
     ): PhotoExportResult = withContext(Dispatchers.IO) {
 
         try {
-            Timber.d("Avvio export foto: ${exportData.sections.size} sezioni")
+            Timber.d("Avvio export foto: ${exportData.itemsByModule.size} moduli")
 
             // 1. Crea cartella FOTO
             val photoFolder = createPhotoFolder(targetDirectory)
 
-            // 2. Raccoglie tutte le foto da esportare
-            val allPhotosToExport = collectPhotosFromSections(exportData.sections)
+            // 2. Raccoglie tutte le foto da esportare usando domain models
+            val allPhotosToExport = collectPhotosFromModules(exportData.itemsByModule)
             Timber.d("Foto da esportare: ${allPhotosToExport.size}")
 
             if (allPhotosToExport.isEmpty()) {
@@ -71,10 +74,10 @@ class PhotoExportManager @Inject constructor(
             val exportedPhotos = mutableListOf<ExportedPhoto>()
             var totalSize = 0L
 
-            allPhotosToExport.forEachIndexed { globalIndex, photoData ->
+            allPhotosToExport.forEachIndexed { globalIndex, photoContext ->
                 try {
                     val exportedPhoto = exportSinglePhoto(
-                        photoData = photoData,
+                        photoContext = photoContext,
                         globalIndex = globalIndex,
                         targetDirectory = photoFolder,
                         namingStrategy = namingStrategy,
@@ -90,7 +93,7 @@ class PhotoExportManager @Inject constructor(
                     Timber.v("Foto esportata: ${exportedPhoto.exportedFileName}")
 
                 } catch (e: Exception) {
-                    Timber.e(e, "Errore export foto: ${photoData.photo.fileName}")
+                    Timber.e(e, "Errore export foto: ${photoContext.photo.fileName}")
                     // Continua con le altre foto invece di fallire tutto
                 }
             }
@@ -129,35 +132,38 @@ class PhotoExportManager @Inject constructor(
     }
 
     /**
-     * Raccoglie tutte le foto dalle sezioni con metadati di contesto
+     * Raccoglie tutte le foto dai moduli con metadati di contesto
+     * USA SOLO DOMAIN MODELS
      */
-    private fun collectPhotosFromSections(sections: List<CheckupSection>): List<PhotoWithContext> {
-        val photos = mutableListOf<PhotoWithContext>()
+    private fun collectPhotosFromModules(itemsByModule: Map<ModuleType, List<CheckItem>>): List<PhotoContext> {
+        val photos = mutableListOf<PhotoContext>()
 
-        sections.forEachIndexed { sectionIndex, section ->
-            val sectionInfo = PhotoSectionInfo(
-                sectionId = section.id,
-                sectionTitle = section.title,
-                sectionIndex = sectionIndex,
-                sectionPrefix = String.format("%02d", sectionIndex + 1)
+        itemsByModule.entries.forEachIndexed { moduleIndex, (moduleType, checkItems) ->
+            val moduleInfo = PhotoModuleInfo(
+                moduleType = moduleType,
+                moduleDisplayName = moduleType.displayName,
+                moduleIndex = moduleIndex,
+                modulePrefix = String.format("%02d", moduleIndex + 1)
             )
 
-            section.items.forEachIndexed { itemIndex, item ->
+            checkItems.forEachIndexed { itemIndex, item ->
                 val checkItemInfo = PhotoCheckItemInfo(
                     checkItemId = item.id,
-                    checkItemTitle = item.title,
+                    checkItemTitle = item.description,
                     checkItemIndex = itemIndex,
                     itemStatus = item.status.toString(),
                     itemCriticality = item.criticality.toString()
                 )
 
                 item.photos.forEachIndexed { photoIndex, photo ->
-                    photos.add(PhotoWithContext(
-                        photo = photo,
-                        sectionInfo = sectionInfo,
-                        checkItemInfo = checkItemInfo,
-                        photoIndexInItem = photoIndex
-                    ))
+                    photos.add(
+                        PhotoContext(
+                            photo = photo,
+                            moduleInfo = moduleInfo,
+                            checkItemInfo = checkItemInfo,
+                            photoIndexInItem = photoIndex
+                        )
+                    )
                 }
             }
         }
@@ -167,9 +173,10 @@ class PhotoExportManager @Inject constructor(
 
     /**
      * Esporta una singola foto con tutte le trasformazioni richieste
+     * USA SOLO DOMAIN MODELS
      */
     private suspend fun exportSinglePhoto(
-        photoData: PhotoWithContext,
+        photoContext: PhotoContext,
         globalIndex: Int,
         targetDirectory: File,
         namingStrategy: PhotoNamingStrategy,
@@ -183,13 +190,13 @@ class PhotoExportManager @Inject constructor(
 
         // 1. Genera nome file
         val fileName = generateFileName(
-            photoData = photoData,
+            photoContext = photoContext,
             globalIndex = globalIndex,
             namingStrategy = namingStrategy
         )
 
         val targetFile = File(targetDirectory, fileName)
-        val sourceFile = File(photoData.photo.filePath)
+        val sourceFile = File(photoContext.photo.filePath)
 
         // 2. Processa foto in base alla qualità richiesta
         val originalSize = sourceFile.length()
@@ -211,104 +218,86 @@ class PhotoExportManager @Inject constructor(
 
         val processingTime = System.currentTimeMillis() - startTime
 
+        // 3. Crea ExportedPhoto usando DOMAIN MODEL
         return ExportedPhoto(
-            originalPhoto = photoData.photo,
+            originalPhoto = photoContext.photo,
             exportedFileName = fileName,
             exportedPath = targetFile.absolutePath,
             fileSize = processedSize,
             namingStrategy = namingStrategy,
-            sectionInfo = photoData.sectionInfo,
-            checkItemInfo = photoData.checkItemInfo,
+            exportedAt = LocalDateTime.now(),
+            moduleInfo = photoContext.moduleInfo,
+            checkItemInfo = photoContext.checkItemInfo,
             exportMetadata = PhotoExportMetadata(
+                quality = when (quality) {
+                    PhotoQuality.ORIGINAL -> 100
+                    PhotoQuality.OPTIMIZED -> 85
+                    PhotoQuality.COMPRESSED -> 70
+                },
                 originalFileSize = originalSize,
-                compressionRatio = if (originalSize > 0) processedSize.toFloat() / originalSize.toFloat() else 1f,
+                compressionRatio = if (originalSize > 0) processedSize.toFloat() / originalSize else 1f,
                 watermarkApplied = addWatermark,
                 exifPreserved = preserveExifData,
+                transformationsApplied = buildList {
+                    if (quality != PhotoQuality.ORIGINAL) add("Compression")
+                    if (addWatermark) add("Watermark")
+                    if (!preserveExifData) add("EXIF Removal")
+                },
                 processingTimeMs = processingTime
             )
         )
     }
 
     /**
-     * Genera nome file in base alla strategia specificata
+     * Genera nome file basato sulla strategia di naming
      */
     private fun generateFileName(
-        photoData: PhotoWithContext,
+        photoContext: PhotoContext,
         globalIndex: Int,
         namingStrategy: PhotoNamingStrategy
     ): String {
+        val extension = photoContext.photo.fileName.substringAfterLast('.', "jpg")
+        val modulePrefix = photoContext.moduleInfo.modulePrefix
+        val itemNumber = String.format("%03d", photoContext.checkItemInfo.checkItemIndex + 1)
+        val photoNumber = String.format("%02d", photoContext.photoIndexInItem + 1)
 
         return when (namingStrategy) {
-            PhotoNamingStrategy.STRUCTURED -> generateStructuredName(photoData)
-            PhotoNamingStrategy.SEQUENTIAL -> generateSequentialName(globalIndex)
-            PhotoNamingStrategy.TIMESTAMP -> generateTimestampName(photoData, globalIndex)
+            PhotoNamingStrategy.SEQUENTIAL ->
+                "foto_${String.format("%03d", globalIndex + 1)}.${extension}"
+
+            PhotoNamingStrategy.STRUCTURED ->
+                "${modulePrefix}_${photoContext.moduleInfo.normalizedName}_Check${itemNumber}_${photoNumber}.${extension}"
+
+            PhotoNamingStrategy.TIMESTAMP -> {
+                // Format: 20251022_143052_001.jpg
+                val timestamp = photoContext.photo.takenAt.toString()
+                    .substring(0, 19) // Take only YYYY-MM-DDTHH:mm:SS
+                    .replace("T", "_")
+                    .replace("-", "")
+                    .replace(":", "")
+                "${timestamp}_${String.format("%03d", globalIndex + 1)}.${extension}"
+            }
         }
     }
 
     /**
-     * Genera nome strutturato: 01_Sicurezza_Check001_vista-frontale.jpg
-     */
-    private fun generateStructuredName(photoData: PhotoWithContext): String {
-        val section = photoData.sectionInfo
-        val item = photoData.checkItemInfo
-        val photo = photoData.photo
-
-        val sectionPrefix = section.sectionPrefix
-        val sectionName = section.normalizedName
-        val itemDesc = item.normalizedDescription
-        val photoDesc = normalizePhotoDescription(photo.caption, photoData.photoIndexInItem)
-
-        return "${sectionPrefix}_${sectionName}_${itemDesc}_${photoDesc}.jpg"
-            .take(80) // Limitazione lunghezza per compatibilità file system
-    }
-
-    /**
-     * Genera nome sequenziale: foto_001.jpg
-     */
-    private fun generateSequentialName(globalIndex: Int): String {
-        return "foto_${String.format("%03d", globalIndex + 1)}.jpg"
-    }
-
-    /**
-     * Genera nome con timestamp: 20251022_143052_001.jpg
-     */
-    private fun generateTimestampName(photoData: PhotoWithContext, globalIndex: Int): String {
-        val timestamp = photoData.photo.takenAt.toString().replace(":", "").replace("-", "")
-        return "${timestamp}_${String.format("%03d", globalIndex + 1)}.jpg"
-    }
-
-    /**
-     * Normalizza descrizione foto per nome file
-     */
-    private fun normalizePhotoDescription(caption: String, photoIndex: Int): String {
-        val normalizedCaption = if (caption.isBlank()) {
-            "foto${photoIndex + 1}"
-        } else {
-            caption.replace(" ", "-")
-                .replace(Regex("[^a-zA-Z0-9\\-]"), "")
-                .lowercase()
-        }
-
-        return normalizedCaption.take(30)
-    }
-
-    /**
-     * Copia file preservando attributi e metadati
+     * Copia file mantenendo attributi originali
      */
     private suspend fun copyFilePreservingAttributes(
         sourceFile: File,
         targetFile: File,
-        preserveExifData: Boolean
+        preserveExif: Boolean
     ) = withContext(Dispatchers.IO) {
-
         FileInputStream(sourceFile).use { input ->
             FileOutputStream(targetFile).use { output ->
                 input.copyTo(output)
             }
         }
 
-        // Preserva timestamp originale
-        targetFile.setLastModified(sourceFile.lastModified())
+        if (preserveExif) {
+            // Mantieni timestamp originale
+            targetFile.setLastModified(sourceFile.lastModified())
+        }
     }
 
     /**
@@ -345,6 +334,7 @@ class PhotoExportManager @Inject constructor(
 
     /**
      * Genera file indice con mapping foto -> check items
+     * USA SOLO DOMAIN MODELS
      */
     private suspend fun generatePhotoIndex(
         photoFolder: File,
@@ -357,22 +347,22 @@ class PhotoExportManager @Inject constructor(
         val indexContent = buildString {
             appendLine("# INDICE FOTO - ${exportData.checkup.islandType.displayName}")
             appendLine("# Generato: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))}")
-            appendLine("# Cliente: ${exportData.metadata.clientInfo.companyName}")
-            appendLine("# Tecnico: ${exportData.metadata.technicianName}")
+            appendLine("# Cliente: ${exportData.checkup.header.clientInfo.companyName}")
+            appendLine("# Tecnico: ${exportData.checkup.header.technicianInfo.name}")
             appendLine("#")
-            appendLine("# Formato: [NOME_FILE] -> [SEZIONE] -> [CHECK_ITEM] -> [STATO]")
-            appendLine("=" * 80)
+            appendLine("# Formato: [NOME_FILE] -> [MODULO] -> [CHECK_ITEM] -> [STATO]")
+            appendLine("=".repeat(80))
             appendLine()
 
-            // Raggruppa per sezione
-            val photosBySection = exportedPhotos.groupBy { it.sectionInfo.sectionId }
+            // Raggruppa per modulo usando DOMAIN MODEL
+            val photosByModule = exportedPhotos.groupBy { it.moduleInfo.moduleType }
 
-            photosBySection.forEach { (sectionId, sectionPhotos) ->
-                val sectionInfo = sectionPhotos.first().sectionInfo
-                appendLine("SEZIONE ${sectionInfo.sectionIndex + 1}: ${sectionInfo.sectionTitle}")
-                appendLine("-" * 50)
+            photosByModule.forEach { (moduleType, modulePhotos) ->
+                val moduleInfo = modulePhotos.first().moduleInfo
+                appendLine("MODULO ${moduleInfo.moduleIndex + 1}: ${moduleInfo.moduleDisplayName}")
+                appendLine("-".repeat(50))
 
-                val photosByItem = sectionPhotos.groupBy { it.checkItemInfo.checkItemId }
+                val photosByItem = modulePhotos.groupBy { it.checkItemInfo.checkItemId }
 
                 photosByItem.forEach { (itemId, itemPhotos) ->
                     val itemInfo = itemPhotos.first().checkItemInfo
@@ -394,10 +384,10 @@ class PhotoExportManager @Inject constructor(
                 appendLine()
             }
 
-            appendLine("=" * 80)
+            appendLine("=".repeat(80))
             appendLine("RIEPILOGO:")
             appendLine("Foto totali: ${exportedPhotos.size}")
-            appendLine("Sezioni: ${photosBySection.size}")
+            appendLine("Moduli: ${photosByModule.size}")
             appendLine("Check items con foto: ${exportedPhotos.map { it.checkItemInfo.checkItemId }.distinct().size}")
             appendLine("Dimensione totale: ${formatFileSize(exportedPhotos.sumOf { it.fileSize })}")
         }
@@ -414,16 +404,17 @@ class PhotoExportManager @Inject constructor(
             else -> "${String.format("%.1f", bytes / (1024.0 * 1024.0 * 1024.0))}GB"
         }
     }
-
-    private fun String.times(n: Int): String = this.repeat(n)
 }
 
+// === HELPER CLASSES ===
+
 /**
- * Classe di supporto per associare foto a contesto di sezione/item
+ * Classe di supporto per associare foto a contesto di modulo/item
+ * SEMPLICE HELPER - Non duplicate domain models
  */
-private data class PhotoWithContext(
+private data class PhotoContext(
     val photo: Photo,
-    val sectionInfo: PhotoSectionInfo,
+    val moduleInfo: PhotoModuleInfo,
     val checkItemInfo: PhotoCheckItemInfo,
     val photoIndexInItem: Int
 )

@@ -8,8 +8,9 @@ import net.calvuz.qreport.domain.model.export.ExportData
 import net.calvuz.qreport.domain.model.export.ExportOptions
 import net.calvuz.qreport.domain.model.export.PhotoNamingStrategy
 import net.calvuz.qreport.domain.model.photo.Photo
+import net.calvuz.qreport.domain.model.spare.SparePart
+import net.calvuz.qreport.domain.model.spare.SparePartUrgency
 import timber.log.Timber
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -107,7 +108,7 @@ class TextReportGenerator @Inject constructor() {
         if (checkup.header.islandInfo.operatingHours > 0) {
             appendLine("Ore Funzionamento:    ${checkup.header.islandInfo.operatingHours}h")
         }
-        appendLine("Data Checkup:         ${checkup.createdAt.toString()}")
+        appendLine("Data Checkup:         ${checkup.createdAt}")
         appendLine("Tecnico Responsabile: ${exportData.checkup.header.technicianInfo.name}")
         if (exportData.checkup.header.technicianInfo.company.isNotBlank()) {
             appendLine("Azienda Tecnico:      ${exportData.checkup.header.technicianInfo.company}")
@@ -129,9 +130,9 @@ class TextReportGenerator @Inject constructor() {
         appendLine("Ora Fine:             $endLocalTime")
 
         if (completedAt != null) {
-            val duration = Duration.between(startTime, completedAt)
-            val hours = duration.toHours()
-            val minutes = duration.toMinutesPart()
+            val duration = completedAt - startTime  // kotlinx.datetime.Duration
+            val hours = duration.inWholeHours
+            val minutes = (duration.inWholeMinutes % 60).toInt()
             appendLine("Durata Totale:        ${hours}h ${minutes}m")
         }
 
@@ -226,7 +227,7 @@ class TextReportGenerator @Inject constructor() {
             val modulePhotos = checkItems.flatMap { it.photos }
             if (modulePhotos.isNotEmpty()) {
                 appendLine()
-                appendPhotoIndex(modulePhotos, moduleIndex, options.pho6toNamingStrategy ?: PhotoNamingStrategy.STRUCTURED)
+                appendPhotoIndex(modulePhotos, moduleIndex, options.photoNamingStrategy)
             }
         }
     }
@@ -308,10 +309,12 @@ private fun StringBuilder.appendPhotoReferences(
 ) {
     appendLine("    Foto:       ${item.photos.size} foto acquisite")
 
-    if (options.formats.contains(net.calvuz.qreport.domain.model.export.ExportFormat.PHOTO_FOLDER)) {
+    if (options.exportFormats.contains(net.calvuz.qreport.domain.model.export.ExportFormat.PHOTO_FOLDER)) {
         // Se cartella FOTO è abilitata, mostra nomi file
         item.photos.forEachIndexed { photoIndex, photo ->
-            val fileName = generatePhotoFileName(sectionIndex, item, photo, photoIndex, options.photoNamingStrategy ?: PhotoNamingStrategy.STRUCTURED)
+            val fileName = generatePhotoFileName(sectionIndex, item, photo, photoIndex,
+                options.photoNamingStrategy
+            )
             appendLine("                - $fileName")
 
             if (photo.caption.isNotBlank()) {
@@ -334,7 +337,7 @@ private fun StringBuilder.appendPhotoReferences(
 private fun StringBuilder.appendItemRecommendations(item: CheckItem) {
     val recommendations = generateItemRecommendations(item)
     if (recommendations.isNotEmpty()) {
-        appendLine("    Azione:     ${recommendations}")
+        appendLine("    Azione:     $recommendations")
     }
 }
 
@@ -342,9 +345,9 @@ private fun StringBuilder.appendItemRecommendations(item: CheckItem) {
  * Sezione parti di ricambio
  */
 private fun StringBuilder.appendSpareParts(spareParts: List<SparePart>) {
-    appendLine("=" * 80)
-    appendLine(textFormatter.centerText("PARTI DI RICAMBIO", 80))
-    appendLine("=" * 80)
+    appendLine("=".times(80))
+    appendLine(centerText("PARTI DI RICAMBIO", 80))
+    appendLine("=".times(80))
     appendLine()
 
     if (spareParts.isEmpty()) {
@@ -353,14 +356,14 @@ private fun StringBuilder.appendSpareParts(spareParts: List<SparePart>) {
     }
 
     appendLine("RICAMBI CONSIGLIATI")
-    appendLine("-" * 18)
+    appendLine("-".times(18))
     appendLine()
 
     // Raggruppa per urgenza
     val partsByUrgency = spareParts.groupBy { it.urgency }
 
     // Critici prima
-    partsByUrgency[SparePartUrgency.CRITICAL]?.let { criticalParts ->
+    partsByUrgency[SparePartUrgency.IMMEDIATE]?.let { criticalParts ->
         if (criticalParts.isNotEmpty()) {
             appendLine("🔴 RICAMBI CRITICI (Sostituire immediatamente):")
             criticalParts.forEach { part ->
@@ -371,7 +374,7 @@ private fun StringBuilder.appendSpareParts(spareParts: List<SparePart>) {
     }
 
     // Importanti
-    partsByUrgency[SparePartUrgency.IMPORTANT]?.let { importantParts ->
+    partsByUrgency[SparePartUrgency.HIGH]?.let { importantParts ->
         if (importantParts.isNotEmpty()) {
             appendLine("🟡 RICAMBI IMPORTANTI (Sostituire entro 30 giorni):")
             importantParts.forEach { part ->
@@ -382,7 +385,7 @@ private fun StringBuilder.appendSpareParts(spareParts: List<SparePart>) {
     }
 
     // Routine
-    partsByUrgency[SparePartUrgency.ROUTINE]?.let { routineParts ->
+    partsByUrgency[SparePartUrgency.MEDIUM]?.let { routineParts ->
         if (routineParts.isNotEmpty()) {
             appendLine("🟢 RICAMBI ROUTINE (Sostituire alla prossima manutenzione):")
             routineParts.forEach { part ->
@@ -484,7 +487,6 @@ private fun generatePhotoFileName(
             "foto_${String.format("%03d", photoIndex + 1)}.jpg"
         PhotoNamingStrategy.TIMESTAMP ->
             "${photo.takenAt.toString().replace(":", "")}_${photoIndex + 1}.jpg"
-        else -> "foto_${photoIndex + 1}.jpg" // Default fallback
     }
 }
 
@@ -504,7 +506,6 @@ private fun generatePhotoFileName(
             "foto_${String.format("%03d", photoIndex + 1)}.jpg"
         PhotoNamingStrategy.TIMESTAMP ->
             "${photo.takenAt.toString().replace(":", "")}_${photoIndex + 1}.jpg"
-        else -> "foto_${photoIndex + 1}.jpg" // Default fallback
     }
 }
 
@@ -637,7 +638,7 @@ private fun generateGeneralRecommendations(exportData: ExportData, stats: Checku
     return Recommendations(immediate, general)
 }
 
-private fun calculateNextCheckupDate(checkup: net.calvuz.qreport.domain.model.checkup.CheckUp, stats: CheckupStatistics): LocalDateTime {
+private fun calculateNextCheckupDate(checkup: CheckUp, stats: CheckupStatistics): LocalDateTime {
     val baseDate = LocalDateTime.now()
     return when {
         stats.criticalIssues > 0 -> baseDate.plusWeeks(2) // 2 settimane se critici
