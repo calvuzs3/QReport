@@ -418,22 +418,3 @@ private data class PhotoContext(
     val checkItemInfo: PhotoCheckItemInfo,
     val photoIndexInItem: Int
 )
-
-/**
- * Processore immagini placeholder - da implementare in futuro
- */
-interface ImageProcessor {
-    suspend fun optimizePhoto(
-        sourceFile: File,
-        targetFile: File,
-        quality: Int,
-        maxWidth: Int? = null,
-        maxHeight: Int? = null
-    ): Long
-
-    suspend fun addWatermark(
-        sourceFile: File,
-        targetFile: File,
-        watermarkText: String
-    ): Long
-}

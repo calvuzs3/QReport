@@ -6,7 +6,7 @@ import kotlinx.datetime.Instant
  * Metadati TECNICI per l'export (non business domain)
  * Contiene solo informazioni tecniche per la generazione del report
  */
-data class ExportTechnicalMetadata(
+data class  ExportTechnicalMetadata(
     /**
      * Timestamp di generazione del report
      */

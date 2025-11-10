@@ -6,9 +6,11 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import net.calvuz.qreport.data.export.photo.ImageProcessorImpl
 import net.calvuz.qreport.data.local.file.FileManagerImpl
 import net.calvuz.qreport.data.photo.PhotoStorageManager
 import net.calvuz.qreport.domain.model.file.FileManager
+import net.calvuz.qreport.domain.model.photo.ImageProcessor
 import javax.inject.Singleton
 
 /**
@@ -37,4 +39,13 @@ object UtilityModule {
         @ApplicationContext context: Context,
         fileManager: FileManager // ✅ Riusa esistente
     ): PhotoStorageManager = PhotoStorageManager(context, fileManager)
+
+    /**
+     * Image processor per export foto
+     */
+    @Provides
+    @Singleton
+    fun provideImageProcessor(): ImageProcessor {
+        return ImageProcessorImpl()
+    }
 }

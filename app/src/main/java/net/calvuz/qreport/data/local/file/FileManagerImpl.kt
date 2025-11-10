@@ -1,7 +1,12 @@
 package net.calvuz.qreport.data.local.file
 
 import android.content.Context
+import android.content.Intent
+import androidx.core.content.FileProvider
 import net.calvuz.qreport.domain.model.file.FileManager
+import net.calvuz.qreport.domain.model.export.ExportFormat
+import net.calvuz.qreport.domain.model.export.ExportResult
+import timber.log.Timber
 import java.io.File
 
 /**
@@ -45,6 +50,76 @@ class FileManagerImpl(
             File(filePath).length()
         } catch (e: Exception) {
             0L
+        }
+    }
+
+    // ✅ NUOVO: Implementazione metodi export file management
+    override fun openExportedFile(exportResult: ExportResult.Success): Result<Unit> {
+        return try {
+            val file = File(exportResult.filePath)
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, getMimeType(exportResult.format))
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            context.startActivity(Intent.createChooser(intent, "Apri con"))
+            Result.success(Unit)
+
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to open exported file")
+            Result.failure(e)
+        }
+    }
+
+    override fun shareExportedFile(exportResult: ExportResult.Success): Result<Unit> {
+        return try {
+            val file = File(exportResult.filePath)
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.fileprovider",
+                file
+            )
+
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = getMimeType(exportResult.format)
+                putExtra(Intent.EXTRA_STREAM, uri)
+                putExtra(Intent.EXTRA_SUBJECT, "Report QReport - ${exportResult.fileName}")
+                putExtra(Intent.EXTRA_TEXT, "Report generato dall'app QReport")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            context.startActivity(Intent.createChooser(intent, "Condividi"))
+            Result.success(Unit)
+
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to share exported file")
+            Result.failure(e)
+        }
+    }
+
+    override fun getAppVersion(): String {
+        return try {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName.toString()
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to get app version")
+            "unknown"
+        }
+    }
+
+    private fun getMimeType(format: ExportFormat): String {
+        return when (format) {
+            ExportFormat.WORD -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            ExportFormat.TEXT -> "text/plain"
+            ExportFormat.PHOTO_FOLDER -> "application/zip"
+            ExportFormat.COMBINED_PACKAGE -> "application/zip"
         }
     }
 }

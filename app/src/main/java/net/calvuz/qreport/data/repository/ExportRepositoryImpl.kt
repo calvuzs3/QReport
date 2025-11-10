@@ -1,6 +1,5 @@
-package net.calvuz.qreport.data.export.repository
+package net.calvuz.qreport.data.repository
 
-import android.content.Context
 import android.os.Environment
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -40,7 +39,6 @@ data class CombinedPackageResult(
  */
 @Singleton
 class ExportRepositoryImpl @Inject constructor(
-    private val context: Context,
     private val wordReportGenerator: WordReportGenerator,
     private val textReportGenerator: TextReportGenerator,
     private val photoExportManager: PhotoExportManager
@@ -92,13 +90,13 @@ class ExportRepositoryImpl @Inject constructor(
                         ExportFormat.WORD -> {
                             val wordResult =
                                 generateWordReportInternal(exportData, options, exportDirectory)
-                            result = result.copy(wordResult = wordResult as? ExportResult.Success)
+                            result = result.copy(wordResult = wordResult as? Success)
                         }
 
                         ExportFormat.TEXT -> {
                             val textResult =
                                 generateTextReportInternal(exportData, options, exportDirectory)
-                            result = result.copy(textResult = textResult as? ExportResult.Success)
+                            result = result.copy(textResult = textResult as? Success)
                         }
 
                         ExportFormat.PHOTO_FOLDER -> {
@@ -198,7 +196,7 @@ class ExportRepositoryImpl @Inject constructor(
             val result = wordReportGenerator.generateWordReport(exportData, options)
 
             when (result) {
-                is ExportResult.Success -> {
+                is Success -> {
                     // Sposta file nella directory target se necessario
                     val sourceFile = File(result.filePath)
                     val targetFile = File(targetDirectory, result.fileName)
@@ -207,7 +205,7 @@ class ExportRepositoryImpl @Inject constructor(
                         sourceFile.copyTo(targetFile, overwrite = true)
                         sourceFile.delete()
 
-                        ExportResult.Success(
+                        Success(
                             filePath = targetFile.absolutePath,
                             fileName = result.fileName,
                             fileSize = targetFile.length(),
@@ -218,13 +216,13 @@ class ExportRepositoryImpl @Inject constructor(
                     }
                 }
 
-                is ExportResult.Error -> result
-                is ExportResult.Loading -> result
+                is Error -> result
+                is Loading -> result
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Errore generazione Word")
-            ExportResult.Error(
+            Error(
                 exception = e,
                 errorCode = ExportErrorCode.DOCUMENT_GENERATION_ERROR,
                 format = ExportFormat.WORD
@@ -270,7 +268,7 @@ class ExportRepositoryImpl @Inject constructor(
             // Scrivi file
             targetFile.writeText(textContent, Charsets.UTF_8)
 
-            ExportResult.Success(
+            Success(
                 filePath = targetFile.absolutePath,
                 fileName = fileName,
                 fileSize = targetFile.length(),
@@ -279,7 +277,7 @@ class ExportRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Errore generazione Text")
-            ExportResult.Error(
+            Error(
                 exception = e,
                 errorCode = ExportErrorCode.TEXT_GENERATION_ERROR,
                 format = ExportFormat.TEXT
@@ -337,14 +335,14 @@ class ExportRepositoryImpl @Inject constructor(
         return try {
             Timber.d("Avvio generazione package completo")
 
-            var wordResult: ExportResult.Success? = null
-            var textResult: ExportResult.Success? = null
-            var photoFolderResult: ExportResult.Success? = null
+            var wordResult: Success? = null
+            var textResult: Success? = null
+            var photoFolderResult: Success? = null
 
             // 1. Genera documento Word
             try {
                 val wordExportResult = generateWordReportInternal(exportData, options, targetDirectory)
-                if (wordExportResult is ExportResult.Success) {
+                if (wordExportResult is Success) {
                     wordResult = wordExportResult
                     Timber.d("Word document generato: ${wordResult.fileName}")
                 }
@@ -355,7 +353,7 @@ class ExportRepositoryImpl @Inject constructor(
             // 2. Genera riassunto testuale
             try {
                 val textExportResult = generateTextReportInternal(exportData, options, targetDirectory)
-                if (textExportResult is ExportResult.Success) {
+                if (textExportResult is Success) {
                     textResult = textExportResult
                     Timber.d("Text summary generato: ${textResult.fileName}")
                 }
@@ -367,7 +365,7 @@ class ExportRepositoryImpl @Inject constructor(
             try {
                 val photoExportResult = generatePhotoFolderInternal(exportData, options, targetDirectory)
                 if (photoExportResult is PhotoExportResult.Success) {
-                    photoFolderResult = ExportResult.Success(
+                    photoFolderResult = Success(
                         filePath = photoExportResult.exportDirectory,
                         fileName = "FOTO",
                         fileSize = photoExportResult.totalSize,
@@ -407,9 +405,9 @@ class ExportRepositoryImpl @Inject constructor(
      */
     private suspend fun createPackageIndex(
         packageDirectory: File,
-        wordResult: ExportResult.Success?,
-        textResult: ExportResult.Success?,
-        photoFolderResult: ExportResult.Success?,
+        wordResult: Success?,
+        textResult: Success?,
+        photoFolderResult: Success?,
         exportData: ExportData
     ) = withContext(Dispatchers.IO) {
 

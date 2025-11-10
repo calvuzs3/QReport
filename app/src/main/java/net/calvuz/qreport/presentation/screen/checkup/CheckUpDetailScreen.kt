@@ -57,6 +57,7 @@ fun CheckUpDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCamera: (String) -> Unit,
     onNavigateToPhotoGallery: (String) -> Unit,
+    onNavigateToExportOptions: (String) -> Unit, // ✅ NUOVO
     modifier: Modifier = Modifier,
     viewModel: CheckUpDetailViewModel = hiltViewModel()
 ) {
@@ -124,7 +125,7 @@ fun CheckUpDetailScreen(
                     DropdownMenuItem(
                         text = { Text("Esporta Report") },
                         onClick = {
-                            viewModel.exportReport()
+                            onNavigateToExportOptions(checkUpId)
                             showStatusMenu = false
                         },
                         leadingIcon = {

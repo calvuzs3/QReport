@@ -4,7 +4,7 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import net.calvuz.qreport.data.export.repository.ExportRepositoryImpl
+import net.calvuz.qreport.data.repository.ExportRepositoryImpl
 import net.calvuz.qreport.data.repository.CheckItemRepositoryImpl
 import net.calvuz.qreport.data.repository.CheckUpRepositoryImpl
 import net.calvuz.qreport.data.repository.PhotoRepositoryImpl

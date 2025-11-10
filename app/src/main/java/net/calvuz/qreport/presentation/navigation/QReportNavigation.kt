@@ -25,6 +25,7 @@ import net.calvuz.qreport.presentation.screen.archive.ArchiveScreen
 import net.calvuz.qreport.presentation.screen.camera.CameraScreen
 import net.calvuz.qreport.presentation.screen.photo.PhotoGalleryScreen
 import net.calvuz.qreport.presentation.screen.settings.SettingsScreen
+import net.calvuz.qreport.presentation.screen.export.ExportOptionsScreen
 
 /**
  * Sistema di navigazione QReport - COMPLETO
@@ -94,11 +95,13 @@ object QReportRoutes {
     const val CHECKUP_DETAIL = "checkup_detail/{checkUpId}"
     const val CAMERA = "camera/{checkItemId}"
     const val PHOTO_GALLERY = "photo_gallery/{checkItemId}"
+    const val EXPORT_OPTIONS = "export_options/{checkUpId}"
 
     // Helper functions for parameters
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
     fun photoGallery(checkItemId: String) = "photo_gallery/$checkItemId"
+    fun exportOptions(checkUpId: String) = "export_options/$checkUpId"
 }
 
 /**
@@ -218,6 +221,10 @@ fun QReportNavigation(
                         // ✅ NUOVO: Aggiungi navigation per PhotoGallery
                         onNavigateToPhotoGallery = { checkItemId ->
                             navController.navigate(QReportRoutes.photoGallery(checkItemId))
+                        },
+                        // ✅ NUOVO: Aggiungi navigation per ExportOptions
+                        onNavigateToExportOptions = { checkUpId ->
+                            navController.navigate(QReportRoutes.exportOptions(checkUpId))
                         }
                     )
                 }
@@ -261,6 +268,29 @@ fun QReportNavigation(
                         },
                         onNavigateToCamera = {
                             navController.navigate(QReportRoutes.camera(checkItemId))
+                        }
+                    )
+                }
+
+                // ✅ NUOVO: Export Options Screen
+                composable(
+                    route = QReportRoutes.EXPORT_OPTIONS,
+                    arguments = listOf(
+                        navArgument("checkUpId") {
+                            type = NavType.StringType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val checkUpId = backStackEntry.arguments?.getString("checkUpId") ?: ""
+
+                    ExportOptionsScreen(
+                        checkUpId = checkUpId,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onExportStarted = {
+                            // Torna al detail screen dopo l'export
+                            navController.popBackStack()
                         }
                     )
                 }
