@@ -9,6 +9,7 @@ import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
 import net.calvuz.qreport.domain.model.export.*
 import net.calvuz.qreport.domain.model.photo.*
 import net.calvuz.qreport.domain.model.spare.SparePart
+import net.calvuz.qreport.util.DateTimeUtils.toFilenameSafeDate
 import org.apache.poi.xwpf.usermodel.*
 import org.apache.poi.util.Units
 import timber.log.Timber
@@ -470,7 +471,7 @@ class WordReportGenerator @Inject constructor(
      * Genera nome file Word appropriato
      */
     private fun generateWordFileName(exportData: ExportData): String {
-        val timestamp = (exportData.checkup.completedAt.toString())
+        val timestamp = (exportData.checkup.completedAt?.toFilenameSafeDate())
         val clientName = exportData.checkup.header.clientInfo.companyName
             .replace(" ", "")
             .replace(Regex("[^a-zA-Z0-9]"), "")
