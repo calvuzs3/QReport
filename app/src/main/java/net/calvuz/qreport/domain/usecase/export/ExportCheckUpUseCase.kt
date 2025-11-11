@@ -1,7 +1,8 @@
-package net.calvuz.qreport.domain.usecase.checkup
+package net.calvuz.qreport.domain.usecase.export
 
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
 import net.calvuz.qreport.domain.repository.CheckUpRepository
+import net.calvuz.qreport.domain.usecase.checkup.UpdateCheckUpStatusUseCase
 import javax.inject.Inject
 
 /**
@@ -16,16 +17,22 @@ class ExportCheckUpUseCase @Inject constructor(
             val checkUp = repository.getCheckUpById(checkUpId)
                 ?: return Result.failure(Exception("CheckUp not found: $checkUpId"))
 
-            if (checkUp.status != CheckUpStatus.COMPLETED) {
-                return Result.failure(
-                    Exception("Can only export completed check-ups")
-                )
+            when (checkUp.status) {
+                CheckUpStatus.DRAFT, CheckUpStatus.IN_PROGRESS -> {
+                    return Result.failure(
+                        Exception("Can only export completed check-ups")
+                    )
+                }
+                else -> {
+                    updateCheckUpStatusUseCase(checkUpId, CheckUpStatus.EXPORTED)
+
+                }
+
             }
 
             // TODO: Implementare logica di export (Word, PDF, etc.)
             // Per ora cambiamo solo lo status
 
-            updateCheckUpStatusUseCase(checkUpId, CheckUpStatus.EXPORTED)
 
         } catch (e: Exception) {
             Result.failure(e)

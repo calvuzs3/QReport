@@ -14,6 +14,7 @@ import net.calvuz.qreport.domain.model.photo.PhotoResult
 import net.calvuz.qreport.domain.model.spare.SparePartCategory
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency
 import net.calvuz.qreport.domain.usecase.checkup.*
+import net.calvuz.qreport.domain.usecase.export.ExportCheckUpUseCase
 import net.calvuz.qreport.domain.usecase.photo.CapturePhotoUseCase
 import net.calvuz.qreport.domain.usecase.photo.DeletePhotoUseCase
 import net.calvuz.qreport.domain.usecase.photo.GetCheckItemPhotosUseCase

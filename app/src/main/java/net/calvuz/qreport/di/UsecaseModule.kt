@@ -4,6 +4,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.domain.repository.CheckItemRepository
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import net.calvuz.qreport.domain.usecase.checkup.AddSparePartUseCase
@@ -26,8 +27,9 @@ class UsecaseModule {
     @Provides
     fun provideGetCheckUpDetailsUseCase(
         checkUpRepository: CheckUpRepository,
-        checkItemRepository: CheckItemRepository
-    ) = GetCheckUpDetailsUseCase(checkUpRepository, checkItemRepository)
+        checkItemRepository: CheckItemRepository,
+        photoDao: PhotoDao
+    ) = GetCheckUpDetailsUseCase(checkUpRepository, checkItemRepository, photoDao)
 
     @Provides
     fun provideAddSparePartUseCase(repository: CheckUpRepository) =
