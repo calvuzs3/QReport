@@ -1,4 +1,4 @@
-package net.calvuz.qreport.data.local
+package net.calvuz.qreport.data.local.converters
 
 import androidx.room.TypeConverter
 import com.google.gson.Gson
@@ -43,7 +43,7 @@ class DatabaseConverters {
 
     @TypeConverter
     fun toInstant(epochMilli: Long?): Instant? {
-        return epochMilli?.let { Instant.fromEpochMilliseconds(it) }
+        return epochMilli?.let { Instant.Companion.fromEpochMilliseconds(it) }
     }
 
     // ===============================

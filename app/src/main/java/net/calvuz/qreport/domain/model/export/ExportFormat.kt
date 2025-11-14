@@ -28,8 +28,9 @@ enum class ExportFormat {
      */
     PHOTO_FOLDER,
 
-//    PDF,
-
-    COMBINED_PACKAGE // Tutti i formati insieme
+    /**
+     * Tutti i formati insieme
+     */
+    COMBINED_PACKAGE
 }
 

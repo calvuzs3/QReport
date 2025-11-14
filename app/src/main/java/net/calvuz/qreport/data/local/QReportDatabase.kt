@@ -5,12 +5,18 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import net.calvuz.qreport.data.local.QReportDatabase.Companion.DATABASE_VERSION
+import net.calvuz.qreport.data.local.converters.AddressConverter
+import net.calvuz.qreport.data.local.converters.DatabaseConverters
 import net.calvuz.qreport.data.local.dao.CheckItemDao
 import net.calvuz.qreport.data.local.dao.CheckUpDao
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.data.local.dao.SparePartDao
 import net.calvuz.qreport.data.local.entity.CheckItemEntity
 import net.calvuz.qreport.data.local.entity.CheckUpEntity
+import net.calvuz.qreport.data.local.entity.ClientEntity
+import net.calvuz.qreport.data.local.entity.ContactEntity
+import net.calvuz.qreport.data.local.entity.FacilityEntity
+import net.calvuz.qreport.data.local.entity.FacilityIslandEntity
 import net.calvuz.qreport.data.local.entity.PhotoEntity
 import net.calvuz.qreport.data.local.entity.SparePartEntity
 
@@ -33,7 +39,12 @@ import net.calvuz.qreport.data.local.entity.SparePartEntity
         CheckUpEntity::class,
         CheckItemEntity::class,
         PhotoEntity::class,
-        SparePartEntity::class
+        SparePartEntity::class,
+        // new
+        ClientEntity::class,
+        ContactEntity::class,
+        FacilityEntity::class,
+        FacilityIslandEntity::class
     ],
     version = DATABASE_VERSION,
     exportSchema = true,
@@ -41,7 +52,10 @@ import net.calvuz.qreport.data.local.entity.SparePartEntity
         // Future migrations will be added here
     ]
 )
-@TypeConverters(DatabaseConverters::class)
+@TypeConverters(
+    DatabaseConverters::class,
+    AddressConverter::class
+)
 abstract class QReportDatabase : RoomDatabase() {
 
     // DAO abstract methods
