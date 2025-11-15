@@ -179,12 +179,11 @@ class FacilityRepositoryImpl @Inject constructor(
         }
     }
 
-    // TODO implementare
     override suspend fun hasPrimaryFacility(clientId: String, excludeId: String): Result<Boolean> {
         return try {
-//            val hasPrimary = facilityDao.PrimaryFacility(clientId, excludeId)
-//            Result.success(hasPrimary)
-            throw IllegalArgumentException("Not implemented")
+            val primaryFacility = facilityDao.getPrimaryFacility(clientId)
+            val hasPrimary = primaryFacility != null && primaryFacility.id != excludeId
+            Result.success(hasPrimary)
         } catch (e: Exception) {
             Result.failure(e)
         }

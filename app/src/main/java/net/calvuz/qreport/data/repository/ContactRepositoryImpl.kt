@@ -323,15 +323,14 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override suspend fun getPrimaryContactForClients(clientId: String): Result<Contact> {
+    override suspend fun getPrimaryContactForClients(clientId: String): Result<Contact?> {
         return try {
             val entity = contactDao.getPrimaryContact(clientId)
             val contact = entity?.let { contactMapper.toDomain(it) }
             Result.success(contact)
         } catch (e: Exception) {
             Result.failure(e)
-        } as Result<Contact>
+        }
     }
 
     // ===== MAINTENANCE =====

@@ -63,7 +63,7 @@ interface ContactRepository {
     // ===== ADVANCED QUERIES =====
 
     suspend fun getContactsWithAnyContactInfo(): Result<List<Contact>>
-    suspend fun getPrimaryContactForClients(clientId: String): Result<Contact>
+    suspend fun getPrimaryContactForClients(clientId: String): Result<Contact?>
 
     // ===== MAINTENANCE =====
 

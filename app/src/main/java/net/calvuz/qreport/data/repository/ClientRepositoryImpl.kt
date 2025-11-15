@@ -6,11 +6,12 @@ import net.calvuz.qreport.domain.model.client.Client
 import net.calvuz.qreport.domain.repository.ClientRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Instant
 import javax.inject.Inject
 
 /**
  * Implementazione del repository per gestione clienti
- * Utilizza Room DAO per persistenza e mapper per conversioni domain ↔ entity
+ * Implementa tutti i metodi definiti in ClientRepository
  */
 class ClientRepositoryImpl @Inject constructor(
     private val clientDao: ClientDao,
@@ -22,7 +23,7 @@ class ClientRepositoryImpl @Inject constructor(
     override suspend fun getAllClients(): Result<List<Client>> {
         return try {
             val entities = clientDao.getAllClients()
-            val clients = clientMapper.toDomainList(entities)
+            val clients = entities.map { clientMapper.toDomain(it) }
             Result.success(clients)
         } catch (e: Exception) {
             Result.failure(e)
@@ -32,7 +33,7 @@ class ClientRepositoryImpl @Inject constructor(
     override suspend fun getActiveClients(): Result<List<Client>> {
         return try {
             val entities = clientDao.getActiveClients()
-            val clients = clientMapper.toDomainList(entities)
+            val clients = entities.map { clientMapper.toDomain(it) }
             Result.success(clients)
         } catch (e: Exception) {
             Result.failure(e)
@@ -81,15 +82,13 @@ class ClientRepositoryImpl @Inject constructor(
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
     override fun getAllClientsFlow(): Flow<List<Client>> {
-        return clientDao.getAllActiveClientsFlow().map { entities ->
-            clientMapper.toDomainList(entities)
-        }
+        return clientDao.getAllActiveClientsFlow()
+            .map { entities -> entities.map { clientMapper.toDomain(it) } }
     }
 
     override fun getClientByIdFlow(id: String): Flow<Client?> {
-        return clientDao.getClientByIdFlow(id).map { entity ->
-            entity?.let { clientMapper.toDomain(it) }
-        }
+        return clientDao.getClientByIdFlow(id)
+            .map { entity -> entity?.let { clientMapper.toDomain(it) } }
     }
 
     // ===== SEARCH & FILTER =====
@@ -97,7 +96,7 @@ class ClientRepositoryImpl @Inject constructor(
     override suspend fun searchClients(query: String): Result<List<Client>> {
         return try {
             val entities = clientDao.searchClients(query)
-            val clients = clientMapper.toDomainList(entities)
+            val clients = entities.map { clientMapper.toDomain(it) }
             Result.success(clients)
         } catch (e: Exception) {
             Result.failure(e)
@@ -105,15 +104,14 @@ class ClientRepositoryImpl @Inject constructor(
     }
 
     override fun searchClientsFlow(query: String): Flow<List<Client>> {
-        return clientDao.searchClientsFlow(query).map { entities ->
-            clientMapper.toDomainList(entities)
-        }
+        return clientDao.searchClientsFlow(query)
+            .map { entities -> entities.map { clientMapper.toDomain(it) } }
     }
 
     override suspend fun getClientsByIndustry(industry: String): Result<List<Client>> {
         return try {
             val entities = clientDao.getClientsByIndustry(industry)
-            val clients = clientMapper.toDomainList(entities)
+            val clients = entities.map { clientMapper.toDomain(it) }
             Result.success(clients)
         } catch (e: Exception) {
             Result.failure(e)
@@ -211,7 +209,7 @@ class ClientRepositoryImpl @Inject constructor(
     override suspend fun getClientsWithFacilities(): Result<List<Client>> {
         return try {
             val entities = clientDao.getClientsWithFacilities()
-            val clients = clientMapper.toDomainList(entities)
+            val clients = entities.map { clientMapper.toDomain(it) }
             Result.success(clients)
         } catch (e: Exception) {
             Result.failure(e)
@@ -221,7 +219,7 @@ class ClientRepositoryImpl @Inject constructor(
     override suspend fun getClientsWithContacts(): Result<List<Client>> {
         return try {
             val entities = clientDao.getClientsWithContacts()
-            val clients = clientMapper.toDomainList(entities)
+            val clients = entities.map { clientMapper.toDomain(it) }
             Result.success(clients)
         } catch (e: Exception) {
             Result.failure(e)
@@ -231,7 +229,7 @@ class ClientRepositoryImpl @Inject constructor(
     override suspend fun getClientsWithIslands(): Result<List<Client>> {
         return try {
             val entities = clientDao.getClientsWithIslands()
-            val clients = clientMapper.toDomainList(entities)
+            val clients = entities.map { clientMapper.toDomain(it) }
             Result.success(clients)
         } catch (e: Exception) {
             Result.failure(e)
@@ -242,7 +240,7 @@ class ClientRepositoryImpl @Inject constructor(
 
     override suspend fun createClients(clients: List<Client>): Result<Unit> {
         return try {
-            val entities = clientMapper.toEntityList(clients)
+            val entities = clients.map { clientMapper.toEntity(it) }
             clientDao.insertClients(entities)
             Result.success(Unit)
         } catch (e: Exception) {
@@ -250,9 +248,9 @@ class ClientRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteInactiveClients(cutoffTimestamp: Long): Result<Int> {
+    override suspend fun deleteInactiveClients(cutoffTimestamp: Instant): Result<Int> {
         return try {
-            val deletedCount = clientDao.permanentlyDeleteInactiveClients(cutoffTimestamp)
+            val deletedCount = clientDao.permanentlyDeleteInactiveClients(cutoffTimestamp.toEpochMilliseconds())
             Result.success(deletedCount)
         } catch (e: Exception) {
             Result.failure(e)

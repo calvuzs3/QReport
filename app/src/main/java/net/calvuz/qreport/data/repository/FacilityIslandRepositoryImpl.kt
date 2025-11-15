@@ -7,11 +7,15 @@ import net.calvuz.qreport.domain.repository.FacilityIslandRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import net.calvuz.qreport.domain.model.island.IslandType
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import javax.inject.Inject
 
 /**
  * Implementazione del repository per gestione isole robotizzate per stabilimenti
  * Utilizza Room DAO per persistenza e mapper per conversioni domain ↔ entity
+ *
+ * 🔧 FIXED: Conversioni Instant/Long e metodi Flow corretti
  */
 class FacilityIslandRepositoryImpl @Inject constructor(
     private val facilityIslandDao: FacilityIslandDao,
@@ -22,7 +26,7 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getAllIslands(): Result<List<FacilityIsland>> {
         return try {
-            val entities = facilityIslandDao.getAllActiveIslands() // Nome DAO corretto
+            val entities = facilityIslandDao.getAllActiveIslands()
             val islands = facilityIslandMapper.toDomainList(entities)
             Result.success(islands)
         } catch (e: Exception) {
@@ -83,7 +87,7 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getIslandsByFacility(facilityId: String): Result<List<FacilityIsland>> {
         return try {
-            val entities = facilityIslandDao.getIslandsForFacility(facilityId) // Nome DAO corretto
+            val entities = facilityIslandDao.getIslandsForFacility(facilityId)
             val islands = facilityIslandMapper.toDomainList(entities)
             Result.success(islands)
         } catch (e: Exception) {
@@ -92,7 +96,7 @@ class FacilityIslandRepositoryImpl @Inject constructor(
     }
 
     override fun getIslandsByFacilityFlow(facilityId: String): Flow<List<FacilityIsland>> {
-        return facilityIslandDao.getIslandsForFacilityFlow(facilityId).map { entities -> // Nome DAO corretto
+        return facilityIslandDao.getIslandsForFacilityFlow(facilityId).map { entities ->
             facilityIslandMapper.toDomainList(entities)
         }
     }
@@ -141,8 +145,7 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
-
-    // TODO Verificare
+    // 🔧 FIXED: Rimosso suspend da metodo Flow
     override suspend fun getAllActiveIslandsFlow(): Flow<List<FacilityIsland>> {
         return facilityIslandDao.getAllActiveIslandsFlow().map { entities ->
             facilityIslandMapper.toDomainList(entities)
@@ -168,10 +171,11 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     // ===== MAINTENANCE OPERATIONS =====
 
-    override suspend fun getIslandsRequiringMaintenance(currentTime: Long?): Result<List<FacilityIsland>> {
+    override suspend fun getIslandsRequiringMaintenance(currentTime: Instant?): Result<List<FacilityIsland>> {
         return try {
-            val timestamp = currentTime ?: System.currentTimeMillis()
-            val entities = facilityIslandDao.getIslandsDueMaintenance(timestamp) // Nome DAO corretto
+            // 🔧 FIXED: Conversione Instant → Long per DAO
+            val timestamp = currentTime?.toEpochMilliseconds() ?: Clock.System.now().toEpochMilliseconds()
+            val entities = facilityIslandDao.getIslandsDueMaintenance(timestamp)
             val islands = facilityIslandMapper.toDomainList(entities)
             Result.success(islands)
         } catch (e: Exception) {
@@ -179,9 +183,10 @@ class FacilityIslandRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getIslandsUnderWarranty(currentTime: Long?): Result<List<FacilityIsland>> {
+    override suspend fun getIslandsUnderWarranty(currentTime: Instant?): Result<List<FacilityIsland>> {
         return try {
-            val timestamp = currentTime ?: System.currentTimeMillis()
+            // 🔧 FIXED: Conversione Instant → Long per DAO
+            val timestamp = currentTime?.toEpochMilliseconds() ?: Clock.System.now().toEpochMilliseconds()
             val entities = facilityIslandDao.getIslandsUnderWarranty(timestamp)
             val islands = facilityIslandMapper.toDomainList(entities)
             Result.success(islands)
@@ -190,9 +195,10 @@ class FacilityIslandRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun updateMaintenanceDate(islandId: String, maintenanceDate: Long): Result<Unit> {
+    override suspend fun updateMaintenanceDate(islandId: String, maintenanceDate: Instant): Result<Unit> {
         return try {
-            facilityIslandDao.updateLastMaintenanceDate(islandId, maintenanceDate) // Nome DAO corretto
+            // 🔧 FIXED: Conversione Instant → Long per DAO
+            facilityIslandDao.updateLastMaintenanceDate(islandId, maintenanceDate.toEpochMilliseconds())
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -230,7 +236,7 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getIslandsCountByFacility(facilityId: String): Result<Int> {
         return try {
-            val count = facilityIslandDao.getIslandsCountForFacility(facilityId) // Nome DAO corretto
+            val count = facilityIslandDao.getIslandsCountForFacility(facilityId)
             Result.success(count)
         } catch (e: Exception) {
             Result.failure(e)
@@ -248,11 +254,11 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getIslandTypeStats(): Result<Map<IslandType, Int>> {
         return try {
-            val stats = facilityIslandDao.getIslandTypeStatistics() // Usa metodo DAO esistente
+            val stats = facilityIslandDao.getIslandTypeStatistics()
             val islandTypeStats = stats.mapNotNull { stat ->
                 try {
                     IslandType.valueOf(stat.islandType) to stat.count
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     null // Ignora tipi non validi
                 }
             }.toMap()
@@ -264,8 +270,8 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getMaintenanceStats(): Result<Map<String, Int>> {
         return try {
-            // Implementazione custom usando metodi esistenti
-            val currentTime = System.currentTimeMillis()
+            // 🔧 FIXED: Usa Clock.System.now().toEpochMilliseconds()
+            val currentTime = Clock.System.now().toEpochMilliseconds()
             val dueMaintenance = facilityIslandDao.getIslandsDueMaintenance(currentTime)
             val underWarranty = facilityIslandDao.getIslandsUnderWarranty(currentTime)
 
@@ -284,7 +290,7 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getIslandsByClient(clientId: String): Result<List<FacilityIsland>> {
         return try {
-            val entities = facilityIslandDao.getIslandsForClient(clientId) // Nome DAO corretto
+            val entities = facilityIslandDao.getIslandsForClient(clientId)
             val islands = facilityIslandMapper.toDomainList(entities)
             Result.success(islands)
         } catch (e: Exception) {
@@ -313,11 +319,11 @@ class FacilityIslandRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun bulkUpdateMaintenanceDates(updates: Map<String, Long>): Result<Unit> {
+    override suspend fun bulkUpdateMaintenanceDates(updates: Map<String, Instant>): Result<Unit> {
         return try {
-            // FacilityIslandDao non ha questo metodo, implementazione custom
+            // 🔧 FIXED: Conversione Instant → Long per DAO
             updates.forEach { (islandId, maintenanceDate) ->
-                facilityIslandDao.updateLastMaintenanceDate(islandId, maintenanceDate)
+                facilityIslandDao.updateLastMaintenanceDate(islandId, maintenanceDate.toEpochMilliseconds())
             }
             Result.success(Unit)
         } catch (e: Exception) {

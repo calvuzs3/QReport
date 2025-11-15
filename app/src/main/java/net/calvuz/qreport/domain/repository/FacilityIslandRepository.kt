@@ -2,6 +2,7 @@ package net.calvuz.qreport.domain.repository
 
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 import net.calvuz.qreport.domain.model.island.IslandType
 
 /**
@@ -43,9 +44,9 @@ interface FacilityIslandRepository {
 
     // ===== MAINTENANCE OPERATIONS =====
 
-    suspend fun getIslandsRequiringMaintenance(currentTime: Long? = null): Result<List<FacilityIsland>>
-    suspend fun getIslandsUnderWarranty(currentTime: Long? = null): Result<List<FacilityIsland>>
-    suspend fun updateMaintenanceDate(islandId: String, maintenanceDate: Long): Result<Unit>
+    suspend fun getIslandsRequiringMaintenance(currentTime: Instant?): Result<List<FacilityIsland>>
+    suspend fun getIslandsUnderWarranty(currentTime: Instant?): Result<List<FacilityIsland>>
+    suspend fun updateMaintenanceDate(islandId: String, maintenanceDate: Instant): Result<Unit>
     suspend fun updateOperatingHours(islandId: String, operatingHours: Int): Result<Unit>
     suspend fun updateCycleCount(islandId: String, cycleCount: Long): Result<Unit>
 
@@ -60,7 +61,7 @@ interface FacilityIslandRepository {
     // ===== BULK OPERATIONS =====
 
     suspend fun createIslands(islands: List<FacilityIsland>): Result<Unit>
-    suspend fun bulkUpdateMaintenanceDates(updates: Map<String, Long>): Result<Unit>
+    suspend fun bulkUpdateMaintenanceDates(updates: Map<String, Instant>): Result<Unit>
 
     // ===== CLIENT AGGREGATION =====
 

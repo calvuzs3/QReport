@@ -2,6 +2,7 @@ package net.calvuz.qreport.domain.repository
 
 import net.calvuz.qreport.domain.model.client.Client
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
 
 /**
  * Repository interface per gestione clienti
@@ -54,7 +55,7 @@ interface ClientRepository {
     // ===== BULK OPERATIONS =====
 
     suspend fun createClients(clients: List<Client>): Result<Unit>
-    suspend fun deleteInactiveClients(cutoffTimestamp: Long): Result<Int>
+    suspend fun deleteInactiveClients(cutoffTimestamp: Instant): Result<Int>
 
     // ===== MAINTENANCE =====
 
