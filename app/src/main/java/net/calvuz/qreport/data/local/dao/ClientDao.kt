@@ -163,17 +163,28 @@ interface ClientDao {
     """)
     suspend fun getClientsWithIslands(): List<ClientEntity>
 
+    // ===== QUERY CON CONTEGGI CORRETTA ===== ✅
     @Query("""
-        SELECT c.*, 
-               COUNT(DISTINCT f.id) as facilities_count,
-               COUNT(DISTINCT ct.id) as contacts_count,
-               COUNT(DISTINCT fi.id) as islands_count
+        SELECT c.id,
+               c.company_name as companyName,
+               c.vat_number as vatNumber,
+               c.fiscal_code as fiscalCode,
+               c.website,
+               c.industry,
+               c.notes,
+               c.headquarters_json as headquartersJson,
+               c.is_active as isActive,
+               c.created_at as createdAt,
+               c.updated_at as updatedAt,
+               COUNT(DISTINCT f.id) as facilitiesCount,
+               COUNT(DISTINCT ct.id) as contactsCount,
+               COUNT(DISTINCT fi.id) as islandsCount
         FROM clients c
         LEFT JOIN facilities f ON c.id = f.client_id AND f.is_active = 1
         LEFT JOIN contacts ct ON c.id = ct.client_id AND ct.is_active = 1  
         LEFT JOIN facility_islands fi ON f.id = fi.facility_id AND fi.is_active = 1
         WHERE c.is_active = 1
-        GROUP BY c.id
+        GROUP BY c.id, c.company_name, c.vat_number, c.fiscal_code, c.website, c.industry, c.notes, c.headquarters_json, c.is_active, c.created_at, c.updated_at
         ORDER BY c.company_name ASC
     """)
     suspend fun getClientsWithCounts(): List<ClientWithCountsResult>
@@ -185,21 +196,21 @@ interface ClientDao {
 }
 
 /**
- * Result class per query con conteggi
+ * Result class per query con conteggi - CORRETTA ✅
  */
 data class ClientWithCountsResult(
     val id: String,
-    val companyName: String,
-    val vatNumber: String?,
-    val fiscalCode: String?,
+    val companyName: String,           // ✅ Matches alias in query
+    val vatNumber: String?,            // ✅ Matches alias in query
+    val fiscalCode: String?,           // ✅ Matches alias in query
     val website: String?,
     val industry: String?,
     val notes: String?,
-    val headquartersJson: String?,
-    val isActive: Boolean,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val facilitiesCount: Int,
-    val contactsCount: Int,
-    val islandsCount: Int
+    val headquartersJson: String?,     // ✅ Matches alias in query
+    val isActive: Boolean,             // ✅ Matches alias in query
+    val createdAt: Long,               // ✅ Matches alias in query
+    val updatedAt: Long,               // ✅ Matches alias in query
+    val facilitiesCount: Int,          // ✅ Matches alias in query
+    val contactsCount: Int,            // ✅ Matches alias in query
+    val islandsCount: Int              // ✅ Matches alias in query
 )

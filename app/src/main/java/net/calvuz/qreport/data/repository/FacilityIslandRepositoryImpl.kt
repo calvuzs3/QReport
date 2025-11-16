@@ -15,7 +15,10 @@ import javax.inject.Inject
  * Implementazione del repository per gestione isole robotizzate per stabilimenti
  * Utilizza Room DAO per persistenza e mapper per conversioni domain ↔ entity
  *
- * 🔧 FIXED: Conversioni Instant/Long e metodi Flow corretti
+ * ✅ FIXED: Tutti i metodi corretti per compilazione
+ * ✅ FIXED: FacilityIslandMapper integrato
+ * ✅ FIXED: Conversioni Instant/Long corrette
+ * ✅ FIXED: Flow methods senza suspend
  */
 class FacilityIslandRepositoryImpl @Inject constructor(
     private val facilityIslandDao: FacilityIslandDao,
@@ -144,9 +147,9 @@ class FacilityIslandRepositoryImpl @Inject constructor(
     }
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
+    // ✅ FIXED: Rimosso suspend da metodi Flow
 
-    // 🔧 FIXED: Rimosso suspend da metodo Flow
-    override suspend fun getAllActiveIslandsFlow(): Flow<List<FacilityIsland>> {
+    override fun getAllActiveIslandsFlow(): Flow<List<FacilityIsland>> {
         return facilityIslandDao.getAllActiveIslandsFlow().map { entities ->
             facilityIslandMapper.toDomainList(entities)
         }
@@ -173,7 +176,6 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getIslandsRequiringMaintenance(currentTime: Instant?): Result<List<FacilityIsland>> {
         return try {
-            // 🔧 FIXED: Conversione Instant → Long per DAO
             val timestamp = currentTime?.toEpochMilliseconds() ?: Clock.System.now().toEpochMilliseconds()
             val entities = facilityIslandDao.getIslandsDueMaintenance(timestamp)
             val islands = facilityIslandMapper.toDomainList(entities)
@@ -185,7 +187,6 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getIslandsUnderWarranty(currentTime: Instant?): Result<List<FacilityIsland>> {
         return try {
-            // 🔧 FIXED: Conversione Instant → Long per DAO
             val timestamp = currentTime?.toEpochMilliseconds() ?: Clock.System.now().toEpochMilliseconds()
             val entities = facilityIslandDao.getIslandsUnderWarranty(timestamp)
             val islands = facilityIslandMapper.toDomainList(entities)
@@ -197,7 +198,6 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun updateMaintenanceDate(islandId: String, maintenanceDate: Instant): Result<Unit> {
         return try {
-            // 🔧 FIXED: Conversione Instant → Long per DAO
             facilityIslandDao.updateLastMaintenanceDate(islandId, maintenanceDate.toEpochMilliseconds())
             Result.success(Unit)
         } catch (e: Exception) {
@@ -257,7 +257,7 @@ class FacilityIslandRepositoryImpl @Inject constructor(
             val stats = facilityIslandDao.getIslandTypeStatistics()
             val islandTypeStats = stats.mapNotNull { stat ->
                 try {
-                    IslandType.valueOf(stat.islandType) to stat.count
+                    IslandType.valueOf(stat.island_type) to stat.count
                 } catch (_: IllegalArgumentException) {
                     null // Ignora tipi non validi
                 }
@@ -270,7 +270,6 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun getMaintenanceStats(): Result<Map<String, Int>> {
         return try {
-            // 🔧 FIXED: Usa Clock.System.now().toEpochMilliseconds()
             val currentTime = Clock.System.now().toEpochMilliseconds()
             val dueMaintenance = facilityIslandDao.getIslandsDueMaintenance(currentTime)
             val underWarranty = facilityIslandDao.getIslandsUnderWarranty(currentTime)
@@ -321,7 +320,6 @@ class FacilityIslandRepositoryImpl @Inject constructor(
 
     override suspend fun bulkUpdateMaintenanceDates(updates: Map<String, Instant>): Result<Unit> {
         return try {
-            // 🔧 FIXED: Conversione Instant → Long per DAO
             updates.forEach { (islandId, maintenanceDate) ->
                 facilityIslandDao.updateLastMaintenanceDate(islandId, maintenanceDate.toEpochMilliseconds())
             }

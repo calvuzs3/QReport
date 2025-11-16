@@ -26,6 +26,7 @@ import net.calvuz.qreport.presentation.screen.camera.CameraScreen
 import net.calvuz.qreport.presentation.screen.photo.PhotoGalleryScreen
 import net.calvuz.qreport.presentation.screen.settings.SettingsScreen
 import net.calvuz.qreport.presentation.screen.export.ExportOptionsScreen
+import net.calvuz.qreport.presentation.screen.client.client.ClientListScreen
 
 /**
  * Sistema di navigazione QReport - COMPLETO
@@ -97,11 +98,19 @@ object QReportRoutes {
     const val PHOTO_GALLERY = "photo_gallery/{checkItemId}"
     const val EXPORT_OPTIONS = "export_options/{checkUpId}"
 
+    // ✅ NEW: Client management routes
+    const val CLIENT_LIST = "clients"
+    const val CLIENT_DETAIL = "client_detail/{clientId}"
+    const val CLIENT_CREATE = "client_create"
+
     // Helper functions for parameters
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
     fun photoGallery(checkItemId: String) = "photo_gallery/$checkItemId"
     fun exportOptions(checkUpId: String) = "export_options/$checkUpId"
+
+    // ✅ NEW: Client helper functions
+    fun clientDetail(clientId: String) = "client_detail/$clientId"
 }
 
 /**
@@ -151,6 +160,10 @@ fun QReportNavigation(
                         },
                         onNavigateToCheckUpDetail = { checkUpId ->
                             navController.navigate(QReportRoutes.checkupDetail(checkUpId))
+                        },
+                        // ✅ NEW: Navigation to client management
+                        onNavigateToClients = {
+                            navController.navigate(QReportRoutes.CLIENT_LIST)
                         }
                     )
                 }
@@ -294,6 +307,59 @@ fun QReportNavigation(
                         }
                     )
                 }
+
+                // ============================================================
+                // ✅ CLIENT MANAGEMENT DESTINATIONS
+                // ============================================================
+
+                // Client List Screen
+                composable(QReportRoutes.CLIENT_LIST) {
+                    ClientListScreen(
+                        onNavigateToClientDetail = { clientId ->
+                            navController.navigate(QReportRoutes.clientDetail(clientId))
+                        },
+                        onCreateNewClient = {
+                            navController.navigate(QReportRoutes.CLIENT_CREATE)
+                        }
+                    )
+                }
+
+                // Client Detail Screen (placeholder - to be implemented)
+                composable(
+                    route = QReportRoutes.CLIENT_DETAIL,
+                    arguments = listOf(
+                        navArgument("clientId") {
+                            type = NavType.StringType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+
+                    // TODO: Implement ClientDetailScreen
+                    // ClientDetailScreen(
+                    //     clientId = clientId,
+                    //     onNavigateBack = {
+                    //         navController.popBackStack()
+                    //     }
+                    // )
+                }
+
+                // Client Create Screen (placeholder - to be implemented)
+                composable(QReportRoutes.CLIENT_CREATE) {
+                    // TODO: Implement ClientCreateScreen
+                    // ClientCreateScreen(
+                    //     onNavigateBack = {
+                    //         navController.popBackStack()
+                    //     },
+                    //     onClientCreated = { clientId ->
+                    //         navController.navigate(QReportRoutes.clientDetail(clientId)) {
+                    //             popUpTo(QReportRoutes.CLIENT_LIST) {
+                    //                 inclusive = false
+                    //             }
+                    //         }
+                    //     }
+                    // )
+                }
             }
         }
 
@@ -308,6 +374,8 @@ fun QReportNavigation(
             QReportRoutes.CHECKUPS,
             QReportRoutes.ARCHIVE,
             QReportRoutes.SETTINGS -> true
+            // ✅ UPDATED: Show bottom nav for main client list, hide for detail/create
+            QReportRoutes.CLIENT_LIST -> true
             else -> false
         }
 

@@ -9,6 +9,10 @@ import net.calvuz.qreport.data.local.converters.AddressConverter
 import net.calvuz.qreport.data.local.converters.DatabaseConverters
 import net.calvuz.qreport.data.local.dao.CheckItemDao
 import net.calvuz.qreport.data.local.dao.CheckUpDao
+import net.calvuz.qreport.data.local.dao.ClientDao
+import net.calvuz.qreport.data.local.dao.ContactDao
+import net.calvuz.qreport.data.local.dao.FacilityDao
+import net.calvuz.qreport.data.local.dao.FacilityIslandDao
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.data.local.dao.SparePartDao
 import net.calvuz.qreport.data.local.entity.CheckItemEntity
@@ -63,10 +67,15 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun checkItemDao(): CheckItemDao
     abstract fun photoDao(): PhotoDao
     abstract fun sparePartDao(): SparePartDao
+    abstract fun clientDao(): ClientDao
+    abstract fun contactDao(): ContactDao
+    abstract fun facilityDao(): FacilityDao
+    abstract fun facilityIslandDao(): FacilityIslandDao
+
 
     companion object {
         const val DATABASE_NAME = "qreport_database"
-        const val DATABASE_VERSION = 1
+        const val DATABASE_VERSION = 2
 
         /**
          * Callback per inizializzazione database

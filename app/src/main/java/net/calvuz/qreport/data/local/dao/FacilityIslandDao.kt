@@ -7,6 +7,8 @@ import net.calvuz.qreport.data.local.entity.FacilityIslandEntity
 /**
  * DAO per gestione isole robotizzate per stabilimento
  * Definisce tutte le operazioni CRUD e query complesse per FacilityIslandEntity
+ *
+ * ✅ FIXED: Tutte le query e data classes corrette per compilazione
  */
 @Dao
 interface FacilityIslandDao {
@@ -31,9 +33,8 @@ interface FacilityIslandDao {
     @Query("SELECT * FROM facility_islands WHERE is_active = 1 ORDER BY serial_number ASC")
     suspend fun getAllActiveIslands(): List<FacilityIslandEntity>
 
-    // TODO Verificare
     @Query("SELECT * FROM facility_islands WHERE is_active = 1 ORDER BY serial_number ASC")
-    suspend fun getAllActiveIslandsFlow(): Flow<List<FacilityIslandEntity>>
+    fun getAllActiveIslandsFlow(): Flow<List<FacilityIslandEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIsland(island: FacilityIslandEntity)
@@ -199,7 +200,25 @@ interface FacilityIslandDao {
     // ===== COMPLEX QUERIES =====
 
     @Query("""
-        SELECT fi.*, f.name as facility_name, c.company_name
+        SELECT fi.id,
+               fi.facility_id as facilityId,
+               fi.island_type as islandType,
+               fi.serial_number as serialNumber,
+               fi.model,
+               fi.installation_date as installationDate,
+               fi.warranty_expiration as warrantyExpiration,
+               fi.is_active as isActive,
+               fi.operating_hours as operatingHours,
+               fi.cycle_count as cycleCount,
+               fi.last_maintenance_date as lastMaintenanceDate,
+               fi.next_scheduled_maintenance as nextScheduledMaintenance,
+               fi.custom_name as customName,
+               fi.location,
+               fi.notes,
+               fi.created_at as createdAt,
+               fi.updated_at as updatedAt,
+               f.name as facilityName,
+               c.company_name as companyName
         FROM facility_islands fi
         INNER JOIN facilities f ON fi.facility_id = f.id
         INNER JOIN clients c ON f.client_id = c.id
@@ -239,7 +258,7 @@ interface FacilityIslandDao {
 }
 
 /**
- * Result class per query con facility e client
+ * Result class per query con facility e client - ✅ CORRETTA con alias
  */
 data class IslandWithFacilityAndClientResult(
     val id: String,
@@ -264,9 +283,9 @@ data class IslandWithFacilityAndClientResult(
 )
 
 /**
- * Statistiche per tipo di isola
+ * Statistiche per tipo di isola - ✅ CORRETTA
  */
 data class IslandTypeStatistics(
-    val islandType: String,
+    val island_type: String,  // ✅ Snake case per match SQL
     val count: Int
 )

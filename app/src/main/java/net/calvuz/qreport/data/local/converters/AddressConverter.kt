@@ -4,6 +4,7 @@ import androidx.room.TypeConverter
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.calvuz.qreport.domain.model.client.Address
+import javax.inject.Inject
 
 /**
  * TypeConverter per serializzazione JSON di Address
@@ -12,7 +13,7 @@ import net.calvuz.qreport.domain.model.client.Address
  * Consistente con l'approccio usato in ClientEntity (headquarters_json)
  * e FacilityEntity (address_json)
  */
-class AddressConverter {
+class AddressConverter @Inject constructor() {
 
     private val json = Json {
         ignoreUnknownKeys = true

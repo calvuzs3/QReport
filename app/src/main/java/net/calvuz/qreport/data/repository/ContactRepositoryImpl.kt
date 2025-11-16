@@ -6,9 +6,7 @@ import net.calvuz.qreport.domain.model.client.Contact
 import net.calvuz.qreport.domain.model.client.ContactMethod
 import net.calvuz.qreport.domain.repository.ContactRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.delay
 import javax.inject.Inject
 
 /**
@@ -24,7 +22,7 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun getAllContacts(): Result<List<Contact>> {
         return try {
-            val entities = contactDao.getAllActiveContacts() // Usa il metodo DAO esistente
+            val entities = contactDao.getActiveContacts() // Usa il metodo DAO esistente
             val contacts = contactMapper.toDomainList(entities)
             Result.success(contacts)
         } catch (e: Exception) {
@@ -34,7 +32,7 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun getActiveContacts(): Result<List<Contact>> {
         return try {
-            val entities = contactDao.getAllActiveContacts()
+            val entities = contactDao.getActiveContacts()
             val contacts = contactMapper.toDomainList(entities)
             Result.success(contacts)
         } catch (e: Exception) {
@@ -74,7 +72,7 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun deleteContact(id: String): Result<Unit> {
         return try {
-            contactDao.softDeleteContact(id)
+            contactDao.softDeleteContact(id, System.currentTimeMillis())
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -85,7 +83,7 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun getContactsByClient(clientId: String): Result<List<Contact>> {
         return try {
-            val entities = contactDao.getContactsForClient(clientId) // Nome DAO corretto
+            val entities = contactDao.getContactsByClient(clientId)
             val contacts = contactMapper.toDomainList(entities)
             Result.success(contacts)
         } catch (e: Exception) {
@@ -94,14 +92,14 @@ class ContactRepositoryImpl @Inject constructor(
     }
 
     override fun getContactsByClientFlow(clientId: String): Flow<List<Contact>> {
-        return contactDao.getContactsForClientFlow(clientId).map { entities -> // Nome DAO corretto
+        return contactDao.getContactsByClientFlow(clientId).map { entities ->
             contactMapper.toDomainList(entities)
         }
     }
 
     override suspend fun getActiveContactsByClient(clientId: String): Result<List<Contact>> {
         return try {
-            val entities = contactDao.getContactsForClient(clientId) // Usa stesso metodo, già filtrato per is_active
+            val entities = contactDao.getActiveContactsByClient(clientId)
             val contacts = contactMapper.toDomainList(entities)
             Result.success(contacts)
         } catch (e: Exception) {
@@ -122,17 +120,8 @@ class ContactRepositoryImpl @Inject constructor(
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
     override fun getAllActiveContactsFlow(): Flow<List<Contact>> {
-        // ContactDao non ha getAllActiveContactsFlow, implemento con polling
-        return flow {
-            while (true) {
-                try {
-                    val contacts = getActiveContacts().getOrThrow()
-                    emit(contacts)
-                    delay(1000) // Polling ogni secondo
-                } catch (e: Exception) {
-                    emit(emptyList())
-                }
-            }
+        return contactDao.getAllActiveContactsFlow().map { entities ->
+            contactMapper.toDomainList(entities)
         }
     }
 
@@ -208,7 +197,7 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun isEmailTaken(email: String, excludeId: String): Result<Boolean> {
         return try {
-            val isTaken = contactDao.isEmailTakenGlobally(email, excludeId) // Usa metodo DAO esistente
+            val isTaken = contactDao.isEmailTaken(email, excludeId)
             Result.success(isTaken)
         } catch (e: Exception) {
             Result.failure(e)
@@ -217,9 +206,7 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun isPhoneTaken(phone: String, excludeId: String): Result<Boolean> {
         return try {
-            // ContactDao non ha isPhoneTaken, uso implementazione custom
-            val contact = contactDao.getContactByPhone(phone)
-            val isTaken = contact != null && contact.id != excludeId
+            val isTaken = contactDao.isPhoneTaken(phone, excludeId)
             Result.success(isTaken)
         } catch (e: Exception) {
             Result.failure(e)
@@ -276,10 +263,10 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun getContactMethodStats(): Result<Map<ContactMethod, Int>> {
         return try {
-            val methods = contactDao.getAllPreferredContactMethods() // Usa metodo DAO esistente
-            val stats = methods.mapNotNull { methodString ->
+            val methodStats = contactDao.getContactMethodStats()
+            val stats = methodStats.mapNotNull { result ->
                 try {
-                    ContactMethod.valueOf(methodString) to contactDao.getContactsCountByRole(methodString) // Approx
+                    ContactMethod.valueOf(result.preferred_contact_method) to result.count
                 } catch (e: IllegalArgumentException) {
                     null
                 }
@@ -337,7 +324,7 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun touchContact(id: String): Result<Unit> {
         return try {
-            contactDao.touchContact(id)
+            contactDao.touchContact(id, System.currentTimeMillis())
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -1,66 +1,31 @@
 package net.calvuz.qreport.domain.usecase.client.client
 
+import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
 import net.calvuz.qreport.domain.repository.ClientRepository
+import net.calvuz.qreport.domain.repository.CheckUpRepository
 import javax.inject.Inject
 
 /**
- * Use Case per statistiche e dashboard clienti
+ * Use Case per statistiche di un singolo cliente
  *
- * Gestisce:
- * - Conteggi clienti (attivi, totali)
- * - Statistiche per settore
- * - Conteggi dipendenze (facilities, contatti, isole)
- * - Metriche per dashboard executive
+ * Questo use case è specifico per ottenere le statistiche
+ * di un cliente individuale da mostrare nelle liste e card.
+ *
+ * È diverso da GetAllClientsStatisticsUseCase che gestisce
+ * le statistiche aggregate per dashboard.
  */
 class GetClientStatisticsUseCase @Inject constructor(
-    private val clientRepository: ClientRepository
+    private val clientRepository: ClientRepository,
+    private val checkUpRepository: CheckUpRepository? = null // Opzionale se non ancora disponibile
 ) {
 
     /**
-     * Ottiene statistiche complete per dashboard
-     *
-     * @return Result con oggetto statistiche complete
-     */
-    suspend operator fun invoke(): Result<ClientStatistics> {
-        return try {
-            val activeClientsResult = clientRepository.getActiveClientsCount()
-            val totalClientsResult = clientRepository.getTotalClientsCount()
-            val industriesResult = clientRepository.getAllIndustries()
-
-            // Verifica che tutte le chiamate siano riuscite
-            val activeClients = activeClientsResult.getOrElse { return Result.failure(it) }
-            val totalClients = totalClientsResult.getOrElse { return Result.failure(it) }
-            val industries = industriesResult.getOrElse { return Result.failure(it) }
-
-            // Calcola statistiche aggregate
-            val inactiveClients = totalClients - activeClients
-            val activationRate = if (totalClients > 0) {
-                (activeClients.toDouble() / totalClients.toDouble() * 100).toInt()
-            } else 0
-
-            val statistics = ClientStatistics(
-                activeClients = activeClients,
-                totalClients = totalClients,
-                inactiveClients = inactiveClients,
-                activationRate = activationRate,
-                totalIndustries = industries.size,
-                industries = industries
-            )
-
-            Result.success(statistics)
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Ottiene statistiche dettagliate per un singolo cliente
+     * Ottiene statistiche per un singolo cliente
      *
      * @param clientId ID del cliente
-     * @return Result con statistiche specifiche del cliente
+     * @return Result con statistiche del cliente per UI
      */
-    suspend fun getClientDetailStats(clientId: String): Result<ClientDetailStats> {
+    suspend operator fun invoke(clientId: String): Result<SingleClientStatistics> {
         return try {
             // Validazione input
             if (clientId.isBlank()) {
@@ -68,11 +33,11 @@ class GetClientStatisticsUseCase @Inject constructor(
             }
 
             // Verifica esistenza cliente
-            val client = clientRepository.getClientById(clientId)
+            clientRepository.getClientById(clientId)
                 .getOrElse { return Result.failure(it) }
                 ?: return Result.failure(NoSuchElementException("Cliente non trovato"))
 
-            // Raccogli statistiche
+            // Raccogli statistiche base
             val facilitiesCount = clientRepository.getFacilitiesCount(clientId)
                 .getOrElse { return Result.failure(it) }
 
@@ -82,16 +47,34 @@ class GetClientStatisticsUseCase @Inject constructor(
             val islandsCount = clientRepository.getIslandsCount(clientId)
                 .getOrElse { return Result.failure(it) }
 
-            val stats = ClientDetailStats(
-                clientId = client.id,
-                companyName = client.companyName,
-                isActive = client.isActive,
+            // Statistiche CheckUp (opzionali se repository non disponibile)
+            val (totalCheckUps, completedCheckUps, lastCheckUpDate) = if (checkUpRepository != null) {
+                try {
+                    // TODO
+//                    val checkUps = checkUpRepository.getCheckUpsByClient(clientId)
+//                        .getOrElse { emptyList() }
+//
+//                    val completed = checkUps.count { it.status.isCompleted() }
+//                    val lastDate = checkUps.maxByOrNull { it.updatedAt }?.updatedAt
+//
+//                    Triple(checkUps.size, completed, lastDate)
+                    Triple(0, 0, null)
+                } catch (e: Exception) {
+                    // Se fallisce, usa valori di default
+                    Triple(0, 0, null)
+                }
+            } else {
+                // Repository non disponibile, usa placeholder
+                Triple(0, 0, null)
+            }
+
+            val stats = SingleClientStatistics(
                 facilitiesCount = facilitiesCount,
-                contactsCount = contactsCount,
                 islandsCount = islandsCount,
-                createdAt = client.createdAt.epochSeconds,
-                updatedAt = client.updatedAt.epochSeconds,
-                industry = client.industry
+                contactsCount = contactsCount,
+                totalCheckUps = totalCheckUps,
+                completedCheckUps = completedCheckUps,
+                lastCheckUpDate = lastCheckUpDate
             )
 
             Result.success(stats)
@@ -102,105 +85,36 @@ class GetClientStatisticsUseCase @Inject constructor(
     }
 
     /**
-     * Ottiene statistiche per settore/industria
+     * Ottiene statistiche rapide senza CheckUp (versione veloce)
      *
-     * @return Result con mappa settore -> numero clienti
+     * Usa questa versione se le statistiche CheckUp non sono critiche
+     * e vuoi performance migliori.
      */
-    suspend fun getIndustryStatistics(): Result<Map<String, Int>> {
+    suspend fun getBasicStats(clientId: String): Result<SingleClientStatistics> {
         return try {
-            val industries = clientRepository.getAllIndustries()
-                .getOrElse { return Result.failure(it) }
-
-            val industryStats = mutableMapOf<String, Int>()
-
-            // Per ogni settore, conta i clienti
-            industries.forEach { industry ->
-                val clientsInIndustry = clientRepository.getClientsByIndustry(industry)
-                    .getOrElse { return Result.failure(it) }
-                industryStats[industry] = clientsInIndustry.size
+            if (clientId.isBlank()) {
+                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
             }
 
-            // Aggiungi clienti senza settore specificato
-            val allClients = clientRepository.getActiveClients()
+            val facilitiesCount = clientRepository.getFacilitiesCount(clientId)
                 .getOrElse { return Result.failure(it) }
 
-            val clientsWithoutIndustry = allClients.count { it.industry.isNullOrBlank() }
-            if (clientsWithoutIndustry > 0) {
-                industryStats["Non specificato"] = clientsWithoutIndustry
-            }
+            val contactsCount = clientRepository.getContactsCount(clientId)
+                .getOrElse { return Result.failure(it) }
 
-            Result.success(industryStats.toMap())
+            val islandsCount = clientRepository.getIslandsCount(clientId)
+                .getOrElse { return Result.failure(it) }
 
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Ottiene top 5 settori per numero clienti
-     *
-     * @return Result con lista settori ordinati per popolarità
-     */
-    suspend fun getTopIndustries(limit: Int = 5): Result<List<IndustryStats>> {
-        return try {
-            getIndustryStatistics()
-                .map { industryMap ->
-                    industryMap.map { (industry, count) ->
-                        IndustryStats(industry, count)
-                    }
-                        .sortedByDescending { it.clientCount }
-                        .take(limit)
-                }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Verifica salute generale sistema clienti
-     *
-     * @return Result con indicatori di salute
-     */
-    suspend fun getSystemHealthStats(): Result<SystemHealthStats> {
-        return try {
-            val baseStats = invoke().getOrElse { return Result.failure(it) }
-
-            // Conta clienti con dipendenze complete (facilities + contatti + isole)
-            val clientsWithFacilities = clientRepository.getClientsWithFacilities()
-                .getOrElse { return Result.failure(it) }.size
-
-            val clientsWithContacts = clientRepository.getClientsWithContacts()
-                .getOrElse { return Result.failure(it) }.size
-
-            val clientsWithIslands = clientRepository.getClientsWithIslands()
-                .getOrElse { return Result.failure(it) }.size
-
-            // Calcola percentuali completezza
-            val totalActive = baseStats.activeClients
-            val facilitiesCompleteness = if (totalActive > 0) {
-                (clientsWithFacilities.toDouble() / totalActive * 100).toInt()
-            } else 0
-
-            val contactsCompleteness = if (totalActive > 0) {
-                (clientsWithContacts.toDouble() / totalActive * 100).toInt()
-            } else 0
-
-            val islandsCompleteness = if (totalActive > 0) {
-                (clientsWithIslands.toDouble() / totalActive * 100).toInt()
-            } else 0
-
-            val healthStats = SystemHealthStats(
-                totalActiveClients = totalActive,
-                clientsWithFacilities = clientsWithFacilities,
-                clientsWithContacts = clientsWithContacts,
-                clientsWithIslands = clientsWithIslands,
-                facilitiesCompleteness = facilitiesCompleteness,
-                contactsCompleteness = contactsCompleteness,
-                islandsCompleteness = islandsCompleteness,
-                overallHealthScore = (facilitiesCompleteness + contactsCompleteness + islandsCompleteness) / 3
+            val stats = SingleClientStatistics(
+                facilitiesCount = facilitiesCount,
+                islandsCount = islandsCount,
+                contactsCount = contactsCount,
+                totalCheckUps = 0,      // Placeholder
+                completedCheckUps = 0,  // Placeholder
+                lastCheckUpDate = null  // Placeholder
             )
 
-            Result.success(healthStats)
+            Result.success(stats)
 
         } catch (e: Exception) {
             Result.failure(e)
@@ -209,50 +123,58 @@ class GetClientStatisticsUseCase @Inject constructor(
 }
 
 /**
- * Statistiche generali clienti
+ * Statistiche per singolo cliente (per UI liste e card)
  */
-data class ClientStatistics(
-    val activeClients: Int,
-    val totalClients: Int,
-    val inactiveClients: Int,
-    val activationRate: Int, // Percentuale
-    val totalIndustries: Int,
-    val industries: List<String>
-)
-
-/**
- * Statistiche dettagliate singolo cliente
- */
-data class ClientDetailStats(
-    val clientId: String,
-    val companyName: String,
-    val isActive: Boolean,
+data class SingleClientStatistics(
     val facilitiesCount: Int,
-    val contactsCount: Int,
     val islandsCount: Int,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val industry: String?
-)
+    val contactsCount: Int,
+    val totalCheckUps: Int,
+    val completedCheckUps: Int,
+    val lastCheckUpDate: kotlinx.datetime.Instant?
+) {
+    /**
+     * Percentuale CheckUp completati
+     */
+    val completionRate: Int
+        get() = if (totalCheckUps > 0) {
+            (completedCheckUps.toDouble() / totalCheckUps * 100).toInt()
+        } else 0
+
+    /**
+     * Indica se il cliente ha dati completi
+     */
+    val isComplete: Boolean
+        get() = facilitiesCount > 0 && contactsCount > 0
+
+    /**
+     * Score salute cliente (0-100)
+     */
+    val healthScore: Int
+        get() {
+            var score = 0
+            if (facilitiesCount > 0) score += 30
+            if (contactsCount > 0) score += 30
+            if (islandsCount > 0) score += 20
+            if (totalCheckUps > 0) score += 20
+            return score
+        }
+
+    /**
+     * Descrizione stato per UI
+     */
+    val statusDescription: String
+        get() = when {
+            !isComplete -> "Setup incompleto"
+            totalCheckUps == 0 -> "Nessun check-up"
+            completionRate < 50 -> "Check-up in corso"
+            else -> "Operativo"
+        }
+}
 
 /**
- * Statistiche per settore
+ * Extension per verificare se CheckUpStatus è completato
  */
-data class IndustryStats(
-    val industry: String,
-    val clientCount: Int
-)
-
-/**
- * Statistiche salute sistema
- */
-data class SystemHealthStats(
-    val totalActiveClients: Int,
-    val clientsWithFacilities: Int,
-    val clientsWithContacts: Int,
-    val clientsWithIslands: Int,
-    val facilitiesCompleteness: Int, // Percentuale
-    val contactsCompleteness: Int, // Percentuale
-    val islandsCompleteness: Int, // Percentuale
-    val overallHealthScore: Int // Media percentuali
-)
+private fun Any.isCompleted(): Boolean {
+     return this == CheckUpStatus.COMPLETED || this == CheckUpStatus.EXPORTED
+}

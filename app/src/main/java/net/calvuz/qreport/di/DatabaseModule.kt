@@ -10,6 +10,10 @@ import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.data.local.QReportDatabase
 import net.calvuz.qreport.data.local.dao.CheckItemDao
 import net.calvuz.qreport.data.local.dao.CheckUpDao
+import net.calvuz.qreport.data.local.dao.ClientDao
+import net.calvuz.qreport.data.local.dao.ContactDao
+import net.calvuz.qreport.data.local.dao.FacilityDao
+import net.calvuz.qreport.data.local.dao.FacilityIslandDao
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.data.local.dao.SparePartDao
 import javax.inject.Singleton
@@ -121,4 +125,27 @@ object DatabaseModule {
     fun provideSparePartDao(
         database: QReportDatabase
     ): SparePartDao = database.sparePartDao()
+
+
+    // new
+
+    @Provides
+    fun provideClientDao(
+        database: QReportDatabase
+    ): ClientDao = database.clientDao()
+
+    @Provides
+    fun provideContactDao(
+        database: QReportDatabase
+    ): ContactDao = database.contactDao()
+
+    @Provides
+    fun provideFacilityDao(
+        database: QReportDatabase
+    ): FacilityDao = database.facilityDao()
+
+    @Provides
+    fun provideFacilityIslandDao(
+        database: QReportDatabase
+    ): FacilityIslandDao = database.facilityIslandDao()
 }

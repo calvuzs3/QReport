@@ -108,22 +108,22 @@ interface FacilityDao {
     suspend fun isFacilityCodeTakenForClient(clientId: String, code: String, excludeId: String = ""): Boolean
 
     // ===== COMPLEX QUERIES =====
-
-    @Query("""
-        SELECT f.*, COUNT(fi.id) as islands_count
-        FROM facilities f
-        LEFT JOIN facility_islands fi ON f.id = fi.facility_id AND fi.is_active = 1
-        WHERE f.client_id = :clientId AND f.is_active = 1
-        GROUP BY f.id
-        ORDER BY f.is_primary DESC, f.name ASC
-    """)
-    suspend fun getFacilitiesWithIslandCount(clientId: String): List<FacilityWithIslandCountResult>
+//
+//    @Query("""
+//        SELECT f.*, COUNT(fi.id) as islands_count
+//        FROM facilities f
+//        LEFT JOIN facility_islands fi ON f.id = fi.facility_id AND fi.is_active = 1
+//        WHERE f.client_id = :clientId AND f.is_active = 1
+//        GROUP BY f.id
+//        ORDER BY f.is_primary DESC, f.name ASC
+//    """)
+//    suspend fun getFacilitiesWithIslandCount(clientId: String): List<FacilityWithIslandCountResult>
 
     @Query("""
         SELECT f.* FROM facilities f
         WHERE f.is_active = 1
         AND EXISTS (
-            SELECT 1 FROM facility_islands fi 
+            SELECT 1 FROM facility_islands fi
             WHERE fi.facility_id = f.id AND fi.is_active = 1
         )
         ORDER BY f.name ASC
@@ -183,5 +183,6 @@ data class FacilityWithIslandCountResult(
     val isActive: Boolean,
     val createdAt: Long,
     val updatedAt: Long,
-    val islandsCount: Int
+    val islandsCount: Int,
+
 )

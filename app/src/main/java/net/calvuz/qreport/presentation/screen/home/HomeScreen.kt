@@ -42,6 +42,7 @@ fun HomeScreen(
     onNavigateToArchive: () -> Unit,
     onNavigateToNewCheckUp: () -> Unit,           // ✅ AGGIUNTO
     onNavigateToCheckUpDetail: (String) -> Unit,  // ✅ AGGIUNTO
+    onNavigateToClients: () -> Unit,              // ✅ NEW: Navigation to client management
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -103,6 +104,15 @@ fun HomeScreen(
                 item {
                     DashboardStatsSection(
                         stats = uiState.dashboardStats,
+                        onNavigateToCheckUps = onNavigateToCheckUps,
+                        onNavigateToArchive = onNavigateToArchive
+                    )
+                }
+
+                // ✅ NEW: Navigation Actions
+                item {
+                    NavigationActionsSection(
+                        onNavigateToClients = onNavigateToClients,
                         onNavigateToCheckUps = onNavigateToCheckUps,
                         onNavigateToArchive = onNavigateToArchive
                     )
@@ -621,6 +631,126 @@ private fun LoadingContent() {
     }
 }
 
+/**
+ * ✅ NEW: Sezione azioni di navigazione principale
+ */
+@Composable
+private fun NavigationActionsSection(
+    onNavigateToClients: () -> Unit,
+    onNavigateToCheckUps: () -> Unit,
+    onNavigateToArchive: () -> Unit
+) {
+    Text(
+        text = "Gestione",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.SemiBold
+    )
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Client Management - Featured
+        NavigationActionCard(
+            modifier = Modifier.weight(1f),
+            title = "Clienti",
+            description = "Gestisci aziende",
+            icon = Icons.Default.Business,
+            onClick = onNavigateToClients,
+            isHighlighted = true
+        )
+
+        // Check-ups Management
+        NavigationActionCard(
+            modifier = Modifier.weight(1f),
+            title = "Check-up",
+            description = "Controlli attivi",
+            icon = Icons.AutoMirrored.Filled.Assignment,
+            onClick = onNavigateToCheckUps,
+            isHighlighted = false
+        )
+
+        // Archive
+        NavigationActionCard(
+            modifier = Modifier.weight(1f),
+            title = "Archivio",
+            description = "Storico completo",
+            icon = Icons.Default.Archive,
+            onClick = onNavigateToArchive,
+            isHighlighted = false
+        )
+    }
+}
+
+/**
+ * ✅ NEW: Card per azioni di navigazione
+ */
+@Composable
+private fun NavigationActionCard(
+    title: String,
+    description: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isHighlighted: Boolean = false
+) {
+    val backgroundColor = if (isHighlighted) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val contentColor = if (isHighlighted) {
+        MaterialTheme.colorScheme.onPrimaryContainer
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Card(
+        modifier = modifier.height(100.dp),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = backgroundColor
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                modifier = Modifier.size(28.dp),
+                tint = contentColor
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = contentColor,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Text(
+                text = description,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor.copy(alpha = 0.8f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
 // ============================================================
 // PREVIEWS
 // ============================================================
@@ -634,7 +764,8 @@ private fun HomeScreenPreview() {
             onNavigateToCheckUps = {},
             onNavigateToArchive = {},
             onNavigateToNewCheckUp = {},           // ✅ AGGIUNTO
-            onNavigateToCheckUpDetail = {}         // ✅ AGGIUNTO
+            onNavigateToCheckUpDetail = {},        // ✅ AGGIUNTO
+            onNavigateToClients = {}
         )
     }
 }

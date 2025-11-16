@@ -1,19 +1,23 @@
 package net.calvuz.qreport.data.mapper
 
+import kotlinx.datetime.Instant
 import net.calvuz.qreport.data.local.entity.FacilityIslandEntity
 import net.calvuz.qreport.domain.model.client.FacilityIsland
-import kotlinx.datetime.Instant
 import net.calvuz.qreport.domain.model.island.IslandType
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Mapper per convertire tra FacilityIslandEntity (data layer) e FacilityIsland (domain layer)
- * Gestisce la conversione delle date Instant ↔ Long e IslandType enum
+ * Mapper per conversioni tra FacilityIslandEntity (data layer) e FacilityIsland (domain layer)
+ *
+ * ✅ Gestisce conversioni type-safe tra layers
+ * ✅ Supporta enum IslandType con fallback
+ * ✅ Conversioni Instant ↔ Long automatiche
  */
 class FacilityIslandMapper @Inject constructor() {
 
     /**
-     * Converte da FacilityIslandEntity a FacilityIsland domain model
+     * Converte FacilityIslandEntity in FacilityIsland domain model
      */
     fun toDomain(entity: FacilityIslandEntity): FacilityIsland {
         return FacilityIsland(
@@ -22,21 +26,13 @@ class FacilityIslandMapper @Inject constructor() {
             islandType = parseIslandType(entity.islandType),
             serialNumber = entity.serialNumber,
             model = entity.model,
-            installationDate = entity.installationDate?.let {
-                Instant.fromEpochMilliseconds(it)
-            },
-            warrantyExpiration = entity.warrantyExpiration?.let {
-                Instant.fromEpochMilliseconds(it)
-            },
+            installationDate = entity.installationDate?.let { Instant.fromEpochMilliseconds(it) },
+            warrantyExpiration = entity.warrantyExpiration?.let { Instant.fromEpochMilliseconds(it) },
             isActive = entity.isActive,
             operatingHours = entity.operatingHours,
             cycleCount = entity.cycleCount,
-            lastMaintenanceDate = entity.lastMaintenanceDate?.let {
-                Instant.fromEpochMilliseconds(it)
-            },
-            nextScheduledMaintenance = entity.nextScheduledMaintenance?.let {
-                Instant.fromEpochMilliseconds(it)
-            },
+            lastMaintenanceDate = entity.lastMaintenanceDate?.let { Instant.fromEpochMilliseconds(it) },
+            nextScheduledMaintenance = entity.nextScheduledMaintenance?.let { Instant.fromEpochMilliseconds(it) },
             customName = entity.customName,
             location = entity.location,
             notes = entity.notes,
@@ -46,7 +42,7 @@ class FacilityIslandMapper @Inject constructor() {
     }
 
     /**
-     * Converte da FacilityIsland domain model a FacilityIslandEntity
+     * Converte FacilityIsland domain model in FacilityIslandEntity
      */
     fun toEntity(domain: FacilityIsland): FacilityIslandEntity {
         return FacilityIslandEntity(
@@ -71,126 +67,51 @@ class FacilityIslandMapper @Inject constructor() {
     }
 
     /**
-     * Converte lista di FacilityIslandEntity a lista di FacilityIsland domain models
+     * Converte lista di FacilityIslandEntity in lista di FacilityIsland domain models
      */
     fun toDomainList(entities: List<FacilityIslandEntity>): List<FacilityIsland> {
         return entities.map { toDomain(it) }
     }
 
     /**
-     * Converte lista di FacilityIsland domain models a lista di FacilityIslandEntity
+     * Converte lista di FacilityIsland domain models in lista di FacilityIslandEntity
      */
     fun toEntityList(domains: List<FacilityIsland>): List<FacilityIslandEntity> {
         return domains.map { toEntity(it) }
     }
 
     /**
-     * Filtra islands per tipo
+     * Parsing sicuro di IslandType con fallback
+     *
+     * Se il tipo non è riconosciuto, usa un default o lancia eccezione
+     * controllata per evitare crash runtime
      */
-    fun filterByType(entities: List<FacilityIslandEntity>, islandType: IslandType): List<FacilityIsland> {
-        return entities
-            .filter { it.islandType == islandType.name }
-            .map { toDomain(it) }
-    }
-
-    /**
-     * Filtra islands attive
-     */
-    fun getActiveIslands(entities: List<FacilityIslandEntity>): List<FacilityIsland> {
-        return entities
-            .filter { it.isActive }
-            .map { toDomain(it) }
-    }
-
-    /**
-     * Islands che richiedono manutenzione
-     */
-    fun getIslandsRequiringMaintenance(
-        entities: List<FacilityIslandEntity>,
-        currentTime: Long = System.currentTimeMillis()
-    ): List<FacilityIsland> {
-        return entities
-            .filter { entity ->
-                entity.isActive &&
-                        entity.nextScheduledMaintenance != null &&
-                        entity.nextScheduledMaintenance <= currentTime
-            }
-            .map { toDomain(it) }
-    }
-
-    /**
-     * Parse IslandType da stringa con fallback
-     */
-    private fun parseIslandType(typeString: String): IslandType {
+    private fun parseIslandType(islandTypeString: String): IslandType {
         return try {
-            IslandType.valueOf(typeString)
-        } catch (e: IllegalArgumentException) {
-            //
-            // Fallback per dati legacy o typos
-            //
-            when (typeString.uppercase()) {
-                "MOVE" -> IslandType.POLY_MOVE
-                "CAST" -> IslandType.POLY_CAST
-                "EBT" -> IslandType.POLY_EBT
-                "TAG_BLE" -> IslandType.POLY_TAG_BLE
-                "TAG_FC" -> IslandType.POLY_TAG_FC
-                "TAG_V" -> IslandType.POLY_TAG_V
-                "SAMPLE" -> IslandType.POLY_SAMPLE
-                else -> IslandType.POLY_MOVE // Fallback di default
-            }
+            IslandType.valueOf(islandTypeString)
+        } catch (_: IllegalArgumentException) {
+            // Log l'errore e usa un fallback
+             Timber.w("Unknown island type: $islandTypeString, using POLY_MOVE as fallback")
+
+            // Prova parsing case-insensitive
+            IslandType.entries.find {
+                it.name.equals(islandTypeString, ignoreCase = true)
+            } ?: IslandType.POLY_MOVE // Default fallback
         }
     }
 }
 
 /**
- * Extension functions per conversioni dirette
+ * Extension functions per convenience
  */
+fun FacilityIslandEntity.toDomain(mapper: FacilityIslandMapper): FacilityIsland =
+    mapper.toDomain(this)
 
-/**
- * Converte FacilityIslandEntity a FacilityIsland
- */
-fun FacilityIslandEntity.toDomain(): FacilityIsland {
-    return FacilityIslandMapper().toDomain(this)
-}
+fun FacilityIsland.toEntity(mapper: FacilityIslandMapper): FacilityIslandEntity =
+    mapper.toEntity(this)
 
-/**
- * Converte FacilityIsland a FacilityIslandEntity
- */
-fun FacilityIsland.toEntity(): FacilityIslandEntity {
-    return FacilityIslandMapper().toEntity(this)
-}
+fun List<FacilityIslandEntity>.toDomain(mapper: FacilityIslandMapper): List<FacilityIsland> =
+    mapper.toDomainList(this)
 
-/**
- * Extension per nome display dell'isola
- */
-fun FacilityIsland.displayName(): String {
-    return customName?.takeIf { it.isNotBlank() }
-        ?: "${islandType.name} - $serialNumber"
-}
-
-/**
- * Extension per verifica se l'isola è sotto garanzia
- */
-fun FacilityIsland.isUnderWarranty(): Boolean {
-    val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
-    return warrantyExpiration?.let { it > now } ?: false
-}
-
-/**
- * Extension per verifica se richiede manutenzione
- */
-fun FacilityIsland.requiresMaintenance(): Boolean {
-    val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
-    return nextScheduledMaintenance?.let { it <= now } ?: false
-}
-
-/**
- * Extension per calcolo giorni dalla last manutenzione
- */
-fun FacilityIsland.daysSinceLastMaintenance(): Long? {
-    return lastMaintenanceDate?.let { lastMaintenance ->
-        val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
-        val diffMillis = now.toEpochMilliseconds() - lastMaintenance.toEpochMilliseconds()
-        diffMillis / (1000 * 60 * 60 * 24) // Convert to days
-    }
-}
+fun List<FacilityIsland>.toEntity(mapper: FacilityIslandMapper): List<FacilityIslandEntity> =
+    mapper.toEntityList(this)
