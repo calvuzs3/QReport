@@ -29,8 +29,18 @@ class ContactMapper @Inject constructor() {
             alternativeEmail = entity.alternativeEmail,
             isPrimary = entity.isPrimary,
             isActive = entity.isActive,
-            preferredContactMethod = entity.preferredContactMethod?.let {
-                ContactMethod.valueOf(it)
+            preferredContactMethod = entity.preferredContactMethod?.let { methodString ->
+                // ✅ FIX: Gestisce il caso in cui il database contenga "null" come stringa
+                if (methodString.isBlank() || methodString.equals("null", ignoreCase = true)) {
+                    null
+                } else {
+                    try {
+                        ContactMethod.valueOf(methodString)
+                    } catch (e: IllegalArgumentException) {
+                        // Log del problema e fallback a null
+                        null
+                    }
+                }
             },
             createdAt = Instant.fromEpochMilliseconds(entity.createdAt),
             updatedAt = Instant.fromEpochMilliseconds(entity.updatedAt)
@@ -54,7 +64,8 @@ class ContactMapper @Inject constructor() {
             alternativeEmail = domain.alternativeEmail,
             isPrimary = domain.isPrimary,
             isActive = domain.isActive,
-            preferredContactMethod = domain.preferredContactMethod.toString(),
+            // ✅ FIX: Evita di salvare "null" come stringa nel database
+            preferredContactMethod = domain.preferredContactMethod?.name,
             createdAt = domain.createdAt.toEpochMilliseconds(),
             updatedAt = domain.updatedAt.toEpochMilliseconds()
         )

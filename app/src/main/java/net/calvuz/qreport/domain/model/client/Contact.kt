@@ -30,7 +30,7 @@ data class Contact(
     // ===== STATO =====
     val isPrimary: Boolean = false,        // Referente principale
     val isActive: Boolean = true,
-    val preferredContactMethod: ContactMethod? = null,
+    val preferredContactMethod: ContactMethod? = ContactMethod.PHONE,
 
     // ===== METADATI =====
     val notes: String? = null,

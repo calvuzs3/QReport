@@ -23,10 +23,14 @@ import net.calvuz.qreport.presentation.screen.checkup.NewCheckUpScreen
 import net.calvuz.qreport.presentation.screen.checkup.CheckUpDetailScreen
 import net.calvuz.qreport.presentation.screen.archive.ArchiveScreen
 import net.calvuz.qreport.presentation.screen.camera.CameraScreen
+import net.calvuz.qreport.presentation.screen.client.client.ClientDetailScreen
 import net.calvuz.qreport.presentation.screen.photo.PhotoGalleryScreen
 import net.calvuz.qreport.presentation.screen.settings.SettingsScreen
 import net.calvuz.qreport.presentation.screen.export.ExportOptionsScreen
 import net.calvuz.qreport.presentation.screen.client.client.ClientListScreen
+import net.calvuz.qreport.presentation.screen.client.client.ClientFormScreen
+import net.calvuz.qreport.presentation.screen.client.contact.ContactFormScreen
+import net.calvuz.qreport.presentation.screen.client.contact.ContactListScreen
 
 /**
  * Sistema di navigazione QReport - COMPLETO
@@ -102,6 +106,22 @@ object QReportRoutes {
     const val CLIENT_LIST = "clients"
     const val CLIENT_DETAIL = "client_detail/{clientId}"
     const val CLIENT_CREATE = "client_create"
+    const val CLIENT_EDIT = "client_edit/{clientId}"
+
+    // Contact routes - UNIFIED FORM
+    const val CONTACT_FORM = "contact_form/{clientId}?contactId={contactId}"
+    const val CONTACT_CREATE = "contact_create/{clientId}"  // Redirect to form
+    const val CONTACT_EDIT = "contact_edit/{contactId}"     // Redirect to form
+    const val CONTACT_LIST = "contacts/{clientId}"
+
+    // Helper functions
+    fun contactFormRoute(clientId: String, contactId: String? = null) =
+        if (contactId != null) "contact_form/$clientId?contactId=$contactId"
+        else "contact_form/$clientId"
+
+    fun contactCreateRoute(clientId: String) = "contact_create/$clientId"
+    fun contactEditRoute(contactId: String) = "contact_edit/$contactId"
+    fun contactListRoute(clientId: String) = "contacts/$clientId"
 
     // Helper functions for parameters
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
@@ -334,56 +354,200 @@ fun QReportNavigation(
                     )
                 ) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
-
-                    // TODO: Implement ClientDetailScreen
-                    // ClientDetailScreen(
-                    //     clientId = clientId,
-                    //     onNavigateBack = {
-                    //         navController.popBackStack()
-                    //     }
-                    // )
+                    ClientDetailScreen(
+                        clientId = clientId,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onNavigateToEdit = { editClientId ->
+                            navController.navigate("client_edit/$editClientId")
+                        },
+                        onNavigateToContactList = { clientId, clientName ->
+                            navController.navigate("contacts/$clientId")
+                        },
+                        onNavigateToCreateContact = { clientId ->
+                            navController.navigate("contact_create/$clientId")
+                        },
+                        onNavigateToEditContact = { contactId ->
+                            navController.navigate("contact_edit/$contactId")
+                        },
+                        onNavigateToFacilityDetail = { facilityId ->
+                            // TODO: Implementare quando FacilityDetailScreen sarà disponibile
+                            // navController.navigate("facility_detail/$facilityId")
+                        },
+                        onNavigateToIslandDetail = { islandId ->
+                            // TODO: Implementare quando IslandDetailScreen sarà disponibile
+                            // navController.navigate("island_detail/$islandId")
+                        }
+                    )
                 }
 
-                // Client Create Screen (placeholder - to be implemented)
+                // ✅ Client Create/Edit Screen
                 composable(QReportRoutes.CLIENT_CREATE) {
-                    // TODO: Implement ClientCreateScreen
-                    // ClientCreateScreen(
-                    //     onNavigateBack = {
-                    //         navController.popBackStack()
-                    //     },
-                    //     onClientCreated = { clientId ->
-                    //         navController.navigate(QReportRoutes.clientDetail(clientId)) {
-                    //             popUpTo(QReportRoutes.CLIENT_LIST) {
-                    //                 inclusive = false
-                    //             }
-                    //         }
-                    //     }
-                    // )
+                    ClientFormScreen(
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onNavigateToClientDetail = { clientId ->
+                            navController.navigate(QReportRoutes.clientDetail(clientId)) {
+                                popUpTo(QReportRoutes.CLIENT_LIST) {
+                                    inclusive = false
+                                }
+                            }
+                        }
+                    )
+                }
+
+                // ✅ Client Edit Screen
+                composable(
+                    route = QReportRoutes.CLIENT_EDIT,
+                    arguments = listOf(
+                        navArgument("clientId") {
+                            type = NavType.StringType
+                        }
+                    )
+                ) { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+
+                    ClientFormScreen(
+                        clientId = clientId,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onNavigateToClientDetail = { savedClientId ->
+                            navController.navigate(QReportRoutes.clientDetail(savedClientId)) {
+                                popUpTo(QReportRoutes.CLIENT_LIST) {
+                                    inclusive = false
+                                }
+                            }
+                        }
+                    )
+                }
+
+                // ============================================================
+                // CONTACT FORM SCREEN (Unified Create/Edit)
+                // ============================================================
+                composable(
+                    route = "contact_form/{clientId}?contactId={contactId}",
+                    arguments = listOf(
+                        navArgument("clientId") { type = NavType.StringType },
+                        navArgument("contactId") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        }
+                    )
+                ) { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    val contactId = backStackEntry.arguments?.getString("contactId")
+
+                    // TODO: Recupera clientName dal ClientDetailViewModel o da un repository
+                    // Per ora uso un placeholder - dovresti passarlo dal ClientDetailScreen
+                    val clientName = "Cliente" // TODO: Get from ViewModel or pass through route
+
+                    ContactFormScreen(
+                        clientId = clientId,
+                        clientName = clientName,
+                        contactId = contactId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onContactSaved = { contactId ->
+                            // Torna al ClientDetailScreen dopo il salvataggio
+                            navController.navigate("client_detail/$clientId") {
+                                popUpTo("client_detail/$clientId") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                // ============================================================
+                // CONTACT CREATE - Redirect to unified form
+                // ============================================================
+                composable(
+                    route = "contact_create/{clientId}",
+                    arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+
+                    // Immediate redirect to unified form
+                    LaunchedEffect(clientId) {
+                        navController.navigate("contact_form/$clientId") {
+                            popUpTo("contact_create/$clientId") { inclusive = true }
+                        }
+                    }
+                }
+
+                // ============================================================
+                // CONTACT EDIT - Redirect to unified form
+                // ============================================================
+                composable(
+                    route = "contact_edit/{contactId}",
+                    arguments = listOf(navArgument("contactId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
+
+                    // TODO: Qui dovresti recuperare il clientId dal contactId usando un UseCase
+                    // Per ora uso un placeholder
+
+                    LaunchedEffect(contactId) {
+                        // TODO: Get clientId from contactId using GetContactUseCase
+                        val clientId = "placeholder" // TODO: Implement proper lookup
+
+                        navController.navigate("contact_form/$clientId?contactId=$contactId") {
+                            popUpTo("contact_edit/$contactId") { inclusive = true }
+                        }
+                    }
+                }
+
+                // ============================================================
+                // CONTACT LIST SCREEN
+                // ============================================================
+                composable(
+                    route = "contacts/{clientId}",
+                    arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+
+                    // TODO: Recupera clientName dal ClientDetailViewModel o repository
+                    val clientName = "Cliente" // TODO: Get from ViewModel
+
+                    ContactListScreen(
+                        clientId = clientId,
+                        clientName = clientName,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToCreateContact = { clientId ->
+                            navController.navigate("contact_form/$clientId")
+                        },
+                        onNavigateToEditContact = { contactId ->
+                            // TODO: Get clientId from contactId
+                            val clientId = clientId // Use current clientId for now
+                            navController.navigate("contact_form/$clientId?contactId=$contactId")
+                        }
+                    )
                 }
             }
-        }
 
-        // Bottom Navigation Bar (only for main destinations)
-        val navBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentDestination = navBackStackEntry?.destination
-        val currentRoute = currentDestination?.route
+            // Bottom Navigation Bar (only for main destinations)
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
+            val currentRoute = currentDestination?.route
 
-        // Hide bottom nav for secondary destinations
-        val shouldShowBottomNav = when (currentRoute) {
-            QReportRoutes.HOME,
-            QReportRoutes.CHECKUPS,
-            QReportRoutes.ARCHIVE,
-            QReportRoutes.SETTINGS -> true
-            // ✅ UPDATED: Show bottom nav for main client list, hide for detail/create
-            QReportRoutes.CLIENT_LIST -> true
-            else -> false
-        }
+            // Hide bottom nav for secondary destinations
+            val shouldShowBottomNav = when (currentRoute) {
+                QReportRoutes.HOME,
+                QReportRoutes.CHECKUPS,
+                QReportRoutes.ARCHIVE,
+                QReportRoutes.SETTINGS -> true
+                // ✅ UPDATED: Show bottom nav for main client list, hide for detail/create
+                QReportRoutes.CLIENT_LIST -> true
+                else -> false
+            }
 
-        if (shouldShowBottomNav) {
-            QReportBottomNavigation(
-                navController = navController,
-                modifier = Modifier.fillMaxWidth()
-            )
+            if (shouldShowBottomNav) {
+                QReportBottomNavigation(
+                    navController = navController,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }

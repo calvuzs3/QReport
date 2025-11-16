@@ -84,30 +84,21 @@ private fun FullClientCard(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Header row
+        // Header row - Solo nome azienda e azioni
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = client.companyName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                if (!client.vatNumber.isNullOrBlank()) {
-                    Text(
-                        text = "P.IVA: ${client.vatNumber}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                }
-            }
+            // ✅ FIXED: Solo nome azienda, rimossa P.IVA
+            Text(
+                text = client.companyName,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f)
+            )
 
             if (showActions) {
                 Row {
@@ -185,7 +176,7 @@ private fun FullClientCard(
             }
         }
 
-        // Statistics row
+        // ✅ FIXED: Statistics row - Solo statistiche, senza timestamp
         if (stats != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -198,7 +189,7 @@ private fun FullClientCard(
                 )
 
                 ClientStatItem(
-                    icon = Icons.Default.PrecisionManufacturing, // .Precision,
+                    icon = Icons.Default.PrecisionManufacturing,
                     value = stats.islandsCount.toString(),
                     label = "Isole"
                 )
@@ -214,20 +205,24 @@ private fun FullClientCard(
                     value = stats.totalCheckUps.toString(),
                     label = "Check-up"
                 )
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Text(
-                    text = formatLastModified(client),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
 
-        // Status chip
-        Row {
+        // ✅ FIXED: Last modified su riga separata, allineato a destra
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Status chip a sinistra
             ClientStatusChip(isActive = client.isActive)
+
+            // Timestamp a destra
+            Text(
+                text = formatLastModified(client),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
