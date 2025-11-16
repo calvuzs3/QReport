@@ -6,11 +6,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.domain.model.client.Contact
+import net.calvuz.qreport.domain.model.client.ContactStatistics
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import net.calvuz.qreport.domain.usecase.client.client.GetClientWithDetailsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.ClientWithDetails
 import net.calvuz.qreport.domain.usecase.client.client.FacilityWithIslands
 import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
+import net.calvuz.qreport.domain.usecase.client.contact.GetContactStatisticsUseCase
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -32,6 +34,7 @@ data class ClientDetailUiState(
 
     // UI State
     val selectedTab: ClientDetailTab = ClientDetailTab.INFO,
+    val contactStatistics: ContactStatistics? = null, // ← AGGIUNGERE QUESTO
 
     // Quick access data
     val companyName: String = "",
@@ -57,11 +60,14 @@ data class ClientDetailUiState(
         get() = clientDetails?.client?.id
 
     val isFullyOperational: Boolean
-        get() = clientDetails?.isFullyOperational() ?: false
+        get() = clientDetails?.isFullyOperational() == true
 
     // Tab counts per badge
     val facilitiesCount: Int
         get() = facilitiesWithIslands.size
+
+    val contacts: List<Contact>
+        get() = activeContacts
 
     val contactsCount: Int
         get() = activeContacts.size
@@ -85,7 +91,9 @@ enum class ClientDetailTab(val title: String) {
 
 @HiltViewModel
 class ClientDetailViewModel @Inject constructor(
-    private val getClientWithDetailsUseCase: GetClientWithDetailsUseCase
+    private val getClientWithDetailsUseCase: GetClientWithDetailsUseCase,
+    private val getContactStatisticsUseCase: GetContactStatisticsUseCase // ← AGGIUNGERE QUESTO
+
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ClientDetailUiState())
@@ -119,6 +127,9 @@ class ClientDetailViewModel @Inject constructor(
                     onSuccess = { clientDetails ->
                         Timber.d("Client details loaded successfully for: ${clientDetails.client.companyName}")
                         populateUiState(clientDetails)
+
+                        // ✅ AGGIUNGI QUESTA RIGA ALLA FINE
+                        loadContactStatistics(clientId)
                     },
                     onFailure = { error ->
                         Timber.e(error, "Failed to load client details for ID: $clientId")
@@ -136,6 +147,20 @@ class ClientDetailViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    private suspend fun loadContactStatistics(clientId: String) {
+        getContactStatisticsUseCase(clientId).fold(
+            onSuccess = { stats ->
+                _uiState.value = _uiState.value.copy(
+                    contactStatistics = stats
+                )
+            },
+            onFailure = { error ->
+                // Log error but don't fail the whole screen
+                Timber.e(error, "Failed to load contact statistics")
+            }
+        )
     }
 
     private fun populateUiState(clientDetails: ClientWithDetails) {
@@ -220,15 +245,15 @@ class ClientDetailViewModel @Inject constructor(
      */
     fun getCompanyNameForNavigation(): String = _uiState.value.companyName
 
-    // Contact management convenience properties in UiState
-    val primaryContact: Contact?
-        get() = _uiState.value.activeContacts.find { it.isPrimary }
+//    // Contact management convenience properties in UiState
+//    val primaryContact: Contact?
+//        get() = _uiState.value.activeContacts.find { it.isPrimary }
+//
+//    val hasContacts: Boolean
+//        get() = _uiState.value.activeContacts.isNotEmpty()
 
-    val hasContacts: Boolean
-        get() = _uiState.value.activeContacts.isNotEmpty()
-
-    val hasPrimaryContact: Boolean
-        get() = primaryContact != null
+//    val hasPrimaryContact: Boolean
+//        get() = primaryContact != null
 
     // ============================================================
     // UTILITY METHODS per UI convenience

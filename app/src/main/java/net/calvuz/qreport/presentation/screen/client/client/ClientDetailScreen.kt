@@ -20,20 +20,23 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.client.Contact
+import net.calvuz.qreport.domain.model.client.ContactStatistics
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import net.calvuz.qreport.domain.model.client.OperationalStatus
 import net.calvuz.qreport.domain.usecase.client.client.ClientWithDetails
 import net.calvuz.qreport.domain.usecase.client.client.FacilityWithIslands
+import net.calvuz.qreport.presentation.screen.client.client.components.ContactsStatisticsSummary
 
 /**
- * Screen per il dettaglio cliente con 4 tab
+ * Screen per il dettaglio cliente con 4 tab - VERSIONE FINALE CON GESTIONE FACILITY
  *
  * Features:
  * - Tab: Info, Facilities, Contacts, History
- * - Solo visualizzazione + bottone modifica
- * - ✅ NUOVO: Chiamata diretta contatti con icone telefono
- * - Navigation verso dettagli facility/island (quando implementati)
- * - Gestione stati loading/error/empty
+ * - ✅ Gestione completa facilities (CRUD) nel tab dedicato
+ * - ✅ UI consistency: "Stabilimenti" e "Nuovo" button
+ * - ✅ Colori consistenti tra tab
+ * - Chiamata diretta contatti con icone telefono
+ * - Navigation verso gestione facility complete
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,19 +44,26 @@ fun ClientDetailScreen(
     clientId: String,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (String) -> Unit,
-    onNavigateToFacilityDetail: (String) -> Unit = { }, // Implementazione futura
-    onNavigateToIslandDetail: (String) -> Unit = { }, // Implementazione futura
+
+    // ✅ Facility navigation callbacks
+    onNavigateToFacilityList: (String) -> Unit, // Navigate to full facility list
+    onNavigateToCreateFacility: (String) -> Unit, // Create new facility
+    onNavigateToEditFacility: (String, String) -> Unit, // Edit facility (clientId, facilityId)
+    onNavigateToFacilityDetail: (String, String) -> Unit = { _, _ -> }, // Facility detail
+    onNavigateToIslandDetail: (String) -> Unit = { }, // Island detail (future)
+
     // Navigation callbacks per contatti
     onNavigateToContactList: (String, String) -> Unit = { _, _ -> }, // (clientId, clientName)
     onNavigateToCreateContact: (String) -> Unit = { }, // (clientId)
     onNavigateToEditContact: (String) -> Unit = { }, // (contactId)
+
     modifier: Modifier = Modifier,
     viewModel: ClientDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // ✅ NUOVO: Funzione per chiamare contatto
+    // Funzione per chiamare contatto
     val callContact = { phoneNumber: String ->
         try {
             val intent = Intent(Intent.ACTION_CALL).apply {
@@ -61,7 +71,6 @@ fun ClientDetailScreen(
             }
             context.startActivity(intent)
         } catch (e: Exception) {
-            // Fallback to dialer if no CALL permission
             val intent = Intent(Intent.ACTION_DIAL).apply {
                 data = Uri.parse("tel:$phoneNumber")
             }
@@ -131,15 +140,32 @@ fun ClientDetailScreen(
             uiState.hasData -> {
                 ClientDetailContent(
                     uiState = uiState,
+                    clientId = clientId,
                     onTabSelected = viewModel::selectTab,
-                    onFacilityClick = onNavigateToFacilityDetail,
+
+                    // Facility management callbacks
+                    onFacilityClick = { facilityId ->
+                        onNavigateToFacilityDetail(
+                            clientId,
+                            facilityId
+                        )
+                    },
                     onIslandClick = onNavigateToIslandDetail,
+                    onManageFacilities = { onNavigateToFacilityList(clientId) },
+                    onCreateFacility = { onNavigateToCreateFacility(clientId) },
+                    onEditFacility = { facilityId ->
+                        onNavigateToEditFacility(
+                            clientId,
+                            facilityId
+                        )
+                    },
+
+                    // Contact callbacks
                     onEditContact = onNavigateToEditContact,
                     onCreateContact = { onNavigateToCreateContact(clientId) },
                     onViewAllContacts = {
                         onNavigateToContactList(clientId, uiState.companyName)
                     },
-                    // ✅ NUOVO: Callback per chiamate
                     onCallContact = callContact
                 )
             }
@@ -159,15 +185,128 @@ fun ClientDetailScreen(
 }
 
 @Composable
+private fun ContactsTabContent(
+    contacts: List<Contact>,
+    contactStatistics: ContactStatistics? = null, // ← NUOVO PARAMETRO
+    onViewAllContacts: () -> Unit,
+    onCreateContact: () -> Unit,
+    onEditContact: (String) -> Unit,
+    onCallContact: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier) {
+        // ✅ Header con stesso stile di Facilities per consistency
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Contatti (${contacts.size})",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (contacts.isNotEmpty()) {
+                    OutlinedButton(onClick = onViewAllContacts) {
+                        Text("Vedi tutti")
+                    }
+                }
+
+                Button(onClick = onCreateContact) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Nuovo")
+                }
+            }
+        }
+
+        // ✅ NUOVO: Statistiche dettagliate (sostituisce quelle semplici)
+        contactStatistics?.let { stats ->
+            ContactsStatisticsSummary(
+                statistics = stats,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+
+        // ✅ CORRETTO: Logica if/else per contatti vuoti o con contenuto
+        if (contacts.isEmpty()) {
+            EmptyTabContent(
+                icon = Icons.Outlined.Person,
+                message = "Nessun contatto",
+                subMessage = "Aggiungi il primo contatto per questo cliente"
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(contacts.take(5)) { contact ->
+                    ContactItem(  // ← USA ContactItem ESISTENTE
+                        contact = contact,
+                        onEditContact = onEditContact,
+                        onCallContact = onCallContact
+                    )
+                }
+
+                // Se ci sono più di 5 contatti, mostra indicatore
+                if (contacts.size > 5) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "... e altri ${contacts.size - 5} contatti",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ClientDetailContent(
     uiState: ClientDetailUiState,
+    clientId: String,
     onTabSelected: (ClientDetailTab) -> Unit,
+
+    // Facility callbacks
     onFacilityClick: (String) -> Unit,
     onIslandClick: (String) -> Unit,
+    onManageFacilities: () -> Unit,
+    onCreateFacility: () -> Unit,
+    onEditFacility: (String) -> Unit,
+
+    // Contact callbacks
     onEditContact: (String) -> Unit,
     onCreateContact: () -> Unit,
     onViewAllContacts: () -> Unit,
-    // ✅ NUOVO: Callback per chiamate
     onCallContact: (String) -> Unit
 ) {
     Column {
@@ -175,7 +314,7 @@ private fun ClientDetailContent(
         if (uiState.statusBadge.isNotBlank() || !uiState.industry.isNullOrBlank()) {
             HeaderSection(
                 statusBadge = uiState.statusBadge,
-                statusColor = uiState.statusBadgeColor,
+                statusColor = uiState.statusBadgeColor.toLongOrNull() ?: 0xFF00B050L,
                 industry = uiState.industry,
                 statisticsSummary = uiState.statisticsSummary
             )
@@ -186,30 +325,63 @@ private fun ClientDetailContent(
             selectedTabIndex = uiState.selectedTab.ordinal,
             containerColor = MaterialTheme.colorScheme.surface
         ) {
-            ClientDetailTab.values().forEach { tab ->
-                val count = when (tab) {
-                    ClientDetailTab.INFO -> null
-                    ClientDetailTab.FACILITIES -> uiState.facilitiesCount.takeIf { it > 0 }
-                    ClientDetailTab.CONTACTS -> uiState.contactsCount.takeIf { it > 0 }
-                    ClientDetailTab.HISTORY -> uiState.checkUpsCount.takeIf { it > 0 }
-                }
+            // Tab Info
+            Tab(
+                selected = uiState.selectedTab == ClientDetailTab.INFO,
+                onClick = { onTabSelected(ClientDetailTab.INFO) },
+                text = { Text("Info") }
+            )
 
-                Tab(
-                    selected = uiState.selectedTab == tab,
-                    onClick = { onTabSelected(tab) },
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(tab.title)
-                            count?.let {
-                                Badge { Text(it.toString()) }
-                            }
+            // Tab Facilities
+            Tab(
+                selected = uiState.selectedTab == ClientDetailTab.FACILITIES,
+                onClick = { onTabSelected(ClientDetailTab.FACILITIES) },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text("Stabilimenti")
+                        uiState.facilitiesCount.takeIf { it > 0 }?.let { count ->
+                            Badge { Text(count.toString()) }
                         }
                     }
-                )
-            }
+                }
+            )
+
+            // Tab Contacts
+            Tab(
+                selected = uiState.selectedTab == ClientDetailTab.CONTACTS,
+                onClick = { onTabSelected(ClientDetailTab.CONTACTS) },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text("Contatti")
+                        uiState.contactsCount.takeIf { it > 0 }?.let { count ->
+                            Badge { Text(count.toString()) }
+                        }
+                    }
+                }
+            )
+
+            // Tab History
+            Tab(
+                selected = uiState.selectedTab == ClientDetailTab.HISTORY,
+                onClick = { onTabSelected(ClientDetailTab.HISTORY) },
+                text = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text("Storico")
+                        uiState.checkUpsCount.takeIf { it > 0 }?.let { count ->
+                            Badge { Text(count.toString()) }
+                        }
+                    }
+                }
+            )
         }
 
         // Tab Content
@@ -222,21 +394,26 @@ private fun ClientDetailContent(
             }
 
             ClientDetailTab.FACILITIES -> {
-                FacilitiesTabContent(
+                // ✅ Tab Facilities con gestione completa
+                FacilitiesTabContentWithManagement(
                     facilitiesWithIslands = uiState.facilitiesWithIslands,
                     onFacilityClick = onFacilityClick,
                     onIslandClick = onIslandClick,
+                    onManageFacilities = onManageFacilities,
+                    onCreateFacility = onCreateFacility,
+                    onEditFacility = onEditFacility,
                     modifier = Modifier.weight(1f)
                 )
             }
 
             ClientDetailTab.CONTACTS -> {
+                // ✅ Tab Contacts con statistiche dettagliate
                 ContactsTabContent(
-                    contacts = uiState.activeContacts,
+                    contacts = uiState.contacts,
+                    contactStatistics = uiState.contactStatistics, // ← STATISTICHE AGGIUNTE
                     onViewAllContacts = onViewAllContacts,
                     onCreateContact = onCreateContact,
                     onEditContact = onEditContact,
-                    // ✅ NUOVO: Passa il callback per chiamate
                     onCallContact = onCallContact,
                     modifier = Modifier.weight(1f)
                 )
@@ -252,20 +429,21 @@ private fun ClientDetailContent(
     }
 }
 
+// ✅ Facilities tab con gestione completa e UI CORRETTA
 @Composable
-private fun ContactsTabContent(
-    contacts: List<Contact>,
-    onViewAllContacts: () -> Unit,
-    onCreateContact: () -> Unit,
-    onEditContact: (String) -> Unit,
-    // ✅ NUOVO: Callback per chiamate
-    onCallContact: (String) -> Unit,
+private fun FacilitiesTabContentWithManagement(
+    facilitiesWithIslands: List<FacilityWithIslands>,
+    onFacilityClick: (String) -> Unit,
+    onIslandClick: (String) -> Unit,
+    onManageFacilities: () -> Unit,
+    onCreateFacility: () -> Unit,
+    onEditFacility: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.fillMaxSize()
     ) {
-        // Header con azioni
+        // ✅ Header con azioni gestione - UI CORRETTA come richiesto
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -273,8 +451,9 @@ private fun ContactsTabContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // ✅ CORRETTO: Solo "Stabilimenti" invece di "Gestione Stabilimenti"
             Text(
-                text = "Referenti \n(${contacts.size})",
+                text = "Stabilimenti (${facilitiesWithIslands.size})",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -282,440 +461,84 @@ private fun ContactsTabContent(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Add contact button
-                IconButton(onClick = onCreateContact) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Aggiungi contatto"
-                    )
-                }
-
-                // View all contacts button
-                if (contacts.isNotEmpty()) {
-                    TextButton(onClick = onViewAllContacts) {
+                // Bottone gestione completa
+                if (facilitiesWithIslands.isNotEmpty()) {
+                    OutlinedButton(onClick = onManageFacilities) {
                         Text("Vedi tutti")
-                        Icon(
-                            imageVector = Icons.Default.ArrowForwardIos,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
                     }
                 }
-            }
-        }
 
-        // Content
-        if (contacts.isEmpty()) {
-            // Empty state with action
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
+                // ✅ CORRETTO: "Nuovo" invece di "Aggiungi" per consistency con contatti
+                Button(onClick = onCreateFacility) {
                     Icon(
-                        imageVector = Icons.Outlined.Contacts,
+                        Icons.Default.Add,
                         contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        modifier = Modifier.size(18.dp)
                     )
-
-                    Text(
-                        text = "Nessun Referente",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Text(
-                        text = "Non ci sono referenti configurati per questo cliente.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Button(onClick = onCreateContact) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Aggiungi primo referente")
-                    }
-                }
-            }
-        } else {
-            // Contacts list (mostra solo i primi 3-4)
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(
-                    items = contacts.take(4), // Mostra max 4 contatti
-                    key = { it.id }
-                ) { contact ->
-                    ContactCard(
-                        contact = contact,
-                        onEdit = { onEditContact(contact.id) },
-                        // ✅ NUOVO: Callback per chiamate
-                        onCallPhone = if (contact.phone?.isNotBlank() == true) {
-                            { onCallContact(contact.phone!!) }
-                        } else null,
-                        onCallMobile = if (contact.mobilePhone?.isNotBlank() == true) {
-                            { onCallContact(contact.mobilePhone!!) }
-                        } else null
-                    )
-                }
-
-                // "View all" card se ci sono più di 4 contatti
-                if (contacts.size > 4) {
-                    item {
-                        Card(
-                            onClick = onViewAllContacts,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Vedi tutti i ${contacts.size} referenti",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-
-                                Icon(
-                                    imageVector = Icons.Default.ArrowForwardIos,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Nuovo")
                 }
             }
         }
-    }
-}
 
-// ✅ AGGIORNATO: ContactCard con icone telefono
-@Composable
-private fun ContactCard(
-    contact: Contact,
-    onEdit: () -> Unit = { },
-    // ✅ NUOVO: Callback per chiamate telefono/cellulare
-    onCallPhone: (() -> Unit)? = null,
-    onCallMobile: (() -> Unit)? = null
-) {
-    Card(
-        onClick = onEdit,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        // Stats summary
+        if (facilitiesWithIslands.isNotEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
             ) {
-                Text(
-                    text = contact.fullName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
+                val totalIslands = facilitiesWithIslands.sumOf { it.islands.size }
+                val activeIslands = facilitiesWithIslands.sumOf { facility ->
+                    facility.islands.count { it.isActive }
+                }
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
-                    // ✅ NUOVO: Icona telefono fisso
-                    if (onCallPhone != null) {
-                        IconButton(
-                            onClick = onCallPhone,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Phone,
-                                contentDescription = "Chiama telefono: ${contact.phone}",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    // ✅ NUOVO: Icona cellulare
-                    if (onCallMobile != null) {
-                        IconButton(
-                            onClick = onCallMobile,
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.PhoneAndroid,
-                                contentDescription = "Chiama cellulare: ${contact.mobilePhone}",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    // Stella per referente primario
-                    if (contact.isPrimary) {
-                        Icon(
-                            imageVector = Icons.Default.Star,
-                            contentDescription = "Referente primario",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-
-                    // Icona modifica
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Modifica",
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(16.dp)
+                    StatItem(
+                        icon = Icons.Default.Business,
+                        value = facilitiesWithIslands.size.toString(),
+                        label = "Stabilimenti"
                     )
-                }
-            }
-
-            contact.roleDescription.takeIf { it.isNotBlank() }?.let { role ->
-                Text(
-                    text = role,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // ✅ MIGLIORATO: Mostra numeri separatamente
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                contact.phone?.takeIf { it.isNotBlank() }?.let { phone ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Phone,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = phone,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                contact.mobilePhone?.takeIf { it.isNotBlank() }?.let { mobile ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PhoneAndroid,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = mobile,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                contact.email?.takeIf { it.isNotBlank() }?.let { email ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Email,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = email,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-// =================================================================
-// Il resto delle funzioni rimane uguale (HeaderSection, InfoTabContent,
-// FacilitiesTabContent, HistoryTabContent, LoadingState, ErrorState, etc.)
-// =================================================================
-
-@Composable
-private fun HeaderSection(
-    statusBadge: String,
-    statusColor: String,
-    industry: String?,
-    statisticsSummary: String
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                industry?.let { industryText ->
-                    Text(
-                        text = industryText,
-                        style = MaterialTheme.typography.bodyMedium,
+                    StatItem(
+                        icon = Icons.Default.PrecisionManufacturing,
+                        value = totalIslands.toString(),
+                        label = "Isole Totali"
+                    )
+                    StatItem(
+                        icon = Icons.Default.CheckCircle,
+                        value = activeIslands.toString(),
+                        label = "Isole Attive",
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-
-                if (statisticsSummary.isNotBlank()) {
-                    Text(
-                        text = statisticsSummary,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
             }
-
-            if (statusBadge.isNotBlank()) {
-                AssistChip(
-                    onClick = { },
-                    label = { Text(statusBadge) },
-                    enabled = false
-                )
-            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-}
 
-// InfoTabContent rimane uguale dalla versione originale...
-@Composable
-private fun InfoTabContent(
-    clientDetails: ClientWithDetails,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            InfoCard(
-                title = "Informazioni Aziendali",
-                icon = Icons.Default.Business
+        // Lista facility esistenti
+        if (facilitiesWithIslands.isEmpty()) {
+            EmptyFacilitiesState(
+                onCreateFacility = onCreateFacility,
+                modifier = Modifier.weight(1f)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InfoItem(
-                    label = "Ragione Sociale",
-                    value = clientDetails.client.companyName
-                )
-
-                clientDetails.client.vatNumber?.let { vatNumber ->
-                    InfoItem(
-                        label = "Partita IVA",
-                        value = vatNumber
-                    )
-                }
-
-                clientDetails.client.fiscalCode?.let { fiscalCode ->
-                    InfoItem(
-                        label = "Codice Fiscale",
-                        value = fiscalCode
-                    )
-                }
-
-                clientDetails.client.industry?.let { industry ->
-                    InfoItem(
-                        label = "Settore",
-                        value = industry
-                    )
-                }
-
-                clientDetails.client.website?.let { website ->
-                    InfoItem(
-                        label = "Sito Web",
-                        value = website
-                    )
-                }
-            }
-        }
-
-        // Sede legale
-        clientDetails.client.headquarters?.let { headquarters ->
-            item {
-                InfoCard(
-                    title = "Sede Legale",
-                    icon = Icons.Default.LocationOn
-                ) {
-                    InfoItem(
-                        label = "Indirizzo",
-                        value = headquarters.toDisplayString()
-                    )
-                }
-            }
-        }
-
-        // Statistiche
-        item {
-            InfoCard(
-                title = "Statistiche",
-                icon = Icons.Default.Analytics
-            ) {
-                InfoItem(
-                    label = "Stabilimenti",
-                    value = "${clientDetails.statistics.facilitiesCount}"
-                )
-
-                InfoItem(
-                    label = "Isole Robotizzate",
-                    value = "${clientDetails.statistics.islandsCount}"
-                )
-
-                InfoItem(
-                    label = "Referenti",
-                    value = "${clientDetails.statistics.contactsCount}"
-                )
-
-                InfoItem(
-                    label = "Check-up Totali",
-                    value = "${clientDetails.statistics.totalCheckUps}"
-                )
-            }
-        }
-
-        clientDetails.client.notes?.takeIf { it.isNotBlank() }?.let { notes ->
-            item {
-                InfoCard(
-                    title = "Note",
-                    icon = Icons.Default.Notes
-                ) {
-                    Text(
-                        text = notes,
-                        style = MaterialTheme.typography.bodyMedium
+                items(facilitiesWithIslands) { facilityWithIslands ->
+                    FacilityItemWithActions(
+                        facilityWithIslands = facilityWithIslands,
+                        onFacilityClick = onFacilityClick,
+                        onIslandClick = onIslandClick,
+                        onEditFacility = onEditFacility
                     )
                 }
             }
@@ -723,140 +546,232 @@ private fun InfoTabContent(
     }
 }
 
+// ✅ Facility item con azioni
 @Composable
-private fun FacilitiesTabContent(
-    facilitiesWithIslands: List<FacilityWithIslands>,
-    onFacilityClick: (String) -> Unit,
-    onIslandClick: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    if (facilitiesWithIslands.isEmpty()) {
-        EmptyTabContent(
-            icon = Icons.Outlined.Factory,
-            message = "Nessuno Stabilimento",
-            subMessage = "Non ci sono stabilimenti configurati per questo cliente.",
-            modifier = modifier
-        )
-    } else {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(
-                items = facilitiesWithIslands,
-                key = { it.facility.id }
-            ) { facilityWithIslands ->
-                FacilityCard(
-                    facilityWithIslands = facilityWithIslands,
-                    onFacilityClick = onFacilityClick,
-                    onIslandClick = onIslandClick
-                )
-            }
-        }
-    }
-}
-
-// FacilityCard, IslandItem e le altre funzioni rimangono uguali...
-
-@Composable
-private fun FacilityCard(
+private fun FacilityItemWithActions(
     facilityWithIslands: FacilityWithIslands,
     onFacilityClick: (String) -> Unit,
-    onIslandClick: (String) -> Unit
+    onIslandClick: (String) -> Unit,
+    onEditFacility: (String) -> Unit
 ) {
     val facility = facilityWithIslands.facility
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { onFacilityClick(facility.id) }
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Facility header
+            // Header facility con azioni
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = facility.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.weight(1f)
-                )
+                ) {
+                    // Primary badge
+                    if (facility.isPrimary) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = "Primario",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
 
-                facility.badgeText?.let { badge ->
-                    AssistChip(
-                        onClick = { },
-                        label = { Text(badge, style = MaterialTheme.typography.labelSmall) },
-                        enabled = false
-                    )
+                    Column {
+                        Text(
+                            text = facility.displayName,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = "${facility.facilityType.displayName} • ${facility.address.city ?: ""}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Azioni facility
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    IconButton(
+                        onClick = { onEditFacility(facility.id) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Modifica",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { onFacilityClick(facility.id) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.ChevronRight,
+                            contentDescription = "Dettagli",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
 
-            // Facility type and address
-            Text(
-                text = facility.facilityType.displayName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-
-            Text(
-                text = facility.addressDisplay,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Islands list
+            // Isole associate (se presenti)
             if (facilityWithIslands.islands.isNotEmpty()) {
                 Text(
-                    text = "Isole Robotizzate (${facilityWithIslands.islands.size})",
+                    text = "Isole (${facilityWithIslands.islands.size})",
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(top = 8.dp)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                facilityWithIslands.islands.forEach { island ->
-                    IslandItem(
+                facilityWithIslands.islands.take(3).forEach { island ->
+                    IslandItemCompact(
                         island = island,
                         onClick = { onIslandClick(island.id) }
                     )
                 }
+
+                if (facilityWithIslands.islands.size > 3) {
+                    TextButton(
+                        onClick = { onFacilityClick(facility.id) }
+                    ) {
+                        Text("Vedi altre ${facilityWithIslands.islands.size - 3} isole")
+                    }
+                }
+            } else {
+                Text(
+                    text = "Nessuna isola associata",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
 }
 
+// ✅ Empty state per facility con azione
 @Composable
-private fun IslandItem(
+private fun EmptyFacilitiesState(
+    onCreateFacility: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.Factory,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text(
+                text = "Nessuno Stabilimento",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text(
+                text = "Aggiungi il primo stabilimento per questo cliente",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Button(onClick = onCreateFacility) {
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Nuovo Stabilimento")
+            }
+        }
+    }
+}
+
+// ✅ Stat item per summary
+@Composable
+private fun StatItem(
+    icon: ImageVector,
+    value: String,
+    label: String,
+    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = color
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
+            color = color
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color
+        )
+    }
+}
+
+// ✅ Island item compatto
+@Composable
+private fun IslandItemCompact(
     island: FacilityIsland,
     onClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(start = 16.dp),
+            .padding(start = 12.dp),
         onClick = onClick,
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = island.displayName,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = island.islandType.displayName,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -868,12 +783,219 @@ private fun IslandItem(
                     OperationalStatus.INACTIVE -> Icons.Default.Cancel
                 },
                 contentDescription = null,
+                modifier = Modifier.size(16.dp),
                 tint = when (island.operationalStatus) {
                     OperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
                     OperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
                     OperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
                 }
             )
+        }
+    }
+}
+
+@Composable
+private fun ContactItem(
+    contact: Contact,
+    onEditContact: (String) -> Unit,
+    onCallContact: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (contact.isPrimary) {
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = "Primario",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+
+                    Text(
+                        text = contact.fullName,   // .displayName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                contact.role?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                contact.email?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                contact.phone?.let { phone ->
+                    IconButton(
+                        onClick = { onCallContact(phone) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Call,
+                            contentDescription = "Chiama",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+
+                IconButton(
+                    onClick = { onEditContact(contact.id) },
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Modifica",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+// Resto delle funzioni esistenti dal file originale...
+@Composable
+private fun HeaderSection(
+    statusBadge: String,
+    statusColor: Long,
+    industry: String?,
+    statisticsSummary: String
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Status badge
+            if (statusBadge.isNotBlank()) {
+                AssistChip(
+                    onClick = { },
+                    label = { Text(statusBadge) },
+                    colors = AssistChipDefaults.assistChipColors(
+                        containerColor = androidx.compose.ui.graphics.Color(statusColor)
+                    )
+                )
+            }
+
+            // Industry + Statistics
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                industry?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    text = statisticsSummary,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun InfoTabContent(
+    clientDetails: ClientWithDetails,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            InfoCard(
+                title = "Informazioni Generali",
+                icon = Icons.Default.Business
+            ) {
+                InfoItem(
+                    label = "Ragione Sociale",
+                    value = clientDetails.client.companyName
+                )
+
+                clientDetails.client.vatNumber?.let {
+                    InfoItem(
+                        label = "Partita IVA",
+                        value = it
+                    )
+                }
+
+                clientDetails.client.industry?.let {
+                    InfoItem(
+                        label = "Settore",
+                        value = it
+                    )
+                }
+            }
+        }
+
+        item {
+            InfoCard(
+                title = "Sede Legale",
+                icon = Icons.Default.LocationOn
+            ) {
+                clientDetails.client.headquarters?.let { address ->
+                    InfoItem(
+                        label = "Indirizzo",
+                        value = address.toDisplayString()
+                    )
+                }
+            }
+        }
+
+        item {
+            InfoCard(
+                title = "Metadati",
+                icon = Icons.Default.Info
+            ) {
+                InfoItem(
+                    label = "Creato",
+                    value = formatTimestamp(clientDetails.client.createdAt)
+                )
+                InfoItem(
+                    label = "Ultima modifica",
+                    value = formatTimestamp(clientDetails.client.updatedAt)
+                )
+                InfoItem(
+                    label = "Stato",
+                    value = if (clientDetails.client.isActive) "Attivo" else "Inattivo"
+                )
+            }
         }
     }
 }
@@ -1068,5 +1190,19 @@ private fun EmptyState() {
             text = "Cliente non trovato",
             style = MaterialTheme.typography.bodyLarge
         )
+    }
+}
+
+// Helper functions
+private fun formatTimestamp(timestamp: kotlinx.datetime.Instant): String {
+    val now = kotlinx.datetime.Clock.System.now()
+    val updated = timestamp
+    val diffMillis = (now - updated).inWholeMilliseconds
+
+    return when {
+        diffMillis < 60000 -> "Ora"
+        diffMillis < 3600000 -> "${diffMillis / 60000} min fa"
+        diffMillis < 86400000 -> "${diffMillis / 3600000}h fa"
+        else -> "${diffMillis / 86400000} giorni fa"
     }
 }

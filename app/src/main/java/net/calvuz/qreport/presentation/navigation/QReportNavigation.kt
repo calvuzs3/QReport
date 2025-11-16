@@ -31,6 +31,9 @@ import net.calvuz.qreport.presentation.screen.client.client.ClientListScreen
 import net.calvuz.qreport.presentation.screen.client.client.ClientFormScreen
 import net.calvuz.qreport.presentation.screen.client.contact.ContactFormScreen
 import net.calvuz.qreport.presentation.screen.client.contact.ContactListScreen
+import net.calvuz.qreport.presentation.screen.client.facility.FacilityDetailScreen
+import net.calvuz.qreport.presentation.screen.client.facility.FacilityFormScreen
+import net.calvuz.qreport.presentation.screen.client.facility.FacilityListScreen
 
 /**
  * Sistema di navigazione QReport - COMPLETO
@@ -114,7 +117,8 @@ object QReportRoutes {
     const val CONTACT_EDIT = "contact_edit/{contactId}"     // Redirect to form
     const val CONTACT_LIST = "contacts/{clientId}"
 
-    // Helper functions
+
+    // Helper functions for CONTACT
     fun contactFormRoute(clientId: String, contactId: String? = null) =
         if (contactId != null) "contact_form/$clientId?contactId=$contactId"
         else "contact_form/$clientId"
@@ -371,10 +375,20 @@ fun QReportNavigation(
                         onNavigateToEditContact = { contactId ->
                             navController.navigate("contact_edit/$contactId")
                         },
-                        onNavigateToFacilityDetail = { facilityId ->
-                            // TODO: Implementare quando FacilityDetailScreen sarà disponibile
-                            // navController.navigate("facility_detail/$facilityId")
+                        // ✅ NUOVI: Facility management
+                        onNavigateToFacilityList = { clientId ->
+                            navController.navigate("facilities/$clientId")
                         },
+                        onNavigateToCreateFacility = { clientId ->
+                            navController.navigate("facility_form/$clientId")
+                        },
+                        onNavigateToEditFacility = { clientId, facilityId ->
+                            navController.navigate("facility_form/$clientId/$facilityId")
+                        },
+                        onNavigateToFacilityDetail = { clientId, facilityId ->
+                            navController.navigate("facility_detail/$clientId/$facilityId")
+                        },
+
                         onNavigateToIslandDetail = { islandId ->
                             // TODO: Implementare quando IslandDetailScreen sarà disponibile
                             // navController.navigate("island_detail/$islandId")
@@ -524,30 +538,109 @@ fun QReportNavigation(
                         }
                     )
                 }
-            }
 
-            // Bottom Navigation Bar (only for main destinations)
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
-            val currentDestination = navBackStackEntry?.destination
-            val currentRoute = currentDestination?.route
 
-            // Hide bottom nav for secondary destinations
-            val shouldShowBottomNav = when (currentRoute) {
-                QReportRoutes.HOME,
-                QReportRoutes.CHECKUPS,
-                QReportRoutes.ARCHIVE,
-                QReportRoutes.SETTINGS -> true
-                // ✅ UPDATED: Show bottom nav for main client list, hide for detail/create
-                QReportRoutes.CLIENT_LIST -> true
-                else -> false
-            }
+                // ============================================================
+                // FACILITY' SCREENS
+                // ============================================================
 
-            if (shouldShowBottomNav) {
-                QReportBottomNavigation(
-                    navController = navController,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // In QReportNavigation.kt
+
+// 1. Route principale FacilityDetail - PASSA ENTRAMBI I PARAMETRI
+                composable("facility_detail/{clientId}/{facilityId}") { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
+
+                    FacilityDetailScreen(
+                        facilityId = facilityId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToEdit = { facilityId ->
+                            // ✅ CORRETTO: Ora abbiamo clientId disponibile
+                            navController.navigate("facility_form/$clientId/$facilityId")
+                        },
+                        onNavigateToCreateIsland = { facilityId ->
+                            navController.navigate("island_form/$facilityId")
+                        },
+                        onNavigateToEditIsland = { islandId ->
+                            navController.navigate("island_edit/$islandId")
+                        }
+                    )
+                }
+
+// 2. Route per CREATE facility
+                composable("facility_form/{clientId}") { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    FacilityFormScreen(
+                        clientId = clientId,
+                        facilityId = null, // Create mode
+                        onNavigateBack = { navController.popBackStack() },
+                        onFacilitySaved = { savedFacilityId ->
+                            navController.navigate("facility_detail/$clientId/$savedFacilityId") {
+                                popUpTo("facilities/$clientId")
+                            }
+                        }
+                    )
+                }
+
+// 3. Route per EDIT facility
+                composable("facility_form/{clientId}/{facilityId}") { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
+                    FacilityFormScreen(
+                        clientId = clientId, // ✅ Edit mode: entrambi i parametri
+                        facilityId = facilityId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onFacilitySaved = { savedFacilityId ->
+                            navController.navigate("facility_detail/$clientId/$savedFacilityId") {
+                                popUpTo("facility_detail") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+// 4. FacilityList - AGGIORNA per passare clientId
+                composable("facilities/{clientId}") { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    FacilityListScreen(
+                        clientId = clientId,
+                        onNavigateToFacilityDetail = { facilityId ->
+                            navController.navigate("facility_detail/$clientId/$facilityId") // ✅ Entrambi
+                        },
+                        onCreateNewFacility = {
+                            navController.navigate("facility_form/$clientId")
+                        },
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                // ============================================================
+                // END
+                // ============================================================
+
             }
+        } // END OF BOX
+
+        // Bottom Navigation Bar (only for main destinations)
+        val navBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentDestination = navBackStackEntry?.destination
+        val currentRoute = currentDestination?.route
+
+        // Hide bottom nav for secondary destinations
+        val shouldShowBottomNav = when (currentRoute) {
+            QReportRoutes.HOME,
+            QReportRoutes.CHECKUPS,
+            QReportRoutes.ARCHIVE,
+            QReportRoutes.SETTINGS -> true
+            // ✅ UPDATED: Show bottom nav for main client list, hide for detail/create
+            QReportRoutes.CLIENT_LIST -> true
+            else -> false
+        }
+
+        if (shouldShowBottomNav) {
+            QReportBottomNavigation(
+                navController = navController,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

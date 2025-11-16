@@ -43,6 +43,7 @@ fun HomeScreen(
     onNavigateToNewCheckUp: () -> Unit,           // ✅ AGGIUNTO
     onNavigateToCheckUpDetail: (String) -> Unit,  // ✅ AGGIUNTO
     onNavigateToClients: () -> Unit,              // ✅ NEW: Navigation to client management
+    
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
