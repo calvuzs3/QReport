@@ -20,7 +20,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.client.Facility
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import net.calvuz.qreport.domain.model.client.OperationalStatus
-import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.usecase.client.facilityisland.FacilityOperationalSummary
 
 /**
@@ -41,9 +40,10 @@ fun FacilityDetailScreen(
     onNavigateToEdit: (String) -> Unit, // Edit facility
 
     // Island navigation callbacks
-    onNavigateToCreateIsland: (String) -> Unit, // Create island for facility
-    onNavigateToEditIsland: (String) -> Unit, // Edit island
-    onNavigateToIslandDetail: (String) -> Unit = { }, // Island detail (future)
+    onNavigateToCreateIsland: (String) -> Unit, // Create island
+    onNavigateToEditIsland: (String) -> Unit, // Edit island - only islandId available
+    onNavigateToIslandDetail: (String) -> Unit = { }, // View Island
+    onNavigateToIslandsList: (String) -> Unit = { },   // View all Islands
 
     modifier: Modifier = Modifier,
     viewModel: FacilityDetailViewModel = hiltViewModel()
@@ -70,7 +70,7 @@ fun FacilityDetailScreen(
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.Default.ArrowBackIosNew,
                         contentDescription = "Indietro"
                     )
                 }
@@ -417,7 +417,7 @@ private fun InfoTabContent(
                     )
                 }
 
-                facility.address.country?.let {
+                facility.address.country.let {
                     InfoItem(
                         label = "Paese",
                         value = it

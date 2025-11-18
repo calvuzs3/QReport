@@ -34,6 +34,9 @@ import net.calvuz.qreport.presentation.screen.client.contact.ContactListScreen
 import net.calvuz.qreport.presentation.screen.client.facility.FacilityDetailScreen
 import net.calvuz.qreport.presentation.screen.client.facility.FacilityFormScreen
 import net.calvuz.qreport.presentation.screen.client.facility.FacilityListScreen
+import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandFormScreen
+import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandDetailScreen
+import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandListScreen
 
 /**
  * Sistema di navigazione QReport - COMPLETO
@@ -117,6 +120,12 @@ object QReportRoutes {
     const val CONTACT_EDIT = "contact_edit/{contactId}"     // Redirect to form
     const val CONTACT_LIST = "contacts/{clientId}"
 
+    // ✅ NEW: Facility Island routes
+    const val ISLAND_LIST = "islands/{facilityId}"
+    const val ISLAND_DETAIL = "island_detail/{islandId}"
+    const val ISLAND_CREATE = "island_form/{facilityId}"
+    const val ISLAND_EDIT = "island_form/{facilityId}/{islandId}"
+
 
     // Helper functions for CONTACT
     fun contactFormRoute(clientId: String, contactId: String? = null) =
@@ -126,6 +135,12 @@ object QReportRoutes {
     fun contactCreateRoute(clientId: String) = "contact_create/$clientId"
     fun contactEditRoute(contactId: String) = "contact_edit/$contactId"
     fun contactListRoute(clientId: String) = "contacts/$clientId"
+
+    // ✅ NEW: Helper functions for FACILITY ISLAND
+    fun islandListRoute(facilityId: String) = "islands/$facilityId"
+    fun islandDetailRoute(islandId: String) = "island_detail/$islandId"
+    fun islandCreateRoute(facilityId: String) = "island_form/$facilityId"
+    fun islandEditRoute(facilityId: String, islandId: String) = "island_form/$facilityId/$islandId"
 
     // Helper functions for parameters
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
@@ -562,7 +577,16 @@ fun QReportNavigation(
                             navController.navigate("island_form/$facilityId")
                         },
                         onNavigateToEditIsland = { islandId ->
-                            navController.navigate("island_edit/$islandId")
+                            // TODO: Temporary limitation - FacilityIslandDetailScreen only passes islandId
+                            // but we need both islandId and facilityId for proper edit navigation.
+                            // For now navigate to island detail, which has its own edit functionality
+                            navController.navigate("island_detail/$islandId")
+                        },
+                        onNavigateToIslandsList = { facilityId ->
+                            navController.navigate("islands/$facilityId")
+                        },
+                        onNavigateToIslandDetail = { islandId ->
+                            navController.navigate("island_detail/$islandId")
                         }
                     )
                 }
@@ -608,6 +632,114 @@ fun QReportNavigation(
                         },
                         onCreateNewFacility = {
                             navController.navigate("facility_form/$clientId")
+                        },
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+
+                // ============================================================
+                // FACILITY ISLAND SCREENS
+                // ============================================================
+
+                // 1. FacilityIslandForm - CREATE mode
+                composable(
+                    "island_form/{facilityId}",
+                    arguments = listOf(
+                        navArgument("facilityId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
+
+                    // TODO: Temporary solution - in real app would fetch facility name from repository
+                    val facilityName = "Stabilimento" // Placeholder until we implement facility lookup
+
+                    FacilityIslandFormScreen(
+                        facilityId = facilityId,
+                        facilityName = facilityName,
+                        islandId = null, // Create mode
+                        onNavigateBack = { navController.popBackStack() },
+                        onIslandSaved = { savedIslandId ->
+                            // ✅ BETTER FIX: Semplicemente torna indietro alla lista
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                // 2. FacilityIslandForm - EDIT mode
+                composable(
+                    "island_form/{facilityId}/{islandId}",
+                    arguments = listOf(
+                        navArgument("facilityId") { type = NavType.StringType },
+                        navArgument("islandId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
+                    val islandId = backStackEntry.arguments?.getString("islandId") ?: ""
+
+                    // TODO: Temporary solution - in real app would fetch facility name from repository
+                    val facilityName = "Stabilimento" // Placeholder until we implement facility lookup
+
+                    FacilityIslandFormScreen(
+                        facilityId = facilityId,
+                        facilityName = facilityName,
+                        islandId = islandId, // Edit mode
+                        onNavigateBack = { navController.popBackStack() },
+                        onIslandSaved = { savedIslandId ->
+                            // ✅ CONSISTENT: Per edit mode torna al detail se già esiste
+                            navController.navigate("island_detail/$savedIslandId") {
+                                popUpTo("island_detail") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                // 3. FacilityIslandDetail
+                composable(
+                    "island_detail/{islandId}",
+                    arguments = listOf(
+                        navArgument("islandId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val islandId = backStackEntry.arguments?.getString("islandId") ?: ""
+                    FacilityIslandDetailScreen(
+                        islandId = islandId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToEdit = { islandId ->
+                            // TODO: Need to get facilityId from island data to properly navigate to edit
+                            // For now, navigate to island detail which has edit button
+                            // This is a limitation that needs island->facility lookup
+                            navController.navigate("island_detail/$islandId")
+                        },
+                        onNavigateToMaintenance = { islandId ->
+                            // TODO: Navigate to maintenance screen when implemented
+                        },
+                        onIslandDeleted = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                // 4. FacilityIslandList - Lista islands per facility
+                composable(
+                    "islands/{facilityId}",
+                    arguments = listOf(
+                        navArgument("facilityId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
+
+                    // TODO: Temporary solution - in real app would fetch facility name from repository
+                    val facilityName = "Stabilimento" // Placeholder until we implement facility lookup
+
+                    FacilityIslandListScreen(
+                        facilityId = facilityId,
+                        facilityName = facilityName,
+                        onNavigateToIslandDetail = { islandId ->
+                            navController.navigate("island_detail/$islandId")
+                        },
+                        onCreateNewIsland = {
+                            navController.navigate("island_form/$facilityId")
                         },
                         onNavigateBack = { navController.popBackStack() }
                     )

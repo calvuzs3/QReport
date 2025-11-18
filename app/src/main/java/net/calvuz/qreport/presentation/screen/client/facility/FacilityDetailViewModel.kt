@@ -456,7 +456,7 @@ class FacilityDetailViewModel @Inject constructor(
      */
     fun onIslandClick(islandId: String) {
         Timber.d("TODO: Navigate to island detail: $islandId")
-        // TODO: Implementare navigazione quando IslandDetailScreen sarà pronto
+        onIslandClick(islandId)
     }
 
     /**

@@ -557,7 +557,9 @@ private fun FacilityItemWithActions(
     val facility = facilityWithIslands.facility
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier
+            .fillMaxWidth(),
+        onClick = { onFacilityClick(facility.id) } // ✅ Tutta la card è ora cliccabile
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -600,32 +602,17 @@ private fun FacilityItemWithActions(
                     }
                 }
 
-                // Azioni facility
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                // Solo azione edit (rimuovo la freccia destra)
+                IconButton(
+                    onClick = { onEditFacility(facility.id) },
+                    modifier = Modifier.size(32.dp)
                 ) {
-                    IconButton(
-                        onClick = { onEditFacility(facility.id) },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = "Modifica",
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { onFacilityClick(facility.id) },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = "Dettagli",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Modifica",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
 

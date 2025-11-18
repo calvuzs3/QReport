@@ -3,119 +3,85 @@ package net.calvuz.qreport.domain.usecase.client.facilityisland
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.domain.model.client.FacilityIsland
-import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.domain.model.client.OperationalStatus
 import net.calvuz.qreport.domain.repository.FacilityIslandRepository
+import net.calvuz.qreport.domain.repository.CheckUpRepository
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.days
 
 /**
- * Use Case per statistiche e analytics isole robotizzate
+ * Use Case per statistiche di una singola isola robotizzata
  *
- * Gestisce:
- * - Dashboard executive per isole
- * - Metriche operative aggregate
- * - Analisi per tipo isola
- * - KPI manutenzione e garanzie
- * - Performance tracking
+ * Questo use case è specifico per ottenere le statistiche
+ * di un'isola individuale da mostrare nelle UI, card e dettagli.
+ *
+ * È diverso da GetAllFacilityIslandsStatisticsUseCase che gestisce
+ * le statistiche aggregate per dashboard.
  */
 class GetFacilityIslandStatisticsUseCase @Inject constructor(
-    private val facilityIslandRepository: FacilityIslandRepository
+    private val facilityIslandRepository: FacilityIslandRepository,
+    private val checkUpRepository: CheckUpRepository? = null // Opzionale se non ancora disponibile
 ) {
 
     /**
-     * Ottiene statistiche complete per dashboard
+     * Ottiene statistiche complete per una singola isola
      *
-     * @return Result con oggetto statistiche complete
+     * @param islandId ID dell'isola
+     * @return Result con statistiche dell'isola per UI
      */
-    suspend operator fun invoke(): Result<IslandStatistics> {
+    suspend operator fun invoke(islandId: String): Result<SingleIslandStatistics> {
         return try {
-            val activeCount = facilityIslandRepository.getActiveIslandsCount()
-                .getOrElse { return Result.failure(it) }
-
-            val typeStats = facilityIslandRepository.getIslandTypeStats()
-                .getOrElse { return Result.failure(it) }
-
-            val maintenanceStats = facilityIslandRepository.getMaintenanceStats()
-                .getOrElse { return Result.failure(it) }
-
-            val allIslands = facilityIslandRepository.getActiveIslands()
-                .getOrElse { return Result.failure(it) }
-
-            val currentTime = Clock.System.now()
-
-            // Calcola metriche operative
-            val operationalMetrics = calculateOperationalMetrics(allIslands)
-
-            // Calcola metriche manutenzione
-            val maintenanceMetrics = calculateMaintenanceMetrics(allIslands, currentTime)
-
-            // Calcola metriche garanzia
-            val warrantyMetrics = calculateWarrantyMetrics(allIslands, currentTime)
-
-            val statistics = IslandStatistics(
-                totalActiveIslands = activeCount,
-                islandsByType = typeStats,
-                operationalMetrics = operationalMetrics,
-                maintenanceMetrics = maintenanceMetrics,
-                warrantyMetrics = warrantyMetrics,
-                systemHealth = calculateSystemHealth(maintenanceMetrics, warrantyMetrics),
-                generatedAt = currentTime
-            )
-
-            Result.success(statistics)
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Ottiene statistiche dettagliate per un tipo di isola
-     *
-     * @param islandType Tipo di isola
-     * @return Result con statistiche specifiche del tipo
-     */
-    suspend fun getTypeSpecificStatistics(islandType: IslandType): Result<TypeSpecificStatistics> {
-        return try {
-            val typeIslands = facilityIslandRepository.getIslandsByType(islandType)
-                .getOrElse { return Result.failure(it) }
-
-            val activeIslands = typeIslands.filter { it.isActive }
-
-            if (activeIslands.isEmpty()) {
-                return Result.success(
-                    TypeSpecificStatistics(
-                        islandType = islandType,
-                        totalCount = 0,
-                        averageOperatingHours = 0,
-                        averageCycleCount = 0L,
-                        totalOperatingHours = 0,
-                        totalCycleCount = 0L,
-                        underWarrantyCount = 0,
-                        maintenanceOverdueCount = 0,
-                        averageAge = 0,
-                        performanceScore = 0
-                    )
-                )
+            // Validazione input
+            if (islandId.isBlank()) {
+                return Result.failure(IllegalArgumentException("ID isola non può essere vuoto"))
             }
 
+            // Verifica esistenza isola
+            val island = facilityIslandRepository.getIslandById(islandId)
+                .getOrElse { return Result.failure(it) }
+                ?: return Result.failure(NoSuchElementException("Isola non trovata"))
+
             val currentTime = Clock.System.now()
 
-            val stats = TypeSpecificStatistics(
-                islandType = islandType,
-                totalCount = activeIslands.size,
-                averageOperatingHours = activeIslands.map { it.operatingHours }.average().toInt(),
-                averageCycleCount = activeIslands.map { it.cycleCount }.average().toLong(),
-                totalOperatingHours = activeIslands.sumOf { it.operatingHours },
-                totalCycleCount = activeIslands.sumOf { it.cycleCount },
-                underWarrantyCount = activeIslands.count { island ->
-                    island.warrantyExpiration?.let { it > currentTime } == true
-                },
-                maintenanceOverdueCount = activeIslands.count { island ->
-                    island.nextScheduledMaintenance?.let { it <= currentTime } == true
-                },
-                averageAge = calculateAverageAge(activeIslands, currentTime),
-                performanceScore = calculatePerformanceScore(activeIslands, currentTime)
+            // Calcola statistiche operative
+            val operationalStats = calculateOperationalStats(island, currentTime)
+
+            // Calcola stato manutenzione
+            val maintenanceStats = calculateMaintenanceStats(island, currentTime)
+
+            // Calcola stato garanzia
+            val warrantyStats = calculateWarrantyStats(island, currentTime)
+
+            // Statistiche CheckUp (opzionali se repository non disponibile)
+            val (totalCheckUps, lastCheckUpDate, issuesCount) = if (checkUpRepository != null) {
+                try {
+                    // TODO: Implementare quando CheckUpRepository supporta ricerca per isola
+                    // val checkUps = checkUpRepository.getCheckUpsByIsland(islandId)
+                    //     .getOrElse { emptyList() }
+                    //
+                    // val lastDate = checkUps.maxByOrNull { it.updatedAt }?.updatedAt
+                    // val issues = checkUps.sumOf { it.issuesCount }
+
+                    Triple(0, null, 0)
+                } catch (_: Exception) {
+                    // Se fallisce, usa valori di default
+                    Triple(0, null, 0)
+                }
+            } else {
+                // Repository non disponibile, usa placeholder
+                Triple(0, null, 0)
+            }
+
+            val stats = SingleIslandStatistics(
+                islandId = island.id,
+                serialNumber = island.serialNumber,
+                islandType = island.islandType,
+                operationalStats = operationalStats,
+                maintenanceStats = maintenanceStats,
+                warrantyStats = warrantyStats,
+                totalCheckUps = totalCheckUps,
+                lastCheckUpDate = lastCheckUpDate,
+                issuesCount = issuesCount,
+                generatedAt = currentTime
             )
 
             Result.success(stats)
@@ -126,97 +92,37 @@ class GetFacilityIslandStatisticsUseCase @Inject constructor(
     }
 
     /**
-     * Ottiene top N isole per performance
+     * Ottiene statistiche rapide senza CheckUp (versione veloce)
      *
-     * @param limit Numero massimo di isole da restituire
-     * @param metric Metrica per ordinamento (OPERATING_HOURS, CYCLE_COUNT, UPTIME)
-     * @return Result con lista isole top performer
+     * Usa questa versione se le statistiche CheckUp non sono critiche
+     * e vuoi performance migliori.
      */
-    suspend fun getTopPerformingIslands(
-        limit: Int = 10,
-        metric: PerformanceMetric = PerformanceMetric.OPERATING_HOURS
-    ): Result<List<IslandPerformance>> {
+    suspend fun getBasicStats(islandId: String): Result<SingleIslandStatistics> {
         return try {
-            val allIslands = facilityIslandRepository.getActiveIslands()
+            if (islandId.isBlank()) {
+                return Result.failure(IllegalArgumentException("ID isola non può essere vuoto"))
+            }
+
+            val island = facilityIslandRepository.getIslandById(islandId)
                 .getOrElse { return Result.failure(it) }
+                ?: return Result.failure(NoSuchElementException("Isola non trovata"))
 
             val currentTime = Clock.System.now()
 
-            val performances = allIslands.map { island ->
-                val uptime = calculateUptime(island, currentTime)
-                val efficiency = calculateEfficiency(island)
-
-                IslandPerformance(
-                    islandId = island.id,
-                    serialNumber = island.serialNumber,
-                    islandType = island.islandType,
-                    customName = island.customName,
-                    operatingHours = island.operatingHours,
-                    cycleCount = island.cycleCount,
-                    uptime = uptime,
-                    efficiency = efficiency,
-                    performanceScore = (uptime * 0.4 + efficiency * 0.6).toInt()
-                )
-            }
-
-            val sortedPerformances = when (metric) {
-                PerformanceMetric.OPERATING_HOURS ->
-                    performances.sortedByDescending { it.operatingHours }
-                PerformanceMetric.CYCLE_COUNT ->
-                    performances.sortedByDescending { it.cycleCount }
-                PerformanceMetric.UPTIME ->
-                    performances.sortedByDescending { it.uptime }
-                PerformanceMetric.EFFICIENCY ->
-                    performances.sortedByDescending { it.efficiency }
-                PerformanceMetric.PERFORMANCE_SCORE ->
-                    performances.sortedByDescending { it.performanceScore }
-            }
-
-            Result.success(sortedPerformances.take(limit))
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Ottiene trend di manutenzione per analisi predittiva
-     *
-     * @param daysAhead Giorni nel futuro da analizzare
-     * @return Result con analisi trend manutenzione
-     */
-    suspend fun getMaintenanceTrend(daysAhead: Int = 90): Result<MaintenanceTrend> {
-        return try {
-            val allIslands = facilityIslandRepository.getActiveIslands()
-                .getOrElse { return Result.failure(it) }
-
-            val currentTime = Clock.System.now()
-            val endTime = currentTime + (daysAhead.days)
-
-            val scheduledMaintenances = allIslands.mapNotNull { island ->
-                island.nextScheduledMaintenance?.let { nextMaintenance ->
-                    if (nextMaintenance >= currentTime && nextMaintenance <= endTime) {
-                        Pair(island, nextMaintenance)
-                    } else null
-                }
-            }
-
-            // Raggruppa per settimane
-            val weeklyMaintenances = mutableMapOf<Int, Int>()
-            scheduledMaintenances.forEach { (_, maintenanceDate) ->
-                val weekNumber = ((maintenanceDate - currentTime) / (7.days)).toInt()
-                weeklyMaintenances[weekNumber] = weeklyMaintenances.getOrDefault(weekNumber, 0) + 1
-            }
-
-            val trend = MaintenanceTrend(
-                totalScheduled = scheduledMaintenances.size,
-                weeklyDistribution = weeklyMaintenances.toMap(),
-                peakWeek = weeklyMaintenances.maxByOrNull { it.value }?.key ?: 0,
-                averagePerWeek = if (daysAhead >= 7) scheduledMaintenances.size / (daysAhead / 7) else 0,
-                daysAnalyzed = daysAhead
+            val stats = SingleIslandStatistics(
+                islandId = island.id,
+                serialNumber = island.serialNumber,
+                islandType = island.islandType,
+                operationalStats = calculateOperationalStats(island, currentTime),
+                maintenanceStats = calculateMaintenanceStats(island, currentTime),
+                warrantyStats = calculateWarrantyStats(island, currentTime),
+                totalCheckUps = 0,        // Placeholder
+                lastCheckUpDate = null,   // Placeholder
+                issuesCount = 0,          // Placeholder
+                generatedAt = currentTime
             )
 
-            Result.success(trend)
+            Result.success(stats)
 
         } catch (e: Exception) {
             Result.failure(e)
@@ -224,263 +130,273 @@ class GetFacilityIslandStatisticsUseCase @Inject constructor(
     }
 
     /**
-     * Calcola metriche operative aggregate
+     * Calcola metriche operative
      */
-    private fun calculateOperationalMetrics(
-        islands: List<FacilityIsland>
-    ): OperationalMetrics {
-        if (islands.isEmpty()) {
-            return OperationalMetrics(0, 0, 0L, 0L, 0, 0, 0.0)
-        }
+    private fun calculateOperationalStats(island: FacilityIsland, currentTime: Instant): OperationalStats {
+        val ageInDays = island.installationDate?.let { install ->
+            ((currentTime - install).inWholeDays).toInt()
+        } ?: 0
 
-        val totalHours = islands.sumOf { it.operatingHours }
-        val totalCycles = islands.sumOf { it.cycleCount }
-        val avgHours = islands.map { it.operatingHours }.average().toInt()
-        val avgCycles = islands.map { it.cycleCount }.average().toLong()
-        val maxHours = islands.maxOf { it.operatingHours }
-        val maxCycles = islands.maxOf { it.cycleCount }
-        val avgEfficiency = islands.map { calculateEfficiency(it) }.average()
-
-        return OperationalMetrics(
-            totalOperatingHours = totalHours,
-            averageOperatingHours = avgHours,
-            totalCycleCount = totalCycles,
-            averageCycleCount = avgCycles,
-            maxOperatingHours = maxHours,
-            maxCycleCount = maxCycles,
-            averageEfficiency = avgEfficiency
-        )
-    }
-
-    /**
-     * Calcola metriche di manutenzione
-     */
-    private fun calculateMaintenanceMetrics(
-        islands: List<FacilityIsland>,
-        currentTime: Instant
-    ): MaintenanceMetrics {
-        val totalIslands = islands.size
-        val overdueCount = islands.count { island ->
-            island.nextScheduledMaintenance?.let { it <= currentTime } == true
-        }
-        val upToDateCount = totalIslands - overdueCount
-
-        val upToDatePercentage = if (totalIslands > 0) {
-            (upToDateCount.toDouble() / totalIslands * 100).toInt()
-        } else 100
-
-        return MaintenanceMetrics(
-            totalIslands = totalIslands,
-            upToDate = upToDateCount,
-            overdue = overdueCount,
-            upToDatePercentage = upToDatePercentage
-        )
-    }
-
-    /**
-     * Calcola metriche di garanzia
-     */
-    private fun calculateWarrantyMetrics(
-        islands: List<FacilityIsland>,
-        currentTime: Instant
-    ): WarrantyMetrics {
-        val totalIslands = islands.size
-        val underWarranty = islands.count { island ->
-            island.warrantyExpiration?.let { it > currentTime } == true
-        }
-        val expiredWarranty = islands.count { island ->
-            island.warrantyExpiration?.let { it <= currentTime } == true
-        }
-        val noWarrantyInfo = totalIslands - underWarranty - expiredWarranty
-
-        val underWarrantyPercentage = if (totalIslands > 0) {
-            (underWarranty.toDouble() / totalIslands * 100).toInt()
+        val averageHoursPerDay = if (ageInDays > 0) {
+            (island.operatingHours.toDouble() / ageInDays).toInt()
         } else 0
 
-        return WarrantyMetrics(
-            totalIslands = totalIslands,
-            underWarranty = underWarranty,
-            expired = expiredWarranty,
-            noInformation = noWarrantyInfo,
-            underWarrantyPercentage = underWarrantyPercentage
+        val averageCyclesPerHour = if (island.operatingHours > 0) {
+            (island.cycleCount.toDouble() / island.operatingHours).toInt()
+        } else 0
+
+        // Calcola uptime percentage approssimativo
+        val expectedHoursPerDay = 16 // Assumendo 16h lavorative al giorno
+        val expectedTotalHours = ageInDays * expectedHoursPerDay
+        val uptime = if (expectedTotalHours > 0) {
+            ((island.operatingHours.toDouble() / expectedTotalHours) * 100).coerceAtMost(100.0).toInt()
+        } else 100
+
+        // Performance score basato su cicli/ora
+        val performanceScore = when (averageCyclesPerHour) {
+            in 0..20 -> 20
+            in 21..40 -> 40
+            in 41..60 -> 60
+            in 61..80 -> 80
+            else -> 100
+        }
+
+        return OperationalStats(
+            operatingHours = island.operatingHours,
+            cycleCount = island.cycleCount,
+            ageInDays = ageInDays,
+            averageHoursPerDay = averageHoursPerDay,
+            averageCyclesPerHour = averageCyclesPerHour,
+            uptime = uptime,
+            performanceScore = performanceScore,
+            isActive = island.isActive
         )
     }
 
     /**
-     * Calcola score di salute del sistema
+     * Calcola stato manutenzione
      */
-    private fun calculateSystemHealth(
-        maintenanceMetrics: MaintenanceMetrics,
-        warrantyMetrics: WarrantyMetrics
-    ): Int {
-        val maintenanceScore = maintenanceMetrics.upToDatePercentage
-        val warrantyScore = warrantyMetrics.underWarrantyPercentage
+    private fun calculateMaintenanceStats(island: FacilityIsland, currentTime: Instant): MaintenanceStats {
+        val daysToNextMaintenance = island.daysToNextMaintenance()
+        val isOverdue = island.needsMaintenance()
 
-        // Peso maggiore alla manutenzione per la salute del sistema
-        return ((maintenanceScore * 0.7) + (warrantyScore * 0.3)).toInt()
+        val daysSinceLastMaintenance = island.lastMaintenanceDate?.let { lastDate ->
+            ((currentTime - lastDate).inWholeDays).toInt()
+        }
+
+        val maintenanceStatus = when {
+            isOverdue -> MaintenanceStatus.OVERDUE
+            daysToNextMaintenance != null && daysToNextMaintenance <= 7 -> MaintenanceStatus.DUE_SOON
+            daysToNextMaintenance != null && daysToNextMaintenance <= 30 -> MaintenanceStatus.SCHEDULED
+            island.lastMaintenanceDate == null -> MaintenanceStatus.NO_HISTORY
+            else -> MaintenanceStatus.UP_TO_DATE
+        }
+
+        return MaintenanceStats(
+            status = maintenanceStatus,
+            daysToNext = daysToNextMaintenance,
+            daysSinceLast = daysSinceLastMaintenance,
+            lastMaintenanceDate = island.lastMaintenanceDate,
+            nextScheduledDate = island.nextScheduledMaintenance,
+            statusText = island.maintenanceStatusText
+        )
     }
 
     /**
-     * Calcola età media in giorni
+     * Calcola stato garanzia
      */
-    private fun calculateAverageAge(
-        islands: List<FacilityIsland>,
-        currentTime: Instant
-    ): Int {
-        if (islands.isEmpty()) return 0
+    private fun calculateWarrantyStats(island: FacilityIsland, currentTime: Instant): WarrantyStats {
+        val warrantyExpiration = island.warrantyExpiration
 
-        val ages = islands.mapNotNull { island ->
-            island.installationDate?.let { installation ->
-                ((currentTime - installation).inWholeDays)
+        val (status, daysRemaining) = when {
+            warrantyExpiration == null -> WarrantyStatus.NO_INFO to null
+            warrantyExpiration <= currentTime -> WarrantyStatus.EXPIRED to 0L
+            else -> {
+                val days = ((warrantyExpiration - currentTime).inWholeDays)
+                when {
+                    days <= 30 -> WarrantyStatus.EXPIRING_SOON to days
+                    days <= 90 -> WarrantyStatus.EXPIRING_THIS_QUARTER to days
+                    else -> WarrantyStatus.ACTIVE to days
+                }
             }
         }
 
-        return if (ages.isNotEmpty()) ages.average().toInt() else 0
-    }
-
-    /**
-     * Calcola score di performance per tipo
-     */
-    private fun calculatePerformanceScore(
-        islands: List<FacilityIsland>,
-        currentTime: Instant
-    ): Int {
-        if (islands.isEmpty()) return 0
-
-        val scores = islands.map { island ->
-            val uptime = calculateUptime(island, currentTime)
-            val efficiency = calculateEfficiency(island)
-            (uptime * 0.5 + efficiency * 0.5).toInt()
-        }
-
-        return scores.average().toInt()
-    }
-
-    /**
-     * Calcola uptime percentage
-     */
-    private fun calculateUptime(
-        island: FacilityIsland,
-        currentTime: Instant
-    ): Int {
-        val installationDate = island.installationDate ?: currentTime
-        val totalDays = ((currentTime - installationDate).inWholeDays).toInt()
-        val operatingDays = (island.operatingHours / 24).coerceAtMost(totalDays)
-
-        return if (totalDays > 0) {
-            (operatingDays.toDouble() / totalDays * 100).toInt()
-        } else 100
-    }
-
-    /**
-     * Calcola efficienza relativa
-     */
-    private fun calculateEfficiency(island: FacilityIsland): Int {
-        // Efficienza basata su cicli per ora operativa
-        return if (island.operatingHours > 0) {
-            val cyclesPerHour = island.cycleCount.toDouble() / island.operatingHours
-            // Normalizza basandosi su medie di settore (assumendo 50-100 cicli/ora come range normale)
-            ((cyclesPerHour / 100.0) * 100).coerceAtMost(100.0).toInt()
-        } else 0
+        return WarrantyStats(
+            status = status,
+            expirationDate = warrantyExpiration,
+            daysRemaining = daysRemaining,
+            isActive = status == WarrantyStatus.ACTIVE || status == WarrantyStatus.EXPIRING_SOON || status == WarrantyStatus.EXPIRING_THIS_QUARTER
+        )
     }
 }
 
 /**
- * Statistiche complete isole
+ * Statistiche complete per singola isola (per UI dettagli e card)
  */
-data class IslandStatistics(
-    val totalActiveIslands: Int,
-    val islandsByType: Map<IslandType, Int>,
-    val operationalMetrics: OperationalMetrics,
-    val maintenanceMetrics: MaintenanceMetrics,
-    val warrantyMetrics: WarrantyMetrics,
-    val systemHealth: Int, // 0-100
-    val generatedAt: Instant
-)
-
-/**
- * Metriche operative aggregate
- */
-data class OperationalMetrics(
-    val totalOperatingHours: Int,
-    val averageOperatingHours: Int,
-    val totalCycleCount: Long,
-    val averageCycleCount: Long,
-    val maxOperatingHours: Int,
-    val maxCycleCount: Long,
-    val averageEfficiency: Double
-)
-
-/**
- * Metriche manutenzione
- */
-data class MaintenanceMetrics(
-    val totalIslands: Int,
-    val upToDate: Int,
-    val overdue: Int,
-    val upToDatePercentage: Int
-)
-
-/**
- * Metriche garanzia
- */
-data class WarrantyMetrics(
-    val totalIslands: Int,
-    val underWarranty: Int,
-    val expired: Int,
-    val noInformation: Int,
-    val underWarrantyPercentage: Int
-)
-
-/**
- * Statistiche specifiche per tipo
- */
-data class TypeSpecificStatistics(
-    val islandType: IslandType,
-    val totalCount: Int,
-    val averageOperatingHours: Int,
-    val averageCycleCount: Long,
-    val totalOperatingHours: Int,
-    val totalCycleCount: Long,
-    val underWarrantyCount: Int,
-    val maintenanceOverdueCount: Int,
-    val averageAge: Int, // in giorni
-    val performanceScore: Int // 0-100
-)
-
-/**
- * Performance di una singola isola
- */
-data class IslandPerformance(
+data class SingleIslandStatistics(
     val islandId: String,
     val serialNumber: String,
-    val islandType: IslandType,
-    val customName: String?,
+    val islandType: net.calvuz.qreport.domain.model.island.IslandType,
+    val operationalStats: OperationalStats,
+    val maintenanceStats: MaintenanceStats,
+    val warrantyStats: WarrantyStats,
+    val totalCheckUps: Int,
+    val lastCheckUpDate: Instant?,
+    val issuesCount: Int,
+    val generatedAt: Instant
+) {
+
+    /**
+     * Score salute isola (0-100)
+     */
+    val healthScore: Int
+        get() {
+            var score = 0
+
+            // Performance operativa (40%)
+            score += (operationalStats.performanceScore * 0.4).toInt()
+
+            // Stato manutenzione (35%)
+            score += when (maintenanceStats.status) {
+                MaintenanceStatus.UP_TO_DATE -> 35
+                MaintenanceStatus.SCHEDULED -> 30
+                MaintenanceStatus.DUE_SOON -> 15
+                MaintenanceStatus.OVERDUE -> 0
+                MaintenanceStatus.NO_HISTORY -> 20
+            }
+
+            // Stato garanzia (15%)
+            score += when (warrantyStats.status) {
+                WarrantyStatus.ACTIVE -> 15
+                WarrantyStatus.EXPIRING_THIS_QUARTER -> 12
+                WarrantyStatus.EXPIRING_SOON -> 8
+                WarrantyStatus.EXPIRED -> 5
+                WarrantyStatus.NO_INFO -> 7
+            }
+
+            // Assenza di problemi critici (10%)
+            if (operationalStats.isActive) score += 10
+
+            return score.coerceIn(0, 100)
+        }
+
+    /**
+     * Stato operativo globale
+     */
+    val overallStatus: OperationalStatus
+        get() = when {
+            !operationalStats.isActive -> OperationalStatus.INACTIVE
+            maintenanceStats.status == MaintenanceStatus.OVERDUE -> OperationalStatus.MAINTENANCE_DUE
+            else -> OperationalStatus.OPERATIONAL
+        }
+
+    /**
+     * Descrizione stato per UI
+     */
+    val statusDescription: String
+        get() = when {
+            !operationalStats.isActive -> "Non attiva"
+            maintenanceStats.status == MaintenanceStatus.OVERDUE -> "Manutenzione scaduta"
+            maintenanceStats.status == MaintenanceStatus.DUE_SOON -> "Manutenzione imminente"
+            warrantyStats.status == WarrantyStatus.EXPIRING_SOON -> "Garanzia in scadenza"
+            healthScore >= 80 -> "Operativa"
+            healthScore >= 60 -> "Attenzione"
+            else -> "Critica"
+        }
+
+    /**
+     * Testo riassuntivo per UI
+     */
+    val summaryText: String
+        get() = buildString {
+            val parts = mutableListOf<String>()
+
+            // Ore operative
+            parts.add("${operationalStats.operatingHours}h operative")
+
+            // Cicli
+            when {
+                operationalStats.cycleCount >= 1_000_000 -> parts.add("${(operationalStats.cycleCount / 1_000_000).toInt()}M cicli")
+                operationalStats.cycleCount >= 1_000 -> parts.add("${(operationalStats.cycleCount / 1_000).toInt()}K cicli")
+                else -> parts.add("${operationalStats.cycleCount} cicli")
+            }
+
+            // Età
+            if (operationalStats.ageInDays > 0) {
+                when {
+                    operationalStats.ageInDays >= 365 -> parts.add("${operationalStats.ageInDays / 365} anni")
+                    operationalStats.ageInDays >= 30 -> parts.add("${operationalStats.ageInDays / 30} mesi")
+                    else -> parts.add("${operationalStats.ageInDays} giorni")
+                }
+            }
+
+            append(parts.joinToString(" • "))
+        }
+
+    /**
+     * Indica se richiede attenzione immediata
+     */
+    val needsAttention: Boolean
+        get() = maintenanceStats.status == MaintenanceStatus.OVERDUE ||
+                warrantyStats.status == WarrantyStatus.EXPIRING_SOON ||
+                !operationalStats.isActive ||
+                healthScore < 50
+}
+
+/**
+ * Statistiche operative
+ */
+data class OperationalStats(
     val operatingHours: Int,
     val cycleCount: Long,
-    val uptime: Int, // Percentage
-    val efficiency: Int, // Percentage
-    val performanceScore: Int // 0-100
+    val ageInDays: Int,
+    val averageHoursPerDay: Int,
+    val averageCyclesPerHour: Int,
+    val uptime: Int, // Percentuale
+    val performanceScore: Int, // 0-100
+    val isActive: Boolean
 )
 
 /**
- * Trend manutenzione
+ * Statistiche manutenzione
  */
-data class MaintenanceTrend(
-    val totalScheduled: Int,
-    val weeklyDistribution: Map<Int, Int>, // Settimana -> Numero manutenzioni
-    val peakWeek: Int,
-    val averagePerWeek: Int,
-    val daysAnalyzed: Int
+data class MaintenanceStats(
+    val status: MaintenanceStatus,
+    val daysToNext: Long?,
+    val daysSinceLast: Int?,
+    val lastMaintenanceDate: Instant?,
+    val nextScheduledDate: Instant?,
+    val statusText: String
 )
 
 /**
- * Enum per metriche di performance
+ * Statistiche garanzia
  */
-enum class PerformanceMetric {
-    OPERATING_HOURS,
-    CYCLE_COUNT,
-    UPTIME,
-    EFFICIENCY,
-    PERFORMANCE_SCORE
+data class WarrantyStats(
+    val status: WarrantyStatus,
+    val expirationDate: Instant?,
+    val daysRemaining: Long?,
+    val isActive: Boolean
+)
+
+/**
+ * Stati manutenzione
+ */
+enum class MaintenanceStatus(val displayName: String) {
+    UP_TO_DATE("Aggiornata"),
+    SCHEDULED("Programmata"),
+    DUE_SOON("Imminente"),
+    OVERDUE("Scaduta"),
+    NO_HISTORY("Nessuna cronologia")
+}
+
+/**
+ * Stati garanzia
+ */
+enum class WarrantyStatus(val displayName: String) {
+    ACTIVE("Attiva"),
+    EXPIRING_THIS_QUARTER("In scadenza"),
+    EXPIRING_SOON("Scade presto"),
+    EXPIRED("Scaduta"),
+    NO_INFO("Non specificata")
 }
