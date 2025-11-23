@@ -77,9 +77,9 @@ sealed class QReportDestination(
         unselectedIcon = Icons.Outlined.Assignment
     )
 
-    object Archive : QReportDestination(
-        route = "archive",
-        title = "Archivio",
+    object Clients : QReportDestination(
+        route = "clients",
+        title = "Clienti",
         selectedIcon = Icons.Filled.Archive,
         unselectedIcon = Icons.Outlined.Archive
     )
@@ -97,8 +97,8 @@ sealed class QReportDestination(
  */
 object QReportRoutes {
     const val HOME = "home"
+    const val CLIENTS = "clients"
     const val CHECKUPS = "checkups"
-    const val ARCHIVE = "archive"
     const val SETTINGS = "settings"
 
     // Secondary routes
@@ -157,8 +157,8 @@ object QReportRoutes {
  */
 val bottomNavDestinations = listOf(
     QReportDestination.Home,
+    QReportDestination.Clients,
     QReportDestination.CheckUps,
-    QReportDestination.Archive,
     QReportDestination.Settings
 )
 
@@ -191,18 +191,14 @@ fun QReportNavigation(
                         onNavigateToCheckUps = {
                             navController.navigate(QReportRoutes.CHECKUPS)
                         },
-                        onNavigateToArchive = {
-                            navController.navigate(QReportRoutes.ARCHIVE)
+                        onNavigateToClients = {
+                            navController.navigate(QReportRoutes.CLIENTS)
                         },
                         onNavigateToNewCheckUp = {
                             navController.navigate(QReportRoutes.CHECKUP_CREATE)
                         },
                         onNavigateToCheckUpDetail = { checkUpId ->
                             navController.navigate(QReportRoutes.checkupDetail(checkUpId))
-                        },
-                        // ✅ NEW: Navigation to client management
-                        onNavigateToClients = {
-                            navController.navigate(QReportRoutes.CLIENT_LIST)
                         }
                     )
                 }
@@ -214,14 +210,6 @@ fun QReportNavigation(
                         },
                         onCreateNewCheckUp = {
                             navController.navigate(QReportRoutes.CHECKUP_CREATE)
-                        }
-                    )
-                }
-
-                composable(QReportRoutes.ARCHIVE) {
-                    ArchiveScreen(
-                        onNavigateToCheckUpDetail = { checkUpId ->
-                            navController.navigate(QReportRoutes.checkupDetail(checkUpId))
                         }
                     )
                 }
@@ -352,7 +340,7 @@ fun QReportNavigation(
                 // ============================================================
 
                 // Client List Screen
-                composable(QReportRoutes.CLIENT_LIST) {
+                composable(QReportRoutes.CLIENTS) {
                     ClientListScreen(
                         onNavigateToClientDetail = { clientId ->
                             navController.navigate(QReportRoutes.clientDetail(clientId))
@@ -419,7 +407,7 @@ fun QReportNavigation(
                         },
                         onNavigateToClientDetail = { clientId ->
                             navController.navigate(QReportRoutes.clientDetail(clientId)) {
-                                popUpTo(QReportRoutes.CLIENT_LIST) {
+                                popUpTo(QReportRoutes.CLIENTS) {
                                     inclusive = false
                                 }
                             }
@@ -445,7 +433,7 @@ fun QReportNavigation(
                         },
                         onNavigateToClientDetail = { savedClientId ->
                             navController.navigate(QReportRoutes.clientDetail(savedClientId)) {
-                                popUpTo(QReportRoutes.CLIENT_LIST) {
+                                popUpTo(QReportRoutes.CLIENTS) {
                                     inclusive = false
                                 }
                             }
@@ -760,11 +748,9 @@ fun QReportNavigation(
         // Hide bottom nav for secondary destinations
         val shouldShowBottomNav = when (currentRoute) {
             QReportRoutes.HOME,
+            QReportRoutes.CLIENTS,
             QReportRoutes.CHECKUPS,
-            QReportRoutes.ARCHIVE,
             QReportRoutes.SETTINGS -> true
-            // ✅ UPDATED: Show bottom nav for main client list, hide for detail/create
-            QReportRoutes.CLIENT_LIST -> true
             else -> false
         }
 

@@ -39,7 +39,6 @@ import net.calvuz.qreport.domain.model.island.IslandType
 @Composable
 fun HomeScreen(
     onNavigateToCheckUps: () -> Unit,
-    onNavigateToArchive: () -> Unit,
     onNavigateToNewCheckUp: () -> Unit,           // ✅ AGGIUNTO
     onNavigateToCheckUpDetail: (String) -> Unit,  // ✅ AGGIUNTO
     onNavigateToClients: () -> Unit,              // ✅ NEW: Navigation to client management
@@ -105,8 +104,7 @@ fun HomeScreen(
                 item {
                     DashboardStatsSection(
                         stats = uiState.dashboardStats,
-                        onNavigateToCheckUps = onNavigateToCheckUps,
-                        onNavigateToArchive = onNavigateToArchive
+                        onNavigateToCheckUps = onNavigateToCheckUps
                     )
                 }
 
@@ -115,7 +113,6 @@ fun HomeScreen(
                     NavigationActionsSection(
                         onNavigateToClients = onNavigateToClients,
                         onNavigateToCheckUps = onNavigateToCheckUps,
-                        onNavigateToArchive = onNavigateToArchive
                     )
                 }
 
@@ -197,8 +194,7 @@ private fun HomeHeader(
 @Composable
 private fun DashboardStatsSection(
     stats: DashboardStatistics?,
-    onNavigateToCheckUps: () -> Unit,
-    onNavigateToArchive: () -> Unit
+    onNavigateToCheckUps: () -> Unit
 ) {
     Text(
         text = "Panoramica",
@@ -236,7 +232,7 @@ private fun DashboardStatsSection(
             title = "Settimana",
             value = stats?.completedThisWeek?.toString() ?: "0",
             icon = Icons.Default.CheckCircle,
-            onClick = onNavigateToArchive
+            onClick = onNavigateToCheckUps
         )
     }
 }
@@ -254,10 +250,10 @@ private fun StatCard(
 ) {
     Card(
         modifier = modifier,
-        onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        ),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -638,8 +634,7 @@ private fun LoadingContent() {
 @Composable
 private fun NavigationActionsSection(
     onNavigateToClients: () -> Unit,
-    onNavigateToCheckUps: () -> Unit,
-    onNavigateToArchive: () -> Unit
+    onNavigateToCheckUps: () -> Unit
 ) {
     Text(
         text = "Gestione",
@@ -672,16 +667,6 @@ private fun NavigationActionsSection(
             onClick = onNavigateToCheckUps,
             isHighlighted = false
         )
-
-        // Archive
-        NavigationActionCard(
-            modifier = Modifier.weight(1f),
-            title = "Archivio",
-            description = "Storico completo",
-            icon = Icons.Default.Archive,
-            onClick = onNavigateToArchive,
-            isHighlighted = false
-        )
     }
 }
 
@@ -711,10 +696,10 @@ private fun NavigationActionCard(
 
     Card(
         modifier = modifier.height(100.dp),
-        onClick = onClick,
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
-        )
+        ),
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier
@@ -762,11 +747,11 @@ private fun NavigationActionCard(
 private fun HomeScreenPreview() {
     QReportTheme {
         HomeScreen(
+            onNavigateToClients = {},
             onNavigateToCheckUps = {},
-            onNavigateToArchive = {},
-            onNavigateToNewCheckUp = {},           // ✅ AGGIUNTO
-            onNavigateToCheckUpDetail = {},        // ✅ AGGIUNTO
-            onNavigateToClients = {}
+            onNavigateToNewCheckUp = {},
+            onNavigateToCheckUpDetail = {},
+
         )
     }
 }
