@@ -37,6 +37,7 @@ class FacilityIslandDetailViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     private var loadJob: Job? = null
+    private var currentFacilityId: String = ""
     private var currentIslandId: String = ""
 
     /**

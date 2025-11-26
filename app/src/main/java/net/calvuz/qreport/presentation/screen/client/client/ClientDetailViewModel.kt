@@ -59,6 +59,9 @@ data class ClientDetailUiState(
     val clientId: String?
         get() = clientDetails?.client?.id
 
+//    val clientName: String?
+//        get() = clientDetails?.client?.displayName
+
     val isFullyOperational: Boolean
         get() = clientDetails?.isFullyOperational() == true
 

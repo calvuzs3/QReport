@@ -41,7 +41,7 @@ fun FacilityDetailScreen(
 
     // Island navigation callbacks
     onNavigateToCreateIsland: (String) -> Unit, // Create island
-    onNavigateToEditIsland: (String) -> Unit, // Edit island - only islandId available
+    onNavigateToEditIsland: (String) -> Unit = {}, // Edit island
     onNavigateToIslandDetail: (String) -> Unit = { }, // View Island
     onNavigateToIslandsList: (String) -> Unit = { },   // View all Islands
 
@@ -117,7 +117,7 @@ fun FacilityDetailScreen(
                     onIslandFilterSelected = viewModel::updateIslandFilter,
                     onIslandClick = onNavigateToIslandDetail,
                     onCreateIsland = { onNavigateToCreateIsland(facilityId) },
-                    onEditIsland = onNavigateToEditIsland,
+                    onEditIsland = { onNavigateToEditIsland },
                     onDeleteIsland = viewModel::deleteIsland,
                     onMarkMaintenanceComplete = viewModel::markMaintenanceComplete
                 )

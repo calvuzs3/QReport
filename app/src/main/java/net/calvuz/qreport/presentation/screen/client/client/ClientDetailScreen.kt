@@ -42,6 +42,7 @@ import net.calvuz.qreport.presentation.screen.client.client.components.ContactsS
 @Composable
 fun ClientDetailScreen(
     clientId: String,
+    clientName: String,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (String) -> Unit,
 
@@ -54,7 +55,7 @@ fun ClientDetailScreen(
 
     // Navigation callbacks per contatti
     onNavigateToContactList: (String, String) -> Unit = { _, _ -> }, // (clientId, clientName)
-    onNavigateToCreateContact: (String) -> Unit = { }, // (clientId)
+    onNavigateToCreateContact: (String, String) -> Unit = {_, _ -> }, // (clientId)
     onNavigateToEditContact: (String) -> Unit = { }, // (contactId)
 
     modifier: Modifier = Modifier,
@@ -70,7 +71,7 @@ fun ClientDetailScreen(
                 data = Uri.parse("tel:$phoneNumber")
             }
             context.startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             val intent = Intent(Intent.ACTION_DIAL).apply {
                 data = Uri.parse("tel:$phoneNumber")
             }
@@ -141,6 +142,7 @@ fun ClientDetailScreen(
                 ClientDetailContent(
                     uiState = uiState,
                     clientId = clientId,
+                    clientName = clientName,
                     onTabSelected = viewModel::selectTab,
 
                     // Facility management callbacks
@@ -162,7 +164,7 @@ fun ClientDetailScreen(
 
                     // Contact callbacks
                     onEditContact = onNavigateToEditContact,
-                    onCreateContact = { onNavigateToCreateContact(clientId) },
+                    onCreateContact = { onNavigateToCreateContact(clientId, clientName) },
                     onViewAllContacts = {
                         onNavigateToContactList(clientId, uiState.companyName)
                     },
@@ -294,6 +296,7 @@ private fun ContactsTabContent(
 private fun ClientDetailContent(
     uiState: ClientDetailUiState,
     clientId: String,
+    clientName: String,
     onTabSelected: (ClientDetailTab) -> Unit,
 
     // Facility callbacks

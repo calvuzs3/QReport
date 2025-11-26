@@ -21,7 +21,6 @@ import net.calvuz.qreport.presentation.screen.home.HomeScreen
 import net.calvuz.qreport.presentation.screen.checkup.CheckUpListScreen
 import net.calvuz.qreport.presentation.screen.checkup.NewCheckUpScreen
 import net.calvuz.qreport.presentation.screen.checkup.CheckUpDetailScreen
-import net.calvuz.qreport.presentation.screen.archive.ArchiveScreen
 import net.calvuz.qreport.presentation.screen.camera.CameraScreen
 import net.calvuz.qreport.presentation.screen.client.client.ClientDetailScreen
 import net.calvuz.qreport.presentation.screen.photo.PhotoGalleryScreen
@@ -37,6 +36,8 @@ import net.calvuz.qreport.presentation.screen.client.facility.FacilityListScreen
 import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandFormScreen
 import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandDetailScreen
 import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandListScreen
+import java.net.URLDecoder
+import java.net.URLEncoder
 
 /**
  * Sistema di navigazione QReport - COMPLETO
@@ -50,7 +51,7 @@ import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIsla
  * Struttura:
  * - Home: Dashboard con quick actions
  * - Check-up: Lista e gestione check-up
- * - Archivio: Storico check-up completati
+ * - Clienti: Gestione clienti
  * - Impostazioni: Configurazioni app
  */
 
@@ -70,18 +71,18 @@ sealed class QReportDestination(
         unselectedIcon = Icons.Outlined.Home
     )
 
-    object CheckUps : QReportDestination(
-        route = "checkups",
-        title = "Check-up",
-        selectedIcon = Icons.Filled.Assignment,
-        unselectedIcon = Icons.Outlined.Assignment
-    )
-
     object Clients : QReportDestination(
         route = "clients",
         title = "Clienti",
         selectedIcon = Icons.Filled.Archive,
         unselectedIcon = Icons.Outlined.Archive
+    )
+
+    object CheckUps : QReportDestination(
+        route = "checkups",
+        title = "Check-up",
+        selectedIcon = Icons.Filled.Assignment,
+        unselectedIcon = Icons.Outlined.Assignment
     )
 
     object Settings : QReportDestination(
@@ -108,48 +109,73 @@ object QReportRoutes {
     const val PHOTO_GALLERY = "photo_gallery/{checkItemId}"
     const val EXPORT_OPTIONS = "export_options/{checkUpId}"
 
-    // ✅ NEW: Client management routes
-    const val CLIENT_LIST = "clients"
+    // Client management routes
     const val CLIENT_DETAIL = "client_detail/{clientId}"
     const val CLIENT_CREATE = "client_create"
     const val CLIENT_EDIT = "client_edit/{clientId}"
 
-    // Contact routes - UNIFIED FORM
-    const val CONTACT_FORM = "contact_form/{clientId}?contactId={contactId}"
-    const val CONTACT_CREATE = "contact_create/{clientId}"  // Redirect to form
-    const val CONTACT_EDIT = "contact_edit/{contactId}"     // Redirect to form
-    const val CONTACT_LIST = "contacts/{clientId}"
+    // Contact routes
+    const val CONTACT_FORM = "contact_form/{clientId}/{clientName}?contactId={contactId}"
+    const val CONTACT_CREATE = "contact_create/{clientId}/{clientName}"
+    const val CONTACT_EDIT = "contact_edit/{contactId}"
+    const val CONTACT_LIST = "contacts/{clientId}/{clientName}"
 
-    // ✅ NEW: Facility Island routes
+    // Facility routes
+    const val FACILITY_LIST = "facilities/{clientId}"
+    const val FACILITY_DETAIL = "facility_detail/{clientId}/{facilityId}"
+    const val FACILITY_CREATE = "facility_form/{clientId}"
+    const val FACILITY_EDIT = "facility_form/{clientId}/{facilityId}"
+
+
+    // FacilityIsland routes
     const val ISLAND_LIST = "islands/{facilityId}"
-    const val ISLAND_DETAIL = "island_detail/{islandId}"
+    const val ISLAND_DETAIL = "island_detail/{facilityId}/{islandId}"
     const val ISLAND_CREATE = "island_form/{facilityId}"
     const val ISLAND_EDIT = "island_form/{facilityId}/{islandId}"
 
+    // Helper extension for URL encoding client names with spaces/special chars
+    private fun String.encodeUrl(): String = URLEncoder.encode(this, "UTF-8")
+
+    // Helper functions for CLIENTS
+    fun clientDetail(clientId: String) = "client_detail/$clientId"
+    fun clientEdit(clientId: String) = "client_edit/$clientId"
 
     // Helper functions for CONTACT
-    fun contactFormRoute(clientId: String, contactId: String? = null) =
-        if (contactId != null) "contact_form/$clientId?contactId=$contactId"
-        else "contact_form/$clientId"
+    fun contactFormRoute(clientId: String, clientName: String, contactId: String? = null) =
+        if (contactId != null) "contact_form/$clientId/${clientName.encodeUrl()}?contactId=$contactId"
+        else "contact_form/$clientId/${clientName.encodeUrl()}"
 
-    fun contactCreateRoute(clientId: String) = "contact_create/$clientId"
-    fun contactEditRoute(contactId: String) = "contact_edit/$contactId"
-    fun contactListRoute(clientId: String) = "contacts/$clientId"
+    fun contactCreateRoute(clientId: String, clientName: String) =
+        "contact_create/$clientId/${clientName.encodeUrl()}"
 
-    // ✅ NEW: Helper functions for FACILITY ISLAND
+    fun contactEditRoute(contactId: String) = "contact_edit/$contactId" // Keep as is - needs lookup
+    fun contactListRoute(clientId: String, clientName: String) =
+        "contacts/$clientId/${clientName.encodeUrl()}"
+
+    // Helper functions for FACILITY
+    fun facilityListRoute(clientId: String) = "facilities/$clientId"
+    fun facilityEditRoute(clientId: String, facilityId: String) =
+        "facility_form/$clientId/$facilityId"
+
+    fun facilityDetailRoute(clientId: String, savedFacilityId: String) =
+        "facility_detail/$clientId/$savedFacilityId"
+
+    fun facilityCreateRoute(clientId: String) = "facility_form/$clientId"
+
+    // Helper functions for FACILITY ISLAND
     fun islandListRoute(facilityId: String) = "islands/$facilityId"
-    fun islandDetailRoute(islandId: String) = "island_detail/$islandId"
+    fun islandDetailRoute(facilityId: String, islandId: String) =
+        "island_detail/$facilityId/$islandId"
+
     fun islandCreateRoute(facilityId: String) = "island_form/$facilityId"
     fun islandEditRoute(facilityId: String, islandId: String) = "island_form/$facilityId/$islandId"
 
-    // Helper functions for parameters
+    // Helper functions for CHECK-UPs
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
     fun photoGallery(checkItemId: String) = "photo_gallery/$checkItemId"
     fun exportOptions(checkUpId: String) = "export_options/$checkUpId"
 
-    // ✅ NEW: Client helper functions
-    fun clientDetail(clientId: String) = "client_detail/$clientId"
 }
 
 /**
@@ -167,8 +193,8 @@ val bottomNavDestinations = listOf(
  */
 @Composable
 fun QReportNavigation(
+    modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
         // Main content area
@@ -203,6 +229,17 @@ fun QReportNavigation(
                     )
                 }
 
+                composable(QReportRoutes.CLIENTS) {
+                    ClientListScreen(
+                        onNavigateToClientDetail = { clientId ->
+                            navController.navigate(QReportRoutes.clientDetail(clientId))
+                        },
+                        onCreateNewClient = {
+                            navController.navigate(QReportRoutes.CLIENT_CREATE)
+                        }
+                    )
+                }
+
                 composable(QReportRoutes.CHECKUPS) {
                     CheckUpListScreen(
                         onNavigateToCheckUpDetail = { checkUpId ->
@@ -219,7 +256,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // SECONDARY DESTINATIONS
+                // ✅ CHECK-UP MANAGEMENT DESTINATIONS
                 // ============================================================
 
                 // New Check-up Creation
@@ -258,11 +295,9 @@ fun QReportNavigation(
                         onNavigateToCamera = { checkItemId ->
                             navController.navigate(QReportRoutes.camera(checkItemId))
                         },
-                        // ✅ NUOVO: Aggiungi navigation per PhotoGallery
                         onNavigateToPhotoGallery = { checkItemId ->
                             navController.navigate(QReportRoutes.photoGallery(checkItemId))
                         },
-                        // ✅ NUOVO: Aggiungi navigation per ExportOptions
                         onNavigateToExportOptions = { checkUpId ->
                             navController.navigate(QReportRoutes.exportOptions(checkUpId))
                         }
@@ -290,7 +325,6 @@ fun QReportNavigation(
                     )
                 }
 
-                // ✅ NUOVO: Aggiungi route per PhotoGallery
                 composable(
                     route = QReportRoutes.PHOTO_GALLERY,
                     arguments = listOf(
@@ -312,7 +346,6 @@ fun QReportNavigation(
                     )
                 }
 
-                // ✅ NUOVO: Export Options Screen
                 composable(
                     route = QReportRoutes.EXPORT_OPTIONS,
                     arguments = listOf(
@@ -351,7 +384,6 @@ fun QReportNavigation(
                     )
                 }
 
-                // Client Detail Screen (placeholder - to be implemented)
                 composable(
                     route = QReportRoutes.CLIENT_DETAIL,
                     arguments = listOf(
@@ -361,40 +393,79 @@ fun QReportNavigation(
                     )
                 ) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    val clientName = backStackEntry.arguments?.getString("clientName") ?: ""
+
+                    // Capture facilityId dall'outer scope BEFORE callbacks
+                    val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
+
                     ClientDetailScreen(
                         clientId = clientId,
+                        clientName = clientName,
                         onNavigateBack = {
                             navController.popBackStack()
                         },
-                        onNavigateToEdit = { editClientId ->
-                            navController.navigate("client_edit/$editClientId")
+                        onNavigateToEdit = { clientId ->
+                            navController.navigate(QReportRoutes.clientEdit(clientId))
                         },
                         onNavigateToContactList = { clientId, clientName ->
-                            navController.navigate("contacts/$clientId")
+                            navController.navigate(
+                                QReportRoutes.contactListRoute(
+                                    clientId,
+                                    clientName
+                                )
+                            )
                         },
-                        onNavigateToCreateContact = { clientId ->
-                            navController.navigate("contact_create/$clientId")
+                        onNavigateToCreateContact = { clientId, clientName ->
+                            navController.navigate(
+                                QReportRoutes.contactCreateRoute(
+                                    clientId,
+                                    clientName
+                                )
+                            )
                         },
+//                        onNavigateToCreateContact = { clientId ->
+//                            navController.navigate("contact_create/$clientId")
+//                        },
                         onNavigateToEditContact = { contactId ->
-                            navController.navigate("contact_edit/$contactId")
+                            // ❌ TODO: Need clientId + clientName lookup from contactId
+                            navController.navigate(QReportRoutes.contactEditRoute(contactId))
                         },
-                        // ✅ NUOVI: Facility management
+//                        onNavigateToEditContact = { contactId ->
+//                            navController.navigate("contact_edit/$contactId")
+//                        },
                         onNavigateToFacilityList = { clientId ->
-                            navController.navigate("facilities/$clientId")
+                            navController.navigate(QReportRoutes.facilityListRoute(clientId))
+                            //navController.navigate("facilities/$clientId")
                         },
                         onNavigateToCreateFacility = { clientId ->
-                            navController.navigate("facility_form/$clientId")
+                            navController.navigate(QReportRoutes.facilityCreateRoute(clientId))
+                            //navController.navigate("facility_form/$clientId")
                         },
                         onNavigateToEditFacility = { clientId, facilityId ->
-                            navController.navigate("facility_form/$clientId/$facilityId")
+                            navController.navigate(
+                                QReportRoutes.facilityEditRoute(
+                                    clientId,
+                                    facilityId
+                                )
+                            )
+                            //navController.navigate("facility_form/$clientId/$facilityId")
                         },
                         onNavigateToFacilityDetail = { clientId, facilityId ->
-                            navController.navigate("facility_detail/$clientId/$facilityId")
+                            navController.navigate(
+                                QReportRoutes.facilityDetailRoute(
+                                    clientId,
+                                    facilityId
+                                )
+                            )
+                            //navController.navigate("facility_detail/$clientId/$facilityId")
                         },
-
                         onNavigateToIslandDetail = { islandId ->
-                            // TODO: Implementare quando IslandDetailScreen sarà disponibile
-                            // navController.navigate("island_detail/$islandId")
+                            navController.navigate(
+                                QReportRoutes.islandDetailRoute(
+                                    facilityId,
+                                    islandId
+                                )
+                            )
                         }
                     )
                 }
@@ -442,12 +513,15 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // CONTACT FORM SCREEN (Unified Create/Edit)
+                // CONTACT
                 // ============================================================
+
+                // FORM SCREEN (Unified Create/Edit)
                 composable(
-                    route = "contact_form/{clientId}?contactId={contactId}",
+                    route = QReportRoutes.CONTACT_FORM,
                     arguments = listOf(
                         navArgument("clientId") { type = NavType.StringType },
+                        navArgument("clientName") { type = NavType.StringType },
                         navArgument("contactId") {
                             type = NavType.StringType
                             nullable = true
@@ -457,10 +531,9 @@ fun QReportNavigation(
                 ) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
                     val contactId = backStackEntry.arguments?.getString("contactId")
-
-                    // TODO: Recupera clientName dal ClientDetailViewModel o da un repository
-                    // Per ora uso un placeholder - dovresti passarlo dal ClientDetailScreen
-                    val clientName = "Cliente" // TODO: Get from ViewModel or pass through route
+                    val clientName = backStackEntry.arguments?.getString("clientName")?.let {
+                        URLDecoder.decode(it, "UTF-8")
+                    } ?: "Cliente" // Get clientName from route parameter
 
                     ContactFormScreen(
                         clientId = clientId,
@@ -469,36 +542,48 @@ fun QReportNavigation(
                         onNavigateBack = { navController.popBackStack() },
                         onContactSaved = { contactId ->
                             // Torna al ClientDetailScreen dopo il salvataggio
-                            navController.navigate("client_detail/$clientId") {
-                                popUpTo("client_detail/$clientId") { inclusive = true }
+                            navController.navigate(QReportRoutes.clientDetail(clientId)) {
+                                popUpTo(QReportRoutes.clientDetail(clientId)) { inclusive = true }
                             }
                         }
                     )
                 }
 
-                // ============================================================
-                // CONTACT CREATE - Redirect to unified form
-                // ============================================================
+                // CREATE
                 composable(
-                    route = "contact_create/{clientId}",
-                    arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+                    route = QReportRoutes.CONTACT_CREATE,
+                    arguments = listOf(
+                        navArgument("clientId") { type = NavType.StringType },
+                        navArgument("clientName") { type = NavType.StringType }
+                    )
                 ) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    val clientName = backStackEntry.arguments?.getString("clientName")?.let {
+                        URLDecoder.decode(it, "UTF-8")
+                    } ?: "Cliente"
+
 
                     // Immediate redirect to unified form
                     LaunchedEffect(clientId) {
-                        navController.navigate("contact_form/$clientId") {
-                            popUpTo("contact_create/$clientId") { inclusive = true }
+                        navController.navigate(
+                            QReportRoutes.contactFormRoute(
+                                clientId,
+                                clientName
+                            )
+                        ) {
+                            popUpTo(QReportRoutes.contactCreateRoute(clientId, clientName)) {
+                                inclusive = true
+                            }
                         }
                     }
                 }
 
-                // ============================================================
-                // CONTACT EDIT - Redirect to unified form
-                // ============================================================
+                // EDIT
                 composable(
-                    route = "contact_edit/{contactId}",
-                    arguments = listOf(navArgument("contactId") { type = NavType.StringType })
+                    route = QReportRoutes.CONTACT_EDIT,
+                    arguments = listOf(
+                        navArgument("contactId") { type = NavType.StringType }
+                    )
                 ) { backStackEntry ->
                     val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
 
@@ -507,37 +592,47 @@ fun QReportNavigation(
 
                     LaunchedEffect(contactId) {
                         // TODO: Get clientId from contactId using GetContactUseCase
-                        val clientId = "placeholder" // TODO: Implement proper lookup
+                        val clientId = "placeholder"
 
-                        navController.navigate("contact_form/$clientId?contactId=$contactId") {
-                            popUpTo("contact_edit/$contactId") { inclusive = true }
+                        navController.navigate(
+                            QReportRoutes.contactFormRoute(clientId, contactId)
+                        ) {
+                            // "contact_form/$clientId?contactId=$contactId") {
+                            popUpTo(QReportRoutes.contactEditRoute(contactId)) {
+                                inclusive = true
+                            }
                         }
                     }
                 }
 
-                // ============================================================
-                // CONTACT LIST SCREEN
-                // ============================================================
+                // LIST
                 composable(
-                    route = "contacts/{clientId}",
-                    arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+                    route = QReportRoutes.CONTACT_LIST,
+                    arguments = listOf(
+                        navArgument("clientId") { type = NavType.StringType },
+                        navArgument("clientName") { type = NavType.StringType }
+                    )
                 ) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
-
-                    // TODO: Recupera clientName dal ClientDetailViewModel o repository
-                    val clientName = "Cliente" // TODO: Get from ViewModel
+                    val clientName = backStackEntry.arguments?.getString("clientName")?.let {
+                        URLDecoder.decode(it, "UTF-8")
+                    } ?: "Cliente"
 
                     ContactListScreen(
                         clientId = clientId,
                         clientName = clientName,
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToCreateContact = { clientId ->
-                            navController.navigate("contact_form/$clientId")
+                            navController.navigate(QReportRoutes.contactFormRoute(clientId, clientName))
                         },
                         onNavigateToEditContact = { contactId ->
-                            // TODO: Get clientId from contactId
-                            val clientId = clientId // Use current clientId for now
-                            navController.navigate("contact_form/$clientId?contactId=$contactId")
+                            navController.navigate(
+                                QReportRoutes.contactFormRoute(
+                                    clientId,
+                                    clientName,
+                                    contactId
+                                )
+                            )
                         }
                     )
                 }
@@ -547,10 +642,8 @@ fun QReportNavigation(
                 // FACILITY' SCREENS
                 // ============================================================
 
-                // In QReportNavigation.kt
-
-// 1. Route principale FacilityDetail - PASSA ENTRAMBI I PARAMETRI
-                composable("facility_detail/{clientId}/{facilityId}") { backStackEntry ->
+                // 1. Route principale FacilityDetail - PASSA ENTRAMBI I PARAMETRI
+                composable(QReportRoutes.FACILITY_DETAIL) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
                     val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
 
@@ -558,68 +651,92 @@ fun QReportNavigation(
                         facilityId = facilityId,
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToEdit = { facilityId ->
-                            // ✅ CORRETTO: Ora abbiamo clientId disponibile
-                            navController.navigate("facility_form/$clientId/$facilityId")
+                            navController.navigate(
+                                QReportRoutes.facilityEditRoute(
+                                    clientId,
+                                    facilityId
+                                )
+                            )
                         },
                         onNavigateToCreateIsland = { facilityId ->
-                            navController.navigate("island_form/$facilityId")
+                            navController.navigate(QReportRoutes.islandCreateRoute(facilityId))
                         },
                         onNavigateToEditIsland = { islandId ->
-                            // TODO: Temporary limitation - FacilityIslandDetailScreen only passes islandId
-                            // but we need both islandId and facilityId for proper edit navigation.
-                            // For now navigate to island detail, which has its own edit functionality
-                            navController.navigate("island_detail/$islandId")
+                            navController.navigate(
+                                QReportRoutes.islandEditRoute(
+                                    facilityId,
+                                    islandId
+                                )
+                            )
                         },
                         onNavigateToIslandsList = { facilityId ->
-                            navController.navigate("islands/$facilityId")
+                            navController.navigate(QReportRoutes.islandListRoute(facilityId))
                         },
                         onNavigateToIslandDetail = { islandId ->
-                            navController.navigate("island_detail/$islandId")
+                            navController.navigate(
+                                QReportRoutes.islandDetailRoute(
+                                    facilityId,
+                                    islandId
+                                )
+                            )
                         }
                     )
                 }
 
-// 2. Route per CREATE facility
-                composable("facility_form/{clientId}") { backStackEntry ->
+                // 2. Route per CREATE facility
+                composable(QReportRoutes.FACILITY_CREATE) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+
                     FacilityFormScreen(
                         clientId = clientId,
                         facilityId = null, // Create mode
                         onNavigateBack = { navController.popBackStack() },
                         onFacilitySaved = { savedFacilityId ->
-                            navController.navigate("facility_detail/$clientId/$savedFacilityId") {
-                                popUpTo("facilities/$clientId")
+                            navController.navigate(QReportRoutes.facilityDetailRoute(clientId, savedFacilityId)) {
+                                popUpTo(QReportRoutes.FACILITY_LIST)
                             }
                         }
                     )
                 }
 
-// 3. Route per EDIT facility
-                composable("facility_form/{clientId}/{facilityId}") { backStackEntry ->
+                // 3. Route per EDIT facility
+                composable(QReportRoutes.FACILITY_EDIT) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
                     val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
+
                     FacilityFormScreen(
-                        clientId = clientId, // ✅ Edit mode: entrambi i parametri
+                        clientId = clientId,
                         facilityId = facilityId,
                         onNavigateBack = { navController.popBackStack() },
                         onFacilitySaved = { savedFacilityId ->
-                            navController.navigate("facility_detail/$clientId/$savedFacilityId") {
-                                popUpTo("facility_detail") { inclusive = true }
+                            navController.navigate(
+                                QReportRoutes.facilityDetailRoute(
+                                    clientId,
+                                    savedFacilityId
+                                )
+                            ) {
+                                popUpTo(QReportRoutes.FACILITY_DETAIL) { inclusive = true }
                             }
                         }
                     )
                 }
 
-// 4. FacilityList - AGGIORNA per passare clientId
-                composable("facilities/{clientId}") { backStackEntry ->
+                // 4. FacilityList
+                composable(QReportRoutes.FACILITY_LIST) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+
                     FacilityListScreen(
                         clientId = clientId,
                         onNavigateToFacilityDetail = { facilityId ->
-                            navController.navigate("facility_detail/$clientId/$facilityId") // ✅ Entrambi
+                            navController.navigate(
+                                QReportRoutes.facilityDetailRoute(
+                                    clientId,
+                                    facilityId
+                                )
+                            )
                         },
                         onCreateNewFacility = {
-                            navController.navigate("facility_form/$clientId")
+                            navController.navigate(QReportRoutes.facilityCreateRoute(clientId))
                         },
                         onNavigateBack = { navController.popBackStack() }
                     )
@@ -627,36 +744,32 @@ fun QReportNavigation(
 
 
                 // ============================================================
-                // FACILITY ISLAND SCREENS
+                // FACILITY ISLAND SCREENS - ✅ FIXED con GetFacilityByIdUseCase
                 // ============================================================
 
                 // 1. FacilityIslandForm - CREATE mode
                 composable(
-                    "island_form/{facilityId}",
+                    QReportRoutes.ISLAND_CREATE,
                     arguments = listOf(
                         navArgument("facilityId") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
                     val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
 
-                    // TODO: Temporary solution - in real app would fetch facility name from repository
-                    val facilityName = "Stabilimento" // Placeholder until we implement facility lookup
-
                     FacilityIslandFormScreen(
                         facilityId = facilityId,
-                        facilityName = facilityName,
+                        facilityName = "", // ✅ SIMPLE: Let ViewModel handle facilityName lookup
                         islandId = null, // Create mode
                         onNavigateBack = { navController.popBackStack() },
                         onIslandSaved = { savedIslandId ->
-                            // ✅ BETTER FIX: Semplicemente torna indietro alla lista
-                            navController.popBackStack()
+                            navController.popBackStack() // Return to list
                         }
                     )
                 }
 
                 // 2. FacilityIslandForm - EDIT mode
                 composable(
-                    "island_form/{facilityId}/{islandId}",
+                    QReportRoutes.ISLAND_EDIT,
                     arguments = listOf(
                         navArgument("facilityId") { type = NavType.StringType },
                         navArgument("islandId") { type = NavType.StringType }
@@ -665,18 +778,24 @@ fun QReportNavigation(
                     val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
                     val islandId = backStackEntry.arguments?.getString("islandId") ?: ""
 
-                    // TODO: Temporary solution - in real app would fetch facility name from repository
-                    val facilityName = "Stabilimento" // Placeholder until we implement facility lookup
-
                     FacilityIslandFormScreen(
                         facilityId = facilityId,
-                        facilityName = facilityName,
+                        facilityName = "", // ✅ SIMPLE: Let ViewModel handle facilityName lookup
                         islandId = islandId, // Edit mode
                         onNavigateBack = { navController.popBackStack() },
                         onIslandSaved = { savedIslandId ->
-                            // ✅ CONSISTENT: Per edit mode torna al detail se già esiste
-                            navController.navigate("island_detail/$savedIslandId") {
-                                popUpTo("island_detail") { inclusive = true }
+                            navController.navigate(
+                                QReportRoutes.islandDetailRoute(
+                                    facilityId,
+                                    savedIslandId
+                                )
+                            ) {
+                                popUpTo(
+                                    QReportRoutes.islandDetailRoute(
+                                        facilityId,
+                                        islandId
+                                    )
+                                ) { inclusive = true }
                             }
                         }
                     )
@@ -684,20 +803,26 @@ fun QReportNavigation(
 
                 // 3. FacilityIslandDetail
                 composable(
-                    "island_detail/{islandId}",
+                    QReportRoutes.ISLAND_DETAIL,
                     arguments = listOf(
+                        navArgument("facilityId") { type = NavType.StringType },
                         navArgument("islandId") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
+                    val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
                     val islandId = backStackEntry.arguments?.getString("islandId") ?: ""
+
                     FacilityIslandDetailScreen(
+                        facilityId = facilityId,
                         islandId = islandId,
                         onNavigateBack = { navController.popBackStack() },
-                        onNavigateToEdit = { islandId ->
-                            // TODO: Need to get facilityId from island data to properly navigate to edit
-                            // For now, navigate to island detail which has edit button
-                            // This is a limitation that needs island->facility lookup
-                            navController.navigate("island_detail/$islandId")
+                        onNavigateToEdit = { facilityId, islandId ->
+                            navController.navigate(
+                                QReportRoutes.islandEditRoute(
+                                    facilityId,
+                                    islandId
+                                )
+                            )
                         },
                         onNavigateToMaintenance = { islandId ->
                             // TODO: Navigate to maintenance screen when implemented
@@ -708,35 +833,32 @@ fun QReportNavigation(
                     )
                 }
 
-                // 4. FacilityIslandList - Lista islands per facility
+                // 4. FacilityIslandList
                 composable(
-                    "islands/{facilityId}",
+                    QReportRoutes.ISLAND_LIST,
                     arguments = listOf(
                         navArgument("facilityId") { type = NavType.StringType }
                     )
                 ) { backStackEntry ->
                     val facilityId = backStackEntry.arguments?.getString("facilityId") ?: ""
 
-                    // TODO: Temporary solution - in real app would fetch facility name from repository
-                    val facilityName = "Stabilimento" // Placeholder until we implement facility lookup
-
                     FacilityIslandListScreen(
                         facilityId = facilityId,
-                        facilityName = facilityName,
+                        facilityName = "", // ✅ SIMPLE: Let ViewModel handle facilityName lookup
                         onNavigateToIslandDetail = { islandId ->
-                            navController.navigate("island_detail/$islandId")
+                            navController.navigate(
+                                QReportRoutes.islandDetailRoute(
+                                    facilityId,
+                                    islandId
+                                )
+                            )
                         },
                         onCreateNewIsland = {
-                            navController.navigate("island_form/$facilityId")
+                            navController.navigate(QReportRoutes.islandCreateRoute(facilityId))
                         },
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
-
-                // ============================================================
-                // END
-                // ============================================================
-
             }
         } // END OF BOX
 
@@ -751,6 +873,7 @@ fun QReportNavigation(
             QReportRoutes.CLIENTS,
             QReportRoutes.CHECKUPS,
             QReportRoutes.SETTINGS -> true
+
             else -> false
         }
 
@@ -764,7 +887,7 @@ fun QReportNavigation(
 }
 
 /**
- * Bottom Navigation Bar personalizzata
+ * Bottom Navigation Bar
  */
 @Composable
 fun QReportBottomNavigation(
@@ -809,8 +932,10 @@ fun QReportBottomNavigation(
                             popUpTo(navController.graph.findStartDestination().id) {
                                 inclusive = false
                             }
+                            // Avoid multiple copies of the same destination when
+                            // reselecting the same item
                             launchSingleTop = true
-                            // NO saveState né restoreState per Home
+                            // NO saveState nor restoreState
                         }
                     } else {
                         navController.navigate(destination.route) {

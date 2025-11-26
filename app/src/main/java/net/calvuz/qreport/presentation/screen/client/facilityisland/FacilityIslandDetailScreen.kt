@@ -40,9 +40,10 @@ import kotlinx.datetime.Clock
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityIslandDetailScreen(
+    facilityId: String,
     islandId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToEdit: (String) -> Unit,
+    onNavigateToEdit: (String, String) -> Unit,
     onNavigateToMaintenance: (String) -> Unit = { },
     onIslandDeleted: () -> Unit = { },
     modifier: Modifier = Modifier,
@@ -92,7 +93,7 @@ fun FacilityIslandDetailScreen(
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.Default.ArrowBackIosNew,
                         contentDescription = "Indietro"
                     )
                 }
@@ -115,7 +116,7 @@ fun FacilityIslandDetailScreen(
 
                 // Edit button
                 if (uiState.hasData) {
-                    IconButton(onClick = { onNavigateToEdit(islandId) }) {
+                    IconButton(onClick = { onNavigateToEdit(facilityId, islandId) }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Modifica isola"

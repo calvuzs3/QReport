@@ -7,10 +7,12 @@ import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.domain.repository.CheckItemRepository
 import net.calvuz.qreport.domain.repository.CheckUpRepository
+import net.calvuz.qreport.domain.repository.FacilityRepository
 import net.calvuz.qreport.domain.usecase.checkup.AddSparePartUseCase
 import net.calvuz.qreport.domain.usecase.checkup.GetCheckUpDetailsUseCase
 import net.calvuz.qreport.domain.usecase.checkup.UpdateCheckItemNotesUseCase
 import net.calvuz.qreport.domain.usecase.checkup.UpdateCheckItemStatusUseCase
+import net.calvuz.qreport.domain.usecase.client.facility.GetFacilityByIdUseCase
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -34,4 +36,10 @@ class UsecaseModule {
     @Provides
     fun provideAddSparePartUseCase(repository: CheckUpRepository) =
         AddSparePartUseCase(repository)
+
+    // FACILITY
+    @Provides
+    fun provideGetFacilityByIdUseCase(facilityRepository: FacilityRepository) =
+        GetFacilityByIdUseCase(facilityRepository)
+
 }
