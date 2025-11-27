@@ -10,6 +10,7 @@ import net.calvuz.qreport.domain.model.client.ContactStatistics
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import net.calvuz.qreport.domain.usecase.client.client.GetClientWithDetailsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.ClientWithDetails
+import net.calvuz.qreport.domain.usecase.client.client.DeleteClientUseCase
 import net.calvuz.qreport.domain.usecase.client.client.FacilityWithIslands
 import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
 import net.calvuz.qreport.domain.usecase.client.contact.GetContactStatisticsUseCase
@@ -32,9 +33,15 @@ data class ClientDetailUiState(
     val error: String? = null,
     val clientDetails: ClientWithDetails? = null,
 
+    // Delete states
+    val isDeleting: Boolean = false,
+    val deleteSuccess: Boolean = false,
+    val deleteError: String? = null,
+    val showDeleteConfirmation: Boolean = false,
+
     // UI State
     val selectedTab: ClientDetailTab = ClientDetailTab.INFO,
-    val contactStatistics: ContactStatistics? = null, // ← AGGIUNGERE QUESTO
+    val contactStatistics: ContactStatistics? = null,
 
     // Quick access data
     val companyName: String = "",
@@ -59,13 +66,9 @@ data class ClientDetailUiState(
     val clientId: String?
         get() = clientDetails?.client?.id
 
-//    val clientName: String?
-//        get() = clientDetails?.client?.displayName
-
     val isFullyOperational: Boolean
         get() = clientDetails?.isFullyOperational() == true
 
-    // Tab counts per badge
     val facilitiesCount: Int
         get() = facilitiesWithIslands.size
 
@@ -95,7 +98,8 @@ enum class ClientDetailTab(val title: String) {
 @HiltViewModel
 class ClientDetailViewModel @Inject constructor(
     private val getClientWithDetailsUseCase: GetClientWithDetailsUseCase,
-    private val getContactStatisticsUseCase: GetContactStatisticsUseCase // ← AGGIUNGERE QUESTO
+    private val getContactStatisticsUseCase: GetContactStatisticsUseCase,
+    private val deleteClientUseCase: DeleteClientUseCase
 
 ) : ViewModel() {
 
@@ -187,6 +191,79 @@ class ClientDetailViewModel @Inject constructor(
             activeContacts = clientDetails.activeContacts,
             allIslands = clientDetails.activeIslands,
             statistics = clientDetails.statistics
+        )
+    }
+
+    // ============================================================
+    // DELETE CLIENT OPERATIONS
+    // ============================================================
+
+    /**
+     * Mostra dialog di conferma prima di eliminare
+     */
+    fun showDeleteConfirmation() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteConfirmation = true
+        )
+    }
+
+    /**
+     * Nasconde dialog di conferma
+     */
+    fun hideDeleteConfirmation() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteConfirmation = false
+        )
+    }
+
+    /**
+     * Elimina il cliente corrente
+     * ✅ FUNZIONE PRINCIPALE per delete
+     */
+    fun deleteClient() {
+        val clientId = _uiState.value.clientId ?: return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isDeleting = true,
+                deleteError = null,
+                showDeleteConfirmation = false
+            )
+
+            try {
+                deleteClientUseCase(clientId).fold(
+                    onSuccess = {
+                        Timber.d("Client deleted successfully: $clientId")
+                        _uiState.value = _uiState.value.copy(
+                            isDeleting = false,
+                            deleteSuccess = true  // ✅ Trigger navigation back
+                        )
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to delete client: $clientId")
+                        _uiState.value = _uiState.value.copy(
+                            isDeleting = false,
+                            deleteError = "Errore eliminazione: ${error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Exception deleting client")
+                _uiState.value = _uiState.value.copy(
+                    isDeleting = false,
+                    deleteError = "Errore imprevisto: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Reset delete states
+     */
+    fun resetDeleteState() {
+        _uiState.value = _uiState.value.copy(
+            deleteSuccess = false,
+            deleteError = null
         )
     }
 

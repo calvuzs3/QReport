@@ -234,6 +234,9 @@ fun QReportNavigation(
                         onNavigateToClientDetail = { clientId ->
                             navController.navigate(QReportRoutes.clientDetail(clientId))
                         },
+                        onNavigateToEditClient = { clientId ->
+                            navController.navigate(QReportRoutes.clientEdit(clientId))
+                        },
                         onCreateNewClient = {
                             navController.navigate(QReportRoutes.CLIENT_CREATE)
                         }
@@ -378,6 +381,9 @@ fun QReportNavigation(
                         onNavigateToClientDetail = { clientId ->
                             navController.navigate(QReportRoutes.clientDetail(clientId))
                         },
+                        onNavigateToEditClient = { clientId ->
+                            navController.navigate(QReportRoutes.clientEdit(clientId))
+                        },
                         onCreateNewClient = {
                             navController.navigate(QReportRoutes.CLIENT_CREATE)
                         }
@@ -404,6 +410,14 @@ fun QReportNavigation(
                         onNavigateBack = {
                             navController.popBackStack()
                         },
+                        onDeleteClient = {
+                            // ✅ %Navigate back to client list after delete
+                            navController.navigate(QReportRoutes.CLIENTS) {
+                                popUpTo(QReportRoutes.CLIENT_DETAIL) {
+                                    inclusive = true  // Remove client detail from stack
+                                }
+                            }
+                        },
                         onNavigateToEdit = { clientId ->
                             navController.navigate(QReportRoutes.clientEdit(clientId))
                         },
@@ -423,23 +437,15 @@ fun QReportNavigation(
                                 )
                             )
                         },
-//                        onNavigateToCreateContact = { clientId ->
-//                            navController.navigate("contact_create/$clientId")
-//                        },
                         onNavigateToEditContact = { contactId ->
                             // ❌ TODO: Need clientId + clientName lookup from contactId
                             navController.navigate(QReportRoutes.contactEditRoute(contactId))
                         },
-//                        onNavigateToEditContact = { contactId ->
-//                            navController.navigate("contact_edit/$contactId")
-//                        },
                         onNavigateToFacilityList = { clientId ->
                             navController.navigate(QReportRoutes.facilityListRoute(clientId))
-                            //navController.navigate("facilities/$clientId")
                         },
                         onNavigateToCreateFacility = { clientId ->
                             navController.navigate(QReportRoutes.facilityCreateRoute(clientId))
-                            //navController.navigate("facility_form/$clientId")
                         },
                         onNavigateToEditFacility = { clientId, facilityId ->
                             navController.navigate(
@@ -448,7 +454,6 @@ fun QReportNavigation(
                                     facilityId
                                 )
                             )
-                            //navController.navigate("facility_form/$clientId/$facilityId")
                         },
                         onNavigateToFacilityDetail = { clientId, facilityId ->
                             navController.navigate(
@@ -457,9 +462,8 @@ fun QReportNavigation(
                                     facilityId
                                 )
                             )
-                            //navController.navigate("facility_detail/$clientId/$facilityId")
                         },
-                        onNavigateToIslandDetail = { islandId ->
+                        onNavigateToIslandDetail = { facilityId, islandId ->
                             navController.navigate(
                                 QReportRoutes.islandDetailRoute(
                                     facilityId,

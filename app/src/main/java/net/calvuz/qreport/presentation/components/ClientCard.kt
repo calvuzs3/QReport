@@ -26,10 +26,10 @@ import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
 
 @Composable
 fun ClientCard(
+    modifier: Modifier = Modifier,
     client: Client,
     stats: SingleClientStatistics? = null,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
