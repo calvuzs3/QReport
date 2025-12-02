@@ -26,7 +26,9 @@ interface FacilityIslandRepository {
      */
     suspend fun getIslandById(id: String): Result<FacilityIsland?>
 
-    /**
+    suspend fun getIslandsByIds(ids: List<String>): Result<List<FacilityIsland>>
+
+   /**
      * Crea una nuova isola
      */
     suspend fun createIsland(island: FacilityIsland): Result<Unit>

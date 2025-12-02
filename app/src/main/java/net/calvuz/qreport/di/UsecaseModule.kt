@@ -16,22 +16,22 @@ import net.calvuz.qreport.domain.usecase.checkup.UpdateCheckItemStatusUseCase
 @InstallIn(SingletonComponent::class)
 class UsecaseModule {
 
-    @Provides
-    fun provideUpdateCheckItemStatusUseCase(repository: CheckItemRepository) =
-        UpdateCheckItemStatusUseCase(repository)
-
-    @Provides
-    fun provideUpdateCheckItemNotesUseCase(repository: CheckItemRepository) =
-        UpdateCheckItemNotesUseCase(repository)
-
-    @Provides
-    fun provideGetCheckUpDetailsUseCase(
-        checkUpRepository: CheckUpRepository,
-        checkItemRepository: CheckItemRepository,
-        photoDao: PhotoDao
-    ) = GetCheckUpDetailsUseCase(checkUpRepository, checkItemRepository, photoDao)
-
-    @Provides
-    fun provideAddSparePartUseCase(repository: CheckUpRepository) =
-        AddSparePartUseCase(repository)
+//    @Provides
+//    fun provideUpdateCheckItemStatusUseCase(repository: CheckItemRepository) =
+//        UpdateCheckItemStatusUseCase(repository)
+//
+//    @Provides
+//    fun provideUpdateCheckItemNotesUseCase(repository: CheckItemRepository) =
+//        UpdateCheckItemNotesUseCase(repository)
+//
+//    @Provides
+//    fun provideGetCheckUpDetailsUseCase(
+//        checkUpRepository: CheckUpRepository,
+//        checkItemRepository: CheckItemRepository,
+//        photoDao: PhotoDao
+//    ) = GetCheckUpDetailsUseCase(checkUpRepository, checkItemRepository, photoDao)
+//
+//    @Provides
+//    fun provideAddSparePartUseCase(repository: CheckUpRepository) =
+//        AddSparePartUseCase(repository)
 }

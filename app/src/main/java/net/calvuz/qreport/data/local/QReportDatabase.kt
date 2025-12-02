@@ -3,11 +3,13 @@ package net.calvuz.qreport.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import net.calvuz.qreport.data.local.QReportDatabase.Companion.DATABASE_VERSION
 import net.calvuz.qreport.data.local.converters.AddressConverter
 import net.calvuz.qreport.data.local.converters.DatabaseConverters
 import net.calvuz.qreport.data.local.dao.CheckItemDao
+import net.calvuz.qreport.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.data.local.dao.CheckUpDao
 import net.calvuz.qreport.data.local.dao.ClientDao
 import net.calvuz.qreport.data.local.dao.ContactDao
@@ -17,6 +19,7 @@ import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.data.local.dao.SparePartDao
 import net.calvuz.qreport.data.local.entity.CheckItemEntity
 import net.calvuz.qreport.data.local.entity.CheckUpEntity
+import net.calvuz.qreport.data.local.entity.CheckUpIslandAssociationEntity
 import net.calvuz.qreport.data.local.entity.ClientEntity
 import net.calvuz.qreport.data.local.entity.ContactEntity
 import net.calvuz.qreport.data.local.entity.FacilityEntity
@@ -48,7 +51,9 @@ import net.calvuz.qreport.data.local.entity.SparePartEntity
         ClientEntity::class,
         ContactEntity::class,
         FacilityEntity::class,
-        FacilityIslandEntity::class
+        FacilityIslandEntity::class,
+        // new
+        CheckUpIslandAssociationEntity::class
     ],
     version = DATABASE_VERSION,
     exportSchema = true,
@@ -71,11 +76,12 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun facilityDao(): FacilityDao
     abstract fun facilityIslandDao(): FacilityIslandDao
+    abstract fun checkUpAssociationDao(): CheckUpAssociationDao
 
 
     companion object {
         const val DATABASE_NAME = "qreport_database"
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION =3
 
         /**
          * Callback per inizializzazione database
@@ -93,6 +99,42 @@ abstract class QReportDatabase : RoomDatabase() {
                 // Operazioni da eseguire ad ogni apertura del database
                 // Ad esempio pulizia di dati temporanei vecchi
             }
+        }
+
+
+        val MIGRATION_CHECKUP_ISLAND_ASSOCIATION_2_3 = Migration(2, 3) { database ->
+
+            // Crea tabella associazioni CheckUp-Isole
+            database.execSQL("""
+        CREATE TABLE IF NOT EXISTS checkup_island_associations (
+            id TEXT PRIMARY KEY NOT NULL,
+            checkup_id TEXT NOT NULL,
+            island_id TEXT NOT NULL,
+            association_type TEXT NOT NULL DEFAULT 'STANDARD',
+            notes TEXT,
+            created_at INTEGER NOT NULL,
+            updated_at INTEGER NOT NULL,
+            FOREIGN KEY (checkup_id) REFERENCES checkups(id) ON DELETE CASCADE,
+            FOREIGN KEY (island_id) REFERENCES facility_islands(id) ON DELETE CASCADE,
+            UNIQUE(checkup_id, island_id)
+        )
+    """)
+
+            // Crea indici per performance
+            database.execSQL("""
+        CREATE INDEX IF NOT EXISTS index_checkup_associations_checkup_id 
+        ON checkup_island_associations(checkup_id)
+    """)
+
+            database.execSQL("""
+        CREATE INDEX IF NOT EXISTS index_checkup_associations_island_id 
+        ON checkup_island_associations(island_id)
+    """)
+
+            database.execSQL("""
+        CREATE INDEX IF NOT EXISTS index_checkup_associations_type 
+        ON checkup_island_associations(association_type)
+    """)
         }
     }
 }

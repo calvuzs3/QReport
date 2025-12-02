@@ -8,7 +8,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.data.local.QReportDatabase
+import net.calvuz.qreport.data.local.QReportDatabase.Companion.MIGRATION_CHECKUP_ISLAND_ASSOCIATION_2_3
 import net.calvuz.qreport.data.local.dao.CheckItemDao
+import net.calvuz.qreport.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.data.local.dao.CheckUpDao
 import net.calvuz.qreport.data.local.dao.ClientDao
 import net.calvuz.qreport.data.local.dao.ContactDao
@@ -90,44 +92,33 @@ object DatabaseModule {
             name = QReportDatabase.Companion.DATABASE_NAME
         )
             .addCallback(QReportDatabase.Companion.CALLBACK)
-            .fallbackToDestructiveMigration() // Solo per sviluppo, rimuovere in produzione
+//            .fallbackToDestructiveMigration() // Solo per sviluppo, rimuovere in produzione
+            .addMigrations(
+                // Altre migration esistenti...
+//                MIGRATION_CHECKUP_ISLAND_ASSOCIATION_2_3  // ← AGGIUNGI QUESTA
+            )
             .build()
     }
 
-    /**
-     * DAO per gestione CheckUp
-     */
     @Provides
     fun provideCheckUpDao(
         database: QReportDatabase
     ): CheckUpDao = database.checkUpDao()
 
-    /**
-     * DAO per gestione CheckItem
-     */
     @Provides
     fun provideCheckItemDao(
         database: QReportDatabase
     ): CheckItemDao = database.checkItemDao()
 
-    /**
-     * DAO per gestione Photo
-     */
     @Provides
     fun providePhotoDao(
         database: QReportDatabase
     ): PhotoDao = database.photoDao()
 
-    /**
-     * DAO per gestione SparePart
-     */
     @Provides
     fun provideSparePartDao(
         database: QReportDatabase
     ): SparePartDao = database.sparePartDao()
-
-
-    // new
 
     @Provides
     fun provideClientDao(
@@ -148,4 +139,10 @@ object DatabaseModule {
     fun provideFacilityIslandDao(
         database: QReportDatabase
     ): FacilityIslandDao = database.facilityIslandDao()
+
+    @Provides
+    fun provideCheckUpAssociationDao(
+        database: QReportDatabase
+    ): CheckUpAssociationDao = database.checkUpAssociationDao()
+
 }
