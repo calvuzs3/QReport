@@ -1,7 +1,6 @@
 package net.calvuz.qreport.presentation.screen.client.client
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,6 +25,7 @@ import net.calvuz.qreport.domain.model.client.OperationalStatus
 import net.calvuz.qreport.domain.usecase.client.client.ClientWithDetails
 import net.calvuz.qreport.domain.usecase.client.client.FacilityWithIslands
 import net.calvuz.qreport.presentation.screen.client.client.components.ContactsStatisticsSummary
+import androidx.core.net.toUri
 
 /**
  * Screen per il dettaglio cliente con 4 tab - VERSIONE FINALE CON GESTIONE FACILITY
@@ -41,23 +41,25 @@ import net.calvuz.qreport.presentation.screen.client.client.components.ContactsS
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientDetailScreen(
+    modifier: Modifier = Modifier,
     clientId: String,
+    clientName: String,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (String) -> Unit,
+    onDeleteClient: () -> Unit,
 
     // ✅ Facility navigation callbacks
     onNavigateToFacilityList: (String) -> Unit, // Navigate to full facility list
     onNavigateToCreateFacility: (String) -> Unit, // Create new facility
     onNavigateToEditFacility: (String, String) -> Unit, // Edit facility (clientId, facilityId)
     onNavigateToFacilityDetail: (String, String) -> Unit = { _, _ -> }, // Facility detail
-    onNavigateToIslandDetail: (String) -> Unit = { }, // Island detail (future)
+    onNavigateToIslandDetail: (String, String) -> Unit = {_, _ -> }, // Island detail (future)
 
     // Navigation callbacks per contatti
     onNavigateToContactList: (String, String) -> Unit = { _, _ -> }, // (clientId, clientName)
-    onNavigateToCreateContact: (String) -> Unit = { }, // (clientId)
+    onNavigateToCreateContact: (String, String) -> Unit = {_, _ -> }, // (clientId)
     onNavigateToEditContact: (String) -> Unit = { }, // (contactId)
 
-    modifier: Modifier = Modifier,
     viewModel: ClientDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -67,18 +69,52 @@ fun ClientDetailScreen(
     val callContact = { phoneNumber: String ->
         try {
             val intent = Intent(Intent.ACTION_CALL).apply {
-                data = Uri.parse("tel:$phoneNumber")
+                data = "tel:$phoneNumber".toUri()
             }
             context.startActivity(intent)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             val intent = Intent(Intent.ACTION_DIAL).apply {
-                data = Uri.parse("tel:$phoneNumber")
+                data = "tel:$phoneNumber".toUri()
             }
             context.startActivity(intent)
         }
     }
 
-    // Load client details when screen opens
+    // ✅ Handle delete success - Navigate back automatically
+    LaunchedEffect(uiState.deleteSuccess) {
+        if (uiState.deleteSuccess) {
+            viewModel.resetDeleteState()
+            onDeleteClient()  // Navigate back to client list
+        }
+    }
+
+    // ✅ Delete confirmation dialog
+    if (uiState.showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = viewModel::hideDeleteConfirmation,
+            title = { Text("Elimina Cliente") },
+            text = {
+                Text("Sei sicuro di voler eliminare ${uiState.companyName}? Questa azione non può essere annullata.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = viewModel::deleteClient,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Elimina")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::hideDeleteConfirmation) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
+    // ✅ Load client details when screen opens
     LaunchedEffect(clientId) {
         viewModel.loadClientDetails(clientId)
     }
@@ -104,7 +140,25 @@ fun ClientDetailScreen(
                 }
             },
             actions = {
-                // Edit button (solo se dati caricati)
+                // Delete button
+                if (uiState.hasData) {
+                    IconButton(
+                        onClick = viewModel::showDeleteConfirmation,  // Show confirmation dialog
+                        enabled = !uiState.isDeleting
+                    ) {
+                        if (uiState.isDeleting) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                tint = MaterialTheme.colorScheme.error,
+                                contentDescription = "Elimina cliente"
+                            )
+                        }
+                    }
+                }
+
+                // Edit button
                 if (uiState.hasData) {
                     IconButton(onClick = { onNavigateToEdit(clientId) }) {
                         Icon(
@@ -141,6 +195,7 @@ fun ClientDetailScreen(
                 ClientDetailContent(
                     uiState = uiState,
                     clientId = clientId,
+                    clientName = clientName,
                     onTabSelected = viewModel::selectTab,
 
                     // Facility management callbacks
@@ -162,7 +217,7 @@ fun ClientDetailScreen(
 
                     // Contact callbacks
                     onEditContact = onNavigateToEditContact,
-                    onCreateContact = { onNavigateToCreateContact(clientId) },
+                    onCreateContact = { onNavigateToCreateContact(clientId, clientName) },
                     onViewAllContacts = {
                         onNavigateToContactList(clientId, uiState.companyName)
                     },
@@ -186,13 +241,13 @@ fun ClientDetailScreen(
 
 @Composable
 private fun ContactsTabContent(
+    modifier: Modifier = Modifier,
     contacts: List<Contact>,
-    contactStatistics: ContactStatistics? = null, // ← NUOVO PARAMETRO
+    contactStatistics: ContactStatistics? = null,
     onViewAllContacts: () -> Unit,
     onCreateContact: () -> Unit,
     onEditContact: (String) -> Unit,
     onCallContact: (String) -> Unit,
-    modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
         // ✅ Header con stesso stile di Facilities per consistency
@@ -294,11 +349,12 @@ private fun ContactsTabContent(
 private fun ClientDetailContent(
     uiState: ClientDetailUiState,
     clientId: String,
+    clientName: String,
     onTabSelected: (ClientDetailTab) -> Unit,
 
     // Facility callbacks
     onFacilityClick: (String) -> Unit,
-    onIslandClick: (String) -> Unit,
+    onIslandClick: (String, String) -> Unit,
     onManageFacilities: () -> Unit,
     onCreateFacility: () -> Unit,
     onEditFacility: (String) -> Unit,
@@ -434,7 +490,7 @@ private fun ClientDetailContent(
 private fun FacilitiesTabContentWithManagement(
     facilitiesWithIslands: List<FacilityWithIslands>,
     onFacilityClick: (String) -> Unit,
-    onIslandClick: (String) -> Unit,
+    onIslandClick: (String, String) -> Unit,
     onManageFacilities: () -> Unit,
     onCreateFacility: () -> Unit,
     onEditFacility: (String) -> Unit,
@@ -551,7 +607,7 @@ private fun FacilitiesTabContentWithManagement(
 private fun FacilityItemWithActions(
     facilityWithIslands: FacilityWithIslands,
     onFacilityClick: (String) -> Unit,
-    onIslandClick: (String) -> Unit,
+    onIslandClick: (String, String) -> Unit,
     onEditFacility: (String) -> Unit
 ) {
     val facility = facilityWithIslands.facility
@@ -627,7 +683,7 @@ private fun FacilityItemWithActions(
                 facilityWithIslands.islands.take(3).forEach { island ->
                     IslandItemCompact(
                         island = island,
-                        onClick = { onIslandClick(island.id) }
+                        onClick = { onIslandClick(facilityWithIslands.facility.id, island.id) }
                     )
                 }
 
@@ -1058,10 +1114,10 @@ private fun InfoItem(
 
 @Composable
 private fun EmptyTabContent(
+    modifier: Modifier = Modifier,
     icon: ImageVector,
     message: String,
-    subMessage: String = "",
-    modifier: Modifier = Modifier
+    subMessage: String = ""
 ) {
     Box(
         modifier = modifier

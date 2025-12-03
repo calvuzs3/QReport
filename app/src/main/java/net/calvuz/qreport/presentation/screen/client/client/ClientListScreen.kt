@@ -37,6 +37,7 @@ import net.calvuz.qreport.presentation.components.ClientCardVariant
 @Composable
 fun ClientListScreen(
     onNavigateToClientDetail: (String) -> Unit,
+    onNavigateToEditClient: (String) -> Unit,
     onCreateNewClient: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ClientListViewModel = hiltViewModel()
@@ -156,6 +157,7 @@ fun ClientListScreen(
                     ClientListContent(
                         clients = uiState.filteredClients,
                         onClientClick = onNavigateToClientDetail,
+                        onClientEdit = onNavigateToEditClient,
                         onClientDelete = viewModel::deleteClient
                     )
                 }
@@ -189,6 +191,7 @@ fun ClientListScreen(
 private fun ClientListContent(
     clients: List<ClientWithStats>,
     onClientClick: (String) -> Unit,
+    onClientEdit: (String) -> Unit,
     onClientDelete: (String) -> Unit
 ) {
     LazyColumn(
@@ -204,6 +207,7 @@ private fun ClientListContent(
                 client = clientWithStats.client,
                 stats = clientWithStats.stats,
                 onClick = { onClientClick(clientWithStats.client.id) },
+                onEdit = { onClientEdit(clientWithStats.client.id) },
                 onDelete = { onClientDelete(clientWithStats.client.id) },
                 variant = ClientCardVariant.FULL
             )
