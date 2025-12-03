@@ -6,6 +6,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.data.repository.ExportRepositoryImpl
 import net.calvuz.qreport.data.repository.CheckItemRepositoryImpl
+import net.calvuz.qreport.data.repository.CheckUpAssociationRepositoryImpl
 import net.calvuz.qreport.data.repository.CheckUpRepositoryImpl
 import net.calvuz.qreport.data.repository.ClientRepositoryImpl
 import net.calvuz.qreport.data.repository.ContactRepositoryImpl
@@ -13,6 +14,7 @@ import net.calvuz.qreport.data.repository.FacilityIslandRepositoryImpl
 import net.calvuz.qreport.data.repository.FacilityRepositoryImpl
 import net.calvuz.qreport.data.repository.PhotoRepositoryImpl
 import net.calvuz.qreport.domain.repository.CheckItemRepository
+import net.calvuz.qreport.domain.repository.CheckUpAssociationRepository
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import net.calvuz.qreport.domain.repository.ClientRepository
 import net.calvuz.qreport.domain.repository.ContactRepository
@@ -24,9 +26,6 @@ import javax.inject.Singleton
 
 /**
  * Repository Dependency Injection Module
- *
- * Modulo per fornire istanze dei repository che implementano
- * la logica di business e coordinano i diversi data source.
  */
 @Module
 @InstallIn(SingletonComponent::class)
@@ -80,4 +79,9 @@ abstract class RepositoryModule {
         facilityIslandRepositoryImpl: FacilityIslandRepositoryImpl
     ): FacilityIslandRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindCheckUpAssociationRepository(
+        checkUpAssociationRepositoryImpl: CheckUpAssociationRepositoryImpl
+    ): CheckUpAssociationRepository
 }

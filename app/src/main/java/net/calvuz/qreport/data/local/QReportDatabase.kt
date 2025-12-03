@@ -3,7 +3,6 @@ package net.calvuz.qreport.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import net.calvuz.qreport.data.local.QReportDatabase.Companion.DATABASE_VERSION
 import net.calvuz.qreport.data.local.converters.AddressConverter
@@ -39,26 +38,29 @@ import net.calvuz.qreport.data.local.entity.SparePartEntity
  * - Type converters per Instant (kotlinx.datetime)
  * - Migrazioni automatiche per versioni future
  *
- * @version 1 - Database schema iniziale
+ * @version 3 - Database schema iniziale
  */
 @Database(
     entities = [
+        // checkups
         CheckUpEntity::class,
         CheckItemEntity::class,
         PhotoEntity::class,
         SparePartEntity::class,
-        // new
+        // clients
         ClientEntity::class,
         ContactEntity::class,
         FacilityEntity::class,
         FacilityIslandEntity::class,
-        // new
+        // checkup-client association
         CheckUpIslandAssociationEntity::class
     ],
     version = DATABASE_VERSION,
     exportSchema = true,
     autoMigrations = [
         // Future migrations will be added here
+        //AutoMigration(from = 1, to = 2),  // ← Room: "Ci penso io!"
+        //AutoMigration(from = 2, to = 3),  // ← Room genera SQL automaticamente
     ]
 )
 @TypeConverters(
@@ -81,10 +83,10 @@ abstract class QReportDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "qreport_database"
-        const val DATABASE_VERSION =3
+        const val DATABASE_VERSION = 3
 
         /**
-         * Callback per inizializzazione database
+         * 3. Callback per inizializzazione database
          * Popola dati di base se necessario
          */
         val CALLBACK = object : Callback() {
@@ -102,39 +104,11 @@ abstract class QReportDatabase : RoomDatabase() {
         }
 
 
-        val MIGRATION_CHECKUP_ISLAND_ASSOCIATION_2_3 = Migration(2, 3) { database ->
-
-            // Crea tabella associazioni CheckUp-Isole
-            database.execSQL("""
-        CREATE TABLE IF NOT EXISTS checkup_island_associations (
-            id TEXT PRIMARY KEY NOT NULL,
-            checkup_id TEXT NOT NULL,
-            island_id TEXT NOT NULL,
-            association_type TEXT NOT NULL DEFAULT 'STANDARD',
-            notes TEXT,
-            created_at INTEGER NOT NULL,
-            updated_at INTEGER NOT NULL,
-            FOREIGN KEY (checkup_id) REFERENCES checkups(id) ON DELETE CASCADE,
-            FOREIGN KEY (island_id) REFERENCES facility_islands(id) ON DELETE CASCADE,
-            UNIQUE(checkup_id, island_id)
-        )
-    """)
-
-            // Crea indici per performance
-            database.execSQL("""
-        CREATE INDEX IF NOT EXISTS index_checkup_associations_checkup_id 
-        ON checkup_island_associations(checkup_id)
-    """)
-
-            database.execSQL("""
-        CREATE INDEX IF NOT EXISTS index_checkup_associations_island_id 
-        ON checkup_island_associations(island_id)
-    """)
-
-            database.execSQL("""
-        CREATE INDEX IF NOT EXISTS index_checkup_associations_type 
-        ON checkup_island_associations(association_type)
-    """)
-        }
+        // 4. Migrations, if any
+//        val MIGRATION_2_3 = Migration(2, 3) { database ->
+//        // ← Tu scrivi SQL manualmente
+//        database.execSQL("CREATE TABLE ...")
+//        }
+        // e aggiungi .addMigrations() nel DtabaseModule
     }
 }

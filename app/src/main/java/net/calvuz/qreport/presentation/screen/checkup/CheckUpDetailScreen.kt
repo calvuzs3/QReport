@@ -38,6 +38,7 @@ import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.model.spare.SparePartCategory
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency
+import net.calvuz.qreport.presentation.components.checkup.AssociationManagementDialog
 import net.calvuz.qreport.presentation.components.checkup.CheckUpHeaderCard
 
 /**
@@ -183,7 +184,9 @@ fun CheckUpDetailScreen(
                         CheckUpHeaderCard(
                             checkUp = uiState.checkUp!!,
                             progress = uiState.progress,
-                            onEditHeader = viewModel::showEditHeaderDialog
+                            onEditHeader = viewModel::showEditHeaderDialog,
+                            associations = uiState.checkUpAssociations, // ✅ NUOVO
+                            onManageAssociation = viewModel::showAssociationDialog // ✅ NUOVO
                         )
                     }
 
@@ -222,6 +225,28 @@ fun CheckUpDetailScreen(
                     }
                 }
             }
+        }
+
+        // Association Management Dialog
+        val associationState by viewModel.associationState.collectAsStateWithLifecycle()
+
+        if (associationState.showDialog) {
+            AssociationManagementDialog(
+                currentAssociations = associationState.currentAssociations,
+                availableClients = associationState.availableClients,
+                availableFacilities = associationState.availableFacilities,
+                availableIslands = associationState.availableIslands,
+                selectedClientId = associationState.selectedClientId,
+                selectedFacilityId = associationState.selectedFacilityId,
+                isLoading = associationState.isLoadingClients ||
+                        associationState.isLoadingFacilities ||
+                        associationState.isLoadingIslands,
+                onDismiss = viewModel::hideAssociationDialog,
+                onClientSelected = viewModel::onClientSelected,
+                onFacilitySelected = viewModel::onFacilitySelected,
+                onIslandSelected = viewModel::onIslandSelected,
+                onRemoveAssociation = viewModel::removeAssociation
+            )
         }
     }
 

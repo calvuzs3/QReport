@@ -16,14 +16,14 @@ import javax.inject.Singleton
 /**
  * Utility Dependency Injection Module
  *
- * Modulo per utilità e servizi comuni dell'applicazione.
+ * Utilities and common services Module
  */
 @Module
 @InstallIn(SingletonComponent::class)
 object UtilityModule {
 
     /**
-     * File provider per gestione storage interno
+     * Internal storage management File provider
      */
     @Provides
     @Singleton
@@ -37,11 +37,11 @@ object UtilityModule {
     @Singleton
     fun providePhotoStorageManager(
         @ApplicationContext context: Context,
-        fileManager: FileManager // ✅ Riusa esistente
+        fileManager: FileManager
     ): PhotoStorageManager = PhotoStorageManager(context, fileManager)
 
     /**
-     * Image processor per export foto
+     * Export photos Image processor
      */
     @Provides
     @Singleton
