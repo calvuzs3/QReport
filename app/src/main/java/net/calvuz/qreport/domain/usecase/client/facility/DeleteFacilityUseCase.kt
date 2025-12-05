@@ -17,7 +17,8 @@ import javax.inject.Inject
  */
 class DeleteFacilityUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository,
-    private val facilityIslandRepository: FacilityIslandRepository
+    private val facilityIslandRepository: FacilityIslandRepository,
+    private val checkFacilityExists: CheckFacilityExistsUseCase
 ) {
 
     /**
@@ -63,16 +64,6 @@ class DeleteFacilityUseCase @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    /**
-     * Verifica che la facility esista e la restituisce
-     */
-    private suspend fun checkFacilityExists(facilityId: String): Result<Facility> {
-        return facilityRepository.getFacilityById(facilityId)
-            .mapCatching { facility ->
-                facility ?: throw NoSuchElementException("Stabilimento con ID '$facilityId' non trovato")
-            }
     }
 
     /**

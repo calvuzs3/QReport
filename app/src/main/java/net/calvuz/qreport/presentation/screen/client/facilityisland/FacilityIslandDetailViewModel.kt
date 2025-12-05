@@ -293,7 +293,7 @@ data class FacilityIslandDetailUiState(
      * Testo stato per subtitle
      */
     val statusText: String
-        get() = statistics?.statusDescription ?: island?.operationalStatus?.displayName ?: ""
+        get() = statistics?.statusDescription ?: island?.facilityIslandOperationalStatus?.displayName ?: ""
 }
 
 /**

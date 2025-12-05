@@ -21,11 +21,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.client.Contact
 import net.calvuz.qreport.domain.model.client.ContactStatistics
 import net.calvuz.qreport.domain.model.client.FacilityIsland
-import net.calvuz.qreport.domain.model.client.OperationalStatus
-import net.calvuz.qreport.domain.usecase.client.client.ClientWithDetails
-import net.calvuz.qreport.domain.usecase.client.client.FacilityWithIslands
+import net.calvuz.qreport.domain.model.client.FacilityIslandOperationalStatus
 import net.calvuz.qreport.presentation.screen.client.client.components.ContactsStatisticsSummary
 import androidx.core.net.toUri
+import net.calvuz.qreport.domain.model.client.ClientWithDetails
+import net.calvuz.qreport.domain.model.client.FacilityWithIslands
 
 /**
  * Screen per il dettaglio cliente con 4 tab - VERSIONE FINALE CON GESTIONE FACILITY
@@ -59,6 +59,7 @@ fun ClientDetailScreen(
     onNavigateToContactList: (String, String) -> Unit = { _, _ -> }, // (clientId, clientName)
     onNavigateToCreateContact: (String, String) -> Unit = {_, _ -> }, // (clientId)
     onNavigateToEditContact: (String) -> Unit = { }, // (contactId)
+    onNavigateToContactDetail: (String) -> Unit = { }, // (contactId)
 
     viewModel: ClientDetailViewModel = hiltViewModel()
 ) {
@@ -216,6 +217,7 @@ fun ClientDetailScreen(
                     },
 
                     // Contact callbacks
+                    onContactClick = onNavigateToContactDetail,
                     onEditContact = onNavigateToEditContact,
                     onCreateContact = { onNavigateToCreateContact(clientId, clientName) },
                     onViewAllContacts = {
@@ -245,6 +247,7 @@ private fun ContactsTabContent(
     contacts: List<Contact>,
     contactStatistics: ContactStatistics? = null,
     onViewAllContacts: () -> Unit,
+    onContactClick: (String) -> Unit,
     onCreateContact: () -> Unit,
     onEditContact: (String) -> Unit,
     onCallContact: (String) -> Unit,
@@ -311,6 +314,7 @@ private fun ContactsTabContent(
                 items(contacts.take(5)) { contact ->
                     ContactItem(  // ← USA ContactItem ESISTENTE
                         contact = contact,
+                        onContactClick = onContactClick,
                         onEditContact = onEditContact,
                         onCallContact = onCallContact
                     )
@@ -360,6 +364,7 @@ private fun ClientDetailContent(
     onEditFacility: (String) -> Unit,
 
     // Contact callbacks
+    onContactClick: (String) -> Unit,
     onEditContact: (String) -> Unit,
     onCreateContact: () -> Unit,
     onViewAllContacts: () -> Unit,
@@ -468,6 +473,7 @@ private fun ClientDetailContent(
                     contacts = uiState.contacts,
                     contactStatistics = uiState.contactStatistics, // ← STATISTICHE AGGIUNTE
                     onViewAllContacts = onViewAllContacts,
+                    onContactClick = onContactClick,
                     onCreateContact = onCreateContact,
                     onEditContact = onEditContact,
                     onCallContact = onCallContact,
@@ -820,17 +826,17 @@ private fun IslandItemCompact(
             }
 
             Icon(
-                imageVector = when (island.operationalStatus) {
-                    OperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
-                    OperationalStatus.MAINTENANCE_DUE -> Icons.Default.Warning
-                    OperationalStatus.INACTIVE -> Icons.Default.Cancel
+                imageVector = when (island.facilityIslandOperationalStatus) {
+                    FacilityIslandOperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
+                    FacilityIslandOperationalStatus.MAINTENANCE_DUE -> Icons.Default.Warning
+                    FacilityIslandOperationalStatus.INACTIVE -> Icons.Default.Cancel
                 },
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = when (island.operationalStatus) {
-                    OperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
-                    OperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
-                    OperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
+                tint = when (island.facilityIslandOperationalStatus) {
+                    FacilityIslandOperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
+                    FacilityIslandOperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
+                    FacilityIslandOperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
                 }
             )
         }
@@ -840,10 +846,12 @@ private fun IslandItemCompact(
 @Composable
 private fun ContactItem(
     contact: Contact,
+    onContactClick: (String) -> Unit,
     onEditContact: (String) -> Unit,
     onCallContact: (String) -> Unit
 ) {
     Card(
+        onClick = { onContactClick(contact.id) },
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(

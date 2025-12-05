@@ -1,7 +1,6 @@
 package net.calvuz.qreport.domain.validator
 
 import net.calvuz.qreport.domain.model.client.Client
-import net.calvuz.qreport.domain.repository.ClientRepository
 import java.net.URL
 import javax.inject.Inject
 
@@ -43,7 +42,7 @@ class ClientDataValidator @Inject constructor(){
     /**
      * Validazione formato partita IVA italiana (11 cifre)
      */
-    private fun isValidVatNumber(vatNumber: String): Boolean {
+    fun isValidVatNumber(vatNumber: String): Boolean {
         val cleanVat = vatNumber.replace("\\s+".toRegex(), "")
         return cleanVat.matches("\\d{11}".toRegex())
     }
@@ -51,7 +50,7 @@ class ClientDataValidator @Inject constructor(){
     /**
      * Validazione formato codice fiscale (16 caratteri alfanumerici)
      */
-    private fun isValidFiscalCode(fiscalCode: String): Boolean {
+    fun isValidFiscalCode(fiscalCode: String): Boolean {
         val cleanCode = fiscalCode.replace("\\s+".toRegex(), "").uppercase()
         return cleanCode.matches("[A-Z0-9]{16}".toRegex())
     }
@@ -59,7 +58,7 @@ class ClientDataValidator @Inject constructor(){
     /**
      * Validazione formato website
      */
-    private fun isValidWebsite(website: String): Boolean {
+    fun isValidWebsite(website: String): Boolean {
         return try {
             val cleanWebsite = if (!website.startsWith("http")) "https://$website" else website
             URL(cleanWebsite)

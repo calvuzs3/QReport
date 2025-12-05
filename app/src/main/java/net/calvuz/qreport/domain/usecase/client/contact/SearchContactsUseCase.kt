@@ -1,9 +1,9 @@
 package net.calvuz.qreport.domain.usecase.client.contact
 
-import android.util.Patterns
 import net.calvuz.qreport.domain.model.client.Contact
 import net.calvuz.qreport.domain.model.client.ContactMethod
 import net.calvuz.qreport.domain.repository.ContactRepository
+import net.calvuz.qreport.domain.validator.ContactDataValidator
 import javax.inject.Inject
 
 /**
@@ -16,7 +16,8 @@ import javax.inject.Inject
  * - Analytics contatti
  */
 class SearchContactsUseCase @Inject constructor(
-    private val contactRepository: ContactRepository
+    private val contactRepository: ContactRepository,
+    private val contactDataValidator: ContactDataValidator,
 ) {
 
     /**
@@ -73,7 +74,7 @@ class SearchContactsUseCase @Inject constructor(
                 return Result.failure(IllegalArgumentException("Email non può essere vuota"))
             }
 
-            if (!isValidEmail(email)) {
+            if (!contactDataValidator.isValidEmail(email)) {
                 return Result.failure(IllegalArgumentException("Formato email non valido"))
             }
 
@@ -324,13 +325,6 @@ class SearchContactsUseCase @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    /**
-     * Validazione formato email
-     */
-    private fun isValidEmail(email: String): Boolean {
-        return Patterns.EMAIL_ADDRESS.matcher(email).matches()
     }
 }
 

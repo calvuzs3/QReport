@@ -3,6 +3,7 @@ package net.calvuz.qreport.domain.usecase.client.facilityisland
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import net.calvuz.qreport.domain.repository.FacilityIslandRepository
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.domain.validator.FacilityIslandDataValidator
 import javax.inject.Inject
 
 /**
@@ -17,7 +18,10 @@ import javax.inject.Inject
  * - Calcolo automatico ore operative
  */
 class UpdateFacilityIslandUseCase @Inject constructor(
-    private val facilityIslandRepository: FacilityIslandRepository
+    private val facilityIslandRepository: FacilityIslandRepository,
+    private val validateIslandData: FacilityIslandDataValidator,
+    private val checkIslandExists: CheckFacilityIslandExistsUseCase,
+    private val checkSerialNumberUniqueness: CheckSerialNumberUniquenessUseCase
 ) {
 
     /**
@@ -37,7 +41,7 @@ class UpdateFacilityIslandUseCase @Inject constructor(
 
             // 3. Controllo duplicati serial number (se cambiato)
             if (island.serialNumber != originalIsland.serialNumber) {
-                checkSerialNumberUniqueness(island.id, island.serialNumber)
+                checkSerialNumberUniqueness(island.serialNumber)
                     .onFailure { return Result.failure(it) }
             }
 
@@ -63,69 +67,6 @@ class UpdateFacilityIslandUseCase @Inject constructor(
         }
     }
 
-    /**
-     * Verifica che l'isola esista e la restituisce
-     */
-    private suspend fun checkIslandExists(islandId: String): Result<FacilityIsland> {
-        return facilityIslandRepository.getIslandById(islandId)
-            .mapCatching { island ->
-                island ?: throw NoSuchElementException("Isola con ID '$islandId' non trovata")
-            }
-    }
-
-    /**
-     * Validazione dati isola
-     */
-    private fun validateIslandData(island: FacilityIsland): Result<Unit> {
-        return when {
-            island.id.isBlank() ->
-                Result.failure(IllegalArgumentException("ID isola è obbligatorio"))
-
-            island.facilityId.isBlank() ->
-                Result.failure(IllegalArgumentException("ID facility è obbligatorio"))
-
-            island.serialNumber.isBlank() ->
-                Result.failure(IllegalArgumentException("Serial number è obbligatorio"))
-
-            island.serialNumber.length < 3 ->
-                Result.failure(IllegalArgumentException("Serial number deve essere di almeno 3 caratteri"))
-
-            island.serialNumber.length > 50 ->
-                Result.failure(IllegalArgumentException("Serial number troppo lungo (max 50 caratteri)"))
-
-            !isValidSerialNumber(island.serialNumber) ->
-                Result.failure(IllegalArgumentException("Formato serial number non valido (solo lettere, numeri, trattini)"))
-
-            (island.model?.length ?: 0) > 100 ->
-                Result.failure(IllegalArgumentException("Modello troppo lungo (max 100 caratteri)"))
-
-            (island.customName?.length ?: 0) > 100 ->
-                Result.failure(IllegalArgumentException("Nome personalizzato troppo lungo (max 100 caratteri)"))
-
-            (island.location?.length ?: 0) > 200 ->
-                Result.failure(IllegalArgumentException("Ubicazione troppo lunga (max 200 caratteri)"))
-
-            island.operatingHours < 0 ->
-                Result.failure(IllegalArgumentException("Ore operative non possono essere negative"))
-
-            island.cycleCount < 0 ->
-                Result.failure(IllegalArgumentException("Conteggio cicli non può essere negativo"))
-
-            else -> Result.success(Unit)
-        }
-    }
-
-    /**
-     * Controllo univocità serial number escludendo l'isola corrente
-     */
-    private suspend fun checkSerialNumberUniqueness(islandId: String, serialNumber: String): Result<Unit> {
-        return facilityIslandRepository.isSerialNumberTaken(serialNumber, islandId)
-            .mapCatching { isTaken ->
-                if (isTaken) {
-                    throw IllegalArgumentException("Serial number '$serialNumber' già utilizzato da un'altra isola")
-                }
-            }
-    }
 
     /**
      * Validazione coerenza date manutenzione
@@ -184,113 +125,5 @@ class UpdateFacilityIslandUseCase @Inject constructor(
         }
 
         return updatedIsland
-    }
-
-    /**
-     * Validazione formato serial number
-     */
-    private fun isValidSerialNumber(serialNumber: String): Boolean {
-        return serialNumber.matches("[A-Za-z0-9\\-_]+".toRegex())
-    }
-
-    /**
-     * Aggiorna solo le ore operative e conteggio cicli di un'isola
-     *
-     * @param islandId ID dell'isola
-     * @param additionalHours Ore da aggiungere
-     * @param additionalCycles Cicli da aggiungere
-     * @return Result con Unit se successo
-     */
-    suspend fun updateOperationalData(
-        islandId: String,
-        additionalHours: Int,
-        additionalCycles: Long = 0
-    ): Result<Unit> {
-        return try {
-            if (additionalHours < 0 || additionalCycles < 0) {
-                return Result.failure(
-                    IllegalArgumentException("Ore e cicli aggiuntivi non possono essere negativi")
-                )
-            }
-
-            // Aggiorna tramite repository (più efficiente)
-            facilityIslandRepository.updateOperatingHours(islandId, additionalHours)
-                .onFailure { return Result.failure(it) }
-
-            if (additionalCycles > 0) {
-                facilityIslandRepository.updateCycleCount(islandId, additionalCycles)
-                    .onFailure { return Result.failure(it) }
-            }
-
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Aggiorna solo campi specifici di un'isola
-     *
-     * @param islandId ID dell'isola da aggiornare
-     * @param updates Mappa campo -> nuovo valore
-     * @return Result con Unit se successo
-     */
-    suspend fun updateIslandFields(
-        islandId: String,
-        updates: Map<String, Any?>
-    ): Result<Unit> {
-        return try {
-            val originalIsland = checkIslandExists(islandId)
-                .getOrElse { return Result.failure(it) }
-
-            var updatedIsland = originalIsland
-
-            updates.forEach { (field, value) ->
-                updatedIsland = when (field) {
-                    "serialNumber" -> updatedIsland.copy(serialNumber = value as String)
-                    "model" -> updatedIsland.copy(model = value as? String)
-                    "customName" -> updatedIsland.copy(customName = value as? String)
-                    "location" -> updatedIsland.copy(location = value as? String)
-                    "notes" -> updatedIsland.copy(notes = value as? String)
-                    "operatingHours" -> updatedIsland.copy(operatingHours = value as Int)
-                    "cycleCount" -> updatedIsland.copy(cycleCount = value as Long)
-                    "isActive" -> updatedIsland.copy(isActive = value as Boolean)
-                    else -> throw IllegalArgumentException("Campo '$field' non supportato per aggiornamento")
-                }
-            }
-
-            invoke(updatedIsland)
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Attiva o disattiva un'isola
-     *
-     * @param islandId ID dell'isola
-     * @param isActive Nuovo stato attivo/inattivo
-     * @return Result con Unit se successo
-     */
-    suspend fun updateIslandStatus(islandId: String, isActive: Boolean): Result<Unit> {
-        return try {
-            val island = checkIslandExists(islandId)
-                .getOrElse { return Result.failure(it) }
-
-            if (island.isActive == isActive) {
-                return Result.success(Unit) // Nessun cambio necessario
-            }
-
-            val updatedIsland = island.copy(
-                isActive = isActive,
-                updatedAt = Clock.System.now()
-            )
-
-            facilityIslandRepository.updateIsland(updatedIsland)
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
     }
 }

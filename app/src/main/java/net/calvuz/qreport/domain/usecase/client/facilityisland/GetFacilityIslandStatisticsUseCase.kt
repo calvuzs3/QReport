@@ -3,7 +3,7 @@ package net.calvuz.qreport.domain.usecase.client.facilityisland
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.domain.model.client.FacilityIsland
-import net.calvuz.qreport.domain.model.client.OperationalStatus
+import net.calvuz.qreport.domain.model.client.FacilityIslandOperationalStatus
 import net.calvuz.qreport.domain.repository.FacilityIslandRepository
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import javax.inject.Inject
@@ -283,11 +283,11 @@ data class SingleIslandStatistics(
     /**
      * Stato operativo globale
      */
-    val overallStatus: OperationalStatus
+    val overallStatus: FacilityIslandOperationalStatus
         get() = when {
-            !operationalStats.isActive -> OperationalStatus.INACTIVE
-            maintenanceStats.status == MaintenanceStatus.OVERDUE -> OperationalStatus.MAINTENANCE_DUE
-            else -> OperationalStatus.OPERATIONAL
+            !operationalStats.isActive -> FacilityIslandOperationalStatus.INACTIVE
+            maintenanceStats.status == MaintenanceStatus.OVERDUE -> FacilityIslandOperationalStatus.MAINTENANCE_DUE
+            else -> FacilityIslandOperationalStatus.OPERATIONAL
         }
 
     /**

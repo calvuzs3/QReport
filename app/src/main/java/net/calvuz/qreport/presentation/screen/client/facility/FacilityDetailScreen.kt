@@ -19,7 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.client.Facility
 import net.calvuz.qreport.domain.model.client.FacilityIsland
-import net.calvuz.qreport.domain.model.client.OperationalStatus
+import net.calvuz.qreport.domain.model.client.FacilityIslandOperationalStatus
 import net.calvuz.qreport.domain.usecase.client.facilityisland.FacilityOperationalSummary
 
 /**
@@ -720,16 +720,16 @@ private fun IslandItem(
             ) {
                 // Status indicator
                 Icon(
-                    imageVector = when (island.operationalStatus) {
-                        OperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
-                        OperationalStatus.MAINTENANCE_DUE -> Icons.Default.Warning
-                        OperationalStatus.INACTIVE -> Icons.Default.Cancel
+                    imageVector = when (island.facilityIslandOperationalStatus) {
+                        FacilityIslandOperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
+                        FacilityIslandOperationalStatus.MAINTENANCE_DUE -> Icons.Default.Warning
+                        FacilityIslandOperationalStatus.INACTIVE -> Icons.Default.Cancel
                     },
                     contentDescription = null,
-                    tint = when (island.operationalStatus) {
-                        OperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
-                        OperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
-                        OperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
+                    tint = when (island.facilityIslandOperationalStatus) {
+                        FacilityIslandOperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
+                        FacilityIslandOperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
+                        FacilityIslandOperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
                     },
                     modifier = Modifier.size(20.dp)
                 )

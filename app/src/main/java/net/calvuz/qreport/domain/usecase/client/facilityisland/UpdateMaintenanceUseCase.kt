@@ -29,7 +29,8 @@ import kotlin.time.Duration.Companion.days
  * - Solo isole attive possono ricevere manutenzione
  */
 class UpdateMaintenanceUseCase @Inject constructor(
-    private val facilityIslandRepository: FacilityIslandRepository
+    private val facilityIslandRepository: FacilityIslandRepository,
+    private val checkIslandExists: CheckFacilityIslandExistsUseCase
 ) {
 
     /**
@@ -60,7 +61,10 @@ class UpdateMaintenanceUseCase @Inject constructor(
                 .getOrElse { return Result.failure(it) }
 
             // 3. Validazione che la manutenzione sia coerente
-            validateMaintenanceLogic(island, maintenanceDate).onFailure { return Result.failure(it) }
+            validateMaintenanceLogic(
+                island,
+                maintenanceDate
+            ).onFailure { return Result.failure(it) }
 
             // 4. Calcola prossima manutenzione
             val nextMaintenanceDate = calculateNextMaintenance(island.islandType, maintenanceDate)
@@ -77,7 +81,8 @@ class UpdateMaintenanceUseCase @Inject constructor(
                     operatingHours = if (resetOperatingHours) 0 else island.operatingHours,
                     notes = if (notes != null) {
                         val timestamp = maintenanceDate.toItalianDate()
-                        val existingNotes = island.notes?.takeIf { it.isNotBlank() }?.plus("\n") ?: ""
+                        val existingNotes =
+                            island.notes?.takeIf { it.isNotBlank() }?.plus("\n") ?: ""
                         "${existingNotes}Manutenzione $timestamp: $notes"
                     } else island.notes,
                     updatedAt = Clock.System.now()
@@ -132,113 +137,6 @@ class UpdateMaintenanceUseCase @Inject constructor(
     }
 
     /**
-     * Ottiene lista isole che richiedono manutenzione
-     *
-     * @param currentTime Timestamp corrente (opzionale)
-     * @param daysAhead Giorni di anticipo per considerare "manutenzione imminente" (default: 7)
-     * @return Result con lista isole categorizzate per urgenza manutenzione
-     */
-    suspend fun getMaintenanceSchedule(
-        currentTime: Instant? = null,
-        daysAhead: Int = 7
-    ): Result<MaintenanceSchedule> {
-        return try {
-            val timestamp = currentTime ?: Clock.System.now()
-            val aheadTimestamp = timestamp + (daysAhead.days)
-
-            val overdueIslands = facilityIslandRepository.getIslandsRequiringMaintenance(timestamp)
-                .getOrElse { return Result.failure(it) }
-
-            val allActiveIslands = facilityIslandRepository.getActiveIslands()
-                .getOrElse { return Result.failure(it) }
-
-            val upcomingIslands = allActiveIslands.filter { island ->
-                island.nextScheduledMaintenance?.let { nextMaintenance ->
-                    nextMaintenance > timestamp && nextMaintenance <= aheadTimestamp
-                } == true
-            }.sortedBy { it.nextScheduledMaintenance }
-
-            val schedule = MaintenanceSchedule(
-                overdueIslands = overdueIslands.sortedBy {
-                    it.nextScheduledMaintenance ?: Instant.DISTANT_FUTURE
-                },
-                upcomingIslands = upcomingIslands,
-                daysAhead = daysAhead,
-                generatedAt = timestamp
-            )
-
-            Result.success(schedule)
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Esegue manutenzione in batch per più isole
-     *
-     * @param maintenanceOperations Lista di operazioni di manutenzione
-     * @return Result con risultati delle operazioni
-     */
-    suspend fun performBatchMaintenance(
-        maintenanceOperations: List<MaintenanceOperation>
-    ): Result<BatchMaintenanceResult> {
-        return try {
-            val results = mutableMapOf<String, Result<Unit>>()
-
-            maintenanceOperations.forEach { operation ->
-                val result = invoke(
-                    islandId = operation.islandId,
-                    maintenanceDate = operation.maintenanceDate,
-                    resetOperatingHours = operation.resetOperatingHours,
-                    notes = operation.notes
-                )
-                results[operation.islandId] = result
-            }
-
-            val successful = results.values.count { it.isSuccess }
-            val failed = results.values.count { it.isFailure }
-
-            val batchResult = BatchMaintenanceResult(
-                totalOperations = maintenanceOperations.size,
-                successful = successful,
-                failed = failed,
-                results = results
-            )
-
-            Result.success(batchResult)
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Calcola statistiche di manutenzione per analisi
-     *
-     * @return Result con statistiche aggregate
-     */
-    suspend fun getMaintenanceStatistics(): Result<Map<String, Int>> {
-        return facilityIslandRepository.getMaintenanceStats()
-    }
-
-    /**
-     * Verifica che l'isola esista e sia attiva
-     */
-    private suspend fun checkIslandExists(islandId: String): Result<FacilityIsland> {
-        return facilityIslandRepository.getIslandById(islandId)
-            .mapCatching { island ->
-                when {
-                    island == null ->
-                        throw NoSuchElementException("Isola con ID '$islandId' non trovata")
-                    !island.isActive ->
-                        throw IllegalStateException("Impossibile eseguire manutenzione su isola inattiva")
-                    else -> island
-                }
-            }
-    }
-
-    /**
      * Validazione data manutenzione
      */
     private fun validateMaintenanceDate(maintenanceDate: Instant): Result<Unit> {
@@ -283,7 +181,10 @@ class UpdateMaintenanceUseCase @Inject constructor(
     /**
      * Calcola la data della prossima manutenzione in base al tipo di isola
      */
-    private fun calculateNextMaintenance(islandType: IslandType, lastMaintenanceDate: Instant): Instant {
+    private fun calculateNextMaintenance(
+        islandType: IslandType,
+        lastMaintenanceDate: Instant
+    ): Instant {
         val interval = when (islandType) {
             IslandType.POLY_MOVE -> 90.days
             IslandType.POLY_CAST -> 120.days
@@ -296,43 +197,4 @@ class UpdateMaintenanceUseCase @Inject constructor(
 
         return lastMaintenanceDate + interval
     }
-
-    /**
-     * Formatta una data timestamp in stringa leggibile
-     */
-    private fun formatDate(timestamp: Long): String {
-        val date = Date(timestamp)
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.ITALIAN)
-        return formatter.format(date)
-    }
 }
-
-/**
- * Operazione di manutenzione per batch processing
- */
-data class MaintenanceOperation(
-    val islandId: String,
-    val maintenanceDate: Instant = Clock.System.now(),
-    val resetOperatingHours: Boolean = true,
-    val notes: String? = null
-)
-
-/**
- * Risultato di operazioni di manutenzione in batch
- */
-data class BatchMaintenanceResult(
-    val totalOperations: Int,
-    val successful: Int,
-    val failed: Int,
-    val results: Map<String, Result<Unit>>
-)
-
-/**
- * Pianificazione manutenzioni
- */
-data class MaintenanceSchedule(
-    val overdueIslands: List<FacilityIsland>,
-    val upcomingIslands: List<FacilityIsland>,
-    val daysAhead: Int,
-    val generatedAt: Instant
-)

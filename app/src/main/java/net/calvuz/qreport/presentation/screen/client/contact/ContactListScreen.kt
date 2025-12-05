@@ -40,6 +40,7 @@ fun ContactListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCreateContact: (String) -> Unit,
     onNavigateToEditContact: (String) -> Unit,
+    onNavigateToContactDetail: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactListViewModel = hiltViewModel()
 ) {
@@ -171,7 +172,8 @@ fun ContactListScreen(
                         contacts = uiState.filteredContacts,
                         isSearchActive = uiState.isSearchActive,
                         searchQuery = uiState.searchQuery,
-                        onContactClick = onNavigateToEditContact,
+                        //onContactClick = onNavigateToEditContact,
+                        onContactClick = onNavigateToContactDetail,
                         onDeleteContact = viewModel::deleteContact,
                         onSetPrimaryContact = viewModel::setPrimaryContact,
                         isDeletingContact = uiState.isDeletingContact,
@@ -197,7 +199,7 @@ fun ContactListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Nuovo Contatto"
+                    contentDescription = "Nuovo"
                 )
             }
         }

@@ -79,11 +79,11 @@ data class FacilityIsland(
     /**
      * Stato operativo descrittivo
      */
-    val operationalStatus: OperationalStatus
+    val facilityIslandOperationalStatus: FacilityIslandOperationalStatus
         get() = when {
-            !isActive -> OperationalStatus.INACTIVE
-            needsMaintenance() -> OperationalStatus.MAINTENANCE_DUE
-            else -> OperationalStatus.OPERATIONAL
+            !isActive -> FacilityIslandOperationalStatus.INACTIVE
+            needsMaintenance() -> FacilityIslandOperationalStatus.MAINTENANCE_DUE
+            else -> FacilityIslandOperationalStatus.OPERATIONAL
         }
 
     /**
@@ -117,14 +117,4 @@ data class FacilityIsland(
                 }
             }
         }
-}
-
-/**
- * Stati operativi dell'isola
- */
-@Serializable
-enum class OperationalStatus(val displayName: String, val color: String) {
-    OPERATIONAL("Operativa", "00B050"),
-    MAINTENANCE_DUE("Manutenzione dovuta", "FFC000"),
-    INACTIVE("Non attiva", "FF0000")
 }

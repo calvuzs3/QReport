@@ -28,6 +28,7 @@ import net.calvuz.qreport.presentation.screen.settings.SettingsScreen
 import net.calvuz.qreport.presentation.screen.export.ExportOptionsScreen
 import net.calvuz.qreport.presentation.screen.client.client.ClientListScreen
 import net.calvuz.qreport.presentation.screen.client.client.ClientFormScreen
+import net.calvuz.qreport.presentation.screen.client.contact.ContactDetailScreen
 import net.calvuz.qreport.presentation.screen.client.contact.ContactFormScreen
 import net.calvuz.qreport.presentation.screen.client.contact.ContactListScreen
 import net.calvuz.qreport.presentation.screen.client.facility.FacilityDetailScreen
@@ -115,9 +116,9 @@ object QReportRoutes {
     const val CLIENT_EDIT = "client_edit/{clientId}"
 
     // Contact routes
-    const val CONTACT_FORM = "contact_form/{clientId}/{clientName}?contactId={contactId}"
-    const val CONTACT_CREATE = "contact_create/{clientId}/{clientName}"
-    const val CONTACT_EDIT = "contact_edit/{contactId}"
+    const val CONTACT_DETAIL = "contact_detail/{contactId}"
+    const val CONTACT_CREATE = "contact_form/{clientId}/{clientName}" // was create
+    const val CONTACT_EDIT = "contact_form/{contactId}" // was edit
     const val CONTACT_LIST = "contacts/{clientId}/{clientName}"
 
     // Facility routes
@@ -141,29 +142,27 @@ object QReportRoutes {
     fun clientEdit(clientId: String) = "client_edit/$clientId"
 
     // Helper functions for CONTACT
-    fun contactFormRoute(clientId: String, clientName: String, contactId: String? = null) =
-        if (contactId != null) "contact_form/$clientId/${clientName.encodeUrl()}?contactId=$contactId"
-        else "contact_form/$clientId/${clientName.encodeUrl()}"
-
+    fun contactDetailRoute(contactId: String) =
+        "contact_detail/$contactId"
     fun contactCreateRoute(clientId: String, clientName: String) =
-        "contact_create/$clientId/${clientName.encodeUrl()}"
-
-    fun contactEditRoute(contactId: String) = "contact_edit/$contactId" // Keep as is - needs lookup
+        "contact_form/$clientId/${clientName.encodeUrl()}"
+    fun contactEditRoute(contactId: String) =
+        "contact_form/$contactId" // Keep as is - needs lookup
     fun contactListRoute(clientId: String, clientName: String) =
         "contacts/$clientId/${clientName.encodeUrl()}"
 
     // Helper functions for FACILITY
-    fun facilityListRoute(clientId: String) = "facilities/$clientId"
+    fun facilityListRoute(clientId: String) =
+        "facilities/$clientId"
     fun facilityEditRoute(clientId: String, facilityId: String) =
         "facility_form/$clientId/$facilityId"
-
     fun facilityDetailRoute(clientId: String, savedFacilityId: String) =
         "facility_detail/$clientId/$savedFacilityId"
-
-    fun facilityCreateRoute(clientId: String) = "facility_form/$clientId"
-
+    fun facilityCreateRoute(clientId: String) =
+        "facility_form/$clientId"
     // Helper functions for FACILITY ISLAND
-    fun islandListRoute(facilityId: String) = "islands/$facilityId"
+    fun islandListRoute(facilityId: String) =
+        "islands/$facilityId"
     fun islandDetailRoute(facilityId: String, islandId: String) =
         "island_detail/$facilityId/$islandId"
 
@@ -441,6 +440,9 @@ fun QReportNavigation(
                             // ❌ TODO: Need clientId + clientName lookup from contactId
                             navController.navigate(QReportRoutes.contactEditRoute(contactId))
                         },
+                        onNavigateToContactDetail = { contactId ->
+                            navController.navigate(QReportRoutes.contactDetailRoute(contactId))
+                        },
                         onNavigateToFacilityList = { clientId ->
                             navController.navigate(QReportRoutes.facilityListRoute(clientId))
                         },
@@ -520,42 +522,9 @@ fun QReportNavigation(
                 // CONTACT
                 // ============================================================
 
-                // FORM SCREEN (Unified Create/Edit)
-                composable(
-                    route = QReportRoutes.CONTACT_FORM,
-                    arguments = listOf(
-                        navArgument("clientId") { type = NavType.StringType },
-                        navArgument("clientName") { type = NavType.StringType },
-                        navArgument("contactId") {
-                            type = NavType.StringType
-                            nullable = true
-                            defaultValue = null
-                        }
-                    )
-                ) { backStackEntry ->
-                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
-                    val contactId = backStackEntry.arguments?.getString("contactId")
-                    val clientName = backStackEntry.arguments?.getString("clientName")?.let {
-                        URLDecoder.decode(it, "UTF-8")
-                    } ?: "Cliente" // Get clientName from route parameter
-
-                    ContactFormScreen(
-                        clientId = clientId,
-                        clientName = clientName,
-                        contactId = contactId,
-                        onNavigateBack = { navController.popBackStack() },
-                        onContactSaved = { contactId ->
-                            // Torna al ClientDetailScreen dopo il salvataggio
-                            navController.navigate(QReportRoutes.clientDetail(clientId)) {
-                                popUpTo(QReportRoutes.clientDetail(clientId)) { inclusive = true }
-                            }
-                        }
-                    )
-                }
-
                 // CREATE
                 composable(
-                    route = QReportRoutes.CONTACT_CREATE,
+                    QReportRoutes.CONTACT_CREATE,
                     arguments = listOf(
                         navArgument("clientId") { type = NavType.StringType },
                         navArgument("clientName") { type = NavType.StringType }
@@ -566,21 +535,69 @@ fun QReportNavigation(
                         URLDecoder.decode(it, "UTF-8")
                     } ?: "Cliente"
 
-
-                    // Immediate redirect to unified form
-                    LaunchedEffect(clientId) {
-                        navController.navigate(
-                            QReportRoutes.contactFormRoute(
-                                clientId,
-                                clientName
+                    ContactFormScreen(
+                        clientId = clientId,
+                        clientName = clientName,
+                        contactId = null,
+                        onNavigateBack = { navController.popBackStack() },
+                        onContactSaved = { contactId ->
+                            navController.navigate(
+                                QReportRoutes.contactDetailRoute(contactId)
                             )
-                        ) {
-                            popUpTo(QReportRoutes.contactCreateRoute(clientId, clientName)) {
-                                inclusive = true
-                            }
                         }
-                    }
+                    )
+//
+//                    // Immediate redirect to unified form
+//                    LaunchedEffect(clientId) {
+//                        navController.navigate(
+//                            QReportRoutes.contactFormRoute(
+//                                clientId,
+//                                clientName,
+//                                null
+//                            )
+//                        ) {
+//                            popUpTo(QReportRoutes.contactCreateRoute(clientId, clientName)) {
+//                                inclusive = true
+//                            }
+//                        }
+//                    }
                 }
+
+//                // FORM SCREEN (Unified Create/Edit)
+//                composable(
+//                    route = QReportRoutes.CONTACT_FORM,
+//                    arguments = listOf(
+//                        navArgument("clientId") { type = NavType.StringType },
+//                        navArgument("clientName") { type = NavType.StringType },
+//                        navArgument("contactId") {
+//                            type = NavType.StringType
+//                            nullable = true
+//                            defaultValue = null
+//                        }
+//                    )
+//                ) { backStackEntry ->
+//                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+//                    val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
+//                    val clientName = backStackEntry.arguments?.getString("clientName")?.let {
+//                        URLDecoder.decode(it, "UTF-8")
+//                    } ?: "Cliente" // Get clientName from route parameter
+//
+//                    ContactFormScreen(
+//                        clientId = clientId,
+//                        clientName = clientName,
+//                        contactId = contactId,
+//                        onNavigateBack = { navController.popBackStack() },
+//                        onContactSaved = { contactId ->
+//                            // Torna al ClientDetailScreen dopo il salvataggio
+//                            navController.navigate(QReportRoutes.clientDetail(clientId)) {
+//                                popUpTo(QReportRoutes.clientDetail(clientId)) { inclusive = true }
+//                            }
+//                        }
+//                    )
+//                }
+//
+//
+
 
                 // EDIT
                 composable(
@@ -599,7 +616,7 @@ fun QReportNavigation(
                         val clientId = "placeholder"
 
                         navController.navigate(
-                            QReportRoutes.contactFormRoute(clientId, contactId)
+                            QReportRoutes.contactEditRoute(contactId)
                         ) {
                             // "contact_form/$clientId?contactId=$contactId") {
                             popUpTo(QReportRoutes.contactEditRoute(contactId)) {
@@ -607,6 +624,24 @@ fun QReportNavigation(
                             }
                         }
                     }
+                }
+
+                // DETAIL
+                composable(
+                    QReportRoutes.CONTACT_DETAIL,
+                    arguments = listOf(
+                        navArgument("contactId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
+
+                    ContactDetailScreen(
+                        contactId = contactId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToEdit = { contactId ->
+                            navController.navigate(QReportRoutes.contactEditRoute(contactId))
+                        }
+                    )
                 }
 
                 // LIST
@@ -627,20 +662,24 @@ fun QReportNavigation(
                         clientName = clientName,
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToCreateContact = { clientId ->
-                            navController.navigate(QReportRoutes.contactFormRoute(clientId, clientName))
+                            navController.navigate(QReportRoutes.contactCreateRoute(clientId, clientName))
                         },
                         onNavigateToEditContact = { contactId ->
                             navController.navigate(
-                                QReportRoutes.contactFormRoute(
-                                    clientId,
-                                    clientName,
+                                QReportRoutes.contactEditRoute(
+                                    contactId
+                                )
+                            )
+                        },
+                        onNavigateToContactDetail = { contactId ->
+                            navController.navigate(
+                                QReportRoutes.contactDetailRoute(
                                     contactId
                                 )
                             )
                         }
                     )
                 }
-
 
                 // ============================================================
                 // FACILITY' SCREENS

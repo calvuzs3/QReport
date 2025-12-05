@@ -10,11 +10,15 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.client.Client
+import net.calvuz.qreport.domain.model.client.ClientSingleStatistics
 import net.calvuz.qreport.domain.usecase.client.client.GetAllClientsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.GetClientStatisticsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.DeleteClientUseCase
+import net.calvuz.qreport.domain.usecase.client.client.GetClientsWithContactsUseCase
+import net.calvuz.qreport.domain.usecase.client.client.GetClientsWithFacilitiesUseCase
+import net.calvuz.qreport.domain.usecase.client.client.GetClientsWithIslandsUseCase
+import net.calvuz.qreport.domain.usecase.client.client.ObserveAllClientsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.SearchClientsUseCase
-import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -50,7 +54,11 @@ enum class SortOrder {
 
 @HiltViewModel
 class ClientListViewModel @Inject constructor(
+    private val observeAllClientsUseCase: ObserveAllClientsUseCase,
     private val getAllClientsUseCase: GetAllClientsUseCase,
+    private val getClientsWithIslandsUseCase: GetClientsWithIslandsUseCase,
+    private val getClientsWithContactsUseCase: GetClientsWithContactsUseCase,
+    private val getClientsWithFacilitiesUseCase: GetClientsWithFacilitiesUseCase,
     private val getClientStatisticsUseCase: GetClientStatisticsUseCase,
     private val deleteClientUseCase: DeleteClientUseCase,
     private val searchClientsUseCase: SearchClientsUseCase
@@ -78,7 +86,7 @@ class ClientListViewModel @Inject constructor(
             try {
                 Timber.d("Loading clients list with observeActiveClients()")
 
-                getAllClientsUseCase.observeActiveClients()
+                observeAllClientsUseCase()
                     .catch { exception ->
                         if (exception is CancellationException) throw exception
                         Timber.e(exception, "Error in observeActiveClients flow")
@@ -143,7 +151,7 @@ class ClientListViewModel @Inject constructor(
                 Timber.d("Refreshing clients list with getActiveClients()")
 
                 // Use getActiveClients() for one-shot refresh operation
-                getAllClientsUseCase.getActiveClients().fold(
+                getAllClientsUseCase.invoke().fold(
                     onSuccess = { clients ->
                         if (!currentCoroutineContext().isActive) {
                             Timber.d("Skipping refresh processing - job cancelled")
@@ -256,9 +264,9 @@ class ClientListViewModel @Inject constructor(
     fun updateFilter(filter: ClientFilter) {
         // Per alcuni filtri, usa metodi specializzati del use case per performance migliori
         when (filter) {
-            ClientFilter.WITH_FACILITIES -> loadClientsWithSpecialFilter { getAllClientsUseCase.getClientsWithFacilities() }
-            ClientFilter.WITH_CONTACTS -> loadClientsWithSpecialFilter { getAllClientsUseCase.getClientsWithContacts() }
-            ClientFilter.WITH_ISLANDS -> loadClientsWithSpecialFilter { getAllClientsUseCase.getClientsWithIslands() }
+            ClientFilter.WITH_FACILITIES -> loadClientsWithSpecialFilter { getClientsWithFacilitiesUseCase() }
+            ClientFilter.WITH_CONTACTS -> loadClientsWithSpecialFilter { getClientsWithContactsUseCase() }
+            ClientFilter.WITH_ISLANDS -> loadClientsWithSpecialFilter { getClientsWithIslandsUseCase() }
             else -> {
                 // Per filtri semplici, usa filtro locale
                 val currentState = _uiState.value
@@ -440,7 +448,7 @@ class ClientListViewModel @Inject constructor(
         return filtered
     }
 
-    private fun createEmptyStats() = SingleClientStatistics(
+    private fun createEmptyStats() = ClientSingleStatistics(
         facilitiesCount = 0,
         islandsCount = 0,
         contactsCount = 0,
@@ -455,7 +463,7 @@ class ClientListViewModel @Inject constructor(
  */
 data class ClientWithStats(
     val client: Client,
-    val stats: SingleClientStatistics
+    val stats: ClientSingleStatistics
 ) {
     val formattedLastModified: String
         get() {

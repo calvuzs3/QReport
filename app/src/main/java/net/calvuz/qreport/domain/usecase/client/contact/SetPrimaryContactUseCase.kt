@@ -20,7 +20,8 @@ import javax.inject.Inject
  * - Operazione atomica (rimuovi vecchio + imposta nuovo)
  */
 class SetPrimaryContactUseCase @Inject constructor(
-    private val contactRepository: ContactRepository
+    private val contactRepository: ContactRepository,
+    private val checkContactExists: CheckContactExistsUseCase
 ) {
 
     /**
@@ -264,21 +265,5 @@ class SetPrimaryContactUseCase @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    /**
-     * Verifica che il contatto esista e lo restituisce
-     */
-    private suspend fun checkContactExists(contactId: String): Result<Contact> {
-        return contactRepository.getContactById(contactId)
-            .mapCatching { contact ->
-                when {
-                    contact == null ->
-                        throw NoSuchElementException("Contatto con ID '$contactId' non trovato")
-                    !contact.isActive ->
-                        throw IllegalStateException("Contatto con ID '$contactId' non attivo")
-                    else -> contact
-                }
-            }
     }
 }

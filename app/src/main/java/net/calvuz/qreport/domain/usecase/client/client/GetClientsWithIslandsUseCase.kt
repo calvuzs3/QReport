@@ -2,30 +2,20 @@ package net.calvuz.qreport.domain.usecase.client.client
 
 import net.calvuz.qreport.domain.model.client.Client
 import net.calvuz.qreport.domain.repository.ClientRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
-/**
- * Use Case per recuperare tutti i clienti
- *
- * Gestisce:
- * - Recupero clienti attivi o tutti
- * - Ordinamento
- * - Flow reattivo per UI
- */
-class GetAllClientsUseCase @Inject constructor(
+class GetClientsWithIslandsUseCase @Inject constructor(
     private val clientRepository: ClientRepository
-) {
+){
 
     /**
-     * Recupera tutti i clienti attivi
+     * Recupera clienti con isole associate
      *
-     * @return Result con lista clienti ordinata per ragione sociale
+     * @return Result con lista clienti che hanno isole robotizzate
      */
     suspend operator fun invoke(): Result<List<Client>> {
         return try {
-            clientRepository.getActiveClients()
+            clientRepository.getClientsWithIslands()
                 .map { clients -> clients.sortedBy { it.companyName.lowercase() } }
         } catch (e: Exception) {
             Result.failure(e)

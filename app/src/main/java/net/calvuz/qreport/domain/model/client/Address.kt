@@ -52,45 +52,7 @@ data class Address(
     }
 
     /**
-     * Indirizzo compatto per export
-     */
-    fun toCompactString(): String = buildString {
-        listOfNotNull(
-            if (!street.isNullOrBlank() && !streetNumber.isNullOrBlank()) "$street $streetNumber" else street,
-            city,
-            province
-        ).joinTo(this, ", ")
-    }
-
-    /**
-     * Verifica se ha coordinate GPS
-     */
-    fun hasCoordinates(): Boolean = coordinates != null
-
-    /**
      * Verifica se indirizzo è completo
      */
     fun isComplete(): Boolean = !street.isNullOrBlank() && !city.isNullOrBlank()
-}
-
-/**
- * Coordinate geografiche
- */
-@Serializable
-data class GeoCoordinates(
-    val latitude: Double,
-    val longitude: Double,
-    val altitude: Double? = null,
-    val accuracy: Float? = null        // Accuratezza in metri
-) {
-
-    /**
-     * Coordinate formattate
-     */
-    override fun toString(): String = "$latitude, $longitude"
-
-    /**
-     * Link Google Maps
-     */
-    fun toGoogleMapsUrl(): String = "https://maps.google.com/?q=$latitude,$longitude"
 }

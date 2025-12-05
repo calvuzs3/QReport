@@ -286,7 +286,7 @@ class FacilityIslandListViewModel @Inject constructor(
         result = when (sortOrder) {
             IslandSortOrder.SERIAL_NUMBER -> result.sortedBy { it.serialNumber.lowercase() }
             IslandSortOrder.TYPE -> result.sortedBy { it.islandType.name }
-            IslandSortOrder.STATUS -> result.sortedBy { it.operationalStatus.ordinal }
+            IslandSortOrder.STATUS -> result.sortedBy { it.facilityIslandOperationalStatus.ordinal }
             IslandSortOrder.OPERATING_HOURS -> result.sortedByDescending { it.operatingHours }
             IslandSortOrder.MAINTENANCE_DATE -> result.sortedBy {
                 it.nextScheduledMaintenance ?: kotlinx.datetime.Instant.DISTANT_FUTURE

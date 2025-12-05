@@ -37,12 +37,12 @@ import net.calvuz.qreport.domain.model.client.ContactMethod
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactFormScreen(
+    modifier: Modifier = Modifier,
     clientId: String,
     clientName: String,
     contactId: String? = null, // null = nuovo contatto, non-null = modifica
     onNavigateBack: () -> Unit,
     onContactSaved: (String) -> Unit, // navigateToContactDetail
-    modifier: Modifier = Modifier,
     viewModel: ContactFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -575,11 +575,3 @@ private fun LoadingState() {
         }
     }
 }
-
-// Extension per ContactMethod display name
-private val ContactMethod.displayName: String
-    get() = when (this) {
-        ContactMethod.EMAIL -> "Email"
-        ContactMethod.PHONE -> "Telefono"
-        ContactMethod.MOBILE -> "Cellulare"
-    }

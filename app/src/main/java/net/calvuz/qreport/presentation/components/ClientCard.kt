@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.domain.model.client.Client
-import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
+import net.calvuz.qreport.domain.model.client.ClientSingleStatistics
 
 /**
  * ClientCard riutilizzabile per QReport
@@ -28,7 +28,7 @@ import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
 fun ClientCard(
     modifier: Modifier = Modifier,
     client: Client,
-    stats: SingleClientStatistics? = null,
+    stats: ClientSingleStatistics? = null,
     onClick: () -> Unit,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
@@ -75,7 +75,7 @@ fun ClientCard(
 @Composable
 private fun FullClientCard(
     client: Client,
-    stats: SingleClientStatistics?,
+    stats: ClientSingleStatistics?,
     showActions: Boolean,
     onDelete: (() -> Unit)?,
     onEdit: (() -> Unit)?
@@ -230,7 +230,7 @@ private fun FullClientCard(
 @Composable
 private fun CompactClientCard(
     client: Client,
-    stats: SingleClientStatistics?
+    stats: ClientSingleStatistics?
 ) {
     Row(
         modifier = Modifier.padding(12.dp),
