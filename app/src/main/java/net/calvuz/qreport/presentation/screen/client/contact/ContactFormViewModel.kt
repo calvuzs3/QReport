@@ -11,7 +11,7 @@ import net.calvuz.qreport.domain.model.client.ContactMethod
 import net.calvuz.qreport.domain.usecase.client.contact.CreateContactUseCase
 import net.calvuz.qreport.domain.usecase.client.contact.UpdateContactUseCase
 import net.calvuz.qreport.domain.usecase.client.contact.GetContactsByClientUseCase
-import net.calvuz.qreport.domain.repository.ContactRepository
+import net.calvuz.qreport.domain.usecase.client.contact.GetContactByIdUseCase
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -61,7 +61,8 @@ data class ContactFormUiState(
     val isDirty: Boolean = false,
     val canSave: Boolean = false,
     val isSaving: Boolean = false,
-    val saveCompleted: Boolean = false
+    val saveCompleted: Boolean = false,
+    val savedContactId: String? = null
 ) {
 
     /**
@@ -114,7 +115,7 @@ class ContactFormViewModel @Inject constructor(
     private val createContactUseCase: CreateContactUseCase,
     private val updateContactUseCase: UpdateContactUseCase,
     private val getContactsByClientUseCase: GetContactsByClientUseCase,
-    private val contactRepository: ContactRepository
+    private val getContactByIdUseCase: GetContactByIdUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContactFormUiState())
@@ -144,21 +145,15 @@ class ContactFormViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
 
             try {
-                contactRepository.getContactById(contactId).fold(
+                //contactRepository
+                getContactByIdUseCase(contactId).fold(
                     onSuccess = { contact ->
-                        if (contact != null) {
-                            populateFormFromContact(contact)
-                        } else {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                error = "Contatto non trovato"
-                            )
-                        }
+                        populateFormFromContact(contact)
                     },
                     onFailure = { error ->
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = "Errore caricamento contatto: ${error.message}"
+                            error = "Contatto non trovato: ${error.message}"
                         )
                     }
                 )
@@ -337,6 +332,7 @@ class ContactFormViewModel @Inject constructor(
         return when {
             !android.util.Patterns.EMAIL_ADDRESS.matcher(value).matches() ->
                 "Formato email non valido"
+
             value.length > 100 -> "Email troppo lunga (max 100 caratteri)"
             else -> null
         }
@@ -354,6 +350,7 @@ class ContactFormViewModel @Inject constructor(
                     !cleanPhone.matches("0\\d{8,10}".toRegex()) &&
                     !cleanPhone.matches("3\\d{8,9}".toRegex()) ->
                 "Formato telefono non valido"
+
             else -> null
         }
     }
@@ -372,6 +369,7 @@ class ContactFormViewModel @Inject constructor(
         return when {
             !state.hasAtLeastOneContact ->
                 "Deve essere fornito almeno un contatto (email, telefono o cellulare)"
+
             else -> null
         }
     }
@@ -397,10 +395,11 @@ class ContactFormViewModel @Inject constructor(
 
                 result.fold(
                     onSuccess = {
-                        Timber.d("Contact saved successfully: ${contact.id}")
+                        Timber.d("Contact saved successfully: ${contact.id} ${contact.fullName}")
                         _uiState.value = _uiState.value.copy(
                             isSaving = false,
                             saveCompleted = true,
+                            savedContactId = contact.id,
                             isDirty = false
                         )
                     },

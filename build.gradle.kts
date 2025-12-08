@@ -6,13 +6,4 @@ plugins {
     alias(libs.plugins.hilt.android) apply false
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.room) apply false
-
-//    alias(libs.plugins.dagger.hilt.pl) apply false
-//    alias(libs.plugins.ksp.pl) apply false
 }
-//
-//buildscript {
-//    dependencies {
-//        classpath("com.google.dagger:hilt-android-gradle-plugin:2.50")
-//    }
-//}

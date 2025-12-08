@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -36,7 +37,7 @@ import net.calvuz.qreport.presentation.components.ClientCardVariant
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientListScreen(
-    onNavigateToClientDetail: (String) -> Unit,
+    onNavigateToClientDetail: (String, String) -> Unit,
     onNavigateToEditClient: (String) -> Unit,
     onCreateNewClient: () -> Unit,
     modifier: Modifier = Modifier,
@@ -57,7 +58,7 @@ fun ClientListScreen(
                 // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
                     Icon(
-                        imageVector = Icons.Default.Sort,
+                        imageVector = Icons.AutoMirrored.Default.Sort,
                         contentDescription = "Ordinamento"
                     )
                 }
@@ -190,7 +191,7 @@ fun ClientListScreen(
 @Composable
 private fun ClientListContent(
     clients: List<ClientWithStats>,
-    onClientClick: (String) -> Unit,
+    onClientClick: (String, String) -> Unit,
     onClientEdit: (String) -> Unit,
     onClientDelete: (String) -> Unit
 ) {
@@ -206,7 +207,7 @@ private fun ClientListContent(
             ClientCard(
                 client = clientWithStats.client,
                 stats = clientWithStats.stats,
-                onClick = { onClientClick(clientWithStats.client.id) },
+                onClick = { onClientClick(clientWithStats.client.id, clientWithStats.client.companyName) },
                 onEdit = { onClientEdit(clientWithStats.client.id) },
                 onDelete = { onClientDelete(clientWithStats.client.id) },
                 variant = ClientCardVariant.FULL

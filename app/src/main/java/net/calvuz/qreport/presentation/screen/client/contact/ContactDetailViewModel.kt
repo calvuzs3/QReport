@@ -6,6 +6,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.domain.model.client.Contact
+import net.calvuz.qreport.domain.usecase.client.contact.DeleteContactUseCase
 import net.calvuz.qreport.domain.usecase.client.contact.GetContactByIdUseCase
 import net.calvuz.qreport.domain.usecase.client.contact.UpdateContactUseCase
 import timber.log.Timber
@@ -19,6 +20,12 @@ data class ContactDetailUiState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val contact: Contact? = null,
+
+    // Delete states
+    val isDeleting: Boolean = false,
+    val deleteSuccess: Boolean = false,
+    val deleteError: String? = null,
+    val showDeleteConfirmation: Boolean = false,
 
     // Edit states
     val isUpdating: Boolean = false,
@@ -40,7 +47,8 @@ data class ContactDetailUiState(
 @HiltViewModel
 class ContactDetailViewModel @Inject constructor(
     private val getContactByIdUseCase: GetContactByIdUseCase,
-    private val updateContactUseCase: UpdateContactUseCase
+    private val updateContactUseCase: UpdateContactUseCase,
+    private val deleteContactUseCase: DeleteContactUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContactDetailUiState())
@@ -100,6 +108,80 @@ class ContactDetailViewModel @Inject constructor(
             clientId = contact.clientId
         )
     }
+
+    // ============================================================
+    // DELETE CLIENT OPERATIONS
+    // ============================================================
+
+    /**
+     * Mostra dialog di conferma prima di eliminare
+     */
+    fun showDeleteConfirmation() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteConfirmation = true
+        )
+    }
+
+    /**
+     * Nasconde dialog di conferma
+     */
+    fun hideDeleteConfirmation() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteConfirmation = false
+        )
+    }
+
+    /**
+     * Elimina il contatto corrente
+     * ✅ FUNZIONE PRINCIPALE per delete
+     */
+    fun deleteContact() {
+        val contactId = _uiState.value.contactId ?: return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isDeleting = true,
+                deleteError = null,
+                showDeleteConfirmation = false
+            )
+
+            try {
+                deleteContactUseCase(contactId).fold(
+                    onSuccess = {
+                        Timber.d("Contact deleted successfully: $contactId")
+                        _uiState.value = _uiState.value.copy(
+                            isDeleting = false,
+                            deleteSuccess = true  // ✅ Trigger navigation back
+                        )
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to delete client: $contactId")
+                        _uiState.value = _uiState.value.copy(
+                            isDeleting = false,
+                            deleteError = "Errore eliminazione: ${error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Exception deleting contact")
+                _uiState.value = _uiState.value.copy(
+                    isDeleting = false,
+                    deleteError = "Errore imprevisto: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Reset delete states
+     */
+    fun resetDeleteState() {
+        _uiState.value = _uiState.value.copy(
+            deleteSuccess = false,
+            deleteError = null
+        )
+    }
+
 
     fun showEditDialog() {
         _uiState.value = _uiState.value.copy(showEditDialog = true)

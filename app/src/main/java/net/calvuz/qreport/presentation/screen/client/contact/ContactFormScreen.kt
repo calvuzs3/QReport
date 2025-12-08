@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.client.ContactMethod
+import timber.log.Timber
 
 /**
  * Screen per la creazione/modifica di un contatto
@@ -40,7 +41,7 @@ fun ContactFormScreen(
     modifier: Modifier = Modifier,
     clientId: String,
     clientName: String,
-    contactId: String? = null, // null = nuovo contatto, non-null = modifica
+    contactId: String? = null, // null = new, non-null = edit
     onNavigateBack: () -> Unit,
     onContactSaved: (String) -> Unit, // navigateToContactDetail
     viewModel: ContactFormViewModel = hiltViewModel()
@@ -58,10 +59,12 @@ fun ContactFormScreen(
     }
 
     // Handle save completed
-    LaunchedEffect(uiState.saveCompleted) {
-        if (uiState.saveCompleted) {
-            val savedContactId = viewModel.getContactId() ?: ""
-            onContactSaved(savedContactId)
+    LaunchedEffect(uiState.saveCompleted, uiState.savedContactId) {
+        if (uiState.saveCompleted && !uiState.savedContactId.isNullOrBlank()) {
+            Timber.d("Contact saved ID: ${uiState.savedContactId}")
+
+            onContactSaved(uiState.savedContactId!!)
+            viewModel.resetSaveCompleted()
         }
     }
 

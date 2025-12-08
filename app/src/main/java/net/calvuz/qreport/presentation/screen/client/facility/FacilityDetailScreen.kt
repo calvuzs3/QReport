@@ -44,11 +44,46 @@ fun FacilityDetailScreen(
     onNavigateToEditIsland: (String) -> Unit = {}, // Edit island
     onNavigateToIslandDetail: (String) -> Unit = { }, // View Island
     onNavigateToIslandsList: (String) -> Unit = { },   // View all Islands
+    onDeleted: () -> Unit,
 
     modifier: Modifier = Modifier,
     viewModel: FacilityDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // ✅ Handle delete success - Navigate back automatically
+    LaunchedEffect(uiState.deleteSuccess) {
+        if (uiState.deleteSuccess) {
+            viewModel.resetDeleteState()
+            onDeleted()  // Navigate back to client list
+        }
+    }
+
+    // ✅ Delete confirmation dialog
+    if (uiState.showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = viewModel::hideDeleteConfirmation,
+            title = { Text("Elimina Stabilimento") },
+            text = {
+                Text("Sei sicuro di voler eliminare lo stabilimento? Questa azione non può essere annullata.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = viewModel::deleteFacility,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Elimina")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::hideDeleteConfirmation) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
 
     // Load facility details when screen opens
     LaunchedEffect(facilityId) {
@@ -76,6 +111,24 @@ fun FacilityDetailScreen(
                 }
             },
             actions = {
+                // Delete button
+                if (uiState.hasData) {
+                    IconButton(
+                        onClick = viewModel::showDeleteConfirmation,  // Show confirmation dialog
+                        enabled = !uiState.isDeleting
+                    ) {
+                        if (uiState.isDeleting) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                tint = MaterialTheme.colorScheme.error,
+                                contentDescription = "Elimina contatto"
+                            )
+                        }
+                    }
+                }
+
                 // Edit button (solo se dati caricati)
                 if (uiState.hasData) {
                     IconButton(onClick = { onNavigateToEdit(facilityId) }) {

@@ -65,6 +65,7 @@ fun ClientDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val clientName = uiState.companyName
 
     // Funzione per chiamare contatto
     val callContact = { phoneNumber: String ->

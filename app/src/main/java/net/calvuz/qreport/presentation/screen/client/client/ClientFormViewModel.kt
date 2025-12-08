@@ -2,6 +2,7 @@ package net.calvuz.qreport.presentation.screen.client.client
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import coil.util.CoilUtils.result
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -46,7 +47,9 @@ data class ClientFormUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
+    val saveCompleted: Boolean = false,
     val savedClientId: String? = null,
+    val savedClientName: String? = null,
     val fieldErrors: Map<String, String> = emptyMap(),
 
     // Edit mode
@@ -295,12 +298,31 @@ class ClientFormViewModel @Inject constructor(
             try {
                 val client = buildClientFromForm(currentState)
 
-                if (currentState.isEditMode && currentState.clientId != null) {
-                    updateClient(client)
+                val result = if (currentState.isEditMode && currentState.clientId != null) {
+                    updateClientUseCase(client)
                 } else {
-                    createNewClient(client)
+                    createClientUseCase(client)
                 }
 
+                result.fold(
+                    onSuccess = {
+                        Timber.d("Client saved successfully: ${client.id} ${client.companyName }}")
+                        _uiState.value = _uiState.value.copy(
+                            isSaving = false,
+                            saveCompleted = true,
+                            savedClientId = client.id,
+                            savedClientName = client.companyName,
+                            error = null
+                        )
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to save client")
+                        _uiState.value = _uiState.value.copy(
+                            isSaving = false,
+                            error = "Errore salvataggio: ${error.message}"
+                        )
+                    }
+                )
             } catch (e: Exception) {
                 Timber.e(e, "Exception during client save")
                 _uiState.value = currentState.copy(
@@ -318,6 +340,7 @@ class ClientFormViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
                     savedClientId = client.id,
+                    savedClientName = client.companyName,
                     error = null
                 )
             },
@@ -338,6 +361,7 @@ class ClientFormViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
                     savedClientId = client.id,
+                    savedClientName = client.companyName,
                     error = null
                 )
             },
@@ -387,5 +411,9 @@ class ClientFormViewModel @Inject constructor(
 
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun resetSaveCompleted() {
+        _uiState.value = _uiState.value.copy(saveCompleted = false)
     }
 }

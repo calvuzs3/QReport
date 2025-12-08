@@ -123,10 +123,6 @@ android {
 //    buildToolsVersion = "36.0.0"
 }
 
-//room {
-//    schemaDirectory("$projectDir/schemas")
-//}
-
 dependencies {
     // AndroidX Core
     implementation(libs.androidx.core.ktx)
