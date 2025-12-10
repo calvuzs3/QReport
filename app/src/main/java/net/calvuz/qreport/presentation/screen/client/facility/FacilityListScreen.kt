@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.presentation.components.QReportSearchBar
-import net.calvuz.qreport.presentation.components.FacilityCard
-import net.calvuz.qreport.presentation.components.FacilityCardVariant
+import net.calvuz.qreport.presentation.components.client.FacilityCard
+import net.calvuz.qreport.presentation.components.client.FacilityCardVariant
 
 /**
  * Screen per la lista stabilimenti di un cliente - seguendo pattern ClientListScreen

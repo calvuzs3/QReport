@@ -1,4 +1,4 @@
-package net.calvuz.qreport.presentation.components
+package net.calvuz.qreport.presentation.components.client
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +14,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.client.Facility
+import net.calvuz.qreport.domain.model.client.FacilityType
 import net.calvuz.qreport.presentation.screen.client.facility.FacilityStatistics
 
 /**
@@ -26,10 +28,10 @@ import net.calvuz.qreport.presentation.screen.client.facility.FacilityStatistics
 
 @Composable
 fun FacilityCard(
+    modifier: Modifier = Modifier,
     facility: Facility,
     stats: FacilityStatistics? = null,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
@@ -464,7 +466,7 @@ private fun FacilityDeleteDialog(
 }
 
 private fun formatLastModified(facility: Facility): String {
-    val now = kotlinx.datetime.Clock.System.now()
+    val now = Clock.System.now()
     val updated = facility.updatedAt
     val diffMillis = (now - updated).inWholeMilliseconds
 
@@ -476,17 +478,17 @@ private fun formatLastModified(facility: Facility): String {
     }
 }
 
-private fun getFacilityTypeIcon(facilityType: net.calvuz.qreport.domain.model.client.FacilityType): ImageVector {
+private fun getFacilityTypeIcon(facilityType: FacilityType): ImageVector {
     return when (facilityType) {
-        net.calvuz.qreport.domain.model.client.FacilityType.PRODUCTION -> Icons.Default.Factory
-        net.calvuz.qreport.domain.model.client.FacilityType.WAREHOUSE -> Icons.Default.Warehouse
-        net.calvuz.qreport.domain.model.client.FacilityType.ASSEMBLY -> Icons.Default.Build
-        net.calvuz.qreport.domain.model.client.FacilityType.TESTING -> Icons.Default.Science
-        net.calvuz.qreport.domain.model.client.FacilityType.LOGISTICS -> Icons.Default.LocalShipping
-        net.calvuz.qreport.domain.model.client.FacilityType.OFFICE -> Icons.Default.Business
-        net.calvuz.qreport.domain.model.client.FacilityType.MAINTENANCE -> Icons.Default.Build
-        net.calvuz.qreport.domain.model.client.FacilityType.R_AND_D -> Icons.Default.Biotech
-        net.calvuz.qreport.domain.model.client.FacilityType.OTHER -> Icons.Default.Business
+        FacilityType.PRODUCTION -> Icons.Default.Factory
+        FacilityType.WAREHOUSE -> Icons.Default.Warehouse
+        FacilityType.ASSEMBLY -> Icons.Default.Build
+        FacilityType.TESTING -> Icons.Default.Science
+        FacilityType.LOGISTICS -> Icons.Default.LocalShipping
+        FacilityType.OFFICE -> Icons.Default.Business
+        FacilityType.MAINTENANCE -> Icons.Default.Build
+        FacilityType.R_AND_D -> Icons.Default.Biotech
+        FacilityType.OTHER -> Icons.Default.Business
     }
 }
 

@@ -22,8 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.presentation.components.QReportSearchBar
-import net.calvuz.qreport.presentation.components.FacilityIslandCard
-import net.calvuz.qreport.presentation.components.IslandCardVariant
+import net.calvuz.qreport.presentation.components.client.FacilityIslandCard
+import net.calvuz.qreport.presentation.components.client.IslandCardVariant
 
 /**
  * Screen per la lista isole di un facility - seguendo pattern FacilityListScreen

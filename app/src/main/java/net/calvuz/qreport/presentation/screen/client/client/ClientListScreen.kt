@@ -19,8 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.presentation.components.QReportSearchBar
-import net.calvuz.qreport.presentation.components.ClientCard
-import net.calvuz.qreport.presentation.components.ClientCardVariant
+import net.calvuz.qreport.presentation.components.client.ClientCard
+import net.calvuz.qreport.presentation.components.client.ClientCardVariant
 
 /**
  * Screen per la lista clienti - VERSIONE CON COMPONENTS RIUTILIZZABILI
@@ -209,7 +209,8 @@ private fun ClientListContent(
                 stats = clientWithStats.stats,
                 onClick = { onClientClick(clientWithStats.client.id, clientWithStats.client.companyName) },
                 onEdit = { onClientEdit(clientWithStats.client.id) },
-                onDelete = { onClientDelete(clientWithStats.client.id) },
+                //onDelete = { onClientDelete(clientWithStats.client.id) },
+                onDelete = null,
                 variant = ClientCardVariant.FULL
             )
         }

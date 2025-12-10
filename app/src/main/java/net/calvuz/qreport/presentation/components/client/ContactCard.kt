@@ -1,4 +1,4 @@
-package net.calvuz.qreport.presentation.components
+package net.calvuz.qreport.presentation.components.client
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
