@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -21,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.presentation.components.EmptyState
+import net.calvuz.qreport.presentation.components.ErrorState
 
 /**
  * Screen per la lista check-up con dati reali
@@ -148,9 +152,17 @@ fun CheckUpListScreen(
 
                 uiState.filteredCheckUps.isEmpty() -> {
                     EmptyState(
-                        filter = uiState.selectedFilter,
                         searchQuery = uiState.searchQuery,
-                        onCreateNew = onCreateNewCheckUp
+                        iconImageVector = Icons.AutoMirrored.Filled.Assignment,
+                        iconContentDescription = "Check-Up",
+                        textFilter = if (uiState.selectedFilter != CheckUpFilter.ALL)
+                            getFilterDisplayName(uiState.selectedFilter)
+                        else
+                            null,
+                        iconActionImageVector = Icons.Default.Add,
+                        iconActionContentDescription = "Nuovo Check-Up",
+                        textAction = "Nuovo Check-Up",
+                        onAction = onCreateNewCheckUp
                     )
                 }
 
@@ -395,7 +407,7 @@ private fun CheckUpCard(
 
 @Composable
 private fun StatItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     value: String,
     label: String,
     color: Color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -448,120 +460,120 @@ private fun StatusChip(
         modifier = modifier
     )
 }
-
-@Composable
-private fun ErrorState(
-    error: String,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val errorMessage = error // Local variable to avoid smart cast issues
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Errore",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = errorMessage,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Chiudi")
-            }
-
-            Button(onClick = onRetry) {
-                Text("Riprova")
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyState(
-    filter: CheckUpFilter,
-    searchQuery: String,
-    onCreateNew: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Assignment,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        val (title, message) = when {
-            searchQuery.isNotEmpty() -> "Nessun risultato" to "Non ci sono check-up che corrispondono alla ricerca '$searchQuery'"
-            filter != CheckUpFilter.ALL -> "Nessun check-up" to "Non ci sono check-up con stato '${getFilterDisplayName(filter)}'"
-            else -> "Nessun check-up" to "Non hai ancora creato nessun check-up"
-        }
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        if (filter == CheckUpFilter.ALL && searchQuery.isEmpty()) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(onClick = onCreateNew) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Crea il primo check-up")
-            }
-        }
-    }
-}
+//
+//@Composable
+//private fun ErrorState(
+//    error: String,
+//    onRetry: () -> Unit,
+//    onDismiss: () -> Unit,
+//    modifier: Modifier = Modifier
+//) {
+//    val errorMessage = error // Local variable to avoid smart cast issues
+//
+//    Column(
+//        modifier = modifier
+//            .fillMaxSize()
+//            .padding(32.dp),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center
+//    ) {
+//        Icon(
+//            imageVector = Icons.Default.Error,
+//            contentDescription = null,
+//            modifier = Modifier.size(64.dp),
+//            tint = MaterialTheme.colorScheme.error
+//        )
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        Text(
+//            text = "Errore",
+//            style = MaterialTheme.typography.titleLarge,
+//            color = MaterialTheme.colorScheme.error
+//        )
+//
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        Text(
+//            text = errorMessage,
+//            style = MaterialTheme.typography.bodyMedium,
+//            color = MaterialTheme.colorScheme.onSurfaceVariant
+//        )
+//
+//        Spacer(modifier = Modifier.height(24.dp))
+//
+//        Row(
+//            horizontalArrangement = Arrangement.spacedBy(12.dp)
+//        ) {
+//            OutlinedButton(onClick = onDismiss) {
+//                Text("Chiudi")
+//            }
+//
+//            Button(onClick = onRetry) {
+//                Text("Riprova")
+//            }
+//        }
+//    }
+//}
+//
+//@Composable
+//private fun EmptyState(
+//    filter: CheckUpFilter,
+//    searchQuery: String,
+//    onCreateNew: () -> Unit,
+//    modifier: Modifier = Modifier
+//) {
+//    Column(
+//        modifier = modifier
+//            .fillMaxSize()
+//            .padding(32.dp),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center
+//    ) {
+//        Icon(
+//            imageVector = Icons.AutoMirrored.Filled.Assignment,
+//            contentDescription = null,
+//            modifier = Modifier.size(64.dp),
+//            tint = MaterialTheme.colorScheme.onSurfaceVariant
+//        )
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        val (title, message) = when {
+//            searchQuery.isNotEmpty() -> "Nessun risultato" to "Non ci sono check-up che corrispondono alla ricerca '$searchQuery'"
+//            filter != CheckUpFilter.ALL -> "Nessun check-up" to "Non ci sono check-up con stato '${getFilterDisplayName(filter)}'"
+//            else -> "Nessun check-up" to "Non hai ancora creato nessun check-up"
+//        }
+//
+//        Text(
+//            text = title,
+//            style = MaterialTheme.typography.titleLarge,
+//            color = MaterialTheme.colorScheme.onSurfaceVariant
+//        )
+//
+//        Spacer(modifier = Modifier.height(8.dp))
+//
+//        Text(
+//            text = message,
+//            style = MaterialTheme.typography.bodyMedium,
+//            color = MaterialTheme.colorScheme.onSurfaceVariant
+//        )
+//
+//        if (filter == CheckUpFilter.ALL && searchQuery.isEmpty()) {
+//            Spacer(modifier = Modifier.height(24.dp))
+//
+//            Button(onClick = onCreateNew) {
+//                Icon(
+//                    imageVector = Icons.Default.Add,
+//                    contentDescription = null,
+//                    modifier = Modifier.size(18.dp)
+//                )
+//                Spacer(modifier = Modifier.width(8.dp))
+//                Text("Crea il primo check-up")
+//            }
+//        }
+//    }
+//}
 
 // Helper functions
 private fun getFilterDisplayName(filter: CheckUpFilter): String {

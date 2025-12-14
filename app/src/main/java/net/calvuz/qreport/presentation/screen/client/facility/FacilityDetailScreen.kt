@@ -11,16 +11,22 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import net.calvuz.qreport.domain.model.client.Facility
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import net.calvuz.qreport.domain.model.client.FacilityIslandOperationalStatus
 import net.calvuz.qreport.domain.usecase.client.facilityisland.FacilityOperationalSummary
+import net.calvuz.qreport.presentation.components.EmptyState
+import net.calvuz.qreport.presentation.components.ErrorState
+import net.calvuz.qreport.presentation.components.LoadingState
 
 /**
  * Screen per il dettaglio facility con gestione islands
@@ -177,7 +183,16 @@ fun FacilityDetailScreen(
             }
 
             else -> {
-                EmptyState()
+                EmptyState(
+                    iconImageVector = TODO(),
+                    iconContentDescription = TODO(),
+                    searchQuery = TODO(),
+                    textFilter = TODO(),
+                    iconActionImageVector = TODO(),
+                    iconActionContentDescription = TODO(),
+                    textAction = TODO(),
+                    onAction = TODO()
+                )
             }
         }
     }
@@ -321,7 +336,7 @@ private fun HeaderSection(
                             onClick = { },
                             label = { Text(statusBadge) },
                             colors = AssistChipDefaults.assistChipColors(
-                                containerColor = androidx.compose.ui.graphics.Color(statusColor)
+                                containerColor = Color(statusColor)
                             )
                         )
                     }
@@ -1024,7 +1039,7 @@ private fun StatItem(
     icon: ImageVector,
     value: String,
     label: String,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant
+    color: Color = MaterialTheme.colorScheme.onSurfaceVariant
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1102,89 +1117,6 @@ private fun InfoItem(
     }
 }
 
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            CircularProgressIndicator()
-            Text(
-                text = "Caricamento dettagli stabilimento...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun ErrorState(
-    error: String,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Error,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
-
-            Text(
-                text = "Errore",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.error
-            )
-
-            Text(
-                text = error,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(onClick = onDismiss) {
-                    Text("Chiudi")
-                }
-
-                Button(onClick = onRetry) {
-                    Text("Riprova")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Stabilimento non trovato",
-            style = MaterialTheme.typography.bodyLarge
-        )
-    }
-}
-
 // Helper functions
 private fun getIslandFilterDisplayName(filter: IslandFilter): String {
     return when (filter) {
@@ -1212,8 +1144,8 @@ private fun formatNumber(number: Long): String {
     }
 }
 
-private fun formatTimestamp(timestamp: kotlinx.datetime.Instant): String {
-    val now = kotlinx.datetime.Clock.System.now()
+private fun formatTimestamp(timestamp: Instant): String {
+    val now = Clock.System.now()
     val diffMillis = (now - timestamp).inWholeMilliseconds
 
     return when {

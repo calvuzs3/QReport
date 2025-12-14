@@ -9,18 +9,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.domain.model.client.FacilityIsland
+import net.calvuz.qreport.domain.usecase.client.facilityisland.FacilityOperationalSummary
+import net.calvuz.qreport.presentation.components.EmptyState
+import net.calvuz.qreport.presentation.components.ErrorState
 import net.calvuz.qreport.presentation.components.QReportSearchBar
 import net.calvuz.qreport.presentation.components.client.FacilityIslandCard
 import net.calvuz.qreport.presentation.components.client.IslandCardVariant
@@ -36,6 +41,7 @@ import net.calvuz.qreport.presentation.components.client.IslandCardVariant
  * - FacilityIslandCard con indicatori manutenzione
  * - Statistiche aggregate in header
  */
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityIslandListScreen(
@@ -124,7 +130,7 @@ fun FacilityIslandListScreen(
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca isole per serial, nome o modello...",
+            placeholder = "Cerca per serial, nome o modello...",
             modifier = Modifier.padding(horizontal = 16.dp)
         )
 
@@ -178,9 +184,17 @@ fun FacilityIslandListScreen(
 
                 uiState.filteredIslands.isEmpty() -> {
                     EmptyState(
-                        filter = uiState.selectedFilter,
                         searchQuery = uiState.searchQuery,
-                        onCreateNew = onCreateNewIsland
+                        iconImageVector = Icons.Default.Analytics,
+                        iconContentDescription = "Isole non trovate",
+                        textFilter = if (uiState.selectedFilter != IslandFilter.ALL)
+                            getIslandFilterDisplayName(uiState.selectedFilter)
+                        else
+                            null,
+                        iconActionImageVector = Icons.Default.Add,
+                        iconActionContentDescription = "Nuova Isola",
+                        textAction = "Nuova Isola",
+                        onAction = onCreateNewIsland
                     )
                 }
 
@@ -219,7 +233,7 @@ fun FacilityIslandListScreen(
 
 @Composable
 private fun IslandStatisticsHeader(
-    statistics: net.calvuz.qreport.domain.usecase.client.facilityisland.FacilityOperationalSummary,
+    statistics: FacilityOperationalSummary,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -316,10 +330,10 @@ private fun formatCycleCount(cycleCount: Long): String {
 
 @Composable
 private fun StatisticItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     value: String,
-    color: androidx.compose.ui.graphics.Color
+    color: Color
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -349,7 +363,7 @@ private fun StatisticItem(
 
 @Composable
 private fun IslandListContent(
-    islands: List<net.calvuz.qreport.domain.model.client.FacilityIsland>,
+    islands: List<FacilityIsland>,
     onIslandClick: (String) -> Unit,
     onIslandDelete: (String) -> Unit
 ) {
@@ -489,120 +503,6 @@ private fun LoadingState() {
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-        }
-    }
-}
-
-@Composable
-private fun ErrorState(
-    error: String,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val errorMessage = error.takeIf { it.isNotBlank() } ?: "Errore sconosciuto"
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Errore",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = errorMessage,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Chiudi")
-            }
-
-            Button(onClick = onRetry) {
-                Text("Riprova")
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyState(
-    filter: IslandFilter,
-    searchQuery: String,
-    onCreateNew: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Analytics,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        val (title, message) = when {
-            searchQuery.isNotEmpty() -> "Nessun risultato" to "Non ci sono isole che corrispondono alla ricerca '$searchQuery'"
-            filter != IslandFilter.ALL -> "Nessuna isola" to "Non ci sono isole con filtro '${getIslandFilterDisplayName(filter)}'"
-            else -> "Nessuna isola" to "Non hai ancora aggiunto nessuna isola robotizzata per questo stabilimento"
-        }
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        if (filter == IslandFilter.ALL && searchQuery.isEmpty()) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(onClick = onCreateNew) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Aggiungi prima isola")
-            }
         }
     }
 }

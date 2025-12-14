@@ -9,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -18,7 +17,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.core.net.toUri
 import net.calvuz.qreport.domain.model.client.Contact
-import net.calvuz.qreport.domain.model.client.ContactMethod
+import net.calvuz.qreport.presentation.components.client.ContactMethodsCard
+import net.calvuz.qreport.presentation.components.client.ContactRoleCard
+import net.calvuz.qreport.presentation.components.client.ContactRoleItem
 
 /**
  * Screen dettaglio contatto - Pattern identico a ClientDetailScreen
@@ -219,7 +220,7 @@ private fun ContactDetailContent(
         // Role & Department
         if (!contact.roleDescription.isBlank()) {
             item {
-                RoleCard(contact = contact)
+                ContactRoleCard(contact = contact)
             }
         }
 
@@ -284,165 +285,6 @@ private fun ContactHeaderCard(
                         )
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ContactMethodsCard(
-    contact: Contact,
-    onPhoneClick: (String) -> Unit,
-    onEmailClick: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "Contatti",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            // Phone
-            contact.phone?.let { phone ->
-                ContactMethodItem(
-                    icon = Icons.Default.Phone,
-                    label = "Telefono",
-                    value = phone,
-                    onClick = { onPhoneClick(phone) },
-                    isPrimary = contact.preferredContactMethod == ContactMethod.PHONE
-                )
-            }
-
-            // Mobile
-            contact.mobilePhone?.let { mobile ->
-                ContactMethodItem(
-                    icon = Icons.Default.PhoneAndroid,
-                    label = "Cellulare",
-                    value = mobile,
-                    onClick = { onPhoneClick(mobile) },
-                    isPrimary = contact.preferredContactMethod == ContactMethod.MOBILE
-                )
-            }
-
-            // Email
-            contact.email?.let { email ->
-                ContactMethodItem(
-                    icon = Icons.Default.Email,
-                    label = "Email",
-                    value = email,
-                    onClick = { onEmailClick(email) },
-                    isPrimary = contact.preferredContactMethod == ContactMethod.EMAIL
-                )
-            }
-
-            // Alternative Email
-            contact.alternativeEmail?.let { altEmail ->
-                ContactMethodItem(
-                    icon = Icons.Default.AlternateEmail,
-                    label = "Email alternativa",
-                    value = altEmail,
-                    onClick = { onEmailClick(altEmail) }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ContactMethodItem(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    label: String,
-    value: String,
-    onClick: () -> Unit,
-    isPrimary: Boolean = false
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = if (isPrimary) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(20.dp)
-        )
-
-        Column(modifier = Modifier.weight(1f)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                if (isPrimary) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = "Preferito",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(12.dp)
-                    )
-                }
-            }
-
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-
-        IconButton(onClick = onClick) {
-            Icon(
-                imageVector = Icons.Default.Launch,
-                contentDescription = "Contatta",
-                modifier = Modifier.size(18.dp)
-            )
-        }
-    }
-}
-
-@Composable
-private fun RoleCard(
-    contact: Contact,
-    modifier: Modifier = Modifier
-) {
-    Card(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Ruolo Aziendale",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            contact.role?.let { role ->
-                InfoRow(
-                    icon = Icons.Default.Work,
-                    label = "Posizione",
-                    value = role
-                )
-            }
-
-            contact.department?.let { dept ->
-                InfoRow(
-                    icon = Icons.Default.Business,
-                    label = "Dipartimento",
-                    value = dept
-                )
             }
         }
     }
@@ -516,43 +358,11 @@ private fun StatusCard(
                 }
             }
 
-            InfoRow(
+            // Use the RoleItem for convenience
+            ContactRoleItem(
                 icon = Icons.Default.Schedule,
                 label = "Creato",
                 value = contact.createdAt.toString().substring(0, 10)
-            )
-        }
-    }
-}
-
-@Composable
-private fun InfoRow(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Column {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = value,
-                style = MaterialTheme.typography.bodyMedium
             )
         }
     }

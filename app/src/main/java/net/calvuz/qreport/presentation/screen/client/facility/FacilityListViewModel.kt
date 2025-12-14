@@ -10,7 +10,6 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.client.Facility
-import net.calvuz.qreport.domain.model.client.FacilityType
 import net.calvuz.qreport.domain.usecase.client.facility.GetFacilitiesByClientUseCase
 import net.calvuz.qreport.domain.usecase.client.facility.DeleteFacilityUseCase
 import net.calvuz.qreport.domain.usecase.client.facility.GetFacilityWithIslandsUseCase
@@ -33,6 +32,7 @@ data class FacilityListUiState(
     val filteredFacilities: List<FacilityWithStats> = emptyList(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
+    val isDeletingFacility: String? = null,
     val error: String? = null,
     val searchQuery: String = "",
     val selectedFilter: FacilityFilter = FacilityFilter.ALL,
@@ -207,6 +207,8 @@ class FacilityListViewModel @Inject constructor(
 
     fun deleteFacility(facilityId: String) {
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeletingFacility = facilityId)
+
             try {
                 Timber.d("Deleting facility: $facilityId")
 
@@ -214,10 +216,12 @@ class FacilityListViewModel @Inject constructor(
                     onSuccess = {
                         Timber.d("Facility deleted successfully")
                         // La lista si aggiorna automaticamente tramite Flow
+                        refresh()
                     },
                     onFailure = { error ->
                         Timber.e(error, "Failed to delete facility")
                         _uiState.value = _uiState.value.copy(
+                            isDeletingFacility = null,
                             error = "Errore eliminazione stabilimento: ${error.message}"
                         )
                     }
@@ -227,6 +231,8 @@ class FacilityListViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     error = "Errore eliminazione stabilimento: ${e.message}"
                 )
+            } finally {
+                _uiState.value = _uiState.value.copy(isDeletingFacility = null)
             }
         }
     }

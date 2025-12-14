@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.client.Facility
 import net.calvuz.qreport.domain.model.client.FacilityType
+import net.calvuz.qreport.presentation.components.PrimaryBadge
 import net.calvuz.qreport.presentation.screen.client.facility.FacilityStatistics
 
 /**
@@ -50,7 +51,7 @@ fun FacilityCard(
                 facility = facility,
                 stats = stats,
                 showActions = showActions,
-                onDelete = { showDeleteDialog = true },
+                onDelete = if(onDelete != null){ {showDeleteDialog = true}} else null,
                 onEdit = onEdit
             )
             FacilityCardVariant.COMPACT -> CompactFacilityCard(
@@ -79,8 +80,8 @@ private fun FullFacilityCard(
     facility: Facility,
     stats: FacilityStatistics?,
     showActions: Boolean,
-    onDelete: (() -> Unit)?,
-    onEdit: (() -> Unit)?
+    onDelete: (() -> Unit)? = null,
+    onEdit: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier.padding(16.dp),
@@ -93,17 +94,29 @@ private fun FullFacilityCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = facility.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row {
+                    Text(
+                        text = facility.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+//                    if (facility.isPrimary) {
+//                        Spacer(modifier = Modifier.height(4.dp))
+//                        Icon(
+//                            Icons.Default.Star,
+//                            contentDescription = "Contatto primario",
+//                            tint = MaterialTheme.colorScheme.primary,
+//                            modifier = Modifier.size(18.dp)
+//                        )
+//                    }
+                }
 
                 if (facility.isPrimary) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    FacilityPrimaryBadge()
+                    PrimaryBadge()
                 }
             }
 
@@ -262,9 +275,10 @@ private fun CompactFacilityCard(
                 )
 
                 if (facility.isPrimary) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Icon(
                         imageVector = Icons.Default.Star,
-                        contentDescription = "Primario",
+                        contentDescription = "Stabilimento primario",
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -412,27 +426,6 @@ private fun FacilityStatusIndicator(
         tint = color,
         modifier = modifier.size(16.dp)
     )
-}
-
-@Composable
-private fun FacilityPrimaryBadge() {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Star,
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = "Primario",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium
-        )
-    }
 }
 
 @Composable

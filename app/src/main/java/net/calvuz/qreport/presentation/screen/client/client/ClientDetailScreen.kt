@@ -1,6 +1,6 @@
 package net.calvuz.qreport.presentation.screen.client.client
 
-import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -23,11 +24,13 @@ import net.calvuz.qreport.domain.model.client.ContactStatistics
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import net.calvuz.qreport.domain.model.client.FacilityIslandOperationalStatus
 import net.calvuz.qreport.presentation.components.client.ContactsStatisticsSummary
-import androidx.core.net.toUri
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import net.calvuz.qreport.domain.model.client.ClientWithDetails
 import net.calvuz.qreport.domain.model.client.FacilityWithIslands
 import net.calvuz.qreport.presentation.components.EmptyTabContent
 import net.calvuz.qreport.presentation.components.client.FacilitiesStatisticsSummary
+import net.calvuz.qreport.util.callContact
 
 /**
  * Screen per il dettaglio cliente con 4 tab - VERSIONE FINALE CON GESTIONE FACILITY
@@ -50,39 +53,27 @@ fun ClientDetailScreen(
     onNavigateToEdit: (String) -> Unit,
     onDeleteClient: () -> Unit,
 
-    // ✅ Facility navigation callbacks
+    // Facility navigation callbacks
     onNavigateToFacilityList: (String) -> Unit, // Navigate to full facility list
     onNavigateToCreateFacility: (String) -> Unit, // Create new facility
     onNavigateToEditFacility: (String, String) -> Unit, // Edit facility (clientId, facilityId)
     onNavigateToFacilityDetail: (String, String) -> Unit = { _, _ -> }, // Facility detail
-    onNavigateToIslandDetail: (String, String) -> Unit = {_, _ -> }, // Island detail (future)
+    onNavigateToIslandDetail: (String, String) -> Unit = { _, _ -> }, // Island detail (future)
 
-    // Navigation callbacks per contatti
+    // Contacts navigation callbacks
     onNavigateToContactList: (String, String) -> Unit = { _, _ -> }, // (clientId, clientName)
-    onNavigateToCreateContact: (String, String) -> Unit = {_, _ -> }, // (clientId)
+    onNavigateToCreateContact: (String, String) -> Unit = { _, _ -> }, // (clientId)
     onNavigateToEditContact: (String) -> Unit = { }, // (contactId)
     onNavigateToContactDetail: (String) -> Unit = { }, // (contactId)
+
+    // Check-up navigation callbacks
+    onNavigateToCreateCheckUp: (String) -> Unit = { }, // (clientId)
 
     viewModel: ClientDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
     val clientName = uiState.companyName
 
-    // Funzione per chiamare contatto
-    val callContact = { phoneNumber: String ->
-        try {
-            val intent = Intent(Intent.ACTION_CALL).apply {
-                data = "tel:$phoneNumber".toUri()
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-            val intent = Intent(Intent.ACTION_DIAL).apply {
-                data = "tel:$phoneNumber".toUri()
-            }
-            context.startActivity(intent)
-        }
-    }
 
     // ✅ Handle delete success - Navigate back automatically
     LaunchedEffect(uiState.deleteSuccess) {
@@ -226,8 +217,11 @@ fun ClientDetailScreen(
                     onViewAllContacts = {
                         onNavigateToContactList(clientId, uiState.companyName)
                     },
-                    onCallContact = callContact
-                )
+
+                    // Check-up callbacks
+                    onCreateCheckUp = { onNavigateToCreateCheckUp(clientId) },
+
+                    )
             }
 
             else -> {
@@ -263,7 +257,9 @@ private fun ClientDetailContent(
     onEditContact: (String) -> Unit,
     onCreateContact: () -> Unit,
     onViewAllContacts: () -> Unit,
-    onCallContact: (String) -> Unit
+
+    // Check-Up callbacks
+    onCreateCheckUp: () -> Unit,
 ) {
     Column {
         // Header con badge status e industry
@@ -371,22 +367,94 @@ private fun ClientDetailContent(
                     onContactClick = onContactClick,
                     onCreateContact = onCreateContact,
                     onEditContact = onEditContact,
-                    onCallContact = onCallContact,
                     modifier = Modifier.weight(1f)
                 )
             }
 
             ClientDetailTab.HISTORY -> {
                 HistoryTabContent(
-                    checkUpsCount = uiState.checkUpsCount,
-                    modifier = Modifier.weight(1f)
+//                    checkUpsCount = uiState.checkUpsCount,
+//                    modifier = Modifier.weight(1f),
+                    onCreateCheckUp = onCreateCheckUp
                 )
             }
         }
     }
 }
 
-// ✅ Facilities tab con gestione completa e UI CORRETTA
+// TAB Info
+@Composable
+private fun InfoTabContent(
+    clientDetails: ClientWithDetails,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            InfoCard(
+                title = "Informazioni Generali",
+                icon = Icons.Default.Business
+            ) {
+                InfoItem(
+                    label = "Ragione Sociale",
+                    value = clientDetails.client.companyName
+                )
+
+                clientDetails.client.vatNumber?.let {
+                    InfoItem(
+                        label = "Partita IVA",
+                        value = it
+                    )
+                }
+
+                clientDetails.client.industry?.let {
+                    InfoItem(
+                        label = "Settore",
+                        value = it
+                    )
+                }
+            }
+        }
+
+        item {
+            InfoCard(
+                title = "Sede Legale",
+                icon = Icons.Default.LocationOn
+            ) {
+                clientDetails.client.headquarters?.let { address ->
+                    InfoItem(
+                        label = "Indirizzo",
+                        value = address.toDisplayString()
+                    )
+                }
+            }
+        }
+
+        item {
+            InfoCard(
+                title = "Metadati",
+                icon = Icons.Default.Info
+            ) {
+                InfoItem(
+                    label = "Creato",
+                    value = formatTimestamp(clientDetails.client.createdAt)
+                )
+                InfoItem(
+                    label = "Ultima modifica",
+                    value = formatTimestamp(clientDetails.client.updatedAt)
+                )
+                InfoItem(
+                    label = "Stato",
+                    value = if (clientDetails.client.isActive) "Attivo" else "Inattivo"
+                )
+            }
+        }
+    }
+}
+
+// TAB Facilities
 @Composable
 private fun FacilitiesTabContentWithManagement(
     facilitiesWithIslands: List<FacilityWithIslands>,
@@ -450,7 +518,7 @@ private fun FacilitiesTabContentWithManagement(
             EmptyTabContent(
                 icon = Icons.Outlined.Factory,
                 message = "Nessuno Stabilimento",
-                subMessage = "Aggiungi il primo Stabilimento per questo cliente",
+                subMessage = "Aggiungi uno Stabilimento per questo Cliente",
                 onButtonClick = onCreateFacility,
                 onButtonMessage = "Nuovo Stabilimento"
             )
@@ -474,6 +542,7 @@ private fun FacilitiesTabContentWithManagement(
     }
 }
 
+// TAB Clients
 @Composable
 private fun ContactsTabContent(
     modifier: Modifier = Modifier,
@@ -483,7 +552,6 @@ private fun ContactsTabContent(
     onContactClick: (String) -> Unit,
     onCreateContact: () -> Unit,
     onEditContact: (String) -> Unit,
-    onCallContact: (String) -> Unit,
 ) {
     Column(modifier = modifier) {
         // ✅ Header con stesso stile di Facilities per consistency
@@ -536,8 +604,8 @@ private fun ContactsTabContent(
         if (contacts.isEmpty()) {
             EmptyTabContent(
                 icon = Icons.Outlined.Person,
-                message = "Nessun contatto",
-                subMessage = "Aggiungi il primo contatto per questo cliente",
+                message = "Nessun Contatto",
+                subMessage = "Aggiungi un contatto per questo cliente",
                 onButtonClick = onCreateContact,
                 onButtonMessage = "Nuovo Contatto"
             )
@@ -547,11 +615,21 @@ private fun ContactsTabContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(contacts.take(5)) { contact ->
-                    ContactItem(  // ← USA ContactItem ESISTENTE
+//                    ContactCard(
+//                        contact = contact,
+//                        onClick = onContactClick,
+//                        onEdit = onEditContact,
+//                        onCall = onCallContact,
+//                        onDelete = TODO(),
+//                        onSetPrimary = TODO(),
+//                        isDeleting = TODO(),
+//                        isSettingPrimary = TODO()
+//                    )
+                    ContactItem(
+                        // ← USA ContactItem ESISTENTE
                         contact = contact,
                         onContactClick = onContactClick,
                         onEditContact = onEditContact,
-                        onCallContact = onCallContact
                     )
                 }
 
@@ -582,6 +660,22 @@ private fun ContactsTabContent(
             }
         }
     }
+}
+
+// TAB History
+@Composable
+private fun HistoryTabContent(
+//    checkUpsCount: Int,
+//    modifier: Modifier = Modifier,
+    onCreateCheckUp: () -> Unit
+) {
+    EmptyTabContent(
+        icon = Icons.Outlined.History,
+        message = "Nessun CheckUp",
+        subMessage = "Aggiungi un Check-up per questo Cliente",
+        onButtonClick = onCreateCheckUp,
+        onButtonMessage = "Nuovo Check-Up"
+    )
 }
 
 // ✅ Facility item con azioni
@@ -687,38 +781,6 @@ private fun FacilityItemWithActions(
     }
 }
 
-// ✅ Stat item per summary
-@Composable
-private fun StatItem(
-    icon: ImageVector,
-    value: String,
-    label: String,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = color
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = color
-        )
-    }
-}
-
 // ✅ Island item compatto
 @Composable
 private fun IslandItemCompact(
@@ -776,8 +838,9 @@ private fun ContactItem(
     contact: Contact,
     onContactClick: (String) -> Unit,
     onEditContact: (String) -> Unit,
-    onCallContact: (String) -> Unit
 ) {
+    val context = LocalContext.current
+
     Card(
         onClick = { onContactClick(contact.id) },
         modifier = Modifier.fillMaxWidth()
@@ -830,7 +893,16 @@ private fun ContactItem(
             ) {
                 contact.phone?.let { phone ->
                     IconButton(
-                        onClick = { onCallContact(phone) },
+                        onClick = {
+                            val result = callContact(context, phone)
+                            if (!result) {
+                                Toast.makeText(
+                                    context,
+                                    "Errore di chiamata",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
@@ -838,6 +910,12 @@ private fun ContactItem(
                             contentDescription = "Chiama",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = phone,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -882,7 +960,7 @@ private fun HeaderSection(
                     onClick = { },
                     label = { Text(statusBadge) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = androidx.compose.ui.graphics.Color(statusColor)
+                        containerColor = Color(statusColor)
                     )
                 )
             }
@@ -906,94 +984,6 @@ private fun HeaderSection(
             }
         }
     }
-}
-
-@Composable
-private fun InfoTabContent(
-    clientDetails: ClientWithDetails,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            InfoCard(
-                title = "Informazioni Generali",
-                icon = Icons.Default.Business
-            ) {
-                InfoItem(
-                    label = "Ragione Sociale",
-                    value = clientDetails.client.companyName
-                )
-
-                clientDetails.client.vatNumber?.let {
-                    InfoItem(
-                        label = "Partita IVA",
-                        value = it
-                    )
-                }
-
-                clientDetails.client.industry?.let {
-                    InfoItem(
-                        label = "Settore",
-                        value = it
-                    )
-                }
-            }
-        }
-
-        item {
-            InfoCard(
-                title = "Sede Legale",
-                icon = Icons.Default.LocationOn
-            ) {
-                clientDetails.client.headquarters?.let { address ->
-                    InfoItem(
-                        label = "Indirizzo",
-                        value = address.toDisplayString()
-                    )
-                }
-            }
-        }
-
-        item {
-            InfoCard(
-                title = "Metadati",
-                icon = Icons.Default.Info
-            ) {
-                InfoItem(
-                    label = "Creato",
-                    value = formatTimestamp(clientDetails.client.createdAt)
-                )
-                InfoItem(
-                    label = "Ultima modifica",
-                    value = formatTimestamp(clientDetails.client.updatedAt)
-                )
-                InfoItem(
-                    label = "Stato",
-                    value = if (clientDetails.client.isActive) "Attivo" else "Inattivo"
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HistoryTabContent(
-    checkUpsCount: Int,
-    modifier: Modifier = Modifier
-) {
-    EmptyTabContent(
-        icon = Icons.Outlined.History,
-        message = "Storico CheckUp",
-        subMessage = if (checkUpsCount > 0) {
-            "Storico di $checkUpsCount check-up effettuati"
-        } else {
-            "Nessun check-up ancora effettuato per questo cliente"
-        },
-        modifier = modifier
-    )
 }
 
 @Composable
@@ -1133,8 +1123,8 @@ private fun EmptyState() {
 }
 
 // Helper functions
-private fun formatTimestamp(timestamp: kotlinx.datetime.Instant): String {
-    val now = kotlinx.datetime.Clock.System.now()
+private fun formatTimestamp(timestamp: Instant): String {
+    val now = Clock.System.now()
     val updated = timestamp
     val diffMillis = (now - updated).inWholeMilliseconds
 

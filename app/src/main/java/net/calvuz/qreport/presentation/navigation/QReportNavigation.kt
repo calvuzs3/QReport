@@ -2,6 +2,8 @@ package net.calvuz.qreport.presentation.navigation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -83,8 +85,8 @@ sealed class QReportDestination(
     object CheckUps : QReportDestination(
         route = "checkups",
         title = "Check-up",
-        selectedIcon = Icons.Filled.Assignment,
-        unselectedIcon = Icons.Outlined.Assignment
+        selectedIcon = Icons.AutoMirrored.Filled.Assignment,
+        unselectedIcon = Icons.AutoMirrored.Outlined.Assignment
     )
 
     object Settings : QReportDestination(
@@ -180,6 +182,7 @@ object QReportRoutes {
     fun islandEditRoute(facilityId: String, islandId: String) = "island_form/$facilityId/$islandId"
 
     // Helper functions for CHECK-UPs
+    fun checkUpCreateRoute(clientId: String? = null) = "checkup_create"
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
     fun photoGallery(checkItemId: String) = "photo_gallery/$checkItemId"
@@ -473,6 +476,11 @@ fun QReportNavigation(
                         onNavigateToIslandDetail = { facilityId, islandId ->
                             navController.navigate(
                                 QReportRoutes.islandDetailRoute(facilityId, islandId)
+                            )
+                        },
+                        onNavigateToCreateCheckUp = { clientId ->
+                            navController.navigate(
+                                QReportRoutes.checkUpCreateRoute(clientId)
                             )
                         }
                     )
@@ -783,14 +791,16 @@ fun QReportNavigation(
                         clientId = clientId,
                         onNavigateToFacilityDetail = { facilityId ->
                             navController.navigate(
-                                QReportRoutes.facilityDetailRoute(
-                                    clientId,
-                                    facilityId
-                                )
+                                QReportRoutes.facilityDetailRoute(clientId, facilityId)
                             )
                         },
                         onCreateNewFacility = {
                             navController.navigate(QReportRoutes.facilityCreateRoute(clientId))
+                        },
+                        onEditFacility = { facilityId ->
+                            navController.navigate(
+                                QReportRoutes.facilityEditRoute(clientId, facilityId)
+                            )
                         },
                         onNavigateBack = { navController.popBackStack() }
                     )

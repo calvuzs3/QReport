@@ -182,7 +182,6 @@ class ContactDetailViewModel @Inject constructor(
         )
     }
 
-
     fun showEditDialog() {
         _uiState.value = _uiState.value.copy(showEditDialog = true)
     }
