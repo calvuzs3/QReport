@@ -96,7 +96,7 @@ fun ClientListScreen(
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca clienti per nome, P.IVA o città...",
+            placeholder = "Cerca per nome, PI o città...",
             modifier = Modifier.padding(16.dp)
         )
 
@@ -150,14 +150,21 @@ fun ClientListScreen(
                 }
 
                 uiState.filteredClients.isEmpty() -> {
+                    val (title, message) = when {
+                        uiState.clients.isEmpty() -> "Nessun Cliente" to "Non ci sono ancora Clienti"
+                        uiState.selectedFilter != ClientFilter.ALL -> "Nessun risultato" to "Non ci sono Clienti che corrispondono al filtro '${
+                            getFilterDisplayName(
+                                uiState.selectedFilter
+                            )
+                        }'"
+
+                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                    }
                     EmptyState(
+                        textTitle = title,
+                        textMessage = message,
                         iconImageVector = Icons.Outlined.Factory,
                         iconContentDescription = "Nessun Cliente",
-                        searchQuery = uiState.searchQuery,
-                        textFilter = if (uiState.selectedFilter != ClientFilter.ALL)
-                            getFilterDisplayName(uiState.selectedFilter)
-                        else
-                            null,
                         iconActionImageVector = Icons.Default.Add,
                         iconActionContentDescription = "Nuovo cliente",
                         textAction = "Nuovo Cliente",
@@ -218,7 +225,12 @@ private fun ClientListContent(
             ClientCard(
                 client = clientWithStats.client,
                 stats = clientWithStats.stats,
-                onClick = { onClientClick(clientWithStats.client.id, clientWithStats.client.companyName) },
+                onClick = {
+                    onClientClick(
+                        clientWithStats.client.id,
+                        clientWithStats.client.companyName
+                    )
+                },
                 onEdit = { onClientEdit(clientWithStats.client.id) },
                 //onDelete = { onClientDelete(clientWithStats.client.id) },
                 onDelete = null,

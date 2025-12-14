@@ -151,14 +151,16 @@ fun CheckUpListScreen(
                 }
 
                 uiState.filteredCheckUps.isEmpty() -> {
+                    val (title, message) = when {
+                        uiState.checkUps.isEmpty() -> "Nessun Check-Up" to "Non ci sono ancora Check-Up"
+                        uiState.selectedFilter != CheckUpFilter.ALL -> "Nessun risultato" to "Non ci sono Check-Up che corrispondono al filtro '${getFilterDisplayName(uiState.selectedFilter)}'"
+                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                    }
                     EmptyState(
-                        searchQuery = uiState.searchQuery,
+                        textTitle = title,
+                        textMessage = message,
                         iconImageVector = Icons.AutoMirrored.Filled.Assignment,
                         iconContentDescription = "Check-Up",
-                        textFilter = if (uiState.selectedFilter != CheckUpFilter.ALL)
-                            getFilterDisplayName(uiState.selectedFilter)
-                        else
-                            null,
                         iconActionImageVector = Icons.Default.Add,
                         iconActionContentDescription = "Nuovo Check-Up",
                         textAction = "Nuovo Check-Up",

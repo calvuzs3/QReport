@@ -21,12 +21,11 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun EmptyState(
-
     modifier: Modifier = Modifier,
+    textTitle: String,
+    textMessage: String,
     iconImageVector: ImageVector,
     iconContentDescription: String? = null,
-    searchQuery: String? = null,
-    textFilter: String? = null,
     iconActionImageVector: ImageVector? = null,
     iconActionContentDescription: String? = null,
     textAction: String? = null,
@@ -39,12 +38,6 @@ fun EmptyState(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        val (title, message) = when {
-            searchQuery != null && searchQuery.isNotEmpty() -> "Nessun risultato" to "Non ci sono elementi che corrispondono alla ricerca '$searchQuery'"
-            textFilter != null -> "Nessun risultato" to "Non ci sono elementi con filtro '$textFilter'"
-            else -> "Nessun risultato" to "Non hai ancora aggiunto nessuno elemento"
-        }
-
         Icon(
             imageVector = iconImageVector,
             contentDescription = iconContentDescription,
@@ -55,7 +48,7 @@ fun EmptyState(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = title,
+            text = textTitle,
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = modifier.align(alignment = Alignment.CenterHorizontally)
@@ -64,12 +57,12 @@ fun EmptyState(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = message,
+            text = textMessage,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        if (iconActionImageVector != null && iconContentDescription!=null && onAction != null && textAction != null) {
+        if (iconActionImageVector != null && iconContentDescription != null && onAction != null && textAction != null) {
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(onClick = onAction) {

@@ -15,6 +15,7 @@ enum class PhotoErrorType {
     THUMBNAIL_GENERATION_FAILED,
 
     CAPTURE_ERROR,      // Errori durante acquisizione foto
+    IMPORT_ERROR,       // Errori durante import foto
     STORAGE_ERROR,      // Errori filesystem/storage
     REPOSITORY_ERROR,   // Errori database
     VALIDATION_ERROR,   // Errori validazione

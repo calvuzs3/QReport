@@ -1,6 +1,7 @@
 package net.calvuz.qreport.presentation.screen.photo
 
 import android.graphics.BitmapFactory
+import android.net.Uri
 import androidx.exifinterface.media.ExifInterface
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import net.calvuz.qreport.domain.model.photo.Photo
+import net.calvuz.qreport.util.photo.rememberPhotoPickerLauncher
 import timber.log.Timber
 import java.io.File
 
@@ -40,6 +42,7 @@ fun PhotoGalleryScreen(
     checkItemId: String,
     onNavigateBack: () -> Unit,
     onNavigateToCamera: () -> Unit,
+    onNavigateToPhotoImport: (Uri) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PhotoViewModel = hiltViewModel()
 ) {
@@ -89,7 +92,8 @@ fun PhotoGalleryScreen(
         PhotoGalleryTopBar(
             photosCount = galleryState.photosCount,
             onNavigateBack = onNavigateBack,
-            onNavigateToCamera = onNavigateToCamera
+            onNavigateToPhotoImport = onNavigateToPhotoImport,
+            onNavigateToCamera = onNavigateToCamera,
         )
 
         when {
@@ -97,6 +101,7 @@ fun PhotoGalleryScreen(
                 PhotoGalleryLoading()
             }
             galleryState.isEmpty -> {
+
                 PhotoGalleryEmpty(
                     onNavigateToCamera = onNavigateToCamera
                 )
@@ -574,8 +579,14 @@ private fun String.extractDimensions(): String {
 private fun PhotoGalleryTopBar(
     photosCount: Int,
     onNavigateBack: () -> Unit,
-    onNavigateToCamera: () -> Unit
+    onNavigateToCamera: () -> Unit,
+    onNavigateToPhotoImport: (Uri) -> Unit,
 ) {
+    // Photo picker launcher
+    val photoPickerLauncher = rememberPhotoPickerLauncher { uri ->
+        uri?.let { onNavigateToPhotoImport(it) }
+    }
+
     TopAppBar(
         title = {
             Column {
@@ -599,6 +610,17 @@ private fun PhotoGalleryTopBar(
             }
         },
         actions = {
+            // Import Photo
+            IconButton(
+                onClick = { photoPickerLauncher.launch() }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PhotoLibrary,
+                    contentDescription = "Importa dalla galleria"
+                )
+            }
+
+            // Capture Photo
             IconButton(onClick = onNavigateToCamera) {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,

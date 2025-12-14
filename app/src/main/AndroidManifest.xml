@@ -19,7 +19,6 @@
 
     <!-- Camera permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
-
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -28,10 +27,21 @@
         android:required="false" />
 
     <!-- Storage permissions (per scoped storage Android 10+) -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
+
+    <!-- Permessi granulari per Android 13+ -->
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!--Photo Picker feature (opzionale, per ottimizzazione) -->
+    <uses-feature
+        android:name="android.software.activities_on_secondary_displays"
+        android:required="false" />
 
     <!-- Network permission per future sync features -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -62,6 +72,18 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Supporto per intent di condivisione foto (opzionale) -->
+        <activity
+            android:name=".presentation.screen.photo.PhotoImportActivity"
+            android:exported="true"
+            android:theme="@style/Theme.QReport">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
             </intent-filter>
         </activity>
 

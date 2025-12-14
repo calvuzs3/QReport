@@ -14,6 +14,7 @@ import net.calvuz.qreport.domain.model.photo.PhotoResult
 import net.calvuz.qreport.domain.usecase.photo.CapturePhotoUseCase
 import net.calvuz.qreport.domain.usecase.photo.DeletePhotoUseCase
 import net.calvuz.qreport.domain.usecase.photo.GetCheckItemPhotosUseCase
+import net.calvuz.qreport.domain.usecase.photo.ImportPhotoUseCase
 import net.calvuz.qreport.domain.usecase.photo.UpdatePhotoUseCase
 import net.calvuz.qreport.presentation.camera.CameraController
 import net.calvuz.qreport.presentation.camera.CaptureResult
@@ -21,6 +22,33 @@ import net.calvuz.qreport.presentation.model.camera.CameraUiState
 import net.calvuz.qreport.presentation.screen.photo.model.PhotoGalleryUiState
 import net.calvuz.qreport.presentation.model.photo.PhotoPreviewUiState
 import javax.inject.Inject
+
+
+
+/**
+ * UI State per la gestione dell'import di foto dalla galleria.
+ */
+data class PhotoImportUiState(
+    val isLoading: Boolean = false,
+    val isImporting: Boolean = false,
+    val isImportSuccess: Boolean = false,
+    val error: String? = null,
+    val selectedPhotoUri: Uri? = null,
+    val imageInfo: ImageInfo? = null
+)
+
+/**
+ * Informazioni sulla foto selezionata per l'import.
+ */
+data class ImageInfo(
+    val width: Int,
+    val height: Int,
+    val fileSize: Long,
+    val mimeType: String,
+    val fileName: String
+)
+
+
 
 /**
  * ViewModel per gestire tutte le operazioni relative alle foto.
@@ -32,7 +60,8 @@ class PhotoViewModel @Inject constructor(
     private val capturePhotoUseCase: CapturePhotoUseCase,
     private val getCheckItemPhotosUseCase: GetCheckItemPhotosUseCase,
     private val updatePhotoUseCase: UpdatePhotoUseCase,
-    private val deletePhotoUseCase: DeletePhotoUseCase
+    private val deletePhotoUseCase: DeletePhotoUseCase,
+    private val importPhotoUseCase: ImportPhotoUseCase
 ) : ViewModel() {
 
     // ===== CAMERA STATE =====
@@ -54,6 +83,12 @@ class PhotoViewModel @Inject constructor(
 
     private val _currentCheckItemId = MutableStateFlow<String?>(null)
     val currentCheckItemId: StateFlow<String?> = _currentCheckItemId.asStateFlow()
+
+    // ===== IMPORT STATE =====
+
+    private val _importUiState = MutableStateFlow(PhotoImportUiState())
+    val importUiState: StateFlow<PhotoImportUiState> = _importUiState.asStateFlow()
+
 
     init {
         // Osserva lo stato della camera dal controller
@@ -477,6 +512,148 @@ class PhotoViewModel @Inject constructor(
      */
     fun showDeleteConfirmation(show: Boolean) {
         _previewUiState.value = _previewUiState.value.copy(showDeleteConfirmation = show)
+    }
+
+    // ===== IMPORT FUNCTIONS =====
+
+    /**
+     * Imposta l'URI della foto selezionata per l'import.
+     */
+    fun setSelectedPhotoForImport(photoUri: Uri) {
+        _importUiState.value = _importUiState.value.copy(
+            selectedPhotoUri = photoUri,
+            error = null
+        )
+
+        // Carica informazioni sulla foto
+        viewModelScope.launch {
+            loadImageInfo(photoUri)
+        }
+    }
+
+    /**
+     * Carica le informazioni preliminari sulla foto.
+     */
+    private suspend fun loadImageInfo(photoUri: Uri) {
+        _importUiState.value = _importUiState.value.copy(isLoading = true)
+
+        val result = importPhotoUseCase.getImageInfo(photoUri)
+
+        when (result) {
+            is PhotoResult.Success -> {
+                _importUiState.value = _importUiState.value.copy(
+                    isLoading = false,
+                    imageInfo = result.data,
+                    error = null
+                )
+            }
+            is PhotoResult.Error -> {
+                _importUiState.value = _importUiState.value.copy(
+                    isLoading = false,
+                    error = result.exception.message ?: "Errore caricamento info foto"
+                )
+            }
+            is PhotoResult.Loading -> {
+                _importUiState.value = _importUiState.value.copy(isLoading = true)
+            }
+        }
+    }
+
+    /**
+     * Importa la foto nel check item specificato.
+     */
+    fun importPhoto(
+        checkItemId: String,
+        photoUri: Uri,
+        perspective: PhotoPerspective,
+        caption: String = ""
+    ) {
+        viewModelScope.launch {
+            _importUiState.value = _importUiState.value.copy(isImporting = true)
+
+            val cameraSettings = CameraSettings(
+                perspective = perspective,
+                resolution = PhotoResolution.HIGH // Default per foto importate
+            )
+
+            val result = importPhotoUseCase(
+                checkItemId = checkItemId,
+                imageUri = photoUri,
+                caption = caption,
+                cameraSettings = cameraSettings
+            )
+
+            when (result) {
+                is PhotoResult.Success -> {
+                    _importUiState.value = _importUiState.value.copy(
+                        isImporting = false,
+                        isImportSuccess = true,
+                        error = null
+                    )
+                    // Ricarica le foto per aggiornare la gallery
+                    loadPhotos(checkItemId)
+                }
+                is PhotoResult.Error -> {
+                    _importUiState.value = _importUiState.value.copy(
+                        isImporting = false,
+                        error = result.exception.message ?: "Errore durante l'import"
+                    )
+                }
+                is PhotoResult.Loading -> {
+                    _importUiState.value = _importUiState.value.copy(isImporting = true)
+                }
+            }
+        }
+    }
+
+    /**
+     * Valida l'URI della foto prima dell'import.
+     */
+    fun validatePhotoUri(photoUri: Uri) {
+        viewModelScope.launch {
+            val result = importPhotoUseCase.validateImageUri(photoUri)
+
+            when (result) {
+                is PhotoResult.Success -> {
+                    if (result.data) {
+                        setSelectedPhotoForImport(photoUri)
+                    } else {
+                        _importUiState.value = _importUiState.value.copy(
+                            error = "Foto non valida o non accessibile"
+                        )
+                    }
+                }
+                is PhotoResult.Error -> {
+                    _importUiState.value = _importUiState.value.copy(
+                        error = result.exception.message ?: "Errore validazione foto"
+                    )
+                }
+                is PhotoResult.Loading -> {
+                    _importUiState.value = _importUiState.value.copy(isLoading = true)
+                }
+            }
+        }
+    }
+
+    /**
+     * Pulisce lo stato di import.
+     */
+    fun clearImportState() {
+        _importUiState.value = PhotoImportUiState()
+    }
+
+    /**
+     * Pulisce solo gli errori di import.
+     */
+    fun clearImportError() {
+        _importUiState.value = _importUiState.value.copy(error = null)
+    }
+
+    /**
+     * Reset del successo di import (chiamato dopo navigazione).
+     */
+    fun resetImportSuccess() {
+        _importUiState.value = _importUiState.value.copy(isImportSuccess = false)
     }
 
     // ===== ERROR HANDLING =====

@@ -41,6 +41,8 @@ import net.calvuz.qreport.presentation.components.LoadingState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityDetailScreen(
+    modifier: Modifier = Modifier,
+
     facilityId: String,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (String) -> Unit, // Edit facility
@@ -52,7 +54,6 @@ fun FacilityDetailScreen(
     onNavigateToIslandsList: (String) -> Unit = { },   // View all Islands
     onDeleted: () -> Unit,
 
-    modifier: Modifier = Modifier,
     viewModel: FacilityDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -171,10 +172,10 @@ fun FacilityDetailScreen(
             uiState.hasData -> {
                 FacilityDetailContent(
                     uiState = uiState,
-                    facilityId = facilityId,
                     onTabSelected = viewModel::selectTab,
                     onIslandFilterSelected = viewModel::updateIslandFilter,
                     onIslandClick = onNavigateToIslandDetail,
+                    onViewAll = { onNavigateToIslandsList(facilityId) },
                     onCreateIsland = { onNavigateToCreateIsland(facilityId) },
                     onEditIsland = { onNavigateToEditIsland },
                     onDeleteIsland = viewModel::deleteIsland,
@@ -183,15 +184,20 @@ fun FacilityDetailScreen(
             }
 
             else -> {
+                val (title, message) = when {
+                    uiState.islands.isEmpty() -> "Nessuna Isola" to "Non ci sono ancora isole per questo stabilimento"
+                    uiState.selectedIslandFilter != IslandFilter.ALL -> "Nessun risultato" to "Non ci sono isole che corrispondono al filtro '${getIslandFilterDisplayName(uiState.selectedIslandFilter)}'"
+                    else -> "Lista vuota" to "Errore nel caricamento dati"
+                }
                 EmptyState(
-                    iconImageVector = TODO(),
-                    iconContentDescription = TODO(),
-                    searchQuery = TODO(),
-                    textFilter = TODO(),
-                    iconActionImageVector = TODO(),
-                    iconActionContentDescription = TODO(),
-                    textAction = TODO(),
-                    onAction = TODO()
+                    textTitle = title,
+                    textMessage = message,
+                    iconImageVector = Icons.Outlined.PrecisionManufacturing,
+                    iconContentDescription = "Isole robotizzate",
+                    iconActionImageVector = Icons.Default.Add,
+                    iconActionContentDescription = "Aggiungi Isola",
+                    textAction = "Nuova Isola",
+                    onAction ={ onNavigateToCreateIsland }
                 )
             }
         }
@@ -208,10 +214,10 @@ fun FacilityDetailScreen(
 @Composable
 private fun FacilityDetailContent(
     uiState: FacilityDetailUiState,
-    facilityId: String,
     onTabSelected: (FacilityDetailTab) -> Unit,
     onIslandFilterSelected: (IslandFilter) -> Unit,
     onIslandClick: (String) -> Unit,
+    onViewAll: () -> Unit,
     onCreateIsland: () -> Unit,
     onEditIsland: (String) -> Unit,
     onDeleteIsland: (String) -> Unit,
@@ -283,6 +289,7 @@ private fun FacilityDetailContent(
                     selectedFilter = uiState.selectedIslandFilter,
                     onFilterSelected = onIslandFilterSelected,
                     onIslandClick = onIslandClick,
+                    onViewAll = onViewAll,
                     onCreateIsland = onCreateIsland,
                     onEditIsland = onEditIsland,
                     onDeleteIsland = onDeleteIsland,
@@ -560,6 +567,7 @@ private fun IslandsTabContent(
     selectedFilter: IslandFilter,
     onFilterSelected: (IslandFilter) -> Unit,
     onIslandClick: (String) -> Unit,
+    onViewAll: () -> Unit,
     onCreateIsland: () -> Unit,
     onEditIsland: (String) -> Unit,
     onDeleteIsland: (String) -> Unit,
@@ -581,11 +589,21 @@ private fun IslandsTabContent(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Vedi tutti
+                    if (islands.isNotEmpty()) {
+                        OutlinedButton(onClick = onViewAll) {
+                            Text("Vedi tutte")
+                        }
+                    }
 
-                Button(onClick = onCreateIsland) {
-                    Icon(Icons.Default.Add, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Nuova Isola")
+                    Button(onClick = onCreateIsland) {
+                        Icon(Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Nuova")
+                    }
                 }
             }
 
@@ -617,12 +635,15 @@ private fun IslandsTabContent(
 
         // Content
         if (islands.isEmpty()) {
-            EmptyIslandsState(
-                hasIslands = allIslands.isNotEmpty(),
-                filter = selectedFilter,
-                onCreateIsland = onCreateIsland,
-                onClearFilter = { onFilterSelected(IslandFilter.ALL) },
-                modifier = Modifier.weight(1f)
+            EmptyState(
+                textTitle = "Nessuna Isola",
+                textMessage = "Non ci sono ancora isole per questo stabilimento",
+                iconImageVector = Icons.Outlined.PrecisionManufacturing,
+                iconContentDescription = "Isole robotizzate",
+                iconActionImageVector = Icons.Default.Add,
+                iconActionContentDescription = "Aggiungi Isola",
+                textAction = "Nuova Isola",
+                onAction = onCreateIsland
             )
         } else {
             LazyColumn(
@@ -754,7 +775,8 @@ private fun IslandItem(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        onClick = { onIslandClick(island.id) }
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -803,18 +825,6 @@ private fun IslandItem(
                 )
 
                 IconButton(
-                    onClick = { onEditIsland(island.id) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Modifica",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-
-                IconButton(
                     onClick = { showDeleteDialog = true },
                     modifier = Modifier.size(32.dp)
                 ) {
@@ -827,13 +837,14 @@ private fun IslandItem(
                 }
 
                 IconButton(
-                    onClick = { onIslandClick(island.id) },
+                    onClick = { onEditIsland(island.id) },
                     modifier = Modifier.size(32.dp)
                 ) {
                     Icon(
-                        Icons.Default.ChevronRight,
-                        contentDescription = "Dettagli",
-                        modifier = Modifier.size(18.dp)
+                        Icons.Default.Edit,
+                        contentDescription = "Modifica",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
             }
@@ -934,71 +945,6 @@ private fun WarrantyIslandItem(
                 contentDescription = "Dettagli",
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
-        }
-    }
-}
-
-@Composable
-private fun EmptyIslandsState(
-    hasIslands: Boolean,
-    filter: IslandFilter,
-    onCreateIsland: () -> Unit,
-    onClearFilter: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.PrecisionManufacturing,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            val (title, message) = when {
-                !hasIslands -> "Nessuna Isola" to "Non ci sono ancora isole per questo stabilimento"
-                filter != IslandFilter.ALL -> "Nessun risultato" to "Non ci sono isole che corrispondono al filtro '${getIslandFilterDisplayName(filter)}'"
-                else -> "Lista vuota" to "Errore nel caricamento dati"
-            }
-
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            when {
-                !hasIslands -> {
-                    Button(onClick = onCreateIsland) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Aggiungi prima isola")
-                    }
-                }
-                filter != IslandFilter.ALL -> {
-                    OutlinedButton(onClick = onClearFilter) {
-                        Text("Rimuovi filtro")
-                    }
-                }
-            }
         }
     }
 }

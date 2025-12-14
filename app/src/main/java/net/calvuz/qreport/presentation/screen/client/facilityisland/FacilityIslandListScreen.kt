@@ -183,14 +183,20 @@ fun FacilityIslandListScreen(
                 }
 
                 uiState.filteredIslands.isEmpty() -> {
+                    val (title, message) = when {
+                        uiState.allIslands.isEmpty() -> "Nessuna Isola" to "Non ci sono ancora Isole per questo Stabilimento"
+                        uiState.selectedFilter!= IslandFilter.ALL -> "Nessun risultato" to "Non ci sono Isole che corrispondono al filtro '${
+                            getIslandFilterDisplayName(
+                                uiState.selectedFilter
+                            )
+                        }'"
+                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                    }
                     EmptyState(
-                        searchQuery = uiState.searchQuery,
+                        textTitle = title,
+                        textMessage = message,
                         iconImageVector = Icons.Default.Analytics,
                         iconContentDescription = "Isole non trovate",
-                        textFilter = if (uiState.selectedFilter != IslandFilter.ALL)
-                            getIslandFilterDisplayName(uiState.selectedFilter)
-                        else
-                            null,
                         iconActionImageVector = Icons.Default.Add,
                         iconActionContentDescription = "Nuova Isola",
                         textAction = "Nuova Isola",

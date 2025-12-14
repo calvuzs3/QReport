@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
+import android.provider.OpenableColumns
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,6 +22,8 @@ import javax.inject.Singleton
 import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
 import net.calvuz.qreport.domain.model.photo.PhotoLocation
+import net.calvuz.qreport.presentation.screen.photo.ImageInfo
+import java.io.InputStream
 
 /**
  * ✅ COMPATIBILE: PhotoStorageManager per PhotoMetadata ATTUALE (senza width/height)
@@ -470,11 +473,6 @@ class PhotoStorageManager @Inject constructor(
         return photoExists && thumbnailExists
     }
 
-    fun getNextOrderIndex(checkItemId: String): Int {
-        // TODO: Query al repository per trovare max orderIndex per questo checkItem
-        return 0
-    }
-
     fun getStorageInfo(): StorageInfo {
         val photosDir = File(fileManager.getPhotosDirectory())
         val photosSize = photosDir.walkTopDown()
@@ -493,6 +491,263 @@ class PhotoStorageManager @Inject constructor(
             photoCount = photoCount
         )
     }
+
+
+    // ===== IMPORT METHODS =====
+
+    /**
+     * Importa una foto dalla galleria nel sistema di storage dell'app.
+     * Segue lo stesso workflow di savePhoto() ma partendo da un URI esterno.
+     *
+     * @param checkItemId ID del check item di destinazione
+     * @param sourceImageUri URI della foto dalla galleria
+     * @param caption Descrizione della foto
+     * @param cameraSettings Impostazioni che includono perspective e resolution
+     * @param orderIndex Indice di ordinamento
+     * @return PhotoSaveResult con la foto importata o errore
+     */
+    suspend fun importPhoto(
+        checkItemId: String,
+        sourceImageUri: Uri,
+        caption: String = "",
+        cameraSettings: CameraSettings = CameraSettings.default(),
+        orderIndex: Int = 0
+    ): PhotoSaveResult {
+        return try {
+            Timber.d("📥 IMPORT PHOTO START: $sourceImageUri")
+
+            // 1. Valida l'URI sorgente
+            if (!validateImageUri(sourceImageUri)) {
+                return PhotoSaveResult.Error("URI immagine non valida o non accessibile")
+            }
+
+            // 2. Crea i path di destinazione
+            val photoFilePath = fileManager.createPhotoFile(checkItemId)
+            val photoFile = File(photoFilePath)
+
+            // 3. Copia il file dalla galleria alla nostra directory
+            val copyResult = copyImageFromUri(sourceImageUri, photoFile)
+            if (!copyResult) {
+                return PhotoSaveResult.Error("Errore durante la copia del file")
+            }
+
+            // 4. ✅ CORRETTO: Usa il metodo esistente per correzione orientamento
+            // Crea un Uri temporaneo dal file copiato per usare il workflow esistente
+            val tempUri = Uri.fromFile(photoFile)
+            val tempCorrectedFile = File.createTempFile("corrected_", ".jpg", photoFile.parentFile)
+
+            val correctionSuccess = savePhotoWithOrientationCorrection(
+                tempUri,
+                tempCorrectedFile,
+                cameraSettings
+            )
+
+            if (correctionSuccess) {
+                // Sostituisci il file originale con quello corretto
+                tempCorrectedFile.copyTo(photoFile, overwrite = true)
+                tempCorrectedFile.delete()
+            }
+
+            // 5. ✅ CORRETTO: Genera thumbnail con i parametri giusti
+            val thumbnailFileName = "thumb_${photoFile.name}"
+            val thumbnailFile = File(thumbnailsDir, thumbnailFileName)
+            val thumbnailSaved = generateThumbnailWithCorrectOrientation(photoFile, thumbnailFile, cameraSettings)
+
+            // 6. ✅ CORRETTO: Usa i metodi esistenti per metadati
+            val imageMetadata = extractImageMetadata(photoFile)
+            val photoMetadata = PhotoMetadata(
+                exifData = buildExifDataMap(photoFile, imageMetadata),
+                perspective = cameraSettings.perspective,
+                gpsLocation = if (cameraSettings.enableGpsTagging) {
+                    extractGpsLocation(photoFile)
+                } else null,
+                timestamp = Clock.System.now(),
+                fileSize = photoFile.length(),
+                resolution = cameraSettings.resolution,
+                cameraSettings = cameraSettings
+            )
+
+            // 7. ✅ CORRETTO: Usa metodo esistente per creare Photo
+            val photo = Photo(
+                id = generatePhotoId(),
+                checkItemId = checkItemId,
+                fileName = photoFile.name,
+                filePath = photoFile.absolutePath,
+                thumbnailPath = if (thumbnailSaved) thumbnailFile.absolutePath else null,
+                caption = caption,
+                takenAt = Clock.System.now(),
+                fileSize = photoFile.length(),
+                orderIndex = orderIndex,
+                metadata = photoMetadata
+            )
+
+            Timber.d("✅ IMPORT PHOTO SUCCESS: ${photo.fileName}")
+            PhotoSaveResult.Success(photo)
+
+        } catch (e: Exception) {
+            Timber.e("❌ IMPORT PHOTO ERROR: ${e.message}")
+            PhotoSaveResult.Error("Errore import foto: ${e.message}")
+        }
+    }
+
+    /**
+     * Ottieni prossimo orderIndex per un check item
+     */
+    suspend fun getNextOrderIndex(checkItemId: String): Int {
+        return withContext(Dispatchers.IO) {
+            try {
+                // Conta le foto esistenti nella directory del check item
+                val photosDir = File(fileManager.getPhotosDirectory())
+                val checkItemFiles = photosDir.listFiles { file ->
+                    file.name.contains(checkItemId) && file.extension in listOf("jpg", "jpeg", "png")
+                }
+
+                checkItemFiles?.size ?: 0
+            } catch (e: Exception) {
+                Timber.e("Error getting next order index: ${e.message}")
+                0
+            }
+        }
+    }
+
+    /**
+     * Copia un file da URI esterno al file system dell'app.
+     */
+    private suspend fun copyImageFromUri(sourceUri: Uri, destinationFile: File): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val inputStream: InputStream = context.contentResolver.openInputStream(sourceUri)
+                    ?: return@withContext false
+
+                val outputStream = FileOutputStream(destinationFile)
+
+                inputStream.use { input ->
+                    outputStream.use { output ->
+                        input.copyTo(output)
+                    }
+                }
+
+                destinationFile.exists() && destinationFile.length() > 0
+            } catch (e: Exception) {
+                Timber.e("❌ Error copying file from URI: ${e.message}")
+                false
+            }
+        }
+    }
+
+    /**
+     * Valida se un URI di immagine è accessibile e valido.
+     */
+    fun validateImageUri(imageUri: Uri): Boolean {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(imageUri)
+            val isAccessible = inputStream != null
+            inputStream?.close()
+
+            // Verifica anche il MIME type
+            val mimeType = context.contentResolver.getType(imageUri)
+            val isValidImage = mimeType?.startsWith("image/") == true
+
+            isAccessible && isValidImage
+        } catch (e: Exception) {
+            Timber.e("❌ Error validating URI: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * Estrae informazioni preliminari da un URI di immagine.
+     */
+    suspend fun extractImageInfo(imageUri: Uri): ImageInfo {
+        return withContext(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(imageUri)
+                    ?: throw Exception("Impossibile accedere all'immagine")
+
+                // Usa BitmapFactory.Options per ottenere dimensioni senza caricare la bitmap
+                val options = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+
+                inputStream.use {
+                    BitmapFactory.decodeStream(it, null, options)
+                }
+
+                val mimeType = context.contentResolver.getType(imageUri) ?: "image/unknown"
+                val fileName = getFileNameFromUri(imageUri)
+                val fileSize = getFileSizeFromUri(imageUri)
+
+                ImageInfo(
+                    width = options.outWidth,
+                    height = options.outHeight,
+                    fileSize = fileSize,
+                    mimeType = mimeType,
+                    fileName = fileName
+                )
+
+            } catch (e: Exception) {
+                Timber.e("❌ Error extracting image info: ${e.message}")
+                throw e
+            }
+        }
+    }
+
+    /**
+     * Ottiene il nome del file dall'URI.
+     */
+    private fun getFileNameFromUri(uri: Uri): String {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        return cursor?.use {
+            val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (nameIndex >= 0 && it.moveToFirst()) {
+                it.getString(nameIndex) ?: "imported_image.jpg"
+            } else {
+                "imported_image.jpg"
+            }
+        } ?: "imported_image.jpg"
+    }
+
+    /**
+     * Ottiene la dimensione del file dall'URI.
+     */
+    private fun getFileSizeFromUri(uri: Uri): Long {
+        val cursor = context.contentResolver.query(uri, null, null, null, null)
+        return cursor?.use {
+            val sizeIndex = it.getColumnIndex(OpenableColumns.SIZE)
+            if (sizeIndex >= 0 && it.moveToFirst()) {
+                it.getLong(sizeIndex)
+            } else {
+                0L
+            }
+        } ?: 0L
+    }
+
+    /**
+     * Crea un oggetto Photo da una foto importata.
+     */
+    private fun createPhotoFromImport(
+        checkItemId: String,
+        photoFile: File,
+        thumbnailFile: File?,
+        caption: String,
+        metadata: PhotoMetadata,
+        orderIndex: Int
+    ): Photo {
+        return Photo(
+            id = "", // Verrà impostato dal repository
+            checkItemId = checkItemId,
+            fileName = photoFile.name,
+            filePath = photoFile.absolutePath,
+            thumbnailPath = thumbnailFile?.absolutePath,
+            caption = caption,
+            takenAt = Clock.System.now(), // ✅ Timestamp import
+            fileSize = photoFile.length(),
+            orderIndex = orderIndex,
+            metadata = metadata
+        )
+    }
+
+
 }
 
 /**

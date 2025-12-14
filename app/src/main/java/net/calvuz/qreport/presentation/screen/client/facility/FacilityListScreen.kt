@@ -160,14 +160,16 @@ fun FacilityListScreen(
                 }
 
                 uiState.filteredFacilities.isEmpty() -> {
+                    val (title, message) = when {
+                        uiState.facilities.isEmpty() -> "Nessuno Stabilimento" to "Non ci sono ancora Stabilimenti per questo Cliente"
+                        uiState.selectedFilter != FacilityFilter.ALL -> "Nessun risultato" to "Non ci sono Stabilimenti che corrispondono al filtro '${getFacilityFilterDisplayName(uiState.selectedFilter)}'"
+                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                    }
                     EmptyState(
+                        textTitle = title,
+                        textMessage = message,
                         iconImageVector = Icons.Outlined.Factory,
                         iconContentDescription = "Nessuno stabilimento",
-                        searchQuery = uiState.searchQuery,
-                        textFilter = if (uiState.selectedFilter != FacilityFilter.ALL)
-                            getFacilityFilterDisplayName(uiState.selectedFilter)
-                        else
-                            null,
                         iconActionImageVector = Icons.Default.Add,
                         iconActionContentDescription = "Nuovo stabilimento",
                         textAction = "Nuovo Stabilimento",

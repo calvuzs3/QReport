@@ -1,5 +1,6 @@
 package net.calvuz.qreport.presentation.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
@@ -39,6 +40,7 @@ import net.calvuz.qreport.presentation.screen.client.facility.FacilityListScreen
 import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandFormScreen
 import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandDetailScreen
 import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandListScreen
+import net.calvuz.qreport.presentation.screen.photo.PhotoImportPreviewScreen
 import timber.log.Timber
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -111,6 +113,7 @@ object QReportRoutes {
     const val CHECKUP_DETAIL = "checkup_detail/{checkUpId}"
     const val CAMERA = "camera/{checkItemId}"
     const val PHOTO_GALLERY = "photo_gallery/{checkItemId}"
+    const val PHOTO_IMPORT_PREVIEW = "photo_import_preview/{checkItemId}?photoUri={photoUri}"
     const val EXPORT_OPTIONS = "export_options/{checkUpId}"
 
     // Client management routes
@@ -186,6 +189,9 @@ object QReportRoutes {
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
     fun photoGallery(checkItemId: String) = "photo_gallery/$checkItemId"
+    fun photoImportCreateRoute(checkItemId: String, photoUri: String) =
+        "photo_import_preview/$checkItemId?photoUri=$photoUri"
+
     fun exportOptions(checkUpId: String) = "export_options/$checkUpId"
 
 }
@@ -362,6 +368,42 @@ fun QReportNavigation(
                         },
                         onNavigateToCamera = {
                             navController.navigate(QReportRoutes.camera(checkItemId))
+                        },
+                        onNavigateToPhotoImport = { photoUri ->
+                            navController.navigate(
+                                QReportRoutes.photoImportCreateRoute(
+                                    checkItemId,
+                                    photoUri.toString()
+                                )
+                            )
+                        }
+                    )
+                }
+
+                // Photo Import Preview Screen
+                composable(
+                    route = QReportRoutes.PHOTO_IMPORT_PREVIEW,
+                    arguments = listOf(
+                        navArgument("checkItemId") { type = NavType.StringType },
+                        navArgument("photoUri") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val checkItemId =
+                        backStackEntry.arguments?.getString("checkItemId") ?: return@composable
+                    val photoUriString =
+                        backStackEntry.arguments?.getString("photoUri") ?: return@composable
+
+                    val photoUri = Uri.parse(photoUriString)
+
+                    PhotoImportPreviewScreen(
+                        checkItemId = checkItemId,
+                        photoUri = photoUri,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onImportSuccess = {
+                            // Torna alla gallery dopo import successo
+                            navController.popBackStack()
                         }
                     )
                 }

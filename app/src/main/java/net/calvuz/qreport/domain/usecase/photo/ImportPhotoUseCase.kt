@@ -1,0 +1,99 @@
+package net.calvuz.qreport.domain.usecase.photo
+
+import android.net.Uri
+import net.calvuz.qreport.data.photo.PhotoSaveResult
+import net.calvuz.qreport.data.photo.PhotoStorageManager
+import net.calvuz.qreport.domain.model.camera.CameraSettings
+import net.calvuz.qreport.domain.model.photo.Photo
+import net.calvuz.qreport.domain.model.photo.PhotoErrorType
+import net.calvuz.qreport.domain.model.photo.PhotoResult
+import net.calvuz.qreport.domain.repository.PhotoRepository
+import net.calvuz.qreport.presentation.screen.photo.ImageInfo
+import javax.inject.Inject
+
+
+/**
+ * Use case per importare foto dalla galleria del telefono.
+ * Segue lo stesso workflow di CapturePhotoUseCase ma per foto esistenti.
+ */
+class ImportPhotoUseCase @Inject constructor(
+    private val photoRepository: PhotoRepository,
+    private val photoStorageManager: PhotoStorageManager
+) {
+    /**
+     * Importa una foto dalla galleria nel check item specificato.
+     *
+     * @param checkItemId ID del check item di destinazione
+     * @param imageUri URI della foto selezionata dalla galleria
+     * @param caption Descrizione della foto (opzionale)
+     * @param cameraSettings Impostazioni che includono perspective e resolution
+     * @return PhotoResult con la foto importata o errore
+     */
+    suspend operator fun invoke(
+        checkItemId: String,
+        imageUri: Uri,
+        caption: String = "",
+        cameraSettings: CameraSettings = CameraSettings.default()
+    ): PhotoResult<Photo> {
+        return try {
+            // 1. Ottieni prossimo orderIndex per il check item
+            val orderIndex = photoStorageManager.getNextOrderIndex(checkItemId)
+
+            // 2. Importa nel file system con stesso processing delle foto catturate
+            when (val importResult = photoStorageManager.importPhoto(
+                checkItemId = checkItemId,
+                sourceImageUri = imageUri,
+                caption = caption,
+                cameraSettings = cameraSettings,
+                orderIndex = orderIndex
+            )) {
+                is PhotoSaveResult.Success -> {
+                    // 3. Salva nel database
+                    val photoId = photoRepository.insertPhoto(importResult.photo)
+                    PhotoResult.Success(importResult.photo.copy(id = photoId))
+                }
+                is PhotoSaveResult.Error -> {
+                    PhotoResult.Error(
+                        exception = Exception(importResult.message),
+                        errorType = PhotoErrorType.STORAGE_ERROR
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            PhotoResult.Error(e, PhotoErrorType.IMPORT_ERROR)
+        }
+    }
+
+    /**
+     * Valida se l'URI della foto è accessibile e valida.
+     */
+    fun validateImageUri(imageUri: Uri): PhotoResult<Boolean> {
+        return try {
+            val isValid = photoStorageManager.validateImageUri(imageUri)
+            if (isValid) {
+                PhotoResult.Success(true)
+            } else {
+                PhotoResult.Error(
+                    exception = Exception("URI immagine non valida o non accessibile"),
+                    errorType = PhotoErrorType.VALIDATION_ERROR
+                )
+            }
+        } catch (e: Exception) {
+            PhotoResult.Error(e, PhotoErrorType.VALIDATION_ERROR)
+        }
+    }
+
+    /**
+     * Ottiene informazioni preliminari sulla foto senza importarla.
+     * Utile per preview e validazione.
+     */
+    suspend fun getImageInfo(imageUri: Uri): PhotoResult<ImageInfo> {
+        return try {
+            val info = photoStorageManager.extractImageInfo(imageUri)
+            PhotoResult.Success(info)
+        } catch (e: Exception) {
+            PhotoResult.Error(e, PhotoErrorType.PROCESSING_ERROR)
+        }
+    }
+}
+

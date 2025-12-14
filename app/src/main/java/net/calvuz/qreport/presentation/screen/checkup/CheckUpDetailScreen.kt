@@ -830,8 +830,9 @@ private fun PhotoSection(
                 )
             }
 
+            // TODO chacge to see all photos button eitherway, so we can use an existing photo
             // View photos button (only if has photos)
-            if (photos.isNotEmpty()) {
+            if (true or photos.isNotEmpty()) {
                 IconButton(
                     onClick = onViewPhotos,
                     modifier = Modifier.size(32.dp)

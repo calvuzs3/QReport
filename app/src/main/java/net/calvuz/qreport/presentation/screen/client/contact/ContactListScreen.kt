@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -52,9 +51,6 @@ fun ContactListScreen(
     viewModel: ContactListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    // SnackBar per feedback chiamate
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Load contacts when screen opens
     LaunchedEffect(clientId) {
@@ -186,14 +182,16 @@ fun ContactListScreen(
                 }
 
                 uiState.filteredContacts.isEmpty() -> {
+                    val (title, message) = when {
+                        uiState.contacts.isEmpty() -> "Nessun Contatto" to "Non ci sono ancora Contatti per questo Cliente"
+                        uiState.selectedFilter != ContactFilter.ALL -> "Nessun risultato" to "Non ci sono Contatti che corrispondono al filtro '${getContactFilterDisplayName(uiState.selectedFilter)}'"
+                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                    }
                     EmptyState(
+                        textTitle = title,
+                        textMessage = message,
                         iconImageVector = Icons.Outlined.Contacts,
                         iconContentDescription = "Nessun Contatto",
-                        searchQuery = uiState.searchQuery,
-                        textFilter = if (uiState.selectedFilter != ContactFilter.ALL)
-                            getContactFilterDisplayName(uiState.selectedFilter)
-                        else
-                            null,
                         iconActionImageVector = Icons.Default.Add,
                         iconActionContentDescription = "Nuovo contatto",
                         textAction = "Nuovo Contatto",
@@ -246,8 +244,6 @@ private fun ContactListContent(
     onSetPrimaryContact: (String) -> Unit,
     isSettingPrimary: String?
 ) {
-    val context = LocalContext.current
-
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
