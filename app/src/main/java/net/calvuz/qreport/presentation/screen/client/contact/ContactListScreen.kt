@@ -2,8 +2,10 @@ package net.calvuz.qreport.presentation.screen.client.contact
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -13,13 +15,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.calvuz.qreport.domain.model.client.Contact
+import net.calvuz.qreport.presentation.components.EmptyState
+import net.calvuz.qreport.presentation.components.ErrorState
+import net.calvuz.qreport.presentation.components.LoadingState
+import net.calvuz.qreport.presentation.components.client.ContactCard
 import net.calvuz.qreport.presentation.components.QReportSearchBar
+import net.calvuz.qreport.presentation.components.client.ContactCardVariant
 
 /**
  * Screen per la lista contatti di un cliente
@@ -32,6 +38,7 @@ import net.calvuz.qreport.presentation.components.QReportSearchBar
  * - Stati loading/error/empty
  * - Indicazione referente primario
  */
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactListScreen(
@@ -40,14 +47,18 @@ fun ContactListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCreateContact: (String) -> Unit,
     onNavigateToEditContact: (String) -> Unit,
+    onNavigateToContactDetail: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ContactListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    // SnackBar per feedback chiamate
+    val snackbarHostState = remember { SnackbarHostState() }
+
     // Load contacts when screen opens
     LaunchedEffect(clientId) {
-        viewModel.loadContacts(clientId)
+        viewModel.initializeForClient(clientId)
     }
 
     Column(
@@ -80,29 +91,40 @@ fun ContactListScreen(
                 }
             },
             actions = {
-                // Filter toggle
-                IconButton(onClick = viewModel::toggleActiveFilter) {
+                var showFilterMenu by remember { mutableStateOf(false) }
+                var showSortMenu by remember { mutableStateOf(false) }
+
+                // Sort button
+                IconButton(onClick = { showSortMenu = true }) {
                     Icon(
-                        imageVector = if (uiState.showActiveOnly) {
-                            Icons.Default.Visibility
-                        } else {
-                            Icons.Default.VisibilityOff
-                        },
-                        contentDescription = if (uiState.showActiveOnly) {
-                            "Mostra tutti i contatti"
-                        } else {
-                            "Mostra solo contatti attivi"
-                        }
+                        imageVector = Icons.AutoMirrored.Default.Sort,
+                        contentDescription = "Ordinamento"
                     )
                 }
 
-                // Refresh button
-                IconButton(onClick = viewModel::refreshContacts) {
+                // Filter button
+                IconButton(onClick = { showFilterMenu = true }) {
                     Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = "Aggiorna"
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "Filtri"
                     )
                 }
+
+                // Sort menu
+                ContactSortMenu(
+                    expanded = showSortMenu,
+                    selectedSort = uiState.sortOrder,
+                    onSortSelected = viewModel::updateSortOrder,
+                    onDismiss = { showSortMenu = false }
+                )
+
+                // Filter menu
+                ContactFilterMenu(
+                    expanded = showFilterMenu,
+                    selectedFilter = uiState.selectedFilter,
+                    onFilterSelected = viewModel::updateFilter,
+                    onDismiss = { showFilterMenu = false }
+                )
             }
         )
 
@@ -110,14 +132,17 @@ fun ContactListScreen(
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca contatti per nome, ruolo, email...",
+            placeholder = "Cerca per nome, email o ruolo...",
             modifier = Modifier.padding(16.dp)
         )
 
-        // Stats row
-        if (uiState.hasContacts) {
-            ContactStatsRow(
-                stats = uiState.contactStats,
+        // Filter chips
+        if (uiState.selectedFilter != ContactFilter.ALL || uiState.sortOrder != ContactSortOrder.NAME) {
+            ActiveFiltersChipRow(
+                selectedFilter = uiState.selectedFilter,
+                selectedSort = uiState.sortOrder,
+                onClearFilter = { viewModel.updateFilter(ContactFilter.ALL) },
+                onClearSort = { viewModel.updateSortOrder(ContactSortOrder.NAME) },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
@@ -125,17 +150,17 @@ fun ContactListScreen(
         // Content with Pull to Refresh
         val pullToRefreshState = rememberPullToRefreshState()
 
+        // Reset refresh state when not refreshing
+        LaunchedEffect(uiState.isRefreshing) {
+            if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
+                pullToRefreshState.endRefresh()
+            }
+        }
+
         // Handle pull to refresh
         LaunchedEffect(pullToRefreshState.isRefreshing) {
             if (pullToRefreshState.isRefreshing) {
                 viewModel.refreshContacts()
-            }
-        }
-
-        // Reset refresh state when not refreshing
-        LaunchedEffect(uiState.isLoading) {
-            if (!uiState.isLoading && pullToRefreshState.isRefreshing) {
-                pullToRefreshState.endRefresh()
             }
         }
 
@@ -160,21 +185,29 @@ fun ContactListScreen(
                     )
                 }
 
-                uiState.isEmpty -> {
+                uiState.filteredContacts.isEmpty() -> {
                     EmptyState(
-                        onCreateFirst = { onNavigateToCreateContact(clientId) }
+                        iconImageVector = Icons.Outlined.Contacts,
+                        iconContentDescription = "Nessun Contatto",
+                        searchQuery = uiState.searchQuery,
+                        textFilter = if (uiState.selectedFilter != ContactFilter.ALL)
+                            getContactFilterDisplayName(uiState.selectedFilter)
+                        else
+                            null,
+                        iconActionImageVector = Icons.Default.Add,
+                        iconActionContentDescription = "Nuovo contatto",
+                        textAction = "Nuovo Contatto",
+                        onAction = { onNavigateToCreateContact(clientId) }
                     )
                 }
 
                 else -> {
                     ContactListContent(
                         contacts = uiState.filteredContacts,
-                        isSearchActive = uiState.isSearchActive,
-                        searchQuery = uiState.searchQuery,
-                        onContactClick = onNavigateToEditContact,
-                        onDeleteContact = viewModel::deleteContact,
+                        onContactClick = onNavigateToContactDetail,
+                        onContactEdit = onNavigateToEditContact,
+                        onContactDelete = viewModel::deleteContact,
                         onSetPrimaryContact = viewModel::setPrimaryContact,
-                        isDeletingContact = uiState.isDeletingContact,
                         isSettingPrimary = uiState.isSettingPrimary
                     )
                 }
@@ -197,73 +230,7 @@ fun ContactListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Nuovo Contatto"
-                )
-            }
-        }
-    }
-
-    // Error handling
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
-            // Additional error handling if needed
-        }
-    }
-}
-
-@Composable
-private fun ContactStatsRow(
-    stats: ContactStats,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "${stats.totalContacts} contatt${if (stats.totalContacts == 1) "o" else "i"} attiv${if (stats.totalContacts == 1) "o" else "i"}",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-
-            if (stats.hasPrimaryContact) {
-                AssistChip(
-                    onClick = { },
-                    label = { Text("Referente primario impostato") },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                    )
-                )
-            } else {
-                AssistChip(
-                    onClick = { },
-                    label = { Text("Nessun referente primario") },
-                    leadingIcon = {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
+                    contentDescription = "Nuovo contatto"
                 )
             }
         }
@@ -272,329 +239,155 @@ private fun ContactStatsRow(
 
 @Composable
 private fun ContactListContent(
-    contacts: List<Contact>,
-    isSearchActive: Boolean,
-    searchQuery: String,
+    contacts: List<ContactWithStats>,
+    onContactEdit: (String) -> Unit,
     onContactClick: (String) -> Unit,
-    onDeleteContact: (String) -> Unit,
+    onContactDelete: (String) -> Unit,
     onSetPrimaryContact: (String) -> Unit,
-    isDeletingContact: String?,
     isSettingPrimary: String?
 ) {
+    val context = LocalContext.current
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // Search results info
-        if (isSearchActive) {
-            item {
-                Text(
-                    text = "Trovati ${contacts.size} risultat${if (contacts.size == 1) "o" else "i"} per \"$searchQuery\"",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-        }
-
         items(
             items = contacts,
-            key = { it.id }
-        ) { contact ->
+            key = { it.contact.id }
+        ) { contactWithStats ->
             ContactCard(
-                contact = contact,
-                onClick = { onContactClick(contact.id) },
-                onDelete = { onDeleteContact(contact.id) },
-                onSetPrimary = { onSetPrimaryContact(contact.id) },
-                isDeleting = isDeletingContact == contact.id,
-                isSettingPrimary = isSettingPrimary == contact.id
+                contact = contactWithStats.contact,
+                onClick = { onContactClick(contactWithStats.contact.id) },
+                onEdit = { onContactEdit(contactWithStats.contact.id) },
+                onDelete = { onContactDelete(contactWithStats.contact.id) },
+                onSetPrimary = { onSetPrimaryContact(contactWithStats.contact.id) },
+                isSettingPrimary = isSettingPrimary == contactWithStats.contact.id,
+                variant = ContactCardVariant.FULL
             )
         }
     }
 }
 
+
 @Composable
-private fun ContactCard(
-    contact: Contact,
-    onClick: () -> Unit,
-    onDelete: () -> Unit,
-    onSetPrimary: () -> Unit,
-    isDeleting: Boolean,
-    isSettingPrimary: Boolean
+private fun ActiveFiltersChipRow(
+    selectedFilter: ContactFilter,
+    selectedSort: ContactSortOrder,
+    onClearFilter: () -> Unit,
+    onClearSort: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Header row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = contact.fullName,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-
-                        if (contact.isPrimary) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = "Referente primario",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-
-                        if (!contact.isActive) {
-                            AssistChip(
-                                onClick = { },
-                                label = { Text("Inattivo", style = MaterialTheme.typography.labelSmall) },
-                                enabled = false
-                            )
-                        }
-                    }
-
-                    contact.roleDescription.takeIf { it.isNotBlank() }?.let { role ->
-                        Text(
-                            text = role,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+        if (selectedFilter != ContactFilter.ALL) {
+            item {
+                FilterChip(
+                    selected = true,
+                    onClick = onClearFilter,
+                    label = { Text("Filtro: ${getContactFilterDisplayName(selectedFilter)}") },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Rimuovi filtro",
+                            modifier = Modifier.size(18.dp)
                         )
                     }
-                }
-
-                // Actions
-                Row {
-                    if (!contact.isPrimary && contact.isActive) {
-                        IconButton(
-                            onClick = onSetPrimary,
-                            enabled = !isSettingPrimary
-                        ) {
-                            if (isSettingPrimary) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Outlined.Star,
-                                    contentDescription = "Imposta come primario",
-                                    tint = MaterialTheme.colorScheme.outline
-                                )
-                            }
-                        }
-                    }
-
-                    IconButton(
-                        onClick = { showDeleteDialog = true },
-                        enabled = !isDeleting && contact.isActive
-                    ) {
-                        if (isDeleting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Elimina",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Contact info
-            contact.primaryContact?.let { contactInfo ->
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = when {
-                            contactInfo.contains("@") -> Icons.Default.Email
-                            else -> Icons.Default.Phone
-                        },
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = contactInfo,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                )
             }
         }
-    }
 
-    // Delete confirmation dialog
-    if (showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Elimina Contatto") },
-            text = {
-                Text("Sei sicuro di voler eliminare il contatto '${contact.fullName}'?")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onDelete()
-                        showDeleteDialog = false
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Elimina")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Annulla")
-                }
+        if (selectedSort != ContactSortOrder.NAME) {
+            item {
+                FilterChip(
+                    selected = true,
+                    onClick = onClearSort,
+                    label = { Text("Ordine: ${getContactSortDisplayName(selectedSort)}") },
+                    trailingIcon = {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Rimuovi ordinamento",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                )
             }
-        )
-    }
-}
-
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            CircularProgressIndicator()
-            Text(
-                text = "Caricamento contatti...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
 
 @Composable
-private fun ErrorState(
-    error: String,
-    onRetry: () -> Unit,
+private fun ContactSortMenu(
+    expanded: Boolean,
+    selectedSort: ContactSortOrder,
+    onSortSelected: (ContactSortOrder) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // Usa una variabile locale per evitare problemi di smart cast
-    val errorMessage = error.takeIf { it.isNotBlank() } ?: "Errore sconosciuto"
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Error,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.error
+        ContactSortOrder.entries.forEach { sortOrder ->
+            DropdownMenuItem(
+                text = { Text(getContactSortDisplayName(sortOrder)) },
+                onClick = {
+                    onSortSelected(sortOrder)
+                    onDismiss()
+                },
+                leadingIcon = if (selectedSort == sortOrder) {
+                    { Icon(Icons.Default.Check, contentDescription = null) }
+                } else null
             )
-
-            Text(
-                text = "Errore",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.error
-            )
-
-            Text(
-                text = errorMessage,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                OutlinedButton(onClick = onDismiss) {
-                    Text("Chiudi")
-                }
-
-                Button(onClick = onRetry) {
-                    Text("Riprova")
-                }
-            }
         }
     }
 }
 
+// Helper function for Sorting display names
+private fun getContactSortDisplayName(sortOrder: ContactSortOrder): String {
+    return when (sortOrder) {
+        ContactSortOrder.NAME -> "Nome"
+        ContactSortOrder.CREATED_RECENT -> "Più Recenti"
+        ContactSortOrder.CREATED_OLDEST -> "Meno Recenti"
+    }
+}
+
+
 @Composable
-private fun EmptyState(
-    onCreateFirst: () -> Unit
+private fun ContactFilterMenu(
+    expanded: Boolean,
+    selectedFilter: ContactFilter,
+    onFilterSelected: (ContactFilter) -> Unit,
+    onDismiss: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Contacts,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+        ContactFilter.entries.forEach { filter ->
+            DropdownMenuItem(
+                text = { Text(getContactFilterDisplayName(filter)) },
+                onClick = {
+                    onFilterSelected(filter)
+                    onDismiss()
+                },
+                leadingIcon = if (selectedFilter == filter) {
+                    { Icon(Icons.Default.Check, contentDescription = null) }
+                } else null
             )
-
-            Text(
-                text = "Nessun contatto",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = "Non hai ancora aggiunto nessun contatto per questo cliente.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Button(onClick = onCreateFirst) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Aggiungi primo contatto")
-            }
         }
+    }
+}
+
+// Helper function for Filtering display names
+private fun getContactFilterDisplayName(filter: ContactFilter): String {
+    return when (filter) {
+        ContactFilter.ALL -> "Tutti"
+        ContactFilter.ACTIVE -> "Attivi"
+        ContactFilter.INACTIVE -> "Inattivi"
+        ContactFilter.PRIMARY_ONLY -> "Solo Primario"
     }
 }

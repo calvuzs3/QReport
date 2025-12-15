@@ -14,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import timber.log.Timber
 
 /**
  * Screen per la creazione/modifica di un cliente
@@ -27,10 +28,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientFormScreen(
-    onNavigateBack: () -> Unit,
-    onNavigateToClientDetail: (String) -> Unit,
-    clientId: String? = null, // null = create, non-null = edit
     modifier: Modifier = Modifier,
+    onNavigateBack: () -> Unit,
+    onNavigateToClientDetail: (String, String) -> Unit,
+    onClientSaved: (String, String) -> Unit,
+    clientId: String? = null, // null = create, non-null = edit
     viewModel: ClientFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -42,10 +44,14 @@ fun ClientFormScreen(
         }
     }
 
-    // Handle navigation when client is saved
-    LaunchedEffect(uiState.savedClientId) {
-        uiState.savedClientId?.let { savedId ->
-            onNavigateToClientDetail(savedId)
+    // Handle save completed
+    LaunchedEffect(uiState.saveCompleted, uiState.savedClientId) {
+        if (uiState.saveCompleted && !uiState.savedClientId.isNullOrBlank()) {
+            Timber.d("Client saved ID: ${uiState.savedClientId}")
+            Timber.d("Client saved NAME: ${uiState.savedClientName}")
+
+            onClientSaved(uiState.savedClientId!!, uiState.savedClientName!!)
+            viewModel.resetSaveCompleted()
         }
     }
 

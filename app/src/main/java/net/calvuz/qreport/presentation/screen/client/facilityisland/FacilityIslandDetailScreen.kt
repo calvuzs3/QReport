@@ -40,29 +40,57 @@ import kotlinx.datetime.Clock
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityIslandDetailScreen(
+    modifier: Modifier = Modifier,
     facilityId: String,
     islandId: String,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (String, String) -> Unit,
     onNavigateToMaintenance: (String) -> Unit = { },
     onIslandDeleted: () -> Unit = { },
-    modifier: Modifier = Modifier,
     viewModel: FacilityIslandDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showMaintenanceDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
 
+    // ✅ Handle delete success - Navigate back automatically
+    LaunchedEffect(uiState.deleteSuccess) {
+        if (uiState.deleteSuccess) {
+            viewModel.resetDeleteState()
+            onIslandDeleted()  // Navigate back to client list
+        }
+    }
+
+    // TODO: maintenance checks YES or NO?
+    // ✅ Delete confirmation dialog
+    if (uiState.showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = viewModel::hideDeleteConfirmation,
+            title = { Text("Elimina Isola") },
+            text = {
+                Text("Sei sicuro di voler eliminare l'isola? Questa azione non può essere annullata.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { (viewModel::deleteFacilityIsland)(true) }, // avoid maintenance checks
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Elimina")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::hideDeleteConfirmation) {
+                    Text("Annulla")
+                }
+            }
+        )
+    }
+
     // Load island details when screen opens
     LaunchedEffect(islandId) {
         viewModel.loadIslandDetails(islandId)
-    }
-
-    // Handle deletion completion
-    LaunchedEffect(uiState.islandDeleted) {
-        if (uiState.islandDeleted) {
-            onIslandDeleted()
-        }
     }
 
     Column(
@@ -99,6 +127,24 @@ fun FacilityIslandDetailScreen(
                 }
             },
             actions = {
+                // Delete button
+                if (uiState.hasData) {
+                    IconButton(
+                        onClick = viewModel::showDeleteConfirmation,  // Show confirmation dialog
+                        enabled = !uiState.isDeleting
+                    ) {
+                        if (uiState.isDeleting) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                tint = MaterialTheme.colorScheme.error,
+                                contentDescription = "Elimina isola"
+                            )
+                        }
+                    }
+                }
+
                 // Quick maintenance action
                 if (uiState.hasData && uiState.island?.needsMaintenance() == true) {
                     IconButton(
@@ -147,21 +193,6 @@ fun FacilityIslandDetailScreen(
                             },
                             leadingIcon = {
                                 Icon(Icons.Default.Build, contentDescription = null)
-                            }
-                        )
-
-                        DropdownMenuItem(
-                            text = { Text("Elimina Isola") },
-                            onClick = {
-                                showDeleteConfirmDialog = true
-                                showMoreMenu = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Default.Delete,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.error
-                                )
                             }
                         )
                     }
@@ -221,18 +252,6 @@ fun FacilityIslandDetailScreen(
                     notes = notes
                 )
                 showMaintenanceDialog = false
-            }
-        )
-    }
-
-    // Delete Confirmation Dialog
-    if (showDeleteConfirmDialog) {
-        DeleteConfirmationDialog(
-            island = uiState.island,
-            onDismiss = { showDeleteConfirmDialog = false },
-            onConfirm = { force ->
-                viewModel.deleteIsland(force)
-                showDeleteConfirmDialog = false
             }
         )
     }
@@ -924,36 +943,6 @@ private fun MaintenanceDialog(
         confirmButton = {
             Button(onClick = { onConfirm(resetHours, notes.ifBlank { null }.toString()) }) {
                 Text("Conferma")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
-            }
-        }
-    )
-}
-
-@Composable
-private fun DeleteConfirmationDialog(
-    island: FacilityIsland?,
-    onDismiss: () -> Unit,
-    onConfirm: (force: Boolean) -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Elimina Isola") },
-        text = {
-            Text("Sei sicuro di voler eliminare l'isola '${island?.displayName}'? Questa azione non può essere annullata.")
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(false) },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text("Elimina")
             }
         },
         dismissButton = {

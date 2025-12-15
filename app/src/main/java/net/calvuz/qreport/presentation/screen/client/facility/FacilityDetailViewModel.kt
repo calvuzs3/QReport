@@ -11,6 +11,7 @@ import kotlinx.coroutines.isActive
 import net.calvuz.qreport.domain.model.client.Facility
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.domain.usecase.client.facility.DeleteFacilityUseCase
 import net.calvuz.qreport.domain.usecase.client.facility.GetFacilityWithIslandsUseCase
 import net.calvuz.qreport.domain.usecase.client.facilityisland.GetFacilityIslandsByFacilityUseCase
 import net.calvuz.qreport.domain.usecase.client.facilityisland.DeleteFacilityIslandUseCase
@@ -39,6 +40,12 @@ data class FacilityDetailUiState(
     // UI State
     val selectedTab: FacilityDetailTab = FacilityDetailTab.INFO,
 
+    // Delete states
+    val isDeleting: Boolean = false,
+    val deleteSuccess: Boolean = false,
+    val deleteError: String? = null,
+    val showDeleteConfirmation: Boolean = false,
+
     // Quick access data
     val facilityName: String = "",
     val facilityType: String = "",
@@ -60,11 +67,11 @@ data class FacilityDetailUiState(
     val hasData: Boolean
         get() = facility != null
 
-    val isEmpty: Boolean
-        get() = !isLoading && !hasData && error == null
-
     val facilityId: String?
         get() = facility?.id
+
+    val isEmpty: Boolean
+        get() = !isLoading && !hasData && error == null
 
     val clientId: String?
         get() = facility?.clientId
@@ -103,6 +110,7 @@ enum class IslandFilter {
 class FacilityDetailViewModel @Inject constructor(
     private val getFacilityWithIslandsUseCase: GetFacilityWithIslandsUseCase,
     private val getFacilityIslandsByFacilityUseCase: GetFacilityIslandsByFacilityUseCase,
+    private val deleteFacilityUseCase: DeleteFacilityUseCase,
     private val deleteFacilityIslandUseCase: DeleteFacilityIslandUseCase,
     private val updateMaintenanceUseCase: UpdateMaintenanceUseCase
 ) : ViewModel() {
@@ -251,6 +259,68 @@ class FacilityDetailViewModel @Inject constructor(
     }
 
     // ============================================================
+    // DELETE OPERATIONS
+    // ============================================================
+
+    /**
+     * Mostra dialog di conferma prima di eliminare
+     */
+    fun showDeleteConfirmation() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteConfirmation = true
+        )
+    }
+
+    /**
+     * Nasconde dialog di conferma
+     */
+    fun hideDeleteConfirmation() {
+        _uiState.value = _uiState.value.copy(
+            showDeleteConfirmation = false
+        )
+    }
+
+    /**
+     * ✅ FUNZIONE PRINCIPALE per delete
+     */
+    fun deleteFacility() {
+        val facilityId = _uiState.value.facilityId ?: return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isDeleting = true,
+                deleteError = null,
+                showDeleteConfirmation = false
+            )
+
+            try {
+                deleteFacilityUseCase(facilityId).fold(
+                    onSuccess = {
+                        Timber.d("Facility deleted successfully: $facilityId")
+                        _uiState.value = _uiState.value.copy(
+                            isDeleting = false,
+                            deleteSuccess = true  // ✅ Trigger navigation back
+                        )
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to delete facility: $facilityId")
+                        _uiState.value = _uiState.value.copy(
+                            isDeleting = false,
+                            deleteError = "Errore eliminazione: ${error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Exception deleting facility")
+                _uiState.value = _uiState.value.copy(
+                    isDeleting = false,
+                    deleteError = "Errore imprevisto: ${e.message}"
+                )
+            }
+        }
+    }
+
+    // ============================================================
     // TAB NAVIGATION
     // ============================================================
 
@@ -368,6 +438,16 @@ class FacilityDetailViewModel @Inject constructor(
 
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    /**
+     * Reset DELETE STATES
+     */
+    fun resetDeleteState() {
+        _uiState.value = _uiState.value.copy(
+            deleteSuccess = false,
+            deleteError = null
+        )
     }
 
     // ============================================================

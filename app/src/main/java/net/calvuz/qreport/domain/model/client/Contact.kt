@@ -69,24 +69,4 @@ data class Contact(
             ContactMethod.EMAIL -> email
             null -> phone ?: mobilePhone ?: email
         }
-
-    /**
-     * Verifica se ha informazioni di contatto
-     */
-    fun hasContactInfo(): Boolean = !phone.isNullOrBlank() || !mobilePhone.isNullOrBlank() || !email.isNullOrBlank()
-
-    /**
-     * Verifica se il contatto è completo (ha nome e almeno un modo per essere contattato)
-     */
-    fun isComplete(): Boolean = firstName.isNotBlank() && hasContactInfo()
-}
-
-/**
- * Metodi di contatto preferiti
- */
-@Serializable
-enum class ContactMethod(val displayName: String) {
-    PHONE("Telefono fisso"),
-    MOBILE("Cellulare"),
-    EMAIL("Email")
 }

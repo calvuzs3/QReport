@@ -4,6 +4,7 @@ import net.calvuz.qreport.domain.model.client.Client
 import net.calvuz.qreport.domain.repository.ClientRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import net.calvuz.qreport.domain.validator.ClientDataValidator
 import javax.inject.Inject
 
 /**
@@ -16,7 +17,8 @@ import javax.inject.Inject
  * - Flow reattivo per UI con ricerca dinamica
  */
 class SearchClientsUseCase @Inject constructor(
-    private val clientRepository: ClientRepository
+    private val clientRepository: ClientRepository,
+    private val clientDataValidator: ClientDataValidator
 ) {
 
     /**
@@ -89,7 +91,7 @@ class SearchClientsUseCase @Inject constructor(
             }
 
             val cleanVatNumber = vatNumber.replace("\\s+".toRegex(), "")
-            if (!isValidVatNumber(cleanVatNumber)) {
+            if (!clientDataValidator.isValidVatNumber(cleanVatNumber)) {
                 return Result.failure(IllegalArgumentException("Formato partita IVA non valido"))
             }
 

@@ -25,7 +25,8 @@ import kotlin.time.Duration.Companion.days
  * - Controllo che non sia l'ultima isola operativa della facility
  */
 class DeleteFacilityIslandUseCase @Inject constructor(
-    private val facilityIslandRepository: FacilityIslandRepository
+    private val facilityIslandRepository: FacilityIslandRepository,
+    private val checkIslandExists: CheckFacilityIslandExistsUseCase
 ) {
 
     /**
@@ -59,21 +60,6 @@ class DeleteFacilityIslandUseCase @Inject constructor(
         }
     }
 
-    /**
-     * Verifica che l'isola esista e la restituisce
-     */
-    private suspend fun checkIslandExists(islandId: String): Result<FacilityIsland> {
-        return facilityIslandRepository.getIslandById(islandId)
-            .mapCatching { island ->
-                when {
-                    island == null ->
-                        throw NoSuchElementException("Isola con ID '$islandId' non trovata")
-                    !island.isActive ->
-                        throw IllegalStateException("Isola con ID '$islandId' già eliminata")
-                    else -> island
-                }
-            }
-    }
 
     /**
      * Controlli business pre-eliminazione

@@ -1,4 +1,4 @@
-package net.calvuz.qreport.presentation.screen.client.client.components
+package net.calvuz.qreport.presentation.components.client
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -6,10 +6,9 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.domain.model.client.ContactStatistics
+import net.calvuz.qreport.presentation.StatItem
 
 /**
  * Componente per mostrare statistiche riassuntive dei contatti
@@ -21,7 +20,9 @@ fun ContactsStatisticsSummary(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -55,35 +56,5 @@ fun ContactsStatisticsSummary(
             )
         }
     }
-}
-
-@Composable
-private fun StatItem(
-    icon: ImageVector,
-    value: String,
-    label: String,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant
-) {
-    Row(
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = color
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = color
-        )
-    }
+    Spacer(modifier = Modifier.height(16.dp))
 }

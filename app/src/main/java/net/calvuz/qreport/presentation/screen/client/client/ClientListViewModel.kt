@@ -10,13 +10,13 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.client.Client
+import net.calvuz.qreport.domain.model.client.ClientSingleStatistics
 import net.calvuz.qreport.domain.usecase.client.client.GetClientStatisticsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.DeleteClientUseCase
 import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsWithContactsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.ObserveAllActiveClientsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.SearchClientsUseCase
-import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
 import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsWithFacilitiesUseCase
 import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsWithIslandsUseCase
 import timber.log.Timber
@@ -449,7 +449,7 @@ class ClientListViewModel @Inject constructor(
         return filtered
     }
 
-    private fun createEmptyStats() = SingleClientStatistics(
+    private fun createEmptyStats() = ClientSingleStatistics(
         facilitiesCount = 0,
         islandsCount = 0,
         contactsCount = 0,
@@ -464,7 +464,7 @@ class ClientListViewModel @Inject constructor(
  */
 data class ClientWithStats(
     val client: Client,
-    val stats: SingleClientStatistics
+    val stats: ClientSingleStatistics
 ) {
     val formattedLastModified: String
         get() {

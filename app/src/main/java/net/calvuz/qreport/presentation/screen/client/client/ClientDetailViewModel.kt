@@ -5,14 +5,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.domain.model.client.ClientSingleStatistics
+import net.calvuz.qreport.domain.model.client.ClientWithDetails
 import net.calvuz.qreport.domain.model.client.Contact
 import net.calvuz.qreport.domain.model.client.ContactStatistics
 import net.calvuz.qreport.domain.model.client.FacilityIsland
+import net.calvuz.qreport.domain.model.client.FacilityWithIslands
 import net.calvuz.qreport.domain.usecase.client.client.GetClientWithDetailsUseCase
-import net.calvuz.qreport.domain.usecase.client.client.ClientWithDetails
 import net.calvuz.qreport.domain.usecase.client.client.DeleteClientUseCase
-import net.calvuz.qreport.domain.usecase.client.client.FacilityWithIslands
-import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
 import net.calvuz.qreport.domain.usecase.client.contact.GetContactStatisticsUseCase
 import timber.log.Timber
 import javax.inject.Inject
@@ -54,7 +54,7 @@ data class ClientDetailUiState(
     val facilitiesWithIslands: List<FacilityWithIslands> = emptyList(),
     val activeContacts: List<Contact> = emptyList(),
     val allIslands: List<FacilityIsland> = emptyList(),
-    val statistics: SingleClientStatistics? = null
+    val statistics: ClientSingleStatistics? = null
 ) {
 
     val hasData: Boolean

@@ -38,21 +38,20 @@ import net.calvuz.qreport.domain.model.island.IslandType
  */
 @Composable
 fun HomeScreen(
-    onNavigateToCheckUps: () -> Unit,
-    onNavigateToNewCheckUp: () -> Unit,           // ✅ AGGIUNTO
-    onNavigateToCheckUpDetail: (String) -> Unit,  // ✅ AGGIUNTO
-    onNavigateToClients: () -> Unit,              // ✅ NEW: Navigation to client management
-    
     modifier: Modifier = Modifier,
+    onNavigateToClients: () -> Unit,
+    onNavigateToCheckUps: () -> Unit,
+    onNavigateToNewCheckUp: () -> Unit,
+    onNavigateToCheckUpDetail: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Handle navigation effects - CORRETTO
+    // Handle navigation effects
     LaunchedEffect(uiState.selectedCheckUpId) {
         uiState.selectedCheckUpId?.let { checkUpId ->
-            onNavigateToCheckUpDetail(checkUpId)  // ✅ USA il parametro corretto
-            viewModel.clearSelectedCheckUp()  // ✅ Reset dopo navigazione
+            onNavigateToCheckUpDetail(checkUpId)
+            viewModel.clearSelectedCheckUp()
         }
     }
 
@@ -67,7 +66,7 @@ fun HomeScreen(
     // Error handling
     uiState.error?.let { error ->
         LaunchedEffect(error) {
-            // Show error snackbar or handle error
+            // Show error message
             viewModel.dismissError()
         }
     }
@@ -752,6 +751,6 @@ private fun HomeScreenPreview() {
             onNavigateToNewCheckUp = {},
             onNavigateToCheckUpDetail = {},
 
-        )
+            )
     }
 }

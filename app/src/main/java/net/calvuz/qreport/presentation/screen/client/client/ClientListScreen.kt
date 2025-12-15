@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -17,9 +18,12 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.presentation.components.EmptyState
+import net.calvuz.qreport.presentation.components.ErrorState
+import net.calvuz.qreport.presentation.components.LoadingState
 import net.calvuz.qreport.presentation.components.QReportSearchBar
-import net.calvuz.qreport.presentation.components.ClientCard
-import net.calvuz.qreport.presentation.components.ClientCardVariant
+import net.calvuz.qreport.presentation.components.client.ClientCard
+import net.calvuz.qreport.presentation.components.client.ClientCardVariant
 
 /**
  * Screen per la lista clienti - VERSIONE CON COMPONENTS RIUTILIZZABILI
@@ -36,7 +40,7 @@ import net.calvuz.qreport.presentation.components.ClientCardVariant
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientListScreen(
-    onNavigateToClientDetail: (String) -> Unit,
+    onNavigateToClientDetail: (String, String) -> Unit,
     onNavigateToEditClient: (String) -> Unit,
     onCreateNewClient: () -> Unit,
     modifier: Modifier = Modifier,
@@ -57,7 +61,7 @@ fun ClientListScreen(
                 // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
                     Icon(
-                        imageVector = Icons.Default.Sort,
+                        imageVector = Icons.AutoMirrored.Default.Sort,
                         contentDescription = "Ordinamento"
                     )
                 }
@@ -147,9 +151,17 @@ fun ClientListScreen(
 
                 uiState.filteredClients.isEmpty() -> {
                     EmptyState(
-                        filter = uiState.selectedFilter,
+                        iconImageVector = Icons.Outlined.Factory,
+                        iconContentDescription = "Nessun Cliente",
                         searchQuery = uiState.searchQuery,
-                        onCreateNew = onCreateNewClient
+                        textFilter = if (uiState.selectedFilter != ClientFilter.ALL)
+                            getFilterDisplayName(uiState.selectedFilter)
+                        else
+                            null,
+                        iconActionImageVector = Icons.Default.Add,
+                        iconActionContentDescription = "Nuovo cliente",
+                        textAction = "Nuovo Cliente",
+                        onAction = onCreateNewClient
                     )
                 }
 
@@ -190,7 +202,7 @@ fun ClientListScreen(
 @Composable
 private fun ClientListContent(
     clients: List<ClientWithStats>,
-    onClientClick: (String) -> Unit,
+    onClientClick: (String, String) -> Unit,
     onClientEdit: (String) -> Unit,
     onClientDelete: (String) -> Unit
 ) {
@@ -206,9 +218,10 @@ private fun ClientListContent(
             ClientCard(
                 client = clientWithStats.client,
                 stats = clientWithStats.stats,
-                onClick = { onClientClick(clientWithStats.client.id) },
+                onClick = { onClientClick(clientWithStats.client.id, clientWithStats.client.companyName) },
                 onEdit = { onClientEdit(clientWithStats.client.id) },
-                onDelete = { onClientDelete(clientWithStats.client.id) },
+                //onDelete = { onClientDelete(clientWithStats.client.id) },
+                onDelete = null,
                 variant = ClientCardVariant.FULL
             )
         }
@@ -312,141 +325,6 @@ private fun SortMenu(
                     { Icon(Icons.Default.Check, contentDescription = null) }
                 } else null
             )
-        }
-    }
-}
-
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            CircularProgressIndicator()
-            Text(
-                text = "Caricamento clienti...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun ErrorState(
-    error: String,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // Usa una variabile locale per evitare problemi di smart cast
-    val errorMessage = error.takeIf { it.isNotBlank() } ?: "Errore sconosciuto"
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Errore",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = errorMessage,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Chiudi")
-            }
-
-            Button(onClick = onRetry) {
-                Text("Riprova")
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyState(
-    filter: ClientFilter,
-    searchQuery: String,
-    onCreateNew: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Business,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        val (title, message) = when {
-            searchQuery.isNotEmpty() -> "Nessun risultato" to "Non ci sono clienti che corrispondono alla ricerca '$searchQuery'"
-            filter != ClientFilter.ALL -> "Nessun cliente" to "Non ci sono clienti con filtro '${getFilterDisplayName(filter)}'"
-            else -> "Nessun cliente" to "Non hai ancora aggiunto nessun cliente"
-        }
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        if (filter == ClientFilter.ALL && searchQuery.isEmpty()) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(onClick = onCreateNew) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Aggiungi primo cliente")
-            }
         }
     }
 }

@@ -1,6 +1,6 @@
 package net.calvuz.qreport.domain.usecase.client.client
 
-import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.client.ClientSingleStatistics
 import net.calvuz.qreport.domain.repository.ClientRepository
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import javax.inject.Inject
@@ -25,7 +25,7 @@ class GetClientStatisticsUseCase @Inject constructor(
      * @param clientId ID del cliente
      * @return Result con statistiche del cliente per UI
      */
-    suspend operator fun invoke(clientId: String): Result<SingleClientStatistics> {
+    suspend operator fun invoke(clientId: String): Result<ClientSingleStatistics> {
         return try {
             // Validazione input
             if (clientId.isBlank()) {
@@ -68,7 +68,7 @@ class GetClientStatisticsUseCase @Inject constructor(
                 Triple(0, 0, null)
             }
 
-            val stats = SingleClientStatistics(
+            val stats = ClientSingleStatistics(
                 facilitiesCount = facilitiesCount,
                 islandsCount = islandsCount,
                 contactsCount = contactsCount,
@@ -90,7 +90,7 @@ class GetClientStatisticsUseCase @Inject constructor(
      * Usa questa versione se le statistiche CheckUp non sono critiche
      * e vuoi performance migliori.
      */
-    suspend fun getBasicStats(clientId: String): Result<SingleClientStatistics> {
+    suspend fun getBasicStats(clientId: String): Result<ClientSingleStatistics> {
         return try {
             if (clientId.isBlank()) {
                 return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
@@ -105,7 +105,7 @@ class GetClientStatisticsUseCase @Inject constructor(
             val islandsCount = clientRepository.getIslandsCount(clientId)
                 .getOrElse { return Result.failure(it) }
 
-            val stats = SingleClientStatistics(
+            val stats = ClientSingleStatistics(
                 facilitiesCount = facilitiesCount,
                 islandsCount = islandsCount,
                 contactsCount = contactsCount,
@@ -120,88 +120,4 @@ class GetClientStatisticsUseCase @Inject constructor(
             Result.failure(e)
         }
     }
-}
-
-/**
- * Statistiche per singolo cliente (per UI liste e card)
- */
-data class SingleClientStatistics(
-    val facilitiesCount: Int,
-    val islandsCount: Int,
-    val contactsCount: Int,
-    val totalCheckUps: Int,
-    val completedCheckUps: Int,
-    val lastCheckUpDate: kotlinx.datetime.Instant?
-) {
-    /**
-     * Percentuale CheckUp completati
-     */
-    val completionRate: Int
-        get() = if (totalCheckUps > 0) {
-            (completedCheckUps.toDouble() / totalCheckUps * 100).toInt()
-        } else 0
-
-    /**
-     * Indica se il cliente ha dati completi
-     */
-    val isComplete: Boolean
-        get() = facilitiesCount > 0 && contactsCount > 0
-
-    /**
-     * Score salute cliente (0-100)
-     */
-    val healthScore: Int
-        get() {
-            var score = 0
-            if (facilitiesCount > 0) score += 30
-            if (contactsCount > 0) score += 30
-            if (islandsCount > 0) score += 20
-            if (totalCheckUps > 0) score += 20
-            return score
-        }
-
-    /**
-     * Descrizione stato per UI
-     */
-    val statusDescription: String
-        get() = when {
-            !isComplete -> "Setup incompleto"
-            totalCheckUps == 0 -> "Nessun check-up"
-            completionRate < 50 -> "Check-up in corso"
-            else -> "Operativo"
-        }
-
-    /**
-     * Testo riassuntivo per UI
-     */
-    val summaryText: String
-        get() = buildString {
-            val parts = mutableListOf<String>()
-
-            if (facilitiesCount > 0) {
-                parts.add("$facilitiesCount stabiliment${if (facilitiesCount == 1) "o" else "i"}")
-            }
-
-            if (islandsCount > 0) {
-                parts.add("$islandsCount isol${if (islandsCount == 1) "a" else "e"}")
-            }
-
-            if (contactsCount > 0) {
-                parts.add("$contactsCount referent${if (contactsCount == 1) "e" else "i"}")
-            }
-
-            when {
-                parts.isEmpty() -> append("Nessun dato configurato")
-                parts.size == 1 -> append(parts.first())
-                parts.size == 2 -> append("${parts[0]} e ${parts[1]}")
-                else -> append("${parts.dropLast(1).joinToString(", ")} e ${parts.last()}")
-            }
-        }
-}
-
-/**
- * Extension per verificare se CheckUpStatus è completato
- */
-private fun Any.isCompleted(): Boolean {
-     return this == CheckUpStatus.COMPLETED || this == CheckUpStatus.EXPORTED
 }

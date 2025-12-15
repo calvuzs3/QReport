@@ -18,9 +18,12 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.presentation.components.EmptyState
+import net.calvuz.qreport.presentation.components.ErrorState
+import net.calvuz.qreport.presentation.components.LoadingState
 import net.calvuz.qreport.presentation.components.QReportSearchBar
-import net.calvuz.qreport.presentation.components.FacilityCard
-import net.calvuz.qreport.presentation.components.FacilityCardVariant
+import net.calvuz.qreport.presentation.components.client.FacilityCard
+import net.calvuz.qreport.presentation.components.client.FacilityCardVariant
 
 /**
  * Screen per la lista stabilimenti di un cliente - seguendo pattern ClientListScreen
@@ -39,6 +42,7 @@ fun FacilityListScreen(
     clientId: String,
     onNavigateToFacilityDetail: (String) -> Unit,
     onCreateNewFacility: () -> Unit,
+    onEditFacility: (String) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: FacilityListViewModel = hiltViewModel()
@@ -103,7 +107,7 @@ fun FacilityListScreen(
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca stabilimenti per nome, codice o tipo...",
+            placeholder = "Cerca per nome, codice o tipo...",
             modifier = Modifier.padding(16.dp)
         )
 
@@ -121,17 +125,17 @@ fun FacilityListScreen(
         // Content with Pull to Refresh
         val pullToRefreshState = rememberPullToRefreshState()
 
-        // Handle pull to refresh
-        LaunchedEffect(pullToRefreshState.isRefreshing) {
-            if (pullToRefreshState.isRefreshing) {
-                viewModel.refresh()
-            }
-        }
-
         // Reset refresh state when not refreshing
         LaunchedEffect(uiState.isRefreshing) {
             if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
                 pullToRefreshState.endRefresh()
+            }
+        }
+
+        // Handle pull to refresh
+        LaunchedEffect(pullToRefreshState.isRefreshing) {
+            if (pullToRefreshState.isRefreshing) {
+                viewModel.refresh()
             }
         }
 
@@ -157,9 +161,17 @@ fun FacilityListScreen(
 
                 uiState.filteredFacilities.isEmpty() -> {
                     EmptyState(
-                        filter = uiState.selectedFilter,
+                        iconImageVector = Icons.Outlined.Factory,
+                        iconContentDescription = "Nessuno stabilimento",
                         searchQuery = uiState.searchQuery,
-                        onCreateNew = onCreateNewFacility
+                        textFilter = if (uiState.selectedFilter != FacilityFilter.ALL)
+                            getFacilityFilterDisplayName(uiState.selectedFilter)
+                        else
+                            null,
+                        iconActionImageVector = Icons.Default.Add,
+                        iconActionContentDescription = "Nuovo stabilimento",
+                        textAction = "Nuovo Stabilimento",
+                        onAction = onCreateNewFacility
                     )
                 }
 
@@ -167,7 +179,8 @@ fun FacilityListScreen(
                     FacilityListContent(
                         facilities = uiState.filteredFacilities,
                         onFacilityClick = onNavigateToFacilityDetail,
-                        onFacilityDelete = viewModel::deleteFacility
+                        onFacilityEdit = onEditFacility,
+                        onFacilityDelete = null  // We Don't want to delete from the list
                     )
                 }
             }
@@ -189,7 +202,7 @@ fun FacilityListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Nuovo Stabilimento"
+                    contentDescription = "Nuovo stabilimento"
                 )
             }
         }
@@ -200,7 +213,8 @@ fun FacilityListScreen(
 private fun FacilityListContent(
     facilities: List<FacilityWithStats>,
     onFacilityClick: (String) -> Unit,
-    onFacilityDelete: (String) -> Unit
+    onFacilityEdit: (String) -> Unit,
+    onFacilityDelete: ((String) -> Unit)? = null
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -215,7 +229,10 @@ private fun FacilityListContent(
                 facility = facilityWithStats.facility,
                 stats = facilityWithStats.stats,
                 onClick = { onFacilityClick(facilityWithStats.facility.id) },
-                onDelete = { onFacilityDelete(facilityWithStats.facility.id) },
+                onEdit = { onFacilityEdit(facilityWithStats.facility.id) },
+                onDelete = if (onFacilityDelete != null) {
+                    { onFacilityDelete(facilityWithStats.facility.id) }
+                } else null,
                 variant = FacilityCardVariant.FULL
             )
         }
@@ -319,140 +336,6 @@ private fun FacilitySortMenu(
                     { Icon(Icons.Default.Check, contentDescription = null) }
                 } else null
             )
-        }
-    }
-}
-
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            CircularProgressIndicator()
-            Text(
-                text = "Caricamento stabilimenti...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun ErrorState(
-    error: String,
-    onRetry: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val errorMessage = error.takeIf { it.isNotBlank() } ?: "Errore sconosciuto"
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Error,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Errore",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.error
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = errorMessage,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OutlinedButton(onClick = onDismiss) {
-                Text("Chiudi")
-            }
-
-            Button(onClick = onRetry) {
-                Text("Riprova")
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyState(
-    filter: FacilityFilter,
-    searchQuery: String,
-    onCreateNew: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Outlined.Factory,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        val (title, message) = when {
-            searchQuery.isNotEmpty() -> "Nessun risultato" to "Non ci sono stabilimenti che corrispondono alla ricerca '$searchQuery'"
-            filter != FacilityFilter.ALL -> "Nessuno stabilimento" to "Non ci sono stabilimenti con filtro '${getFacilityFilterDisplayName(filter)}'"
-            else -> "Nessuno stabilimento" to "Non hai ancora aggiunto nessuno stabilimento per questo cliente"
-        }
-
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        if (filter == FacilityFilter.ALL && searchQuery.isEmpty()) {
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(onClick = onCreateNew) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Aggiungi primo stabilimento")
-            }
         }
     }
 }

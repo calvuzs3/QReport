@@ -1,5 +1,6 @@
-package net.calvuz.qreport.presentation.components
+package net.calvuz.qreport.presentation.components.client
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -10,11 +11,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.domain.model.client.FacilityIsland
-import net.calvuz.qreport.domain.model.client.OperationalStatus
+import net.calvuz.qreport.domain.model.client.FacilityIslandOperationalStatus
 import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.util.DateTimeUtils.toItalianDate
 
@@ -46,9 +48,9 @@ fun FacilityIslandCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = when (island.operationalStatus) {
-                OperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
-                OperationalStatus.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant
+            containerColor = when (island.facilityIslandOperationalStatus) {
+                FacilityIslandOperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
+                FacilityIslandOperationalStatus.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant
                 else -> MaterialTheme.colorScheme.surface
             }
         )
@@ -155,7 +157,7 @@ private fun IslandHeader(
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // Indicatore stato operativo
-            OperationalStatusBadge(status = island.operationalStatus)
+            OperationalStatusBadge(status = island.facilityIslandOperationalStatus)
 
             // Menu azioni
             if (onDelete != null) {
@@ -344,7 +346,7 @@ private fun IslandOperationalStats(island: FacilityIsland) {
 
 @Composable
 private fun StatItem(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: ImageVector,
     label: String,
     value: String
 ) {
@@ -375,17 +377,17 @@ private fun StatItem(
 }
 
 @Composable
-private fun OperationalStatusBadge(status: OperationalStatus) {
+private fun OperationalStatusBadge(status: FacilityIslandOperationalStatus) {
     val (color, icon) = when (status) {
-        OperationalStatus.OPERATIONAL -> Color(0xFF00B050) to Icons.Default.CheckCircle
-        OperationalStatus.MAINTENANCE_DUE -> Color(0xFFFFC000) to Icons.Default.Warning
-        OperationalStatus.INACTIVE -> Color(0xFFFF0000) to Icons.Default.Error
+        FacilityIslandOperationalStatus.OPERATIONAL -> Color(0xFF00B050) to Icons.Default.CheckCircle
+        FacilityIslandOperationalStatus.MAINTENANCE_DUE -> Color(0xFFFFC000) to Icons.Default.Warning
+        FacilityIslandOperationalStatus.INACTIVE -> Color(0xFFFF0000) to Icons.Default.Error
     }
 
     Surface(
         color = color.copy(alpha = 0.1f),
         shape = RoundedCornerShape(12.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, color.copy(alpha = 0.3f))
+        border = BorderStroke(1.dp, color.copy(alpha = 0.3f))
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),

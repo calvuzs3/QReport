@@ -1,4 +1,4 @@
-package net.calvuz.qreport.presentation.components
+package net.calvuz.qreport.presentation.components.client
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,8 +14,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.client.Client
-import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
+import net.calvuz.qreport.domain.model.client.ClientSingleStatistics
 
 /**
  * ClientCard riutilizzabile per QReport
@@ -28,7 +29,7 @@ import net.calvuz.qreport.domain.usecase.client.client.SingleClientStatistics
 fun ClientCard(
     modifier: Modifier = Modifier,
     client: Client,
-    stats: SingleClientStatistics? = null,
+    stats: ClientSingleStatistics? = null,
     onClick: () -> Unit,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
@@ -48,7 +49,7 @@ fun ClientCard(
                 client = client,
                 stats = stats,
                 showActions = showActions,
-                onDelete = { showDeleteDialog = true },
+                onDelete = { showDeleteDialog = false },
                 onEdit = onEdit
             )
             ClientCardVariant.COMPACT -> CompactClientCard(
@@ -75,7 +76,7 @@ fun ClientCard(
 @Composable
 private fun FullClientCard(
     client: Client,
-    stats: SingleClientStatistics?,
+    stats: ClientSingleStatistics?,
     showActions: Boolean,
     onDelete: (() -> Unit)?,
     onEdit: (() -> Unit)?
@@ -116,19 +117,19 @@ private fun FullClientCard(
                         }
                     }
 
-                    if (onDelete != null) {
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Elimina cliente",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
+//                    if (onDelete != null) {
+//                        IconButton(
+//                            onClick = onDelete,
+//                            modifier = Modifier.size(24.dp)
+//                        ) {
+//                            Icon(
+//                                imageVector = Icons.Default.Delete,
+//                                contentDescription = "Elimina cliente",
+//                                tint = MaterialTheme.colorScheme.error,
+//                                modifier = Modifier.size(20.dp)
+//                            )
+//                        }
+//                    }
                 }
             }
         }
@@ -230,7 +231,7 @@ private fun FullClientCard(
 @Composable
 private fun CompactClientCard(
     client: Client,
-    stats: SingleClientStatistics?
+    stats: ClientSingleStatistics?
 ) {
     Row(
         modifier = Modifier.padding(12.dp),
@@ -405,7 +406,7 @@ private fun ClientDeleteDialog(
 }
 
 private fun formatLastModified(client: Client): String {
-    val now = kotlinx.datetime.Clock.System.now()
+    val now = Clock.System.now()
     val updated = client.updatedAt
     val diffMillis = (now - updated).inWholeMilliseconds
 

@@ -1,4 +1,4 @@
-package net.calvuz.qreport.presentation.components
+package net.calvuz.qreport.presentation.components.client
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,7 +14,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.client.Facility
+import net.calvuz.qreport.domain.model.client.FacilityType
+import net.calvuz.qreport.presentation.components.PrimaryBadge
 import net.calvuz.qreport.presentation.screen.client.facility.FacilityStatistics
 
 /**
@@ -26,10 +29,10 @@ import net.calvuz.qreport.presentation.screen.client.facility.FacilityStatistics
 
 @Composable
 fun FacilityCard(
+    modifier: Modifier = Modifier,
     facility: Facility,
     stats: FacilityStatistics? = null,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
@@ -48,7 +51,7 @@ fun FacilityCard(
                 facility = facility,
                 stats = stats,
                 showActions = showActions,
-                onDelete = { showDeleteDialog = true },
+                onDelete = if(onDelete != null){ {showDeleteDialog = true}} else null,
                 onEdit = onEdit
             )
             FacilityCardVariant.COMPACT -> CompactFacilityCard(
@@ -77,8 +80,8 @@ private fun FullFacilityCard(
     facility: Facility,
     stats: FacilityStatistics?,
     showActions: Boolean,
-    onDelete: (() -> Unit)?,
-    onEdit: (() -> Unit)?
+    onDelete: (() -> Unit)? = null,
+    onEdit: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier.padding(16.dp),
@@ -91,17 +94,29 @@ private fun FullFacilityCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = facility.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row {
+                    Text(
+                        text = facility.displayName,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+//                    if (facility.isPrimary) {
+//                        Spacer(modifier = Modifier.height(4.dp))
+//                        Icon(
+//                            Icons.Default.Star,
+//                            contentDescription = "Contatto primario",
+//                            tint = MaterialTheme.colorScheme.primary,
+//                            modifier = Modifier.size(18.dp)
+//                        )
+//                    }
+                }
 
                 if (facility.isPrimary) {
                     Spacer(modifier = Modifier.height(4.dp))
-                    FacilityPrimaryBadge()
+                    PrimaryBadge()
                 }
             }
 
@@ -260,9 +275,10 @@ private fun CompactFacilityCard(
                 )
 
                 if (facility.isPrimary) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Icon(
                         imageVector = Icons.Default.Star,
-                        contentDescription = "Primario",
+                        contentDescription = "Stabilimento primario",
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -413,27 +429,6 @@ private fun FacilityStatusIndicator(
 }
 
 @Composable
-private fun FacilityPrimaryBadge() {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = Icons.Default.Star,
-            contentDescription = null,
-            modifier = Modifier.size(14.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = "Primario",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-@Composable
 private fun FacilityDeleteDialog(
     facilityName: String,
     onConfirm: () -> Unit,
@@ -464,7 +459,7 @@ private fun FacilityDeleteDialog(
 }
 
 private fun formatLastModified(facility: Facility): String {
-    val now = kotlinx.datetime.Clock.System.now()
+    val now = Clock.System.now()
     val updated = facility.updatedAt
     val diffMillis = (now - updated).inWholeMilliseconds
 
@@ -476,17 +471,17 @@ private fun formatLastModified(facility: Facility): String {
     }
 }
 
-private fun getFacilityTypeIcon(facilityType: net.calvuz.qreport.domain.model.client.FacilityType): ImageVector {
+private fun getFacilityTypeIcon(facilityType: FacilityType): ImageVector {
     return when (facilityType) {
-        net.calvuz.qreport.domain.model.client.FacilityType.PRODUCTION -> Icons.Default.Factory
-        net.calvuz.qreport.domain.model.client.FacilityType.WAREHOUSE -> Icons.Default.Warehouse
-        net.calvuz.qreport.domain.model.client.FacilityType.ASSEMBLY -> Icons.Default.Build
-        net.calvuz.qreport.domain.model.client.FacilityType.TESTING -> Icons.Default.Science
-        net.calvuz.qreport.domain.model.client.FacilityType.LOGISTICS -> Icons.Default.LocalShipping
-        net.calvuz.qreport.domain.model.client.FacilityType.OFFICE -> Icons.Default.Business
-        net.calvuz.qreport.domain.model.client.FacilityType.MAINTENANCE -> Icons.Default.Build
-        net.calvuz.qreport.domain.model.client.FacilityType.R_AND_D -> Icons.Default.Biotech
-        net.calvuz.qreport.domain.model.client.FacilityType.OTHER -> Icons.Default.Business
+        FacilityType.PRODUCTION -> Icons.Default.Factory
+        FacilityType.WAREHOUSE -> Icons.Default.Warehouse
+        FacilityType.ASSEMBLY -> Icons.Default.Build
+        FacilityType.TESTING -> Icons.Default.Science
+        FacilityType.LOGISTICS -> Icons.Default.LocalShipping
+        FacilityType.OFFICE -> Icons.Default.Business
+        FacilityType.MAINTENANCE -> Icons.Default.Build
+        FacilityType.R_AND_D -> Icons.Default.Biotech
+        FacilityType.OTHER -> Icons.Default.Business
     }
 }
 

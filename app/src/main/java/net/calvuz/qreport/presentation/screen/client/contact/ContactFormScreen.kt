@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.client.ContactMethod
+import timber.log.Timber
 
 /**
  * Screen per la creazione/modifica di un contatto
@@ -37,12 +38,12 @@ import net.calvuz.qreport.domain.model.client.ContactMethod
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactFormScreen(
+    modifier: Modifier = Modifier,
     clientId: String,
     clientName: String,
-    contactId: String? = null, // null = nuovo contatto, non-null = modifica
+    contactId: String? = null, // null = new, non-null = edit
     onNavigateBack: () -> Unit,
     onContactSaved: (String) -> Unit, // navigateToContactDetail
-    modifier: Modifier = Modifier,
     viewModel: ContactFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -58,10 +59,12 @@ fun ContactFormScreen(
     }
 
     // Handle save completed
-    LaunchedEffect(uiState.saveCompleted) {
-        if (uiState.saveCompleted) {
-            val savedContactId = viewModel.getContactId() ?: ""
-            onContactSaved(savedContactId)
+    LaunchedEffect(uiState.saveCompleted, uiState.savedContactId) {
+        if (uiState.saveCompleted && !uiState.savedContactId.isNullOrBlank()) {
+            Timber.d("Contact saved ID: ${uiState.savedContactId}")
+
+            onContactSaved(uiState.savedContactId!!)
+            viewModel.resetSaveCompleted()
         }
     }
 
@@ -575,11 +578,3 @@ private fun LoadingState() {
         }
     }
 }
-
-// Extension per ContactMethod display name
-private val ContactMethod.displayName: String
-    get() = when (this) {
-        ContactMethod.EMAIL -> "Email"
-        ContactMethod.PHONE -> "Telefono"
-        ContactMethod.MOBILE -> "Cellulare"
-    }

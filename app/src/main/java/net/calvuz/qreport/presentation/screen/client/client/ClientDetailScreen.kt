@@ -1,6 +1,6 @@
 package net.calvuz.qreport.presentation.screen.client.client
 
-import android.content.Intent
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -21,11 +22,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.client.Contact
 import net.calvuz.qreport.domain.model.client.ContactStatistics
 import net.calvuz.qreport.domain.model.client.FacilityIsland
-import net.calvuz.qreport.domain.model.client.OperationalStatus
-import net.calvuz.qreport.domain.usecase.client.client.ClientWithDetails
-import net.calvuz.qreport.domain.usecase.client.client.FacilityWithIslands
-import net.calvuz.qreport.presentation.screen.client.client.components.ContactsStatisticsSummary
-import androidx.core.net.toUri
+import net.calvuz.qreport.domain.model.client.FacilityIslandOperationalStatus
+import net.calvuz.qreport.presentation.components.client.ContactsStatisticsSummary
+import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
+import net.calvuz.qreport.domain.model.client.ClientWithDetails
+import net.calvuz.qreport.domain.model.client.FacilityWithIslands
+import net.calvuz.qreport.presentation.components.EmptyTabContent
+import net.calvuz.qreport.presentation.components.client.FacilitiesStatisticsSummary
+import net.calvuz.qreport.util.callContact
 
 /**
  * Screen per il dettaglio cliente con 4 tab - VERSIONE FINALE CON GESTIONE FACILITY
@@ -48,37 +53,27 @@ fun ClientDetailScreen(
     onNavigateToEdit: (String) -> Unit,
     onDeleteClient: () -> Unit,
 
-    // ✅ Facility navigation callbacks
+    // Facility navigation callbacks
     onNavigateToFacilityList: (String) -> Unit, // Navigate to full facility list
     onNavigateToCreateFacility: (String) -> Unit, // Create new facility
     onNavigateToEditFacility: (String, String) -> Unit, // Edit facility (clientId, facilityId)
     onNavigateToFacilityDetail: (String, String) -> Unit = { _, _ -> }, // Facility detail
-    onNavigateToIslandDetail: (String, String) -> Unit = {_, _ -> }, // Island detail (future)
+    onNavigateToIslandDetail: (String, String) -> Unit = { _, _ -> }, // Island detail (future)
 
-    // Navigation callbacks per contatti
+    // Contacts navigation callbacks
     onNavigateToContactList: (String, String) -> Unit = { _, _ -> }, // (clientId, clientName)
-    onNavigateToCreateContact: (String, String) -> Unit = {_, _ -> }, // (clientId)
+    onNavigateToCreateContact: (String, String) -> Unit = { _, _ -> }, // (clientId)
     onNavigateToEditContact: (String) -> Unit = { }, // (contactId)
+    onNavigateToContactDetail: (String) -> Unit = { }, // (contactId)
+
+    // Check-up navigation callbacks
+    onNavigateToCreateCheckUp: (String) -> Unit = { }, // (clientId)
 
     viewModel: ClientDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val clientName = uiState.companyName
 
-    // Funzione per chiamare contatto
-    val callContact = { phoneNumber: String ->
-        try {
-            val intent = Intent(Intent.ACTION_CALL).apply {
-                data = "tel:$phoneNumber".toUri()
-            }
-            context.startActivity(intent)
-        } catch (_: Exception) {
-            val intent = Intent(Intent.ACTION_DIAL).apply {
-                data = "tel:$phoneNumber".toUri()
-            }
-            context.startActivity(intent)
-        }
-    }
 
     // ✅ Handle delete success - Navigate back automatically
     LaunchedEffect(uiState.deleteSuccess) {
@@ -216,13 +211,17 @@ fun ClientDetailScreen(
                     },
 
                     // Contact callbacks
+                    onContactClick = onNavigateToContactDetail,
                     onEditContact = onNavigateToEditContact,
                     onCreateContact = { onNavigateToCreateContact(clientId, clientName) },
                     onViewAllContacts = {
                         onNavigateToContactList(clientId, uiState.companyName)
                     },
-                    onCallContact = callContact
-                )
+
+                    // Check-up callbacks
+                    onCreateCheckUp = { onNavigateToCreateCheckUp(clientId) },
+
+                    )
             }
 
             else -> {
@@ -235,112 +234,6 @@ fun ClientDetailScreen(
     uiState.error?.let { error ->
         LaunchedEffect(error) {
             // Could show snackbar or other error handling
-        }
-    }
-}
-
-@Composable
-private fun ContactsTabContent(
-    modifier: Modifier = Modifier,
-    contacts: List<Contact>,
-    contactStatistics: ContactStatistics? = null,
-    onViewAllContacts: () -> Unit,
-    onCreateContact: () -> Unit,
-    onEditContact: (String) -> Unit,
-    onCallContact: (String) -> Unit,
-) {
-    Column(modifier = modifier) {
-        // ✅ Header con stesso stile di Facilities per consistency
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Contatti (${contacts.size})",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (contacts.isNotEmpty()) {
-                    OutlinedButton(onClick = onViewAllContacts) {
-                        Text("Vedi tutti")
-                    }
-                }
-
-                Button(onClick = onCreateContact) {
-                    Icon(
-                        Icons.Default.Add,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Nuovo")
-                }
-            }
-        }
-
-        // ✅ NUOVO: Statistiche dettagliate (sostituisce quelle semplici)
-        contactStatistics?.let { stats ->
-            ContactsStatisticsSummary(
-                statistics = stats,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // ✅ CORRETTO: Logica if/else per contatti vuoti o con contenuto
-        if (contacts.isEmpty()) {
-            EmptyTabContent(
-                icon = Icons.Outlined.Person,
-                message = "Nessun contatto",
-                subMessage = "Aggiungi il primo contatto per questo cliente"
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier.padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(contacts.take(5)) { contact ->
-                    ContactItem(  // ← USA ContactItem ESISTENTE
-                        contact = contact,
-                        onEditContact = onEditContact,
-                        onCallContact = onCallContact
-                    )
-                }
-
-                // Se ci sono più di 5 contatti, mostra indicatore
-                if (contacts.size > 5) {
-                    item {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            )
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = "... e altri ${contacts.size - 5} contatti",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 }
@@ -360,10 +253,13 @@ private fun ClientDetailContent(
     onEditFacility: (String) -> Unit,
 
     // Contact callbacks
+    onContactClick: (String) -> Unit,
     onEditContact: (String) -> Unit,
     onCreateContact: () -> Unit,
     onViewAllContacts: () -> Unit,
-    onCallContact: (String) -> Unit
+
+    // Check-Up callbacks
+    onCreateCheckUp: () -> Unit,
 ) {
     Column {
         // Header con badge status e industry
@@ -468,24 +364,97 @@ private fun ClientDetailContent(
                     contacts = uiState.contacts,
                     contactStatistics = uiState.contactStatistics, // ← STATISTICHE AGGIUNTE
                     onViewAllContacts = onViewAllContacts,
+                    onContactClick = onContactClick,
                     onCreateContact = onCreateContact,
                     onEditContact = onEditContact,
-                    onCallContact = onCallContact,
                     modifier = Modifier.weight(1f)
                 )
             }
 
             ClientDetailTab.HISTORY -> {
                 HistoryTabContent(
-                    checkUpsCount = uiState.checkUpsCount,
-                    modifier = Modifier.weight(1f)
+//                    checkUpsCount = uiState.checkUpsCount,
+//                    modifier = Modifier.weight(1f),
+                    onCreateCheckUp = onCreateCheckUp
                 )
             }
         }
     }
 }
 
-// ✅ Facilities tab con gestione completa e UI CORRETTA
+// TAB Info
+@Composable
+private fun InfoTabContent(
+    clientDetails: ClientWithDetails,
+    modifier: Modifier = Modifier
+) {
+    LazyColumn(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            InfoCard(
+                title = "Informazioni Generali",
+                icon = Icons.Default.Business
+            ) {
+                InfoItem(
+                    label = "Ragione Sociale",
+                    value = clientDetails.client.companyName
+                )
+
+                clientDetails.client.vatNumber?.let {
+                    InfoItem(
+                        label = "Partita IVA",
+                        value = it
+                    )
+                }
+
+                clientDetails.client.industry?.let {
+                    InfoItem(
+                        label = "Settore",
+                        value = it
+                    )
+                }
+            }
+        }
+
+        item {
+            InfoCard(
+                title = "Sede Legale",
+                icon = Icons.Default.LocationOn
+            ) {
+                clientDetails.client.headquarters?.let { address ->
+                    InfoItem(
+                        label = "Indirizzo",
+                        value = address.toDisplayString()
+                    )
+                }
+            }
+        }
+
+        item {
+            InfoCard(
+                title = "Metadati",
+                icon = Icons.Default.Info
+            ) {
+                InfoItem(
+                    label = "Creato",
+                    value = formatTimestamp(clientDetails.client.createdAt)
+                )
+                InfoItem(
+                    label = "Ultima modifica",
+                    value = formatTimestamp(clientDetails.client.updatedAt)
+                )
+                InfoItem(
+                    label = "Stato",
+                    value = if (clientDetails.client.isActive) "Attivo" else "Inattivo"
+                )
+            }
+        }
+    }
+}
+
+// TAB Facilities
 @Composable
 private fun FacilitiesTabContentWithManagement(
     facilitiesWithIslands: List<FacilityWithIslands>,
@@ -517,14 +486,14 @@ private fun FacilitiesTabContentWithManagement(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Bottone gestione completa
+                // Vedi tutti
                 if (facilitiesWithIslands.isNotEmpty()) {
                     OutlinedButton(onClick = onManageFacilities) {
                         Text("Vedi tutti")
                     }
                 }
 
-                // ✅ CORRETTO: "Nuovo" invece di "Aggiungi" per consistency con contatti
+                // Nuovo
                 Button(onClick = onCreateFacility) {
                     Icon(
                         Icons.Default.Add,
@@ -537,50 +506,21 @@ private fun FacilitiesTabContentWithManagement(
             }
         }
 
-        // Stats summary
+        // Stats
         if (facilitiesWithIslands.isNotEmpty()) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            ) {
-                val totalIslands = facilitiesWithIslands.sumOf { it.islands.size }
-                val activeIslands = facilitiesWithIslands.sumOf { facility ->
-                    facility.islands.count { it.isActive }
-                }
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    StatItem(
-                        icon = Icons.Default.Business,
-                        value = facilitiesWithIslands.size.toString(),
-                        label = "Stabilimenti"
-                    )
-                    StatItem(
-                        icon = Icons.Default.PrecisionManufacturing,
-                        value = totalIslands.toString(),
-                        label = "Isole Totali"
-                    )
-                    StatItem(
-                        icon = Icons.Default.CheckCircle,
-                        value = activeIslands.toString(),
-                        label = "Isole Attive",
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
+            FacilitiesStatisticsSummary(
+                statistics = facilitiesWithIslands,
+            )
         }
 
         // Lista facility esistenti
         if (facilitiesWithIslands.isEmpty()) {
-            EmptyFacilitiesState(
-                onCreateFacility = onCreateFacility,
-                modifier = Modifier.weight(1f)
+            EmptyTabContent(
+                icon = Icons.Outlined.Factory,
+                message = "Nessuno Stabilimento",
+                subMessage = "Aggiungi uno Stabilimento per questo Cliente",
+                onButtonClick = onCreateFacility,
+                onButtonMessage = "Nuovo Stabilimento"
             )
         } else {
             LazyColumn(
@@ -600,6 +540,142 @@ private fun FacilitiesTabContentWithManagement(
             }
         }
     }
+}
+
+// TAB Clients
+@Composable
+private fun ContactsTabContent(
+    modifier: Modifier = Modifier,
+    contacts: List<Contact>,
+    contactStatistics: ContactStatistics? = null,
+    onViewAllContacts: () -> Unit,
+    onContactClick: (String) -> Unit,
+    onCreateContact: () -> Unit,
+    onEditContact: (String) -> Unit,
+) {
+    Column(modifier = modifier) {
+        // ✅ Header con stesso stile di Facilities per consistency
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Contatti (${contacts.size})",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Vedi tutti
+                if (contacts.isNotEmpty()) {
+                    OutlinedButton(onClick = onViewAllContacts) {
+                        Text("Vedi tutti")
+                    }
+                }
+
+                // Nuovo
+                Button(onClick = onCreateContact) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Nuovo")
+                }
+            }
+        }
+
+        // Stats
+        if (contacts.isNotEmpty()) {
+            contactStatistics?.let { stats ->
+                ContactsStatisticsSummary(
+                    statistics = stats
+                )
+            }
+        }
+
+        // ✅ CORRETTO: Logica if/else per contatti vuoti o con contenuto
+        if (contacts.isEmpty()) {
+            EmptyTabContent(
+                icon = Icons.Outlined.Person,
+                message = "Nessun Contatto",
+                subMessage = "Aggiungi un contatto per questo cliente",
+                onButtonClick = onCreateContact,
+                onButtonMessage = "Nuovo Contatto"
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(contacts.take(5)) { contact ->
+//                    ContactCard(
+//                        contact = contact,
+//                        onClick = onContactClick,
+//                        onEdit = onEditContact,
+//                        onCall = onCallContact,
+//                        onDelete = TODO(),
+//                        onSetPrimary = TODO(),
+//                        isDeleting = TODO(),
+//                        isSettingPrimary = TODO()
+//                    )
+                    ContactItem(
+                        // ← USA ContactItem ESISTENTE
+                        contact = contact,
+                        onContactClick = onContactClick,
+                        onEditContact = onEditContact,
+                    )
+                }
+
+                // Se ci sono più di 5 contatti, mostra indicatore
+                if (contacts.size > 5) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "... e altri ${contacts.size - 5} contatti",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// TAB History
+@Composable
+private fun HistoryTabContent(
+//    checkUpsCount: Int,
+//    modifier: Modifier = Modifier,
+    onCreateCheckUp: () -> Unit
+) {
+    EmptyTabContent(
+        icon = Icons.Outlined.History,
+        message = "Nessun CheckUp",
+        subMessage = "Aggiungi un Check-up per questo Cliente",
+        onButtonClick = onCreateCheckUp,
+        onButtonMessage = "Nuovo Check-Up"
+    )
 }
 
 // ✅ Facility item con azioni
@@ -705,86 +781,6 @@ private fun FacilityItemWithActions(
     }
 }
 
-// ✅ Empty state per facility con azione
-@Composable
-private fun EmptyFacilitiesState(
-    onCreateFacility: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Factory,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = "Nessuno Stabilimento",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = "Aggiungi il primo stabilimento per questo cliente",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Button(onClick = onCreateFacility) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Nuovo Stabilimento")
-            }
-        }
-    }
-}
-
-// ✅ Stat item per summary
-@Composable
-private fun StatItem(
-    icon: ImageVector,
-    value: String,
-    label: String,
-    color: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = color
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = color
-        )
-    }
-}
-
 // ✅ Island item compatto
 @Composable
 private fun IslandItemCompact(
@@ -820,17 +816,17 @@ private fun IslandItemCompact(
             }
 
             Icon(
-                imageVector = when (island.operationalStatus) {
-                    OperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
-                    OperationalStatus.MAINTENANCE_DUE -> Icons.Default.Warning
-                    OperationalStatus.INACTIVE -> Icons.Default.Cancel
+                imageVector = when (island.facilityIslandOperationalStatus) {
+                    FacilityIslandOperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
+                    FacilityIslandOperationalStatus.MAINTENANCE_DUE -> Icons.Default.Warning
+                    FacilityIslandOperationalStatus.INACTIVE -> Icons.Default.Cancel
                 },
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
-                tint = when (island.operationalStatus) {
-                    OperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
-                    OperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
-                    OperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
+                tint = when (island.facilityIslandOperationalStatus) {
+                    FacilityIslandOperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
+                    FacilityIslandOperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
+                    FacilityIslandOperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
                 }
             )
         }
@@ -840,10 +836,13 @@ private fun IslandItemCompact(
 @Composable
 private fun ContactItem(
     contact: Contact,
+    onContactClick: (String) -> Unit,
     onEditContact: (String) -> Unit,
-    onCallContact: (String) -> Unit
 ) {
+    val context = LocalContext.current
+
     Card(
+        onClick = { onContactClick(contact.id) },
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -894,7 +893,16 @@ private fun ContactItem(
             ) {
                 contact.phone?.let { phone ->
                     IconButton(
-                        onClick = { onCallContact(phone) },
+                        onClick = {
+                            val result = callContact(context, phone)
+                            if (!result) {
+                                Toast.makeText(
+                                    context,
+                                    "Errore di chiamata",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                        },
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
@@ -902,6 +910,12 @@ private fun ContactItem(
                             contentDescription = "Chiama",
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = phone,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -946,7 +960,7 @@ private fun HeaderSection(
                     onClick = { },
                     label = { Text(statusBadge) },
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor = androidx.compose.ui.graphics.Color(statusColor)
+                        containerColor = Color(statusColor)
                     )
                 )
             }
@@ -970,94 +984,6 @@ private fun HeaderSection(
             }
         }
     }
-}
-
-@Composable
-private fun InfoTabContent(
-    clientDetails: ClientWithDetails,
-    modifier: Modifier = Modifier
-) {
-    LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            InfoCard(
-                title = "Informazioni Generali",
-                icon = Icons.Default.Business
-            ) {
-                InfoItem(
-                    label = "Ragione Sociale",
-                    value = clientDetails.client.companyName
-                )
-
-                clientDetails.client.vatNumber?.let {
-                    InfoItem(
-                        label = "Partita IVA",
-                        value = it
-                    )
-                }
-
-                clientDetails.client.industry?.let {
-                    InfoItem(
-                        label = "Settore",
-                        value = it
-                    )
-                }
-            }
-        }
-
-        item {
-            InfoCard(
-                title = "Sede Legale",
-                icon = Icons.Default.LocationOn
-            ) {
-                clientDetails.client.headquarters?.let { address ->
-                    InfoItem(
-                        label = "Indirizzo",
-                        value = address.toDisplayString()
-                    )
-                }
-            }
-        }
-
-        item {
-            InfoCard(
-                title = "Metadati",
-                icon = Icons.Default.Info
-            ) {
-                InfoItem(
-                    label = "Creato",
-                    value = formatTimestamp(clientDetails.client.createdAt)
-                )
-                InfoItem(
-                    label = "Ultima modifica",
-                    value = formatTimestamp(clientDetails.client.updatedAt)
-                )
-                InfoItem(
-                    label = "Stato",
-                    value = if (clientDetails.client.isActive) "Attivo" else "Inattivo"
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun HistoryTabContent(
-    checkUpsCount: Int,
-    modifier: Modifier = Modifier
-) {
-    EmptyTabContent(
-        icon = Icons.Outlined.History,
-        message = "Storico CheckUp",
-        subMessage = if (checkUpsCount > 0) {
-            "Storico di $checkUpsCount check-up effettuati"
-        } else {
-            "Nessun check-up ancora effettuato per questo cliente"
-        },
-        modifier = modifier
-    )
 }
 
 @Composable
@@ -1112,46 +1038,6 @@ private fun InfoItem(
     }
 }
 
-@Composable
-private fun EmptyTabContent(
-    modifier: Modifier = Modifier,
-    icon: ImageVector,
-    message: String,
-    subMessage: String = ""
-) {
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                modifier = Modifier.size(64.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Text(
-                text = message,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (subMessage.isNotBlank()) {
-                Text(
-                    text = subMessage,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
 
 @Composable
 private fun LoadingState() {
@@ -1237,8 +1123,8 @@ private fun EmptyState() {
 }
 
 // Helper functions
-private fun formatTimestamp(timestamp: kotlinx.datetime.Instant): String {
-    val now = kotlinx.datetime.Clock.System.now()
+private fun formatTimestamp(timestamp: Instant): String {
+    val now = Clock.System.now()
     val updated = timestamp
     val diffMillis = (now - updated).inWholeMilliseconds
 

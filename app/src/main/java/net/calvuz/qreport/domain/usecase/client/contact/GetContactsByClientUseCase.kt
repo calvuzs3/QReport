@@ -5,6 +5,7 @@ import net.calvuz.qreport.domain.repository.ClientRepository
 import net.calvuz.qreport.domain.repository.ContactRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import net.calvuz.qreport.domain.usecase.client.client.CheckClientExistsUseCase
 import javax.inject.Inject
 
 /**
@@ -18,7 +19,7 @@ import javax.inject.Inject
  */
 class GetContactsByClientUseCase @Inject constructor(
     private val contactRepository: ContactRepository,
-    private val clientRepository: ClientRepository
+    private val checkClientExists: CheckClientExistsUseCase
 ) {
 
     /**
@@ -212,21 +213,6 @@ class GetContactsByClientUseCase @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
-    }
-
-    /**
-     * Verifica che il cliente esista
-     */
-    private suspend fun checkClientExists(clientId: String): Result<Unit> {
-        return clientRepository.getClientById(clientId)
-            .mapCatching { client ->
-                when {
-                    client == null ->
-                        throw NoSuchElementException("Cliente con ID '$clientId' non trovato")
-                    !client.isActive ->
-                        throw IllegalStateException("Cliente con ID '$clientId' non attivo")
-                }
-            }
     }
 
     /**

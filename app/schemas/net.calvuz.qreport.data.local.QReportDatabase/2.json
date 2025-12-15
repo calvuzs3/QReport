@@ -1,0 +1,1241 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "94c0d6a4d0ba8baf1664d98dae62cbaa",
+    "entities": [
+      {
+        "tableName": "checkups",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `client_company_name` TEXT NOT NULL, `client_contact_person` TEXT NOT NULL, `client_site` TEXT NOT NULL, `client_address` TEXT NOT NULL, `client_phone` TEXT NOT NULL, `client_email` TEXT NOT NULL, `island_serial_number` TEXT NOT NULL, `island_model` TEXT NOT NULL, `island_installation_date` TEXT NOT NULL, `island_last_maintenance_date` TEXT NOT NULL, `island_operating_hours` INTEGER NOT NULL, `island_cycle_count` INTEGER NOT NULL, `technician_name` TEXT NOT NULL, `technician_company` TEXT NOT NULL, `technician_certification` TEXT NOT NULL, `technician_phone` TEXT NOT NULL, `technician_email` TEXT NOT NULL, `checkup_date` INTEGER NOT NULL, `header_notes` TEXT NOT NULL, `island_type` TEXT NOT NULL, `status` TEXT NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, `completed_at` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientCompanyName",
+            "columnName": "client_company_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientContactPerson",
+            "columnName": "client_contact_person",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientSite",
+            "columnName": "client_site",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientAddress",
+            "columnName": "client_address",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientPhone",
+            "columnName": "client_phone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientEmail",
+            "columnName": "client_email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "islandSerialNumber",
+            "columnName": "island_serial_number",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "islandModel",
+            "columnName": "island_model",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "islandInstallationDate",
+            "columnName": "island_installation_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "islandLastMaintenanceDate",
+            "columnName": "island_last_maintenance_date",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "islandOperatingHours",
+            "columnName": "island_operating_hours",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "islandCycleCount",
+            "columnName": "island_cycle_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianName",
+            "columnName": "technician_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianCompany",
+            "columnName": "technician_company",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianCertification",
+            "columnName": "technician_certification",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianPhone",
+            "columnName": "technician_phone",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "technicianEmail",
+            "columnName": "technician_email",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkUpDate",
+            "columnName": "checkup_date",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "headerNotes",
+            "columnName": "header_notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "islandType",
+            "columnName": "island_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "completedAt",
+            "columnName": "completed_at",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_checkups_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_checkups_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_checkups_island_type",
+            "unique": false,
+            "columnNames": [
+              "island_type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_checkups_island_type` ON `${TABLE_NAME}` (`island_type`)"
+          },
+          {
+            "name": "index_checkups_created_at",
+            "unique": false,
+            "columnNames": [
+              "created_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_checkups_created_at` ON `${TABLE_NAME}` (`created_at`)"
+          },
+          {
+            "name": "index_checkups_client_company_name",
+            "unique": false,
+            "columnNames": [
+              "client_company_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_checkups_client_company_name` ON `${TABLE_NAME}` (`client_company_name`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "check_items",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `checkup_id` TEXT NOT NULL, `module_type` TEXT NOT NULL, `item_code` TEXT NOT NULL, `description` TEXT NOT NULL, `status` TEXT NOT NULL, `criticality` TEXT NOT NULL, `notes` TEXT NOT NULL, `checked_at` INTEGER, `order_index` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`checkup_id`) REFERENCES `checkups`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkUpId",
+            "columnName": "checkup_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "moduleType",
+            "columnName": "module_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "itemCode",
+            "columnName": "item_code",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "criticality",
+            "columnName": "criticality",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkedAt",
+            "columnName": "checked_at",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "orderIndex",
+            "columnName": "order_index",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_check_items_checkup_id",
+            "unique": false,
+            "columnNames": [
+              "checkup_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_check_items_checkup_id` ON `${TABLE_NAME}` (`checkup_id`)"
+          },
+          {
+            "name": "index_check_items_module_type",
+            "unique": false,
+            "columnNames": [
+              "module_type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_check_items_module_type` ON `${TABLE_NAME}` (`module_type`)"
+          },
+          {
+            "name": "index_check_items_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_check_items_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_check_items_criticality",
+            "unique": false,
+            "columnNames": [
+              "criticality"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_check_items_criticality` ON `${TABLE_NAME}` (`criticality`)"
+          },
+          {
+            "name": "index_check_items_order_index",
+            "unique": false,
+            "columnNames": [
+              "order_index"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_check_items_order_index` ON `${TABLE_NAME}` (`order_index`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "checkups",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "checkup_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "photos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `check_item_id` TEXT NOT NULL, `file_name` TEXT NOT NULL, `file_path` TEXT NOT NULL, `thumbnail_path` TEXT, `caption` TEXT NOT NULL, `taken_at` INTEGER NOT NULL, `file_size` INTEGER NOT NULL, `order_index` INTEGER NOT NULL, `width` INTEGER NOT NULL, `height` INTEGER NOT NULL, `gps_location` TEXT, `resolution` TEXT, `perspective` TEXT, `exif_data` TEXT NOT NULL, `camera_settings` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`check_item_id`) REFERENCES `check_items`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkItemId",
+            "columnName": "check_item_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileName",
+            "columnName": "file_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "filePath",
+            "columnName": "file_path",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "thumbnailPath",
+            "columnName": "thumbnail_path",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "caption",
+            "columnName": "caption",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "takenAt",
+            "columnName": "taken_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileSize",
+            "columnName": "file_size",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "orderIndex",
+            "columnName": "order_index",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "width",
+            "columnName": "width",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "height",
+            "columnName": "height",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "gpsLocation",
+            "columnName": "gps_location",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "resolution",
+            "columnName": "resolution",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "perspective",
+            "columnName": "perspective",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "exifData",
+            "columnName": "exif_data",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cameraSettings",
+            "columnName": "camera_settings",
+            "affinity": "TEXT",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_photos_check_item_id",
+            "unique": false,
+            "columnNames": [
+              "check_item_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photos_check_item_id` ON `${TABLE_NAME}` (`check_item_id`)"
+          },
+          {
+            "name": "index_photos_taken_at",
+            "unique": false,
+            "columnNames": [
+              "taken_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photos_taken_at` ON `${TABLE_NAME}` (`taken_at`)"
+          },
+          {
+            "name": "index_photos_order_index",
+            "unique": false,
+            "columnNames": [
+              "order_index"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photos_order_index` ON `${TABLE_NAME}` (`order_index`)"
+          },
+          {
+            "name": "index_photos_resolution",
+            "unique": false,
+            "columnNames": [
+              "resolution"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photos_resolution` ON `${TABLE_NAME}` (`resolution`)"
+          },
+          {
+            "name": "index_photos_perspective",
+            "unique": false,
+            "columnNames": [
+              "perspective"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photos_perspective` ON `${TABLE_NAME}` (`perspective`)"
+          },
+          {
+            "name": "index_photos_width_height",
+            "unique": false,
+            "columnNames": [
+              "width",
+              "height"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_photos_width_height` ON `${TABLE_NAME}` (`width`, `height`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "check_items",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "check_item_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "spare_parts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `checkup_id` TEXT NOT NULL, `part_number` TEXT NOT NULL, `description` TEXT NOT NULL, `quantity` INTEGER NOT NULL, `urgency` TEXT NOT NULL, `category` TEXT NOT NULL, `estimated_cost` REAL, `notes` TEXT NOT NULL, `supplier_info` TEXT NOT NULL, `added_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`checkup_id`) REFERENCES `checkups`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "checkUpId",
+            "columnName": "checkup_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "partNumber",
+            "columnName": "part_number",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quantity",
+            "columnName": "quantity",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "urgency",
+            "columnName": "urgency",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "estimatedCost",
+            "columnName": "estimated_cost",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "supplierInfo",
+            "columnName": "supplier_info",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addedAt",
+            "columnName": "added_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_spare_parts_checkup_id",
+            "unique": false,
+            "columnNames": [
+              "checkup_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_spare_parts_checkup_id` ON `${TABLE_NAME}` (`checkup_id`)"
+          },
+          {
+            "name": "index_spare_parts_urgency",
+            "unique": false,
+            "columnNames": [
+              "urgency"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_spare_parts_urgency` ON `${TABLE_NAME}` (`urgency`)"
+          },
+          {
+            "name": "index_spare_parts_category",
+            "unique": false,
+            "columnNames": [
+              "category"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_spare_parts_category` ON `${TABLE_NAME}` (`category`)"
+          },
+          {
+            "name": "index_spare_parts_added_at",
+            "unique": false,
+            "columnNames": [
+              "added_at"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_spare_parts_added_at` ON `${TABLE_NAME}` (`added_at`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "checkups",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "checkup_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "clients",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `company_name` TEXT NOT NULL, `vat_number` TEXT, `fiscal_code` TEXT, `website` TEXT, `industry` TEXT, `notes` TEXT, `headquarters_json` TEXT, `is_active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "companyName",
+            "columnName": "company_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vatNumber",
+            "columnName": "vat_number",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "fiscalCode",
+            "columnName": "fiscal_code",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "website",
+            "columnName": "website",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "industry",
+            "columnName": "industry",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "headquartersJson",
+            "columnName": "headquarters_json",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "is_active",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_clients_company_name",
+            "unique": false,
+            "columnNames": [
+              "company_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_clients_company_name` ON `${TABLE_NAME}` (`company_name`)"
+          },
+          {
+            "name": "index_clients_vat_number",
+            "unique": true,
+            "columnNames": [
+              "vat_number"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_clients_vat_number` ON `${TABLE_NAME}` (`vat_number`)"
+          },
+          {
+            "name": "index_clients_is_active",
+            "unique": false,
+            "columnNames": [
+              "is_active"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_clients_is_active` ON `${TABLE_NAME}` (`is_active`)"
+          },
+          {
+            "name": "index_clients_industry",
+            "unique": false,
+            "columnNames": [
+              "industry"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_clients_industry` ON `${TABLE_NAME}` (`industry`)"
+          }
+        ],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "contacts",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `client_id` TEXT NOT NULL, `first_name` TEXT NOT NULL, `last_name` TEXT, `title` TEXT, `role` TEXT, `department` TEXT, `phone` TEXT, `mobile_phone` TEXT, `email` TEXT, `alternative_email` TEXT, `is_primary` INTEGER NOT NULL, `is_active` INTEGER NOT NULL, `preferred_contact_method` TEXT, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`client_id`) REFERENCES `clients`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "firstName",
+            "columnName": "first_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastName",
+            "columnName": "last_name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "title",
+            "columnName": "title",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "role",
+            "columnName": "role",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "department",
+            "columnName": "department",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "phone",
+            "columnName": "phone",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "mobilePhone",
+            "columnName": "mobile_phone",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "email",
+            "columnName": "email",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "alternativeEmail",
+            "columnName": "alternative_email",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isPrimary",
+            "columnName": "is_primary",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "is_active",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "preferredContactMethod",
+            "columnName": "preferred_contact_method",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_contacts_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_contacts_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "index_contacts_first_name",
+            "unique": false,
+            "columnNames": [
+              "first_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_contacts_first_name` ON `${TABLE_NAME}` (`first_name`)"
+          },
+          {
+            "name": "index_contacts_is_primary_client_id",
+            "unique": false,
+            "columnNames": [
+              "is_primary",
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_contacts_is_primary_client_id` ON `${TABLE_NAME}` (`is_primary`, `client_id`)"
+          },
+          {
+            "name": "index_contacts_is_active",
+            "unique": false,
+            "columnNames": [
+              "is_active"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_contacts_is_active` ON `${TABLE_NAME}` (`is_active`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "clients",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "client_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "facilities",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `client_id` TEXT NOT NULL, `name` TEXT NOT NULL, `code` TEXT, `description` TEXT, `facility_type` TEXT NOT NULL, `address_json` TEXT NOT NULL, `is_primary` INTEGER NOT NULL, `is_active` INTEGER NOT NULL, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`client_id`) REFERENCES `clients`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "clientId",
+            "columnName": "client_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "code",
+            "columnName": "code",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "description",
+            "columnName": "description",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "facilityType",
+            "columnName": "facility_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "addressJson",
+            "columnName": "address_json",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isPrimary",
+            "columnName": "is_primary",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "is_active",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_facilities_client_id",
+            "unique": false,
+            "columnNames": [
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_facilities_client_id` ON `${TABLE_NAME}` (`client_id`)"
+          },
+          {
+            "name": "index_facilities_name",
+            "unique": false,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_facilities_name` ON `${TABLE_NAME}` (`name`)"
+          },
+          {
+            "name": "index_facilities_is_primary_client_id",
+            "unique": false,
+            "columnNames": [
+              "is_primary",
+              "client_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_facilities_is_primary_client_id` ON `${TABLE_NAME}` (`is_primary`, `client_id`)"
+          },
+          {
+            "name": "index_facilities_is_active",
+            "unique": false,
+            "columnNames": [
+              "is_active"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_facilities_is_active` ON `${TABLE_NAME}` (`is_active`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "clients",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "client_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "facility_islands",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `facility_id` TEXT NOT NULL, `island_type` TEXT NOT NULL, `serial_number` TEXT NOT NULL, `model` TEXT, `installation_date` INTEGER, `warranty_expiration` INTEGER, `is_active` INTEGER NOT NULL, `operating_hours` INTEGER NOT NULL, `cycle_count` INTEGER NOT NULL, `last_maintenance_date` INTEGER, `next_scheduled_maintenance` INTEGER, `custom_name` TEXT, `location` TEXT, `notes` TEXT, `created_at` INTEGER NOT NULL, `updated_at` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`facility_id`) REFERENCES `facilities`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "facilityId",
+            "columnName": "facility_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "islandType",
+            "columnName": "island_type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "serialNumber",
+            "columnName": "serial_number",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "model",
+            "columnName": "model",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "installationDate",
+            "columnName": "installation_date",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "warrantyExpiration",
+            "columnName": "warranty_expiration",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "isActive",
+            "columnName": "is_active",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "operatingHours",
+            "columnName": "operating_hours",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cycleCount",
+            "columnName": "cycle_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastMaintenanceDate",
+            "columnName": "last_maintenance_date",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "nextScheduledMaintenance",
+            "columnName": "next_scheduled_maintenance",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "customName",
+            "columnName": "custom_name",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "location",
+            "columnName": "location",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "notes",
+            "columnName": "notes",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "created_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAt",
+            "columnName": "updated_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_facility_islands_facility_id",
+            "unique": false,
+            "columnNames": [
+              "facility_id"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_facility_islands_facility_id` ON `${TABLE_NAME}` (`facility_id`)"
+          },
+          {
+            "name": "index_facility_islands_serial_number",
+            "unique": true,
+            "columnNames": [
+              "serial_number"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_facility_islands_serial_number` ON `${TABLE_NAME}` (`serial_number`)"
+          },
+          {
+            "name": "index_facility_islands_island_type",
+            "unique": false,
+            "columnNames": [
+              "island_type"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_facility_islands_island_type` ON `${TABLE_NAME}` (`island_type`)"
+          },
+          {
+            "name": "index_facility_islands_is_active",
+            "unique": false,
+            "columnNames": [
+              "is_active"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_facility_islands_is_active` ON `${TABLE_NAME}` (`is_active`)"
+          },
+          {
+            "name": "index_facility_islands_next_scheduled_maintenance",
+            "unique": false,
+            "columnNames": [
+              "next_scheduled_maintenance"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_facility_islands_next_scheduled_maintenance` ON `${TABLE_NAME}` (`next_scheduled_maintenance`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "facilities",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "facility_id"
+            ],
+            "referencedColumns": [
+              "id"
+            ]
+          }
+        ]
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '94c0d6a4d0ba8baf1664d98dae62cbaa')"
+    ]
+  }
+}
