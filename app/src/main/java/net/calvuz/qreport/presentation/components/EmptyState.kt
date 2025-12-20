@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun EmptyState(
-
     modifier: Modifier = Modifier,
     iconImageVector: ImageVector,
     iconContentDescription: String? = null,

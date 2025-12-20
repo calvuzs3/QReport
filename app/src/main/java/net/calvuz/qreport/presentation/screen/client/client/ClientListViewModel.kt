@@ -465,18 +465,4 @@ class ClientListViewModel @Inject constructor(
 data class ClientWithStats(
     val client: Client,
     val stats: ClientSingleStatistics
-) {
-    val formattedLastModified: String
-        get() {
-            val now = Clock.System.now()
-            val updated = client.updatedAt
-            val diffMillis = (now - updated).inWholeMilliseconds
-
-            return when {
-                diffMillis < 60000 -> "Aggiornato ora"
-                diffMillis < 3600000 -> "Aggiornato ${diffMillis / 60000} min fa"
-                diffMillis < 86400000 -> "Aggiornato ${diffMillis / 3600000}h fa"
-                else -> "Aggiornato ${diffMillis / 86400000} giorni fa"
-            }
-        }
-}
+)

@@ -115,6 +115,7 @@ object DateTimeUtils {
                     else -> "in ritardo di $daysLate giorni"
                 }
             }
+
             duration.inWholeDays == 0L -> "dovuta oggi"
             duration.inWholeDays == 1L -> "dovuta domani"
             duration.inWholeDays <= 7 -> "dovuta tra ${duration.inWholeDays} giorni"
@@ -160,5 +161,28 @@ object DateTimeUtils {
         val thisDate = this.toLocalDateTime(TimeZone.currentSystemDefault()).date
         val todayDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
         return thisDate == todayDate
+    }
+
+    /**
+     * Formatta data in modo relativo rispetto a oggi
+     */
+    fun formattedLastModified(lastModified: Instant): String {
+        val now = Clock.System.now()
+        val diffMillis = (now - lastModified).inWholeMilliseconds
+
+        return when {
+            diffMillis < 60000 -> "Aggiornato ora"
+            diffMillis < 3600000 -> "Aggiornato ${diffMillis / 60000} min fa"
+            diffMillis < 86400000 -> "Aggiornato ${diffMillis / 3600000}h fa"
+            else -> {
+                val days = (lastModified - Clock.System.now()).inWholeDays
+
+                return when {
+                    days == 1L -> "Aggiornato ieri"
+                    days < 28 -> "Aggiornato $days giorni fa"
+                    else -> "Aggiornato il ${lastModified.toItalianDate()}"
+                }
+            }
+        }
     }
 }

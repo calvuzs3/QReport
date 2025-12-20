@@ -96,7 +96,7 @@ fun ClientListScreen(
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca clienti per nome, P.IVA o città...",
+            placeholder = "Ricerca Clienti",
             modifier = Modifier.padding(16.dp)
         )
 
@@ -151,7 +151,8 @@ fun ClientListScreen(
 
                 uiState.filteredClients.isEmpty() -> {
                     EmptyState(
-                        iconImageVector = Icons.Outlined.Factory,
+
+                        iconImageVector = Icons.Outlined.Person,
                         iconContentDescription = "Nessun Cliente",
                         searchQuery = uiState.searchQuery,
                         textFilter = if (uiState.selectedFilter != ClientFilter.ALL)

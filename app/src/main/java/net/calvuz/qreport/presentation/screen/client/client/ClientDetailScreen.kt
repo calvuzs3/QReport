@@ -301,7 +301,7 @@ private fun ClientDetailContent(
                     )
                 },
                 text = {
-                    Text("Stab")
+                    Text("Stabilim")
 //                    Row(
 //                        verticalAlignment = Alignment.CenterVertically,
 //                        horizontalArrangement = Arrangement.spacedBy(4.dp)
