@@ -14,6 +14,12 @@ import net.calvuz.qreport.domain.model.photo.PhotoResult
 import net.calvuz.qreport.domain.model.spare.SparePartCategory
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency
 import net.calvuz.qreport.domain.usecase.checkup.*
+import net.calvuz.qreport.domain.usecase.checkup.association.AssociateCheckUpToIslandUseCase
+import net.calvuz.qreport.domain.usecase.checkup.association.GetAssociationsForCheckUpUseCase
+import net.calvuz.qreport.domain.usecase.checkup.association.RemoveCheckUpAssociationUseCase
+import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsUseCase
+import net.calvuz.qreport.domain.usecase.client.facility.GetFacilitiesByClientUseCase
+import net.calvuz.qreport.domain.usecase.client.facilityisland.GetFacilityIslandsByFacilityUseCase
 import net.calvuz.qreport.domain.usecase.export.ExportCheckUpUseCase
 import net.calvuz.qreport.domain.usecase.photo.CapturePhotoUseCase
 import net.calvuz.qreport.domain.usecase.photo.DeletePhotoUseCase
@@ -54,7 +60,15 @@ class CheckUpDetailViewModel @Inject constructor(
     // New
     private val getCheckItemPhotosUseCase: GetCheckItemPhotosUseCase,  // ✅ NUOVO
     private val capturePhotoUseCase: CapturePhotoUseCase,              // ✅ NUOVO
-    private val deletePhotoUseCase: DeletePhotoUseCase                 // ✅ NUOVO
+    private val deletePhotoUseCase: DeletePhotoUseCase,                 // ✅ NUOVO
+
+    // ✅ NUOVI USE CASES PER ASSOCIAZIONI
+    private val getAllActiveClientsUseCase: GetAllActiveClientsUseCase, // ← Già esistente!
+    private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase, // Dai repository esistenti
+    private val getIslandsByFacilityUseCase: GetFacilityIslandsByFacilityUseCase, // Dai repository esistenti
+    private val associateCheckUpToIslandUseCase: AssociateCheckUpToIslandUseCase,
+    private val getAssociationsForCheckUpUseCase: GetAssociationsForCheckUpUseCase,
+    private val removeCheckUpAssociationUseCase: RemoveCheckUpAssociationUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
@@ -63,6 +77,10 @@ class CheckUpDetailViewModel @Inject constructor(
     // ✅ NUOVO: Gestione stati espansione moduli
     private val _expandedModules = MutableStateFlow<Set<String>>(emptySet())
     val expandedModules: StateFlow<Set<String>> = _expandedModules.asStateFlow()
+
+    // ✅ NUOVO STATE PER ASSOCIAZIONI
+    private val _associationState = MutableStateFlow(AssociationDialogState())
+    val associationState = _associationState.asStateFlow()
 
 
     init {
@@ -97,8 +115,9 @@ class CheckUpDetailViewModel @Inject constructor(
                             isLoading = false,
                             error = null
                         )
-                        // ✅ AGGIUNGI QUESTA CHIAMATA:
+                        // ✅ AGGIUNGI QUESTE CHIAMATE:
                         loadPhotosForCheckUp()
+                        loadCurrentAssociations() // ← NUOVO!
                     },
                     onFailure = { error ->
                         Timber.e(error, "Failed to load check-up details")
@@ -356,11 +375,13 @@ class CheckUpDetailViewModel @Inject constructor(
                                 photoCountsByItem[checkItem.id] = photosResult.data.size
                                 Timber.d("Caricate ${photosResult.data.size} foto per item ${checkItem.id}")
                             }
+
                             is PhotoResult.Error -> {
                                 Timber.e("Errore caricamento foto per item ${checkItem.id}: ${photosResult.exception}")
                                 photosByItem[checkItem.id] = emptyList()
                                 photoCountsByItem[checkItem.id] = 0
                             }
+
                             is PhotoResult.Loading -> {
                                 Timber.d("Loading foto per item ${checkItem.id}")
                                 photosByItem[checkItem.id] = emptyList()
@@ -419,9 +440,11 @@ class CheckUpDetailViewModel @Inject constructor(
 
                     Timber.d("Ricaricate ${photosResult.data.size} foto per item $checkItemId")
                 }
+
                 is PhotoResult.Error -> {
                     Timber.e("Errore ricaricamento foto per item $checkItemId: ${photosResult.exception}")
                 }
+
                 is PhotoResult.Loading -> {
                     Timber.d("Loading ricaricamento foto per item $checkItemId")
                 }
@@ -551,6 +574,125 @@ class CheckUpDetailViewModel @Inject constructor(
         }
     }
 
+    // ✅ NUOVI METODI PER GESTIONE ASSOCIAZIONI
+
+    /**
+     * Mostra dialog gestione associazione
+     */
+    fun showAssociationDialog() {
+        _associationState.value = _associationState.value.copy(
+            showDialog = true,
+            isLoadingClients = true
+        )
+
+        loadAvailableClients()
+        loadCurrentAssociations()
+    }
+
+    /**
+     * Nascondi dialog
+     */
+    fun hideAssociationDialog() {
+        _associationState.value = AssociationDialogState() // Reset completo
+    }
+
+    /**
+     * Cliente selezionato nel dialog
+     */
+    fun onClientSelected(clientId: String) {
+        _associationState.value = _associationState.value.copy(
+            selectedClientId = clientId,
+            selectedFacilityId = null, // Reset facility
+            availableFacilities = emptyList(),
+            availableIslands = emptyList(),
+            isLoadingFacilities = true
+        )
+
+        loadFacilitiesForClient(clientId)
+    }
+
+    /**
+     * Facility selezionata nel dialog
+     */
+    fun onFacilitySelected(facilityId: String) {
+        _associationState.value = _associationState.value.copy(
+            selectedFacilityId = facilityId,
+            availableIslands = emptyList(),
+            isLoadingIslands = true
+        )
+
+        loadIslandsForFacility(facilityId)
+    }
+
+    /**
+     * Isola selezionata - crea associazione
+     */
+    fun onIslandSelected(islandId: String) {
+        viewModelScope.launch {
+            val checkUpId = _uiState.value.checkUp?.id
+            if (checkUpId == null) {
+                _uiState.value = _uiState.value.copy(
+                    error = "CheckUp non disponibile"
+                )
+                return@launch
+            }
+
+            try {
+                associateCheckUpToIslandUseCase(
+                    checkupId = checkUpId,
+                    islandId = islandId
+                ).onSuccess {
+                    // Success - refresh e chiudi dialog
+                    loadCurrentAssociations()
+                    hideAssociationDialog()
+
+                    _uiState.value = _uiState.value.copy(
+                        error = null
+                    )
+                }.onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        error = "Errore associazione: ${error.message}"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Errore imprevisto: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Rimuovi associazione esistente
+     */
+    fun removeAssociation() {
+        viewModelScope.launch {
+            val checkUpId = _uiState.value.checkUp?.id
+            if (checkUpId == null) return@launch
+
+            try {
+                removeCheckUpAssociationUseCase(checkUpId).onSuccess {
+                    // Success - refresh e chiudi dialog
+                    loadCurrentAssociations()
+                    hideAssociationDialog()
+
+                    _uiState.value = _uiState.value.copy(
+                        error = null
+                    )
+                }.onFailure { error ->
+                    _uiState.value = _uiState.value.copy(
+                        error = "Errore rimozione: ${error.message}"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    error = "Errore imprevisto: ${e.message}"
+                )
+            }
+        }
+    }
+
+
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
@@ -611,4 +753,120 @@ class CheckUpDetailViewModel @Inject constructor(
     fun isModuleExpanded(moduleType: ModuleType): Boolean {
         return moduleType.name in _expandedModules.value
     }
+
+    /**
+     * Carica associazioni correnti per questo checkup
+     */
+    private fun loadCurrentAssociations() {
+        viewModelScope.launch {
+            val checkUpId = _uiState.value.checkUp?.id ?: return@launch
+
+            try {
+                getAssociationsForCheckUpUseCase(checkUpId).onSuccess { associations ->
+                    _uiState.value = _uiState.value.copy(
+                        checkUpAssociations = associations
+                    )
+
+                    _associationState.value = _associationState.value.copy(
+                        currentAssociations = associations
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to load current associations")
+            }
+        }
+    }
+
+    /**
+     * Carica tutti i clienti attivi
+     */
+    private fun loadAvailableClients() {
+        viewModelScope.launch {
+            try {
+                getAllActiveClientsUseCase()
+                    .onSuccess { clients ->
+                        _associationState.value = _associationState.value.copy(
+                            availableClients = clients,
+                            isLoadingClients = false
+                        )
+                    }
+                    .onFailure { error ->
+                        _associationState.value = _associationState.value.copy(
+                            isLoadingClients = false
+                        )
+                        _uiState.value = _uiState.value.copy(
+                            error = "Errore caricamento clienti: ${error.message}"
+                        )
+                    }
+            } catch (e: Exception) {
+                _associationState.value = _associationState.value.copy(
+                    isLoadingClients = false
+                )
+                _uiState.value = _uiState.value.copy(
+                    error = "Errore caricamento clienti: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Carica facilities per cliente selezionato
+     */
+    private fun loadFacilitiesForClient(clientId: String) {
+        viewModelScope.launch {
+            try {
+                getFacilitiesByClientUseCase(clientId).onSuccess { facilities ->
+                    _associationState.value = _associationState.value.copy(
+                        availableFacilities = facilities,
+                        isLoadingFacilities = false
+                    )
+                }.onFailure { error ->
+                    _associationState.value = _associationState.value.copy(
+                        isLoadingFacilities = false
+                    )
+                    _uiState.value = _uiState.value.copy(
+                        error = "Errore caricamento stabilimenti: ${error.message}"
+                    )
+                }
+            } catch (e: Exception) {
+                _associationState.value = _associationState.value.copy(
+                    isLoadingFacilities = false
+                )
+                _uiState.value = _uiState.value.copy(
+                    error = "Errore caricamento stabilimenti: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Carica isole per facility selezionata
+     */
+    private fun loadIslandsForFacility(facilityId: String) {
+        viewModelScope.launch {
+            try {
+                getIslandsByFacilityUseCase(facilityId).onSuccess { islands ->
+                    _associationState.value = _associationState.value.copy(
+                        availableIslands = islands,
+                        isLoadingIslands = false
+                    )
+                }.onFailure { error ->
+                    _associationState.value = _associationState.value.copy(
+                        isLoadingIslands = false
+                    )
+                    _uiState.value = _uiState.value.copy(
+                        error = "Errore caricamento isole: ${error.message}"
+                    )
+                }
+            } catch (e: Exception) {
+                _associationState.value = _associationState.value.copy(
+                    isLoadingIslands = false
+                )
+                _uiState.value = _uiState.value.copy(
+                    error = "Errore caricamento isole: ${e.message}"
+                )
+            }
+        }
+    }
+
 }

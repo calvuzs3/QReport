@@ -11,14 +11,14 @@ import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.client.Client
 import net.calvuz.qreport.domain.model.client.ClientSingleStatistics
-import net.calvuz.qreport.domain.usecase.client.client.GetAllClientsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.GetClientStatisticsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.DeleteClientUseCase
-import net.calvuz.qreport.domain.usecase.client.client.GetClientsWithContactsUseCase
-import net.calvuz.qreport.domain.usecase.client.client.GetClientsWithFacilitiesUseCase
-import net.calvuz.qreport.domain.usecase.client.client.GetClientsWithIslandsUseCase
-import net.calvuz.qreport.domain.usecase.client.client.ObserveAllClientsUseCase
+import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsUseCase
+import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsWithContactsUseCase
+import net.calvuz.qreport.domain.usecase.client.client.ObserveAllActiveClientsUseCase
 import net.calvuz.qreport.domain.usecase.client.client.SearchClientsUseCase
+import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsWithFacilitiesUseCase
+import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsWithIslandsUseCase
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -54,11 +54,11 @@ enum class SortOrder {
 
 @HiltViewModel
 class ClientListViewModel @Inject constructor(
-    private val observeAllClientsUseCase: ObserveAllClientsUseCase,
-    private val getAllClientsUseCase: GetAllClientsUseCase,
-    private val getClientsWithIslandsUseCase: GetClientsWithIslandsUseCase,
-    private val getClientsWithContactsUseCase: GetClientsWithContactsUseCase,
-    private val getClientsWithFacilitiesUseCase: GetClientsWithFacilitiesUseCase,
+    private val getAllActiveClientsUseCase: GetAllActiveClientsUseCase,
+    private val getAllActiveClientsWithFacilitiesUseCase: GetAllActiveClientsWithFacilitiesUseCase,
+    private val getAllActiveClientWithContactsUseCase: GetAllActiveClientsWithContactsUseCase,
+    private val getAllActiveClientsWithIslandsUseCase: GetAllActiveClientsWithIslandsUseCase,
+    private val observeAllActiveClientsUseCase: ObserveAllActiveClientsUseCase,
     private val getClientStatisticsUseCase: GetClientStatisticsUseCase,
     private val deleteClientUseCase: DeleteClientUseCase,
     private val searchClientsUseCase: SearchClientsUseCase
@@ -86,7 +86,7 @@ class ClientListViewModel @Inject constructor(
             try {
                 Timber.d("Loading clients list with observeActiveClients()")
 
-                observeAllClientsUseCase()
+                observeAllActiveClientsUseCase()
                     .catch { exception ->
                         if (exception is CancellationException) throw exception
                         Timber.e(exception, "Error in observeActiveClients flow")
@@ -151,44 +151,45 @@ class ClientListViewModel @Inject constructor(
                 Timber.d("Refreshing clients list with getActiveClients()")
 
                 // Use getActiveClients() for one-shot refresh operation
-                getAllClientsUseCase.invoke().fold(
-                    onSuccess = { clients ->
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping refresh processing - job cancelled")
-                            return@launch
+                getAllActiveClientsUseCase()
+                    .fold(
+                        onSuccess = { clients ->
+                            if (!currentCoroutineContext().isActive) {
+                                Timber.d("Skipping refresh processing - job cancelled")
+                                return@launch
+                            }
+
+                            val clientsWithStats = enrichWithStatistics(clients)
+
+                            if (currentCoroutineContext().isActive) {
+                                val currentState = _uiState.value
+                                val filteredAndSorted = applyFiltersAndSort(
+                                    clientsWithStats,
+                                    currentState.searchQuery,
+                                    currentState.selectedFilter,
+                                    currentState.sortOrder
+                                )
+
+                                _uiState.value = currentState.copy(
+                                    clients = clientsWithStats,
+                                    filteredClients = filteredAndSorted,
+                                    isRefreshing = false,
+                                    error = null
+                                )
+
+                                Timber.d("Refresh completed successfully")
+                            }
+                        },
+                        onFailure = { error ->
+                            if (currentCoroutineContext().isActive) {
+                                Timber.e(error, "Failed to refresh clients")
+                                _uiState.value = _uiState.value.copy(
+                                    isRefreshing = false,
+                                    error = "Errore refresh: ${error.message}"
+                                )
+                            }
                         }
-
-                        val clientsWithStats = enrichWithStatistics(clients)
-
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                clientsWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.sortOrder
-                            )
-
-                            _uiState.value = currentState.copy(
-                                clients = clientsWithStats,
-                                filteredClients = filteredAndSorted,
-                                isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("Refresh completed successfully")
-                        }
-                    },
-                    onFailure = { error ->
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e(error, "Failed to refresh clients")
-                            _uiState.value = _uiState.value.copy(
-                                isRefreshing = false,
-                                error = "Errore refresh: ${error.message}"
-                            )
-                        }
-                    }
-                )
+                    )
 
             } catch (_: CancellationException) {
                 Timber.d("Refresh cancelled")
@@ -264,9 +265,9 @@ class ClientListViewModel @Inject constructor(
     fun updateFilter(filter: ClientFilter) {
         // Per alcuni filtri, usa metodi specializzati del use case per performance migliori
         when (filter) {
-            ClientFilter.WITH_FACILITIES -> loadClientsWithSpecialFilter { getClientsWithFacilitiesUseCase() }
-            ClientFilter.WITH_CONTACTS -> loadClientsWithSpecialFilter { getClientsWithContactsUseCase() }
-            ClientFilter.WITH_ISLANDS -> loadClientsWithSpecialFilter { getClientsWithIslandsUseCase() }
+            ClientFilter.WITH_FACILITIES -> loadClientsWithSpecialFilter { getAllActiveClientsWithFacilitiesUseCase() }
+            ClientFilter.WITH_CONTACTS -> loadClientsWithSpecialFilter { getAllActiveClientWithContactsUseCase() }
+            ClientFilter.WITH_ISLANDS -> loadClientsWithSpecialFilter { getAllActiveClientsWithIslandsUseCase() }
             else -> {
                 // Per filtri semplici, usa filtro locale
                 val currentState = _uiState.value
@@ -464,18 +465,4 @@ class ClientListViewModel @Inject constructor(
 data class ClientWithStats(
     val client: Client,
     val stats: ClientSingleStatistics
-) {
-    val formattedLastModified: String
-        get() {
-            val now = Clock.System.now()
-            val updated = client.updatedAt
-            val diffMillis = (now - updated).inWholeMilliseconds
-
-            return when {
-                diffMillis < 60000 -> "Aggiornato ora"
-                diffMillis < 3600000 -> "Aggiornato ${diffMillis / 60000} min fa"
-                diffMillis < 86400000 -> "Aggiornato ${diffMillis / 3600000}h fa"
-                else -> "Aggiornato ${diffMillis / 86400000} giorni fa"
-            }
-        }
-}
+)

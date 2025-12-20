@@ -34,14 +34,14 @@ data class CheckUpListUiState(
     val error: String? = null,
     val searchQuery: String = "",
     val selectedFilter: CheckUpFilter = CheckUpFilter.ALL,
-    val sortOrder: SortOrder = SortOrder.RECENT_FIRST
+    val checkUpSortOrder: CheckUpSortOrder = CheckUpSortOrder.RECENT_FIRST
 )
 
 enum class CheckUpFilter {
     ALL, DRAFT, IN_PROGRESS, COMPLETED
 }
 
-enum class SortOrder {
+enum class CheckUpSortOrder {
     RECENT_FIRST, OLDEST_FIRST, CLIENT_NAME, STATUS
 }
 
@@ -142,7 +142,7 @@ class CheckUpListViewModel @Inject constructor(
                                 checkUpsWithStats,
                                 currentState.searchQuery,
                                 currentState.selectedFilter,
-                                currentState.sortOrder
+                                currentState.checkUpSortOrder
                             )
 
                             _uiState.value = currentState.copy(
@@ -240,7 +240,7 @@ class CheckUpListViewModel @Inject constructor(
                         checkUpsWithStats,
                         currentState.searchQuery,
                         currentState.selectedFilter,
-                        currentState.sortOrder
+                        currentState.checkUpSortOrder
                     )
 
                     _uiState.value = currentState.copy(
@@ -314,7 +314,7 @@ class CheckUpListViewModel @Inject constructor(
             currentState.checkUps,
             query,
             currentState.selectedFilter,
-            currentState.sortOrder
+            currentState.checkUpSortOrder
         )
 
         _uiState.value = currentState.copy(
@@ -329,7 +329,7 @@ class CheckUpListViewModel @Inject constructor(
             currentState.checkUps,
             currentState.searchQuery,
             filter,
-            currentState.sortOrder
+            currentState.checkUpSortOrder
         )
 
         _uiState.value = currentState.copy(
@@ -338,17 +338,17 @@ class CheckUpListViewModel @Inject constructor(
         )
     }
 
-    fun updateSortOrder(sortOrder: SortOrder) {
+    fun updateSortOrder(checkUpSortOrder: CheckUpSortOrder) {
         val currentState = _uiState.value
         val filteredAndSorted = applyFiltersAndSort(
             currentState.checkUps,
             currentState.searchQuery,
             currentState.selectedFilter,
-            sortOrder
+            checkUpSortOrder
         )
 
         _uiState.value = currentState.copy(
-            sortOrder = sortOrder,
+            checkUpSortOrder = checkUpSortOrder,
             filteredCheckUps = filteredAndSorted
         )
     }
@@ -365,7 +365,7 @@ class CheckUpListViewModel @Inject constructor(
         checkUps: List<CheckUpWithStats>,
         searchQuery: String,
         filter: CheckUpFilter,
-        sortOrder: SortOrder
+        checkUpSortOrder: CheckUpSortOrder
     ): List<CheckUpWithStats> {
         var filtered = checkUps
 
@@ -391,11 +391,11 @@ class CheckUpListViewModel @Inject constructor(
         }
 
         // Apply sorting
-        filtered = when (sortOrder) {
-            SortOrder.RECENT_FIRST -> filtered.sortedByDescending { it.checkUp.createdAt }
-            SortOrder.OLDEST_FIRST -> filtered.sortedBy { it.checkUp.createdAt }
-            SortOrder.CLIENT_NAME -> filtered.sortedBy { it.checkUp.header.clientInfo.companyName }
-            SortOrder.STATUS -> filtered.sortedBy { it.checkUp.status.ordinal }
+        filtered = when (checkUpSortOrder) {
+            CheckUpSortOrder.RECENT_FIRST -> filtered.sortedByDescending { it.checkUp.createdAt }
+            CheckUpSortOrder.OLDEST_FIRST -> filtered.sortedBy { it.checkUp.createdAt }
+            CheckUpSortOrder.CLIENT_NAME -> filtered.sortedBy { it.checkUp.header.clientInfo.companyName }
+            CheckUpSortOrder.STATUS -> filtered.sortedBy { it.checkUp.status.ordinal }
         }
 
         return filtered

@@ -128,7 +128,7 @@ fun ContactListScreen(
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca per nome, email o ruolo...",
+            placeholder = "Ricerca Contatti",
             modifier = Modifier.padding(16.dp)
         )
 

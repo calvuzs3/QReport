@@ -18,6 +18,9 @@ interface FacilityIslandDao {
     @Query("SELECT * FROM facility_islands WHERE id = :id")
     suspend fun getIslandById(id: String): FacilityIslandEntity?
 
+    @Query("SELECT * FROM facility_islands WHERE id IN (:ids) AND is_active = 1")
+    suspend fun getIslandsByIds(ids: List<String>): List<FacilityIslandEntity>
+
     @Query("SELECT * FROM facility_islands WHERE id = :id")
     fun getIslandByIdFlow(id: String): Flow<FacilityIslandEntity?>
 

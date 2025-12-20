@@ -6,12 +6,20 @@ import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
 import net.calvuz.qreport.domain.model.CriticalityLevel
+import net.calvuz.qreport.domain.model.checkup.CheckUpIslandAssociation
 import net.calvuz.qreport.domain.model.module.ModuleType
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.model.photo.Photo
 
 
 data class CheckUpDetailUiState(
+
+    // ============================================================
+    // ASSOCIATION CHECK-UP CLIENTS
+    // ============================================================
+
+    val checkUpAssociations: List<CheckUpIslandAssociation> = emptyList(),
+
     // ============================================================
     // CORE CHECK-UP DATA
     // ============================================================
@@ -42,7 +50,7 @@ data class CheckUpDetailUiState(
      */
     val isLoadingPhotos: Boolean = false,
 
-// ============================================================
+    // ============================================================
     // UI STATES
     // ============================================================
     val isLoading: Boolean = false,
@@ -139,11 +147,6 @@ data class CheckUpDetailUiState(
         get() = showAddSparePartDialog || showEditHeaderDialog || showExportDialog
 }
 
-
-/**
- * ✅ NUOVO: Helper extension functions per lavorare con le foto
- */
-
 /**
  * Aggiorna le foto per un check item specifico
  */
@@ -153,6 +156,7 @@ fun CheckUpDetailUiState.updatePhotosForCheckItem(
 ): CheckUpDetailUiState {
     val updatedPhotos = photosByCheckItem.toMutableMap()
     val updatedCounts = photoCountsByCheckItem.toMutableMap()
+
 
     updatedPhotos[checkItemId] = photos
     updatedCounts[checkItemId] = photos.size

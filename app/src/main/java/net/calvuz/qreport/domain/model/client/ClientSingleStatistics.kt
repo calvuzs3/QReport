@@ -32,10 +32,10 @@ data class ClientSingleStatistics(
     val healthScore: Int
         get() {
             var score = 0
-            if (facilitiesCount > 0) score += 30
-            if (contactsCount > 0) score += 30
+            if (facilitiesCount > 0) score += 20
+            if (contactsCount > 0) score += 20
             if (islandsCount > 0) score += 20
-            if (totalCheckUps > 0) score += 20
+            if (totalCheckUps > 0) score += 40
             return score
         }
 

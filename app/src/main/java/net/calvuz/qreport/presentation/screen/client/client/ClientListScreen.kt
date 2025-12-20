@@ -96,7 +96,7 @@ fun ClientListScreen(
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca per nome, PI o città...",
+            placeholder = "Ricerca Clienti",
             modifier = Modifier.padding(16.dp)
         )
 

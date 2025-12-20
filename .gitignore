@@ -71,3 +71,9 @@ key.properties
 
 # OpenCV (se incluso come modulo)
 opencv/build/
+
+# Schemas for Room DB
+app/schemas/
+
+# Java pid
+java_pid*
