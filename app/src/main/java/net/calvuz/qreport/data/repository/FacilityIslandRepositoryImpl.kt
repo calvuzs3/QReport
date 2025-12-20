@@ -57,6 +57,20 @@ class FacilityIslandRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getIslandsByIds(ids: List<String>): Result<List<FacilityIsland>> {
+        return try {
+            if (ids.isEmpty()) {
+                return Result.success(emptyList())
+            }
+
+            val entities = facilityIslandDao.getIslandsByIds(ids)
+            val islands = facilityIslandMapper.toDomainList(entities)
+            Result.success(islands)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun createIsland(island: FacilityIsland): Result<Unit> {
         return try {
             val entity = facilityIslandMapper.toEntity(island)
