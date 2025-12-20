@@ -184,14 +184,14 @@ fun FacilityDetailScreen(
 
             else -> {
                 EmptyState(
-                    iconImageVector = TODO(),
-                    iconContentDescription = TODO(),
-                    searchQuery = TODO(),
-                    textFilter = TODO(),
-                    iconActionImageVector = TODO(),
-                    iconActionContentDescription = TODO(),
-                    textAction = TODO(),
-                    onAction = TODO()
+                    iconImageVector = Icons.Default.Factory,
+                    iconContentDescription = "Stabilimenti",
+                    searchQuery = "",
+                    textFilter = "",
+                    iconActionImageVector = Icons.Default.Add,
+                    iconActionContentDescription = "Aggiungi stabilimento",
+                    textAction = "Nuovo Stabilimento",
+                    onAction = { onNavigateToCreateIsland(facilityId) }
                 )
             }
         }

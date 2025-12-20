@@ -855,8 +855,9 @@ private fun PhotoSection(
                 )
             }
 
+            // TODO: true for the view action button visible
             // View photos button (only if has photos)
-            if (photos.isNotEmpty()) {
+            if ( true or photos.isNotEmpty()) {
                 IconButton(
                     onClick = onViewPhotos,
                     modifier = Modifier.size(32.dp)

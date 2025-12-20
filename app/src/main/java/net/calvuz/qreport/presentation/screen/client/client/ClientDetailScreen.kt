@@ -281,57 +281,87 @@ private fun ClientDetailContent(
             Tab(
                 selected = uiState.selectedTab == ClientDetailTab.INFO,
                 onClick = { onTabSelected(ClientDetailTab.INFO) },
-                text = { Text("Info") }
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Info"
+                    )
+                },
+                text = { Text("Info") },
             )
 
             // Tab Facilities
             Tab(
                 selected = uiState.selectedTab == ClientDetailTab.FACILITIES,
                 onClick = { onTabSelected(ClientDetailTab.FACILITIES) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Factory,
+                        contentDescription = "Stabilimenti"
+                    )
+                },
                 text = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text("Stabilimenti")
-                        uiState.facilitiesCount.takeIf { it > 0 }?.let { count ->
-                            Badge { Text(count.toString()) }
-                        }
-                    }
-                }
+                    Text("Stab")
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+//                    ) {
+//                        Text("Stab")
+//                        uiState.facilitiesCount.takeIf { it > 0 }?.let { count ->
+//                            Badge { Text(count.toString()) }
+//                        }
+//                    }
+                },
             )
 
             // Tab Contacts
             Tab(
                 selected = uiState.selectedTab == ClientDetailTab.CONTACTS,
                 onClick = { onTabSelected(ClientDetailTab.CONTACTS) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Contacts,
+                        contentDescription = "Contatti",
+                    )
+                },
                 text = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text("Contatti")
-                        uiState.contactsCount.takeIf { it > 0 }?.let { count ->
-                            Badge { Text(count.toString()) }
-                        }
-                    }
-                }
+                    Text("Contatti")
+//                    uiState.contactsCount.takeIf { it > 0 }?.let { count ->
+//                        Badge { Text(count.toString()) }
+//                    }
+//                    Row(
+////                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+//                    ) {
+//                        Text("Contatti")
+//                        uiState.contactsCount.takeIf { it > 0 }?.let { count ->
+//                            Badge { Text(count.toString()) }
+//                        }
+//                    }
+                },
             )
 
             // Tab History
             Tab(
                 selected = uiState.selectedTab == ClientDetailTab.HISTORY,
                 onClick = { onTabSelected(ClientDetailTab.HISTORY) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = "Storico"
+                    )
+                },
                 text = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text("Storico")
-                        uiState.checkUpsCount.takeIf { it > 0 }?.let { count ->
-                            Badge { Text(count.toString()) }
-                        }
-                    }
+                    Text("Storico")
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+//                    ) {
+//                        Text("Storico")
+//                        uiState.checkUpsCount.takeIf { it > 0 }?.let { count ->
+//                            Badge { Text(count.toString()) }
+//                        }
+//                    }
                 }
             )
         }

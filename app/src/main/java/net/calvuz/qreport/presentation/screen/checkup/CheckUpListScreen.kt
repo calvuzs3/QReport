@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.presentation.components.EmptyState
 import net.calvuz.qreport.presentation.components.ErrorState
 
@@ -103,12 +104,28 @@ fun CheckUpListScreen(
             singleLine = true
         )
 
+//        // Filter chips
+//        FilterChipRow(
+//            selectedFilter = uiState.selectedFilter,
+//            onFilterSelected = viewModel::updateFilter,
+//            modifier = Modifier.padding(horizontal = 16.dp)
+//        )
+
         // Filter chips
-        FilterChipRow(
-            selectedFilter = uiState.selectedFilter,
-            onFilterSelected = viewModel::updateFilter,
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
+        var filter:String? = null
+        if (uiState.selectedFilter != CheckUpFilter.ALL) filter = getFilterDisplayName(uiState.selectedFilter)
+        var order: String? = null
+        if (uiState.checkUpSortOrder!= CheckUpSortOrder.RECENT_FIRST)
+            order = getSortOrderDisplayName(uiState.checkUpSortOrder)
+        if (uiState.selectedFilter != CheckUpFilter.ALL || uiState.checkUpSortOrder != CheckUpSortOrder.RECENT_FIRST) {
+            ActiveFiltersChipRow(
+                selectedFilter = filter,
+                selectedSort = order,
+                onClearFilter = { viewModel.updateFilter(CheckUpFilter.ALL) },
+                onClearSort = { viewModel.updateSortOrder(CheckUpSortOrder.RECENT_FIRST) },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+        }
 
         // Content with Pull to Refresh
         val pullToRefreshState = rememberPullToRefreshState()
@@ -582,5 +599,14 @@ private fun getFilterDisplayName(filter: CheckUpFilter): String {
         CheckUpFilter.DRAFT -> "Bozze"
         CheckUpFilter.IN_PROGRESS -> "In corso"
         CheckUpFilter.COMPLETED -> "Completati"
+    }
+}
+
+private fun getSortOrderDisplayName(sortOrder: CheckUpSortOrder): String {
+    return when(sortOrder) {
+        CheckUpSortOrder.RECENT_FIRST -> "Recenti"
+        CheckUpSortOrder.OLDEST_FIRST -> "Datati"
+        CheckUpSortOrder.CLIENT_NAME -> "Nome cliente"
+        CheckUpSortOrder.STATUS -> "Stato"
     }
 }
