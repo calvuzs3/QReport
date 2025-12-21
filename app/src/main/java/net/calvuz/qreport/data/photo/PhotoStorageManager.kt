@@ -358,10 +358,9 @@ class PhotoStorageManager @Inject constructor(
 
     private fun extractGpsLocation(photoFile: File): PhotoLocation? {
         val exif = ExifInterface(photoFile.absolutePath)
-        val latLong = FloatArray(2)
-        val hasGps = exif.getLatLong(latLong)
+        val latLong = exif.getLatLong()
 
-        if (hasGps) {
+        if (latLong != null) {
             return PhotoLocation(
                 latitude = latLong[0].toDouble(),
                 longitude = latLong[1].toDouble(),

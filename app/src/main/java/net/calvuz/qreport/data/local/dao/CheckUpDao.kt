@@ -53,5 +53,21 @@ interface CheckUpDao {
 
     @Query("SELECT * FROM checkups WHERE client_company_name LIKE '%' || :query || '%' OR island_serial_number LIKE '%' || :query || '%' ORDER BY updated_at DESC")
     fun searchCheckUps(query: String): Flow<List<CheckUpEntity>>
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM checkups ORDER BY created_at ASC")
+    suspend fun getAllForBackup(): List<CheckUpEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(checkUps: List<CheckUpEntity>)
+
+    @Query("DELETE FROM checkups")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM checkups")
+    suspend fun count(): Int
 }
 

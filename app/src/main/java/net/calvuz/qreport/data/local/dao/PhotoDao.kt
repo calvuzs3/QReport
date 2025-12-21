@@ -666,4 +666,20 @@ interface PhotoDao {
         )
     """)
     suspend fun deleteOrphanedPhotos()
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM photos ORDER BY taken_at ASC")
+    suspend fun getAllForBackup(): List<PhotoEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(photos: List<PhotoEntity>)
+
+    @Query("DELETE FROM photos")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM photos")
+    suspend fun count(): Int
 }

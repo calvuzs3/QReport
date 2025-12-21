@@ -1,6 +1,7 @@
 package net.calvuz.qreport.domain.model.island
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
@@ -37,7 +38,7 @@ enum class IslandType(
         displayName = "POLY Tag BLE",
         code = "TAG_BLE",
         description = "Sistema robotizzato per etichettatura con tecnologia BLE",
-        icon = Icons.Default.Label
+        icon = Icons.AutoMirrored.Default.Label
     ),
     POLY_TAG_FC(
         displayName = "POLY Tag FC",

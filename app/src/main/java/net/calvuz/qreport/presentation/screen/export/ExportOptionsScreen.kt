@@ -14,6 +14,8 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -71,7 +73,7 @@ fun ExportOptionsScreen(
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
-                        imageVector = Icons.Default.ArrowBack,
+                        imageVector = Icons.Default.ArrowBackIosNew,
                         contentDescription = "Indietro"
                     )
                 }
@@ -241,7 +243,7 @@ private fun CheckUpPreviewCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 InfoChip(
-                    icon = Icons.Default.Assignment,
+                    icon = Icons.AutoMirrored.Default.Assignment,
                     text = "$itemCount items"
                 )
                 InfoChip(
@@ -590,7 +592,7 @@ private fun ErrorContent(
 private val ExportFormat.icon: ImageVector
     get() = when (this) {
         ExportFormat.WORD -> Icons.Default.Description
-        ExportFormat.TEXT -> Icons.Default.TextSnippet
+        ExportFormat.TEXT -> Icons.AutoMirrored.Default.TextSnippet
         ExportFormat.PHOTO_FOLDER -> Icons.Default.PhotoLibrary
         ExportFormat.COMBINED_PACKAGE -> Icons.Default.Archive
     }

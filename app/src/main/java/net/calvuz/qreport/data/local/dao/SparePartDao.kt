@@ -102,4 +102,20 @@ interface SparePartDao {
         )
     """)
     suspend fun deleteOrphanedSpareParts()
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM spare_parts ORDER BY added_at ASC")
+    suspend fun getAllForBackup(): List<SparePartEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(spareParts: List<SparePartEntity>)
+
+    @Query("DELETE FROM spare_parts")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM spare_parts")
+    suspend fun count(): Int
 }

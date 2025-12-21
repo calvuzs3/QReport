@@ -64,6 +64,7 @@ interface FacilityDao {
 
     // ===== SEARCH & FILTER =====
 
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("""
         SELECT * FROM facilities f
         INNER JOIN clients c ON f.client_id = c.id
@@ -166,6 +167,22 @@ interface FacilityDao {
 
     @Query("DELETE FROM facilities WHERE is_active = 0 AND updated_at < :cutoffTimestamp")
     suspend fun permanentlyDeleteInactiveFacilities(cutoffTimestamp: Long): Int
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM facilities ORDER BY created_at ASC")
+    suspend fun getAllForBackup(): List<FacilityEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(facilities: List<FacilityEntity>)
+
+    @Query("DELETE FROM facilities")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM facilities")
+    suspend fun count(): Int
 }
 
 /**

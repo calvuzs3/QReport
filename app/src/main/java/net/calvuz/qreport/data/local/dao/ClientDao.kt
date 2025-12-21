@@ -193,6 +193,22 @@ interface ClientDao {
 
     @Query("UPDATE clients SET updated_at = :timestamp WHERE id = :id")
     suspend fun touchClient(id: String, timestamp: Long = System.currentTimeMillis())
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM clients ORDER BY created_at ASC")
+    suspend fun getAllForBackup(): List<ClientEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(clients: List<ClientEntity>)
+
+    @Query("DELETE FROM clients")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM clients")
+    suspend fun count(): Int
 }
 
 /**

@@ -1,6 +1,7 @@
 package net.calvuz.qreport.domain.model.module
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
@@ -93,7 +94,7 @@ enum class ModuleType(
     LABELING_MACHINE(
         displayName = "Macchina Etichettatura",
         description = "Sistemi di etichettatura automatica",
-        icon = Icons.Default.Label
+        icon = Icons.AutoMirrored.Default.Label
     ),
 
     // Moduli vibratori

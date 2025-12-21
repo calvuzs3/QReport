@@ -200,6 +200,22 @@ interface ContactDao {
 
     @Query("UPDATE contacts SET is_active = 0, updated_at = :timestamp WHERE client_id = :clientId")
     suspend fun softDeleteAllContactsForClient(clientId: String, timestamp: Long)
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM contacts ORDER BY created_at ASC")
+    suspend fun getAllForBackup(): List<ContactEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(contacts: List<ContactEntity>)
+
+    @Query("DELETE FROM contacts")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM contacts")
+    suspend fun count(): Int
 }
 
 /**

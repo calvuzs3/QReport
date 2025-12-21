@@ -5,7 +5,9 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.domain.model.backup.CheckItemBackup
 
 /**
  * Entità CheckItem

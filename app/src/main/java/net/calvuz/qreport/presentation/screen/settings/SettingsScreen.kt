@@ -8,6 +8,7 @@ package net.calvuz.qreport.presentation.screen.settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -44,7 +45,7 @@ fun SettingsScreen(
                 SettingsItem(
                     title = "Template Check-up",
                     subtitle = "Personalizza checklist",
-                    icon = Icons.Default.Assignment,
+                    icon = Icons.AutoMirrored.Default.Assignment,
                     onClick = { }
                 )
             }

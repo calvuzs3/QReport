@@ -3,6 +3,7 @@ package net.calvuz.qreport.presentation.components.client
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -202,7 +203,7 @@ private fun FullClientCard(
                 )
 
                 ClientStatItem(
-                    icon = Icons.Default.Assignment,
+                    icon = Icons.AutoMirrored.Default.Assignment,
                     value = stats.totalCheckUps.toString(),
                     label = "Check-up"
                 )
@@ -268,7 +269,7 @@ private fun CompactClientCard(
                     compact = true
                 )
                 ClientStatItem(
-                    icon = Icons.Default.Assignment,
+                    icon = Icons.AutoMirrored.Default.Assignment,
                     value = stats.totalCheckUps.toString(),
                     label = "",
                     compact = true

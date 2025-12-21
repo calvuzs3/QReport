@@ -5,6 +5,7 @@ package net.calvuz.qreport.presentation.screen.client.facilityisland
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -363,7 +364,7 @@ private fun IslandBasicInfoCard(island: FacilityIsland) {
                 IslandTypeIcon(islandType = island.islandType)
             }
 
-            Divider()
+            HorizontalDivider()
 
             // Info rows
             InfoRow(
@@ -418,7 +419,7 @@ private fun OperationalStatsCard(statistics: SingleIslandStatistics) {
                 fontWeight = FontWeight.SemiBold
             )
 
-            Divider()
+            HorizontalDivider()
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -439,7 +440,7 @@ private fun OperationalStatsCard(statistics: SingleIslandStatistics) {
                 )
 
                 OperationalStatItem(
-                    icon = Icons.Default.TrendingUp,
+                    icon = Icons.AutoMirrored.Default.TrendingUp,
                     label = "Uptime",
                     value = "${statistics.operationalStats.uptime}%",
                     subtitle = if (statistics.operationalStats.ageInDays > 0) "${statistics.operationalStats.ageInDays} giorni attivi" else ""
@@ -542,7 +543,7 @@ private fun MaintenanceStatusCard(
                 }
             }
 
-            Divider()
+            HorizontalDivider()
 
             // Stato manutenzione
             Text(

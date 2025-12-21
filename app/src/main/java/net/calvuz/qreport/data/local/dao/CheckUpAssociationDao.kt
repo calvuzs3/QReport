@@ -131,4 +131,35 @@ interface CheckUpAssociationDao {
         LIMIT :limit
     """)
     suspend fun getRecentAssociationsForClient(clientId: String, limit: Int = 20): List<CheckUpIslandAssociationEntity>
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    /**
+     * Recupera tutte le associazioni per backup
+     * Ordinate cronologicamente per preservare l'ordine di creazione
+     */
+    @Query("SELECT * FROM checkup_island_associations ORDER BY created_at ASC")
+    suspend fun getAllForBackup(): List<CheckUpIslandAssociationEntity>
+
+    /**
+     * Inserisce tutte le associazioni da backup
+     * REPLACE strategy per gestire eventuali conflitti durante restore
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(associations: List<CheckUpIslandAssociationEntity>)
+
+    /**
+     * Cancella tutte le associazioni (per ripristino completo)
+     * ATTENZIONE: Questa operazione è irreversibile!
+     */
+    @Query("DELETE FROM checkup_island_associations")
+    suspend fun deleteAll()
+
+    /**
+     * Conta totale associazioni (per validazione backup/restore)
+     */
+    @Query("SELECT COUNT(*) FROM checkup_island_associations")
+    suspend fun count(): Int
 }

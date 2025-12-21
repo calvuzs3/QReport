@@ -258,6 +258,22 @@ interface FacilityIslandDao {
         updateNextScheduledMaintenance(islandId, nextMaintenanceTimestamp)
         touchIsland(islandId, currentTimestamp)
     }
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM facility_islands ORDER BY created_at ASC")
+    suspend fun getAllForBackup(): List<FacilityIslandEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(facilityIslands: List<FacilityIslandEntity>)
+
+    @Query("DELETE FROM facility_islands")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM facility_islands")
+    suspend fun count(): Int
 }
 
 /**

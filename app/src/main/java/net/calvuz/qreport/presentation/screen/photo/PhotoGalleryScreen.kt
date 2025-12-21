@@ -352,10 +352,9 @@ fun GPSLocationAnalysis(photos: List<Photo>) {
                         // ✅ VERIFICA EXIF GPS ORIGINALI
                         try {
                             val exif = ExifInterface(photo.filePath)
-                            val latLong = FloatArray(2)
-                            val hasExifGPS = exif.getLatLong(latLong)
+                            val latLong = exif.getLatLong()
 
-                            if (hasExifGPS) {
+                            if (latLong != null) {
                                 val exifLat = latLong[0].toDouble()
                                 val exifLng = latLong[1].toDouble()
                                 val latDiff = kotlin.math.abs(gps.latitude - exifLat)
@@ -381,10 +380,9 @@ fun GPSLocationAnalysis(photos: List<Photo>) {
                         // ✅ VERIFICA SE GPS ERA DISPONIBILE MA NON ESTRATTO
                         try {
                             val exif = ExifInterface(photo.filePath)
-                            val latLong = FloatArray(2)
-                            val hasExifGPS = exif.getLatLong(latLong)
+                            val latLong = exif.getLatLong()
 
-                            if (hasExifGPS) {
+                            if (latLong != null) {
                                 Timber.w("      ⚠️ GPS available in EXIF but not extracted!")
                                 Timber.w("      📍 Available GPS: ${latLong[0]}, ${latLong[1]}")
                                 gpsErrors++

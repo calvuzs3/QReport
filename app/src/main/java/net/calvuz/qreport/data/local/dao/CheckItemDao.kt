@@ -118,4 +118,20 @@ interface CheckItemDao {
     GROUP BY check_items.id
 """)
     suspend fun getPhotoCountsByCheckUp(checkUpId: String): List<CheckItemPhotoCount>
+
+    // ============================================================
+    // BACKUP METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM check_items ORDER BY checked_at ASC")
+    suspend fun getAllForBackup(): List<CheckItemEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(checkItems: List<CheckItemEntity>)
+
+    @Query("DELETE FROM check_items")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM check_items")
+    suspend fun count(): Int
 }
