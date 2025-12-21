@@ -185,6 +185,7 @@ class BackupFileManagerImpl @Inject constructor(
                                 description = backupData.metadata.description,
                                 totalSizeMB = backupData.metadata.totalSize / (1024.0 * 1024.0),
                                 includesPhotos = backupData.includesPhotos(),
+                                dirPath = backupDir.absolutePath,
                                 filePath = fullBackupFile.absolutePath,
                                 appVersion = backupData.metadata.appVersion
                             ))

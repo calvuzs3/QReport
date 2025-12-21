@@ -13,6 +13,7 @@ import net.calvuz.qreport.data.backup.model.ExtractionProgress
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.domain.model.backup.*
 import net.calvuz.qreport.domain.repository.backup.PhotoArchiveRepository
+import net.calvuz.qreport.util.SizeUtils.getFormattedSize
 import timber.log.Timber
 import java.io.*
 import java.security.MessageDigest
@@ -36,14 +37,14 @@ import kotlin.collections.iterator
 
 @Singleton
 class PhotoArchiveRepositoryImpl @Inject constructor(
-    @ApplicationContext  private val context: Context,
+    @ApplicationContext private val context: Context,
     private val photoDao: PhotoDao
 ) : PhotoArchiveRepository {
 
     companion object {
         private const val BUFFER_SIZE = 8192
-        private const val MAX_SINGLE_FILE_SIZE_MB = 50
-        private const val MAX_TOTAL_ARCHIVE_SIZE_MB = 1000
+        private const val MAX_SINGLE_FILE_SIZE = 50 * 1024 * 1024
+        private const val MAX_TOTAL_ARCHIVE_SIZE = 1000 * 1024 * 1024
     }
 
     // ===== CREATE PHOTO ARCHIVE =====
@@ -100,85 +101,148 @@ class PhotoArchiveRepositoryImpl @Inject constructor(
             var totalSizeBytes = 0L
             val photoHashes = mutableMapOf<String, String>()
 
-//            withContext(Dispatchers.IO) {
-                ZipOutputStream(BufferedOutputStream(FileOutputStream(outputFile))).use { zipOut ->
+            ZipOutputStream(BufferedOutputStream(FileOutputStream(outputFile))).use { zipOut ->
 
-                    // Rename index as _ because it is not used
-                    for ((_, photo) in existingPhotos.withIndex()) {
+                // Rename index as _ because it is not used
+                for ((_, photo) in existingPhotos.withIndex()) {
 
-                        // Progress update
-                        val currentProgress = processedFiles.toFloat() / totalFiles
-                        emit(ArchiveProgress.InProgress(
+                    // Progress update
+                    val currentProgress = processedFiles.toFloat() / totalFiles
+                    emit(
+                        ArchiveProgress.InProgress(
                             processedFiles = processedFiles,
                             totalFiles = totalFiles,
                             currentFile = photo.fileName,
                             progress = currentProgress
-                        ))
+                        )
+                    )
 
-                        // 4. Aggiungi foto principale
-                        val photoFile = File(photo.filePath)
-                        if (photoFile.exists()) {
+                    // 4. Aggiungi foto principale
+                    val photoFile = File(photo.filePath)
+                    if (photoFile.exists()) {
 
-                            // Verifica dimensione file
-                            val fileSizeMB = photoFile.length() / (1024.0 * 1024.0)
-                            if (fileSizeMB > MAX_SINGLE_FILE_SIZE_MB) {
-                                Timber.w("Foto ${photo.fileName} troppo grande (${fileSizeMB.toInt()}MB), saltata")
-                                continue
+                        // DEBUG----
+                        val fileSizeBytes = photoFile.length()
+                        Timber.v("🔍 PHOTO DEBUG: ${photo.fileName}")
+                        Timber.v("   📁 Path: ${photo.filePath}")
+                        Timber.v("   📏 Size: ${fileSizeBytes.getFormattedSize()}")
+                        Timber.v("   ✅ Exists: ${photoFile.exists()}")
+                        Timber.v("   📖 Readable: ${photoFile.canRead()}")
+
+                        if (fileSizeBytes == 0L) {
+                            Timber.w("⚠️ WARNING: File ${photo.fileName} has ZERO size!")
+                            continue  // ✅ Salta file vuoti
+                        }
+
+                        if (fileSizeBytes > MAX_SINGLE_FILE_SIZE) {
+                            Timber.w("Foto ${photo.fileName} troppo grande (${fileSizeBytes.getFormattedSize()}), saltata")
+                            continue
+                        }
+                        // ----DEBUG
+
+                        // Verifica dimensione file
+                        if (fileSizeBytes > MAX_SINGLE_FILE_SIZE) {
+                            Timber.w("Foto ${photo.fileName} troppo grande (${fileSizeBytes.getFormattedSize()}), saltata")
+                            continue
+                        }
+
+                        // DEBUG
+                        Timber.v("   🔄 Adding to ZIP...")
+
+                        val photoHash = addFileToZip(
+                            zipOut = zipOut,
+                            file = photoFile,
+                            entryPath = "photos/${photo.checkItemId}/${photo.fileName}"
+                        )
+
+                        photoHashes[photo.filePath] = photoHash
+                        totalSizeBytes += photoFile.length()
+                        processedFiles++
+
+
+                        // DEBUG dopo aggiunta
+                        Timber.v("   ✅ Added: hash=${photoHash.take(8)}..., totalSize=${totalSizeBytes} bytes")
+                        Timber.d("✓ Aggiunta foto: ${photo.fileName} (hash: ${photoHash.take(8)}...)")
+                    }
+
+                    // 5. Aggiungi thumbnail se richiesto e disponibile
+                    if (includesThumbnails && photo.thumbnailPath != null) {
+                        val thumbnailFile = File(photo.thumbnailPath)
+                        if (thumbnailFile.exists()) {
+
+                            // DEBUG----
+                            val thumbSizeBytes = thumbnailFile.length()
+                            Timber.v("🔍 THUMBNAIL DEBUG: ${photo.fileName}")
+                            Timber.v("   📁 Thumb path: ${photo.thumbnailPath}")
+                            Timber.v("   📏 Thumb size: ${thumbSizeBytes.getFormattedSize()}")
+
+                            if (thumbSizeBytes == 0L) {
+                                Timber.w("⚠️ WARNING: Thumbnail ${photo.fileName} has ZERO size!")
+                                continue  // ✅ Salta thumbnails vuoti
                             }
+                            // ----DEBUG
 
-                            val photoHash = addFileToZip(
+
+                            val thumbnailHash = addFileToZip(
                                 zipOut = zipOut,
-                                file = photoFile,
-                                entryPath = "photos/${photo.checkItemId}/${photo.fileName}"
+                                file = thumbnailFile,
+                                entryPath = "thumbnails/${photo.checkItemId}/thumb_${photo.fileName}"
                             )
 
-                            photoHashes[photo.filePath] = photoHash
-                            totalSizeBytes += photoFile.length()
+                            photoHashes[photo.thumbnailPath] = thumbnailHash
+                            totalSizeBytes += thumbnailFile.length()
                             processedFiles++
 
-                            Timber.v("✓ Aggiunta foto: ${photo.fileName} (hash: ${photoHash.take(8)}...)")
-                        }
-
-                        // 5. Aggiungi thumbnail se richiesto e disponibile
-                        if (includesThumbnails && photo.thumbnailPath != null) {
-                            val thumbnailFile = File(photo.thumbnailPath)
-                            if (thumbnailFile.exists()) {
-
-                                val thumbnailHash = addFileToZip(
-                                    zipOut = zipOut,
-                                    file = thumbnailFile,
-                                    entryPath = "thumbnails/${photo.checkItemId}/thumb_${photo.fileName}"
-                                )
-
-                                photoHashes[photo.thumbnailPath] = thumbnailHash
-                                totalSizeBytes += thumbnailFile.length()
-                                processedFiles++
-
-                                Timber.v("✓ Aggiunto thumbnail: thumb_${photo.fileName}")
-                            }
-                        }
-
-                        // 6. Verifica dimensione totale archivio
-                        val totalSizeMB = totalSizeBytes / (1024.0 * 1024.0)
-                        if (totalSizeMB > MAX_TOTAL_ARCHIVE_SIZE_MB) {
-                            Timber.w("Archivio raggiunto limite dimensione (${totalSizeMB.toInt()}MB)")
-                            break
+                            Timber.v("   ✅ Thumbnail added: totalSize=${totalSizeBytes.getFormattedSize()}")
+                            Timber.d("✓ Aggiunto thumbnail: thumb_${photo.fileName}")
                         }
                     }
 
-                    // 7. Aggiungi manifesto hash
-                    addHashManifestToZip(zipOut, photoHashes)
+
+                    // 6. Verifica dimensione totale archivio
+                    if (totalSizeBytes > MAX_TOTAL_ARCHIVE_SIZE) {
+                        Timber.w("Archivio raggiunto limite dimensione (${totalSizeBytes.getFormattedSize()})")
+                        break
+                    }
                 }
-//            }
 
+                // 7. Aggiungi manifesto hash
+                addHashManifestToZip(zipOut, photoHashes)
+            }
+
+            // 2. ✅ DEBUG Total Size - Modifica il log finale (riga ~173)
             val finalSizeMB = totalSizeBytes / (1024.0 * 1024.0)
-            Timber.d("Archivio creato: $processedFiles file, ${finalSizeMB.toInt()}MB")
+            Timber.d("🎯 ARCHIVIO FINAL DEBUG:")
+            Timber.d("   📁 Processed files: $processedFiles")
+            Timber.d("   📏 Total bytes: $totalSizeBytes")
+            Timber.d("   📊 Total MB: ${finalSizeMB.toFloat()}")
+            Timber.d("   📦 Output path: $outputPath")
 
-            emit(ArchiveProgress.Completed(
-                archivePath = outputPath,
-                totalFiles = processedFiles,
-                totalSizeMB = finalSizeMB
-            ))
+            //val outputFile = File(outputPath)
+            if (outputFile.exists()) {
+                val zipSizeBytes = outputFile.length()
+                val zipSizeMB = zipSizeBytes / (1024.0 * 1024.0)
+                Timber.d("   🗜️ ZIP file size: $zipSizeBytes bytes (${zipSizeMB.toFloat()} MB)")
+
+                if (zipSizeBytes == 0L) {
+                    Timber.e("🚨 CRITICAL: ZIP file is EMPTY! ($outputPath)")
+                }
+            } else {
+                Timber.e("🚨 CRITICAL: ZIP file NOT CREATED! ($outputPath)")
+            }
+
+            Timber.d("Archivio creato: $processedFiles file, ${finalSizeMB.toFloat()}MB")
+
+            //val finalSizeMB = totalSizeBytes / (1024.0 * 1024.0)
+            //Timber.d("Archivio creato: $processedFiles file, ${finalSizeMB.toInt()}MB")
+
+            emit(
+                ArchiveProgress.Completed(
+                    archivePath = outputPath,
+                    totalFiles = processedFiles,
+                    totalSizeMB = finalSizeMB
+                )
+            )
 
         } catch (e: Exception) {
             Timber.e(e, "Errore creazione archivio foto")
@@ -238,12 +302,14 @@ class PhotoArchiveRepositoryImpl @Inject constructor(
 
                         // Progress update
                         val currentProgress = extractedFiles.toFloat() / totalFiles
-                        emit(ExtractionProgress.InProgress(
-                            extractedFiles = extractedFiles,
-                            totalFiles = totalFiles,
-                            currentFile = entryName,
-                            progress = currentProgress
-                        ))
+                        emit(
+                            ExtractionProgress.InProgress(
+                                extractedFiles = extractedFiles,
+                                totalFiles = totalFiles,
+                                currentFile = entryName,
+                                progress = currentProgress
+                            )
+                        )
 
                         if (!entry.isDirectory && !entryName.endsWith("MANIFEST.txt")) {
                             // 3. Estrai file normale
@@ -272,10 +338,12 @@ class PhotoArchiveRepositoryImpl @Inject constructor(
 
             Timber.d("Estrazione completata: $extractedFiles file estratti")
 
-            emit(ExtractionProgress.Completed(
-                outputDir = outputDir,
-                extractedFiles = extractedFiles
-            ))
+            emit(
+                ExtractionProgress.Completed(
+                    outputDir = outputDir,
+                    extractedFiles = extractedFiles
+                )
+            )
 
         } catch (e: Exception) {
             Timber.e(e, "Errore estrazione archivio foto")
@@ -357,8 +425,10 @@ class PhotoArchiveRepositoryImpl @Inject constructor(
 
                 // Verifica dimensione
                 if (photoFile.length() != photoInfo.sizeBytes) {
-                    warnings.add("Dimensione foto diversa: ${photoInfo.fileName} " +
-                            "(attesa: ${photoInfo.sizeBytes}, trovata: ${photoFile.length()})")
+                    warnings.add(
+                        "Dimensione foto diversa: ${photoInfo.fileName} " +
+                                "(attesa: ${photoInfo.sizeBytes}, trovata: ${photoFile.length()})"
+                    )
                 }
 
                 // Verifica hash

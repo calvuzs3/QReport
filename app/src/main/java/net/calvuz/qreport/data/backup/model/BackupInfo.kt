@@ -11,6 +11,7 @@ data class BackupInfo(
     val description: String?,
     val totalSizeMB: Double,
     val includesPhotos: Boolean,
+    val dirPath: String,
     val filePath: String,
     val appVersion: String,
     val recordCount: Int? = null,

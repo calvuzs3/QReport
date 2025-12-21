@@ -173,6 +173,7 @@ class BackupRepositoryImpl @Inject constructor(
      * Ripristina il sistema da backup
      */
     override suspend fun restoreFromBackup(
+        dirPath: String,
         backupPath: String,
         strategy: RestoreStrategy
     ): kotlinx.coroutines.flow.Flow<RestoreProgress> = kotlinx.coroutines.flow.flow {
@@ -224,8 +225,10 @@ class BackupRepositoryImpl @Inject constructor(
                             if (backupData.includesPhotos()) {
                                 emit(RestoreProgress.InProgress("Ripristino foto...", 0.65f))
 
-                                val photoArchivePath = backupFileManager.getPhotoArchivePathFromBackup(backupPath)
+                                val photoArchivePath = "${dirPath}/photos.zip" //backupFileManager.getPhotoArchivePathFromBackup(backupPath)
                                 val photosDir = backupFileManager.getPhotosDirectory()
+
+                                Timber.d("Ripristino foto\n   da $photoArchivePath\n   in $photosDir")
 
                                 photoArchiveRepository.extractPhotoArchive(
                                     archivePath = photoArchivePath,

@@ -15,6 +15,7 @@ class RestoreBackupUseCase @Inject constructor(
     private val backupRepository: BackupRepository
 ) {
     operator fun invoke(
+        dirPath: String,
         backupPath: String,
         strategy: RestoreStrategy = RestoreStrategy.REPLACE_ALL
     ): Flow<RestoreProgress> = flow {
@@ -27,6 +28,7 @@ class RestoreBackupUseCase @Inject constructor(
 
             // Delegate to repository
             backupRepository.restoreFromBackup(
+                dirPath = dirPath,
                 backupPath = backupPath,
                 strategy = strategy
             ).collect { progress ->

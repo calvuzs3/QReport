@@ -230,7 +230,7 @@ class BackupViewModel @Inject constructor(
                 }
 
                 // Procedi con restore
-                restoreBackupUseCase(backup.filePath, strategy).collect { progress ->
+                restoreBackupUseCase(backup.dirPath, backup.filePath, strategy).collect { progress ->
                     _restoreProgress.value = progress
 
                     when (progress) {

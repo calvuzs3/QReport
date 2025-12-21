@@ -27,6 +27,7 @@ interface BackupRepository {
      * Ripristina da backup
      */
     suspend fun restoreFromBackup(
+        dirPath: String,
         backupPath: String,
         strategy: RestoreStrategy = RestoreStrategy.REPLACE_ALL
     ): Flow<RestoreProgress>
