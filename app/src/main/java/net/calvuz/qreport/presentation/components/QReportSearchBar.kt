@@ -27,7 +27,7 @@ fun QReportSearchBar(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = {
-        Icon(Icons.Default.Search, contentDescription = null)
+        Icon(Icons.Default.Search, contentDescription = "Cerca")
     },
     maxLines: Int = 1
 ) {

@@ -1,50 +1,3 @@
-//plugins {
-//    alias(libs.plugins.android.application)
-//    alias(libs.plugins.kotlin.android)
-//}
-//
-//android {
-//    namespace = "net.calvuz.qreport"
-//    compileSdk = 35
-//
-//    defaultConfig {
-//        applicationId = "net.calvuz.qreport"
-//        minSdk = 33
-//        targetSdk = 35
-//        versionCode = 1
-//        versionName = "1.0"
-//
-//        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-//    }
-//
-//    buildTypes {
-//        release {
-//            isMinifyEnabled = false
-//            proguardFiles(
-//                getDefaultProguardFile("proguard-android-optimize.txt"),
-//                "proguard-rules.pro"
-//            )
-//        }
-//    }
-//    compileOptions {
-//        sourceCompatibility = JavaVersion.VERSION_11
-//        targetCompatibility = JavaVersion.VERSION_11
-//    }
-//    kotlinOptions {
-//        jvmTarget = "11"
-//    }
-//}
-//
-//dependencies {
-//
-//    implementation(libs.androidx.core.ktx)
-//    implementation(libs.androidx.appcompat)
-//    implementation(libs.material)
-//    testImplementation(libs.junit)
-//    androidTestImplementation(libs.androidx.junit)
-//    androidTestImplementation(libs.androidx.espresso.core)
-//}
-
 // QReport - build.gradle.kts (app level)
 // Versione: 1.0 - Ottobre 2025
 // Namespace: net.calvuz.qreport
@@ -53,6 +6,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.hilt.android)
     alias(libs.plugins.ksp)
     alias(libs.plugins.room)
@@ -65,11 +19,13 @@ android {
     defaultConfig {
         applicationId = "net.calvuz.qreport"
         minSdk = 33
+        //noinspection OldTargetApi
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // ✅ AGGIORNATO test runner per Hilt
+        testInstrumentationRunner = "net.calvuz.qreport.CustomTestRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
@@ -81,7 +37,6 @@ android {
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-DEBUG"
             manifestPlaceholders["appName"] = "QReport Debug"
-//            buildConfigField("boolean", "DEBUG", "true")
         }
 
         release {
@@ -92,7 +47,6 @@ android {
                 "proguard-rules.pro"
             )
             manifestPlaceholders["appName"] = "QReport"
-//            buildConfigField("boolean", "DEBUG", "false")
         }
     }
     compileOptions {
@@ -111,16 +65,20 @@ android {
         buildConfig = true
         compose = true
     }
-//    composeOptions {
-//        kotlinCompilerExtensionVersion = "1.5.8"
-//    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
 
-//    buildToolsVersion = "36.0.0"
+    // ✅ AGGIUNTO per test configuration
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
@@ -181,17 +139,37 @@ dependencies {
     // Permissions
     implementation(libs.accompanist.permissions)
 
-    // Testing
+    // Datastore
+    implementation(libs.datastore.preferences)
+
+    // ===== TESTING DEPENDENCIES =====
+
+    // Unit Tests
     testImplementation(libs.junit)
+//    testImplementation(libs.kotlinx.test)
+    testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.androidx.room.testing)
 
+    // ✅ HILT TESTING - Unit Tests
+    testImplementation(libs.hilt.android.testing)
+    kspTest(libs.hilt.android.compiler)
+
+    // ✅ ROBOLECTRIC - Unit Tests
+    testImplementation(libs.robolectric)
+
+    // Android Instrumented Tests
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
 
+    // ✅ HILT TESTING - Instrumented Tests
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.android.compiler)
+
     // Debug
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
 }

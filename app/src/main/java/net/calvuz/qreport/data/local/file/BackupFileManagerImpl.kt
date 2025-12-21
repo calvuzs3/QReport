@@ -1,6 +1,7 @@
 package net.calvuz.qreport.data.local.file
 
 import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.data.backup.BackupJsonSerializer
 import net.calvuz.qreport.data.backup.model.BackupInfo
@@ -23,7 +24,7 @@ import javax.inject.Singleton
 
 @Singleton
 class BackupFileManagerImpl @Inject constructor(
-    private val context: Context,
+    @ApplicationContext  private val context: Context,
     private val jsonSerializer: BackupJsonSerializer
 ) : BackupFileManager {
 
