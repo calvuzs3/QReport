@@ -20,6 +20,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
+import net.calvuz.qreport.presentation.backup.BackupScreen
 import net.calvuz.qreport.presentation.screen.home.HomeScreen
 import net.calvuz.qreport.presentation.screen.checkup.CheckUpListScreen
 import net.calvuz.qreport.presentation.screen.checkup.NewCheckUpScreen
@@ -71,28 +72,28 @@ sealed class QReportDestination(
     val unselectedIcon: ImageVector
 ) {
     object Home : QReportDestination(
-        route = "home",
+        route = QReportRoutes.HOME,
         title = "Home",
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home
     )
 
     object Clients : QReportDestination(
-        route = "clients",
+        route = QReportRoutes.CLIENTS,
         title = "Clienti",
         selectedIcon = Icons.Filled.Archive,
         unselectedIcon = Icons.Outlined.Archive
     )
 
     object CheckUps : QReportDestination(
-        route = "checkups",
+        route = QReportRoutes.CHECKUPS,
         title = "Check-up",
         selectedIcon = Icons.AutoMirrored.Filled.Assignment,
         unselectedIcon = Icons.AutoMirrored.Outlined.Assignment
     )
 
     object Settings : QReportDestination(
-        route = "settings",
+        route = QReportRoutes.SETTINGS,
         title = "Impostazioni",
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings
@@ -133,12 +134,15 @@ object QReportRoutes {
     const val FACILITY_CREATE = "facility_form/{clientId}"
     const val FACILITY_EDIT = "facility_form/{clientId}/{facilityId}"
 
-
     // FacilityIsland routes
     const val ISLAND_LIST = "islands/{facilityId}"
     const val ISLAND_DETAIL = "island_detail/{facilityId}/{islandId}"
     const val ISLAND_CREATE = "island_form/{facilityId}"
     const val ISLAND_EDIT = "island_form/{facilityId}/{islandId}"
+
+    // Backup
+    const val BACKUP = "backup"
+
 
     // Helper extension for URL encoding client names with spaces/special chars
     private fun String.encodeUrl(): String = URLEncoder.encode(this, "UTF-8")
@@ -278,7 +282,11 @@ fun QReportNavigation(
                 }
 
                 composable(QReportRoutes.SETTINGS) {
-                    SettingsScreen()
+                    SettingsScreen(
+                        onNavigateToBackup = {
+                            navController.navigate(QReportRoutes.BACKUP)
+                        }
+                    )
                 }
 
                 // ============================================================
@@ -969,6 +977,19 @@ fun QReportNavigation(
                             navController.navigate(QReportRoutes.islandCreateRoute(facilityId))
                         },
                         onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                // ============================================================
+                // ✅ BACKUP
+                // ============================================================
+
+                // ===== BACKUP SCREEN =====
+                composable(QReportRoutes.BACKUP) {
+                    BackupScreen(
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
                     )
                 }
             }

@@ -1,6 +1,7 @@
 package net.calvuz.qreport.util
 
 import kotlinx.datetime.*
+import net.calvuz.qreport.data.backup.model.BackupInfo
 import kotlin.time.Duration
 
 /**
@@ -184,5 +185,12 @@ object DateTimeUtils {
                 }
             }
         }
+    }
+
+    /**
+     * Formatta data in italiano
+     */
+    fun BackupInfo.getFormattedDate(): String {
+        return timestamp.toItalianDate()
     }
 }

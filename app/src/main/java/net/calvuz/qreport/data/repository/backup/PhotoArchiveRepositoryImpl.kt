@@ -5,6 +5,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.data.backup.model.ArchiveProgress
@@ -99,7 +100,7 @@ class PhotoArchiveRepositoryImpl @Inject constructor(
             var totalSizeBytes = 0L
             val photoHashes = mutableMapOf<String, String>()
 
-            withContext(Dispatchers.IO) {
+//            withContext(Dispatchers.IO) {
                 ZipOutputStream(BufferedOutputStream(FileOutputStream(outputFile))).use { zipOut ->
 
                     // Rename index as _ because it is not used
@@ -168,7 +169,7 @@ class PhotoArchiveRepositoryImpl @Inject constructor(
                     // 7. Aggiungi manifesto hash
                     addHashManifestToZip(zipOut, photoHashes)
                 }
-            }
+//            }
 
             val finalSizeMB = totalSizeBytes / (1024.0 * 1024.0)
             Timber.d("Archivio creato: $processedFiles file, ${finalSizeMB.toInt()}MB")
@@ -183,7 +184,7 @@ class PhotoArchiveRepositoryImpl @Inject constructor(
             Timber.e(e, "Errore creazione archivio foto")
             emit(ArchiveProgress.Error("Creazione archivio fallita: ${e.message}", e))
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
     // ===== EXTRACT PHOTO ARCHIVE =====
 

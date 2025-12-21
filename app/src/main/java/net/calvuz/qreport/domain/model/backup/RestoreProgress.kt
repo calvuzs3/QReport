@@ -14,7 +14,7 @@ sealed class RestoreProgress {
         val totalRecords: Int = 0
     ) : RestoreProgress()
 
-    data class Completed(val backupId: String) : RestoreProgress()
+    data class Completed(val backupId: String, val processedRecords: Int? = 0) : RestoreProgress()
 
     data class Error(val message: String, val throwable: Throwable? = null) : RestoreProgress()
 }

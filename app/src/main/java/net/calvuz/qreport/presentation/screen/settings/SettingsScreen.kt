@@ -1,6 +1,5 @@
-
 // ===============================
-// Settings Screen
+// Settings Screen - WITH BACKUP INTEGRATION
 // ===============================
 
 package net.calvuz.qreport.presentation.screen.settings
@@ -18,7 +17,8 @@ import androidx.compose.ui.unit.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToBackup: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier
@@ -53,11 +53,12 @@ fun SettingsScreen(
 
         item {
             SettingsSection(title = "Dati") {
+                // ===== BACKUP INTEGRATION ===== 
                 SettingsItem(
-                    title = "Backup Locale",
-                    subtitle = "Esporta tutti i dati",
+                    title = "Backup Database",
+                    subtitle = "Backup e ripristino dati QReport",
                     icon = Icons.Default.Backup,
-                    onClick = { }
+                    onClick = onNavigateToBackup  // ✅ Connected to navigation
                 )
                 SettingsItem(
                     title = "Pulizia Cache",
@@ -164,3 +165,38 @@ private fun SettingsItem(
         }
     }
 }
+
+/*
+=============================================================================
+                        SETTINGS SCREEN - BACKUP INTEGRATION
+=============================================================================
+
+MODIFICHE APPLICATE:
+
+✅ BACKUP NAVIGATION:
+   - Aggiunto parametro onNavigateToBackup: () -> Unit
+   - Collegato al SettingsItem "Backup Database"
+   - Aggiornato subtitle per riflettere funzionalità completa
+
+✅ VISUAL UPDATES:
+   - Cambiato "Backup Locale" → "Backup Database"
+   - Subtitle più descrittivo: "Backup e ripristino dati QReport"
+   - Icon rimane Icons.Default.Backup
+
+✅ INTEGRATION READY:
+   - Compatible con QReportNavigation modificato
+   - Callback pattern per navigation consistency
+   - Default value {} per backward compatibility
+
+USAGE EXAMPLE:
+
+composable(QReportRoutes.SETTINGS) {
+    SettingsScreen(
+        onNavigateToBackup = {
+            navController.navigate(QReportRoutes.BACKUP)
+        }
+    )
+}
+
+=============================================================================
+*/
