@@ -21,15 +21,13 @@ class GetAvailableBackupsUseCase @Inject constructor(
 
     suspend operator fun invoke(): List<BackupInfo> {
         return try {
-            Timber.d("Getting available backups")
-
             val backups = backupRepository.getAvailableBackups()
 
-            Timber.d("Trovati ${backups.size} backup disponibili")
+            Timber.d("Backup found ${backups.size}")
             backups.sortedByDescending { it.timestamp } // Most recent first
 
         } catch (e: Exception) {
-            Timber.e(e, "Error getting available backups")
+            Timber.e(e, "Getting available backups failed")
             emptyList()
         }
     }

@@ -2,7 +2,7 @@ package net.calvuz.qreport.data.backup.model
 
 data class BackupSummary(
     val totalBackups: Int,
-    val totalSizeMB: Long,
+    val totalSize: Long,
     val lastBackupTimestamp: kotlinx.datetime.Instant?,
     val hasPhotoBackups: Boolean,
     val oldestBackupTimestamp: kotlinx.datetime.Instant?
@@ -10,7 +10,7 @@ data class BackupSummary(
     companion object {
         fun empty() = BackupSummary(
             totalBackups = 0,
-            totalSizeMB = 0L,
+            totalSize = 0L,
             lastBackupTimestamp = null,
             hasPhotoBackups = false,
             oldestBackupTimestamp = null

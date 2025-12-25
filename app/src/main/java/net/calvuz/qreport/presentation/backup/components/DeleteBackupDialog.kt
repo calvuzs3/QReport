@@ -84,7 +84,7 @@ fun DeleteBackupDialog(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "📦 Dimensione: ${backup.getFormattedSize()}",
+                            text = "📦 Dimensione: ${backup.totalSize.getFormattedSize()}",
                             style = MaterialTheme.typography.bodyMedium
                         )
                         if (backup.description?.isNotEmpty() == true) {

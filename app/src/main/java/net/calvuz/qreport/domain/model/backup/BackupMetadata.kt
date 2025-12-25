@@ -4,10 +4,9 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import java.util.UUID
 
 /**
- * BackupMetadata - Informazioni sul backup
+ * BackupMetadata
  */
 @Serializable
 data class BackupMetadata(
@@ -23,15 +22,16 @@ data class BackupMetadata(
 ) {
     companion object {
         fun create(
+            id: String,
             appVersion: String,
             databaseVersion: Int,
             deviceInfo: DeviceInfo,
             backupType: BackupType = BackupType.FULL,
-            totalSize: Long = 0L,
+            totalSize: Long = 0L, // Updated after creation
             description: String? = null
         ): BackupMetadata {
             return BackupMetadata(
-                id = UUID.randomUUID().toString(),
+                id = id,
                 timestamp = Clock.System.now(),
                 appVersion = appVersion,
                 databaseVersion = databaseVersion,

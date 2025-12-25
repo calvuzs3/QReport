@@ -10,7 +10,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
-import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.model.camera.CameraSettings
 import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.photo.PhotoMetadata
@@ -21,6 +20,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
+import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.model.photo.PhotoLocation
 import net.calvuz.qreport.presentation.screen.photo.ImageInfo
 import java.io.InputStream

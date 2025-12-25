@@ -1,23 +1,22 @@
 package net.calvuz.qreport.data.repository.backup
 
+import kotlinx.datetime.Clock
 import net.calvuz.qreport.data.backup.model.ArchiveProgress
 import net.calvuz.qreport.data.backup.model.BackupInfo
 import net.calvuz.qreport.data.backup.model.ExtractionProgress
 import net.calvuz.qreport.domain.repository.backup.DatabaseExportRepository
 import net.calvuz.qreport.domain.model.backup.*
-import net.calvuz.qreport.domain.model.file.BackupFileManager
+import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.repository.backup.BackupRepository
 import net.calvuz.qreport.domain.repository.backup.PhotoArchiveRepository
 import net.calvuz.qreport.domain.repository.backup.SettingsBackupRepository
 import timber.log.Timber
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * BACKUP REPOSITORY IMPLEMENTATION PRINCIPALE
- *
- * Implementazione del BackupRepository che coordina tutti i componenti
- * del sistema backup (Database, Photos, Settings).
+ * Coordinates all backup system components (Database, Photos, Settings).
  */
 
 @Singleton
@@ -26,11 +25,11 @@ class BackupRepositoryImpl @Inject constructor(
     private val photoArchiveRepository: PhotoArchiveRepository,
     private val settingsBackupRepository: SettingsBackupRepository,
     private val jsonSerializer: net.calvuz.qreport.data.backup.BackupJsonSerializer,
-    private val backupFileManager: BackupFileManager
+    private val fileManager: FileManager
 ) : BackupRepository {
 
     /**
-     * Crea un backup completo del sistema
+     * Create a full backup
      */
     override suspend fun createFullBackup(
         includePhotos: Boolean,
@@ -39,48 +38,61 @@ class BackupRepositoryImpl @Inject constructor(
         description: String?
     ): kotlinx.coroutines.flow.Flow<BackupProgress> = kotlinx.coroutines.flow.flow {
 
-        emit(BackupProgress.InProgress("Inizializzazione backup...", 0f))
+        emit(BackupProgress.InProgress("Full backup start", 0f))
 
         try {
-            val startTime = System.currentTimeMillis()
+            // ID CREATION
             val backupId = java.util.UUID.randomUUID().toString()
+            var photoManifest = PhotoManifest.empty()
+            var photoError: String? = null
+            val startTime = Clock.System.now()
+            // Select a PATH
+            val archivePath = fileManager.getArchivePath(backupId)
+            // Select a Photos ArchivePath
+            val photoArchivePath = File(archivePath, "photos.zip").absolutePath
 
-            // 1. Validazione database
-            emit(BackupProgress.InProgress("Validazione database...", 0.05f))
+            // 1. Database validation
+            //
+            Timber.d("1. DB validation")
+            emit(BackupProgress.InProgress("1. Database validation", 0.05f))
             val validation = databaseExportRepository.validateDatabaseIntegrity()
-
             if (!validation.isValid) {
-                emit(BackupProgress.Error("Database non valido: ${validation.errors.joinToString()}"))
+                emit(BackupProgress.Error("- Database is invalid: ${validation.errors.joinToString()}"))
             } else {
-                // ✅ Continua solo se validazione OK
+                if (validation.warnings.isNotEmpty())
+                    for (w in validation.warnings)
+                        Timber.w("Backup warnings: $w")
 
-                if (validation.warnings.isNotEmpty()) {
-                    Timber.w("Backup warnings: ${validation.warnings.joinToString()}")
-                }
+                emit(BackupProgress.InProgress("- Database is valid", 0.09f))
 
                 // 2. Export database
-                emit(BackupProgress.InProgress("Export database...", 0.1f, currentTable = "Tutte"))
+                //
+                Timber.d("2. Export DB")
+                emit(BackupProgress.InProgress("2. Export DB", 0.1f, currentTable = "Tutte"))
                 val databaseBackup = databaseExportRepository.exportAllTables()
-
                 emit(BackupProgress.InProgress(
-                    "Database esportato",
+                    "- Database exported",
                     0.3f,
                     processedRecords = databaseBackup.getTotalRecordCount(),
                     totalRecords = databaseBackup.getTotalRecordCount()
                 ))
 
-                // 3. Backup impostazioni
-                emit(BackupProgress.InProgress("Backup impostazioni...", 0.35f))
+                // 3. Settings backup
+                //
+                Timber.d("3. Export settings")
+                emit(BackupProgress.InProgress("3. Export settings", 0.3f))
                 val settingsBackup = settingsBackupRepository.exportSettings()
+                emit(
+                    BackupProgress.InProgress(
+                        "- Settings exported", 0.35f))
 
                 // 4. Backup foto (se richiesto)
-                var photoManifest = PhotoManifest.empty()
-                var photoError: String? = null
+                //
+                                if (includePhotos) {
+                    Timber.d("4. Export photos")
+                    emit(BackupProgress.InProgress("4. Export photos", 0.4f))
 
-                if (includePhotos) {
-                    emit(BackupProgress.InProgress("Backup foto...", 0.4f))
-
-                    val photoArchivePath = backupFileManager.getPhotoArchivePath(backupId)
+                    Timber.d ("PhotoPath = $photoArchivePath")
 
                     photoArchiveRepository.createPhotoArchive(
                         outputPath = photoArchivePath,
@@ -89,7 +101,7 @@ class BackupRepositoryImpl @Inject constructor(
                         when (progress) {
                             is ArchiveProgress.InProgress -> {
                                 emit(BackupProgress.InProgress(
-                                    "Backup foto: ${progress.processedFiles}/${progress.totalFiles}",
+                                    "- Photos backup: ${progress.processedFiles}/${progress.totalFiles}",
                                     0.4f + (progress.progress * 0.4f),
                                     currentTable = "Photos",
                                     processedRecords = progress.processedFiles,
@@ -106,17 +118,22 @@ class BackupRepositoryImpl @Inject constructor(
                     }
                 }
 
-                // Verifica errori foto
+                // Photo export error check
+                //
                 if (photoError != null) {
-                    emit(BackupProgress.Error("Backup foto fallito: $photoError"))
+                    emit(BackupProgress.Error("Export photos failed: $photoError"))
                 } else {
-                    // 5. Creazione metadata
-                    emit(BackupProgress.InProgress("Creazione metadata...", 0.85f))
+                    emit(BackupProgress.InProgress("- Photos exported", 0.8f))
+                    // 5. Metadata creation
+                    //
+                    Timber.d("5. Metadata creation")
+                    emit(BackupProgress.InProgress("5. Metadata creation", 0.85f))
                     val deviceInfo = DeviceInfo.current()
                     val appVersion = getAppVersion()
                     val databaseVersion = getDatabaseVersion()
 
                     val metadata = BackupMetadata.create(
+                        id = backupId,
                         appVersion = appVersion,
                         databaseVersion = databaseVersion,
                         deviceInfo = deviceInfo,
@@ -126,7 +143,8 @@ class BackupRepositoryImpl @Inject constructor(
                     )
 
                     // 6. Assemblaggio backup finale
-                    emit(BackupProgress.InProgress("Assemblaggio backup...", 0.9f))
+                    //
+                    emit(BackupProgress.InProgress("Finalizing backup", 0.9f))
                     val backupData = BackupData(
                         metadata = metadata,
                         database = databaseBackup,
@@ -135,9 +153,11 @@ class BackupRepositoryImpl @Inject constructor(
                     )
 
                     // 7. Calcolo checksum
+                    //
+                    emit(BackupProgress.InProgress("Checking checksum", 0.95f))
                     val checksumResult = jsonSerializer.calculateBackupChecksum(backupData)
                     if (checksumResult.isFailure) {
-                        emit(BackupProgress.Error("Calcolo checksum fallito"))
+                        emit(BackupProgress.Error("Checksum check failed"))
                     } else {
                         val finalBackupData = backupData.copy(
                             metadata = metadata.copy(
@@ -147,10 +167,12 @@ class BackupRepositoryImpl @Inject constructor(
                         )
 
                         // 8. Salvataggio finale
-                        emit(BackupProgress.InProgress("Salvataggio backup...", 0.95f))
-                        val backupPath = backupFileManager.saveBackup(finalBackupData, backupMode)
+                        //
+                        Timber.d("Saving Backup in $archivePath")
+                        emit(BackupProgress.InProgress("Saving Backup", 0.95f))
+                        val backupPath = fileManager.saveBackup(finalBackupData, backupMode, archivePath)
 
-                        val duration = System.currentTimeMillis() - startTime
+                        val duration = Clock.System.now() - startTime
 
                         emit(BackupProgress.Completed(
                             backupId = backupId,
@@ -164,13 +186,13 @@ class BackupRepositoryImpl @Inject constructor(
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante creazione backup")
-            emit(BackupProgress.Error("Backup fallito: ${e.message}", e))
+            Timber.e(e, "Backup creation failed")
+            emit(BackupProgress.Error("Backup failed: ${e.message}", e))
         }
     }
 
     /**
-     * Ripristina il sistema da backup
+     * Restore from backup
      */
     override suspend fun restoreFromBackup(
         dirPath: String,
@@ -178,34 +200,36 @@ class BackupRepositoryImpl @Inject constructor(
         strategy: RestoreStrategy
     ): kotlinx.coroutines.flow.Flow<RestoreProgress> = kotlinx.coroutines.flow.flow {
 
-        emit(RestoreProgress.InProgress("Caricamento backup...", 0f))
+        emit(RestoreProgress.InProgress("Loading backup", 0f))
 
         try {
             // 1. Caricamento backup
-            val backupData = backupFileManager.loadBackup(backupPath)
+            //
+            val backupData = fileManager.loadBackup(backupPath)
 
             // 2. Validazione backup
-            emit(RestoreProgress.InProgress("Validazione backup...", 0.05f))
+            //
+            emit(RestoreProgress.InProgress("Validating backup", 0.05f))
             val validation = validateBackup(backupPath)
 
             if (!validation.isValid) {
-                emit(RestoreProgress.Error("Backup non valido: ${validation.errors.joinToString()}"))
+                emit(RestoreProgress.Error("Backup is invalid: ${validation.errors.joinToString()}"))
             } else {
-                // ✅ Continua solo se validazione OK
 
-                // 3. TODO: Verifica checksum
-                emit(RestoreProgress.InProgress("Verifica integrità...", 0.1f))
-//                val checksumValid = jsonSerializer.verifyBackupIntegrity(
-//                    backupData,
-//                    backupData.metadata.checksum
-//                )
-                val checksumValid = true
+                // 3. Checksum check
+                //
+                emit(RestoreProgress.InProgress("Checking checksum", 0.1f))
+                val checksumValid = jsonSerializer.verifyBackupIntegrity(
+                    backupData
+                )
 
                 if (!checksumValid) {
-                    emit(RestoreProgress.Error("Checksum backup non valido - possibile corruzione"))
+                    emit(RestoreProgress.Error("Checksum invalid - possible corruption"))
                 } else {
-                    // 4. Ripristino database
-                    emit(RestoreProgress.InProgress("Ripristino database...", 0.2f))
+
+                    // 4. DB restoration
+                    //
+                    emit(RestoreProgress.InProgress("Restoring database", 0.2f))
                     val importResult = databaseExportRepository.importAllTables(
                         backupData.database,
                         strategy
@@ -214,21 +238,20 @@ class BackupRepositoryImpl @Inject constructor(
                     importResult.fold(
                         onSuccess = {
                             emit(RestoreProgress.InProgress(
-                                "Database ripristinato",
+                                "Database restored",
                                 0.6f,
                                 processedRecords = backupData.database.getTotalRecordCount()
                             ))
 
                             // 5. Ripristino foto
+                            //
                             var photoError: String? = null
 
                             if (backupData.includesPhotos()) {
-                                emit(RestoreProgress.InProgress("Ripristino foto...", 0.65f))
+                                emit(RestoreProgress.InProgress("Restoring photos", 0.65f))
 
-                                val photoArchivePath = "${dirPath}/photos.zip" //backupFileManager.getPhotoArchivePathFromBackup(backupPath)
-                                val photosDir = backupFileManager.getPhotosDirectory()
-
-                                Timber.d("Ripristino foto\n   da $photoArchivePath\n   in $photosDir")
+                                val photoArchivePath = "${dirPath}/photos.zip" //fileManager.getPhotoArchivePathFromBackup(backupPath)
+                                val photosDir = fileManager.getPhotosDirectory()
 
                                 photoArchiveRepository.extractPhotoArchive(
                                     archivePath = photoArchivePath,
@@ -237,7 +260,7 @@ class BackupRepositoryImpl @Inject constructor(
                                     when (progress) {
                                         is ExtractionProgress.InProgress -> {
                                             emit(RestoreProgress.InProgress(
-                                                "Ripristino foto: ${progress.extractedFiles}/${progress.totalFiles}",
+                                                "Restoring photos: ${progress.extractedFiles}/${progress.totalFiles}",
                                                 0.65f + (progress.progress * 0.25f),
                                                 currentTable = "Photos",
                                                 processedRecords = progress.extractedFiles,
@@ -254,12 +277,13 @@ class BackupRepositoryImpl @Inject constructor(
                                 }
                             }
 
-                            // Verifica errori foto
+                            // Check for photos errors
                             if (photoError != null) {
-                                emit(RestoreProgress.Error("Ripristino foto fallito: $photoError"))
+                                emit(RestoreProgress.Error("Photos restoration failed: $photoError"))
                             } else {
                                 // 6. Ripristino impostazioni
-                                emit(RestoreProgress.InProgress("Ripristino impostazioni...", 0.95f))
+                                //
+                                emit(RestoreProgress.InProgress("Restoring settings", 0.95f))
                                 val settingsResult = settingsBackupRepository.importSettings(backupData.settings)
 
                                 settingsResult.fold(
@@ -267,76 +291,76 @@ class BackupRepositoryImpl @Inject constructor(
                                         emit(RestoreProgress.Completed(backupData.metadata.id))
                                     },
                                     onFailure = { error ->
-                                        Timber.w(error, "Ripristino impostazioni fallito, ma continuando")
+                                        Timber.w(error, "Settings restoration failed, continuing..")
                                         emit(RestoreProgress.Completed(backupData.metadata.id))
                                     }
                                 )
                             }
                         },
                         onFailure = { error ->
-                            emit(RestoreProgress.Error("Ripristino database fallito: ${error.message}"))
+                            emit(RestoreProgress.Error("Database restoration failed: ${error.message}"))
                         }
                     )
                 }
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante ripristino backup")
-            emit(RestoreProgress.Error("Ripristino fallito: ${e.message}", e))
+            Timber.e(e, "Backup restoration failed")
+            emit(RestoreProgress.Error("Backup restoration failed: ${e.message}", e))
         }
     }
 
     /**
-     * Lista i backup disponibili
+     * Available backup listing
      */
     override suspend fun getAvailableBackups(): List<BackupInfo> {
         return try {
-            backupFileManager.listAvailableBackups()
+            fileManager.listAvailableBackups()
         } catch (e: Exception) {
-            Timber.e(e, "Errore caricamento lista backup")
+            Timber.e(e, "Available backup listing failed")
             emptyList()
         }
     }
 
     /**
-     * Elimina un backup
+     * Delete backup
      */
     override suspend fun deleteBackup(backupId: String): Result<Unit> {
         return try {
-            backupFileManager.deleteBackup(backupId)
+            fileManager.deleteBackup(backupId)
         } catch (e: Exception) {
-            Timber.e(e, "Errore eliminazione backup $backupId")
+            Timber.e(e, "Delete backup failed (id:$backupId)")
             Result.failure(e)
         }
     }
 
     /**
-     * Valida un backup
+     * Validate backup
      */
     override suspend fun validateBackup(backupPath: String): BackupValidationResult {
         return try {
-            backupFileManager.validateBackupFile(backupPath)
+            fileManager.validateBackupFile(backupPath)
         } catch (e: Exception) {
-            Timber.e(e, "Errore validazione backup")
-            BackupValidationResult.invalid(listOf("Errore validazione: ${e.message}"))
+            Timber.e(e, "Backup Validation failed")
+            BackupValidationResult.invalid(listOf("Backup Validation failed: ${e.message}"))
         }
     }
 
     /**
-     * Stima dimensione backup
+     * Backup size estimation
      */
     override suspend fun getEstimatedBackupSize(includePhotos: Boolean): Long {
         return try {
             var estimatedSize = 0L
 
-            // Database size (approssimativo)
+            // Database size (approximately)
             val recordCount = databaseExportRepository.getEstimatedRecordCount()
-            estimatedSize += recordCount * 1024L // ~1KB per record
+            estimatedSize += recordCount * 100 // ~100 bytes per record
 
             // Photos size
             if (includePhotos) {
                 val photoManifest = photoArchiveRepository.generatePhotoManifest()
-                estimatedSize += (photoManifest.totalSizeMB * 1024 * 1024).toLong()
+                estimatedSize += (photoManifest.totalSize)
             }
 
             // Settings (piccolo)
@@ -345,7 +369,7 @@ class BackupRepositoryImpl @Inject constructor(
             estimatedSize
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore stima dimensione backup")
+            Timber.e(e, "Backup size estimation failed")
             0L
         }
     }
@@ -359,7 +383,7 @@ class BackupRepositoryImpl @Inject constructor(
 
     private fun getDatabaseVersion(): Int {
         // TODO: Implementa lettura versione database
-        return 1
+        return 3
     }
 
     private fun calculateTotalBackupSize(
@@ -369,10 +393,10 @@ class BackupRepositoryImpl @Inject constructor(
         var totalSize = 0L
 
         // JSON size estimation
-        totalSize += backupData.database.getTotalRecordCount() * 1024L
+        totalSize += backupData.database.getTotalRecordCount() * 100
 
         // Photo archive size
-        totalSize += (photoManifest.totalSizeMB * 1024 * 1024).toLong()
+        totalSize += photoManifest.totalSize
 
         // Settings size (small)
         totalSize += 64L * 1024L
@@ -380,4 +404,3 @@ class BackupRepositoryImpl @Inject constructor(
         return totalSize
     }
 }
-

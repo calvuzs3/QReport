@@ -1,7 +1,6 @@
 package net.calvuz.qreport.data.backup
 
 import androidx.room.withTransaction
-import kotlinx.datetime.Clock
 import net.calvuz.qreport.data.local.dao.*
 import net.calvuz.qreport.data.local.QReportDatabase
 import net.calvuz.qreport.data.local.entity.*
@@ -11,10 +10,10 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * FASE 5.2 - DATABASE IMPORTER
- *
- * Gestisce l'import sicuro di DatabaseBackup nel database QReport.
- * Include gestione FK dependencies, validazione e rollback su errori.
+ * Secure import of DatabaseBackup into db
+ * - FK dependencies
+ * - validation
+ * - rollback on errors
  */
 
 @Singleton
@@ -32,11 +31,10 @@ class DatabaseImporter @Inject constructor(
 ) {
 
     /**
-     * Importa tutti i dati da DatabaseBackup in una singola transazione
-     *
-     * @param databaseBackup Backup da importare
-     * @param strategy Strategia di import (REPLACE_ALL, MERGE, etc.)
-     * @return Result<Unit> per gestione errori
+     * Import data with a single transaction
+     * @param databaseBackup Backup
+     * @param strategy Import strategy (REPLACE_ALL, MERGE, etc.)
+     * @return Result<Unit> for error handling
      */
     suspend fun importAllTables(
         databaseBackup: DatabaseBackup,
@@ -44,7 +42,7 @@ class DatabaseImporter @Inject constructor(
     ): Result<Unit> = try {
 
         database.withTransaction {
-            Timber.d("Inizio import database - ${databaseBackup.getTotalRecordCount()} record")
+            Timber.v("Database import begin\n- records: ${databaseBackup.getTotalRecordCount()}")
             val startTime = System.currentTimeMillis()
 
             when (strategy) {
@@ -54,22 +52,22 @@ class DatabaseImporter @Inject constructor(
                 }
                 RestoreStrategy.MERGE -> {
                     // TODO: Implementazione merge (future)
-                    throw UnsupportedOperationException("Merge strategy non ancora implementata")
+                    throw UnsupportedOperationException("Merge strategy not implemented yet")
                 }
                 RestoreStrategy.SELECTIVE -> {
                     // TODO: Implementazione selettiva (future)
-                    throw UnsupportedOperationException("Selective strategy non ancora implementata")
+                    throw UnsupportedOperationException("Selective strategy not implemented yet")
                 }
             }
 
             // Validazione post-import
             val validation = validateImportedData(databaseBackup)
             if (!validation.isValid) {
-                throw DatabaseImportException("Validazione post-import fallita: ${validation.errors.joinToString()}")
+                throw DatabaseImportException("Post-import validation failed: ${validation.errors.joinToString()}")
             }
 
             val duration = System.currentTimeMillis() - startTime
-            Timber.d("Import completato con successo in ${duration}ms")
+            Timber.v("Import completed in ${duration} ms")
 
             // Log finale
             logImportStatistics()
@@ -78,140 +76,141 @@ class DatabaseImporter @Inject constructor(
         Result.success(Unit)
 
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante import database")
-        Result.failure(DatabaseImportException("Import fallito: ${e.message}", e))
+        Timber.e(e, "Database import failed")
+        Result.failure(DatabaseImportException("Database import failed: ${e.message}", e))
     }
 
     /**
-     * Cancella tutte le tabelle nell'ordine FK inverso
+     * Delete all tables in FK inverse order
      */
     private suspend fun clearAllTablesInOrder() {
-        Timber.d("Pulizia database - eliminazione in ordine FK inverso...")
+        Timber.v("Database cleaning - FK inverse order")
 
         // Ordine critico: elimina prima le tabelle con FK, poi quelle referenziate
         try {
             // 1. Associazioni (dipende da checkups + facility_islands)
             checkUpAssociationDao.deleteAll()
-            Timber.d("Cleared checkup_island_associations")
+            Timber.v("Cleared checkup_island_associations")
 
             // 2. Foto (dipende da check_items)
             photoDao.deleteAll()
-            Timber.d("Cleared photos")
+            Timber.v("Cleared photos")
 
             // 3. Check items (dipende da checkups)
             checkItemDao.deleteAll()
-            Timber.d("Cleared check_items")
+            Timber.v("Cleared check_items")
 
             // 4. Spare parts (dipende da checkups)
             sparePartDao.deleteAll()
-            Timber.d("Cleared spare_parts")
+            Timber.v("Cleared spare_parts")
 
             // 5. CheckUps (dipende da facility_islands via associations)
             checkUpDao.deleteAll()
-            Timber.d("Cleared checkups")
+            Timber.v("Cleared checkups")
 
             // 6. Contatti (dipende da clients)
             contactDao.deleteAll()
-            Timber.d("Cleared contacts")
+            Timber.v("Cleared contacts")
 
             // 7. Facility Islands (dipende da facilities)
             facilityIslandDao.deleteAll()
-            Timber.d("Cleared facility_islands")
+            Timber.v("Cleared facility_islands")
 
             // 8. Facilities (dipende da clients)
             facilityDao.deleteAll()
-            Timber.d("Cleared facilities")
+            Timber.v("Cleared facilities")
 
             // 9. Clients (tabella radice)
             clientDao.deleteAll()
-            Timber.d("Cleared clients")
+            Timber.v("Cleared clients")
 
-            Timber.d("Database completamente pulito")
+            Timber.v("Database cleared")
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante pulizia database")
+            Timber.e(e, "Database clearing failed")
             throw DatabaseImportException("Pulizia database fallita: ${e.message}", e)
         }
     }
 
     /**
-     * Importa tutte le tabelle nell'ordine delle dipendenze FK
+     * Import tables in FK order
      */
     private suspend fun importAllTablesInOrder(backup: DatabaseBackup) {
-        Timber.d("Importazione dati nell'ordine FK dependencies...")
+
+        Timber.v("Database import - FK order")
 
         try {
             // 1. Clients (nessuna dipendenza)
             if (backup.clients.isNotEmpty()) {
                 clientDao.insertAllFromBackup(backup.clients.map { it.toEntity() })
-                Timber.d("Imported ${backup.clients.size} clients")
+                Timber.v("Imported ${backup.clients.size} clients")
             }
 
             // 2. Facilities (dipende da clients)
             if (backup.facilities.isNotEmpty()) {
                 facilityDao.insertAllFromBackup(backup.facilities.map { it.toEntity() })
-                Timber.d("Imported ${backup.facilities.size} facilities")
+                Timber.v("Imported ${backup.facilities.size} facilities")
             }
 
             // 3. Contacts (dipende da clients)
             if (backup.contacts.isNotEmpty()) {
                 contactDao.insertAllFromBackup(backup.contacts.map { it.toEntity() })
-                Timber.d("Imported ${backup.contacts.size} contacts")
+                Timber.v("Imported ${backup.contacts.size} contacts")
             }
 
             // 4. Facility Islands (dipende da facilities)
             if (backup.facilityIslands.isNotEmpty()) {
                 facilityIslandDao.insertAllFromBackup(backup.facilityIslands.map { it.toEntity() })
-                Timber.d("Imported ${backup.facilityIslands.size} facility islands")
+                Timber.v("Imported ${backup.facilityIslands.size} facility islands")
             }
 
             // 5. CheckUps (dipende da facility_islands tramite associations)
             if (backup.checkUps.isNotEmpty()) {
                 checkUpDao.insertAllFromBackup(backup.checkUps.map { it.toEntity() })
-                Timber.d("Imported ${backup.checkUps.size} checkups")
+                Timber.v("Imported ${backup.checkUps.size} checkups")
             }
 
             // 6. Check Items (dipende da checkups)
             if (backup.checkItems.isNotEmpty()) {
                 checkItemDao.insertAllFromBackup(backup.checkItems.map { it.toEntity() })
-                Timber.d("Imported ${backup.checkItems.size} check items")
+                Timber.v("Imported ${backup.checkItems.size} check items")
             }
 
             // 7. Photos (dipende da check_items)
             if (backup.photos.isNotEmpty()) {
                 photoDao.insertAllFromBackup(backup.photos.map { it.toEntity() })
-                Timber.d("Imported ${backup.photos.size} photos")
+                Timber.v("Imported ${backup.photos.size} photos")
             }
 
             // 8. Spare Parts (dipende da checkups)
             if (backup.spareParts.isNotEmpty()) {
                 sparePartDao.insertAllFromBackup(backup.spareParts.map { it.toEntity() })
-                Timber.d("Imported ${backup.spareParts.size} spare parts")
+                Timber.v("Imported ${backup.spareParts.size} spare parts")
             }
 
             // 9. Associations (dipende da checkups + facility_islands)
             if (backup.checkUpAssociations.isNotEmpty()) {
                 checkUpAssociationDao.insertAllFromBackup(backup.checkUpAssociations.map { it.toEntity() })
-                Timber.d("Imported ${backup.checkUpAssociations.size} checkup associations")
+                Timber.v("Imported ${backup.checkUpAssociations.size} checkup associations")
             }
 
-            Timber.d("Import di tutte le tabelle completato con successo")
+            Timber.v("Database import completed")
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante import tabelle")
+            Timber.e(e, "Database import failed")
             throw DatabaseImportException("Import tabelle fallito: ${e.message}", e)
         }
     }
 
     /**
-     * Valida i dati importati confrontando con backup originale
+     * Post-import validation
      */
     private suspend fun validateImportedData(originalBackup: DatabaseBackup): BackupValidationResult {
         return try {
             val errors = mutableListOf<String>()
             val warnings = mutableListOf<String>()
 
-            Timber.d("Validazione post-import...")
+            Timber.v("Post-import validation")
 
             // Verifica conteggi record
             val importedCounts = mapOf(
@@ -241,13 +240,13 @@ class DatabaseImporter @Inject constructor(
             for ((table, expectedCount) in expectedCounts) {
                 val actualCount = importedCounts[table] ?: 0
                 if (actualCount != expectedCount) {
-                    errors.add("$table: attesi $expectedCount record, trovati $actualCount")
+                    errors.add("$table: expected $expectedCount records, found $actualCount")
                 } else {
-                    Timber.d("✓ $table: $actualCount record importati correttamente")
+                    Timber.v("✓ $table: $actualCount records correctly imported")
                 }
             }
 
-            // Verifica integrità FK (sample)
+            // Check FK integrity (sample)
             if (originalBackup.checkItems.isNotEmpty()) {
                 val orphanedItems = database.query(
                     "SELECT COUNT(*) FROM check_items ci WHERE NOT EXISTS (SELECT 1 FROM checkups c WHERE c.id = ci.checkup_id)",
@@ -258,14 +257,14 @@ class DatabaseImporter @Inject constructor(
                 }
 
                 if (orphanedItems > 0) {
-                    errors.add("Trovati $orphanedItems check items senza checkup parent")
+                    errors.add("Found $orphanedItems orphaned check items")
                 }
             }
 
             val totalExpected = expectedCounts.values.sum()
             val totalImported = importedCounts.values.sum()
 
-            Timber.d("Validazione completata - Attesi: $totalExpected, Importati: $totalImported")
+            Timber.v("Validation completed\n- expected: $totalExpected\nimported: $totalImported")
 
             BackupValidationResult(
                 isValid = errors.isEmpty(),
@@ -274,13 +273,13 @@ class DatabaseImporter @Inject constructor(
             )
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante validazione post-import")
-            BackupValidationResult.invalid(listOf("Errore validazione: ${e.message}"))
+            Timber.e(e, "Post-import validation failed")
+            BackupValidationResult.invalid(listOf("Validation failed: ${e.message}"))
         }
     }
 
     /**
-     * Log statistiche finali import
+     * Log final import stats
      */
     private suspend fun logImportStatistics() {
         try {
@@ -297,8 +296,8 @@ class DatabaseImporter @Inject constructor(
             )
 
             val total = stats.values.sum()
-            Timber.d("🎉 DATABASE IMPORT COMPLETATO:")
-            Timber.d("📊 Totale record importati: $total")
+            Timber.v("DATABASE IMPORT COMPLETED")
+            Timber.v("- imported records: $total")
 
             for ((name, count) in stats) {
                 if (count > 0) {
@@ -307,13 +306,13 @@ class DatabaseImporter @Inject constructor(
             }
 
         } catch (e: Exception) {
-            Timber.w(e, "Errore nel logging statistiche")
+            Timber.w(e, "Final import stats logging failed")
         }
     }
 }
 
 /**
- * Eccezione custom per errori di import
+ * Custom exception for import errors
  */
 class DatabaseImportException(
     message: String,
@@ -368,7 +367,7 @@ fun CheckItemBackup.toEntity(): CheckItemEntity {
         status = status,
         criticality = criticality,
         notes = notes,
-        checkedAt = checkedAt?.let { Clock.System.now() },
+        checkedAt = checkedAt,
         orderIndex = orderIndex
     )
 }
@@ -518,45 +517,3 @@ fun CheckUpAssociationBackup.toEntity(): CheckUpIslandAssociationEntity {
         updatedAt = updatedAt.toEpochMilliseconds()
     )
 }
-
-/*
-=============================================================================
-                            UTILIZZO NELL'APPLICAZIONE
-=============================================================================
-
-ESEMPIO - RestoreBackupUseCase:
-
-class RestoreBackupUseCase @Inject constructor(
-    private val databaseImporter: DatabaseImporter,
-    private val photoArchiver: PhotoArchiver
-) {
-
-    suspend operator fun invoke(
-        backupPath: String,
-        strategy: RestoreStrategy
-    ): Flow<RestoreProgress> = flow {
-
-        emit(RestoreProgress.InProgress("Caricamento backup...", 0f))
-        val backupData = loadBackupFromPath(backupPath)
-
-        emit(RestoreProgress.InProgress("Ripristino database...", 0.2f))
-        val importResult = databaseImporter.importAllTables(
-            backupData.database,
-            strategy
-        )
-
-        importResult.fold(
-            onSuccess = {
-                emit(RestoreProgress.InProgress("Ripristino foto...", 0.8f))
-                // ... photo restore logic
-                emit(RestoreProgress.Completed(backupData.metadata.id))
-            },
-            onFailure = { error ->
-                emit(RestoreProgress.Error("Import fallito: ${error.message}", error))
-            }
-        )
-    }
-}
-
-=============================================================================
-*/

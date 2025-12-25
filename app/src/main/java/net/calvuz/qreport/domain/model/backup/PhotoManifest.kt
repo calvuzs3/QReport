@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class PhotoManifest(
     val totalPhotos: Int,
-    val totalSizeMB: Double,
+    val totalSize: Long,
     val photos: List<PhotoBackupInfo>,
     val includesThumbnails: Boolean
 ) {
@@ -16,7 +16,7 @@ data class PhotoManifest(
         fun empty(): PhotoManifest {
             return PhotoManifest(
                 totalPhotos = 0,
-                totalSizeMB = 0.0,
+                totalSize = 0L,
                 photos = emptyList(),
                 includesThumbnails = false
             )

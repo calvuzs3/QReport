@@ -193,4 +193,16 @@ object DateTimeUtils {
     fun BackupInfo.getFormattedDate(): String {
         return timestamp.toItalianDate()
     }
+
+    /**
+     * Formatta timestamp per nomi directory (YYYYMMDD_HHMMSS)
+     */
+    fun formatTimestampToDateTime(instant: Instant): String {
+        // Format: 20241220_143022
+        return instant.toString()
+            .replace("T", "_")
+            .replace(":", "")
+            .replace("-", "")
+            .substring(0, 15)
+    }
 }

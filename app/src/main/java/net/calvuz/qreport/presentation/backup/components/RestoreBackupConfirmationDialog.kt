@@ -88,7 +88,7 @@ fun RestoreBackupConfirmationDialog(
                                 style = MaterialTheme.typography.bodySmall
                             )
                             Text(
-                                text = "📦 ${backup.getFormattedSize()}",
+                                text = "📦 ${backup.totalSize.getFormattedSize()}",
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }

@@ -12,10 +12,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * FASE 5.2 - DATABASE EXPORT REPOSITORY IMPLEMENTATION
- *
- * Implementazione concreta del repository per export/import database.
- * Coordina DatabaseExporter e DatabaseImporter seguendo Clean Architecture.
+ * Coordinates DatabaseExporter e DatabaseImporter following the Clean Architecture.
  */
 
 @Singleton
@@ -25,59 +22,58 @@ class DatabaseExportRepositoryImpl @Inject constructor(
 ) : DatabaseExportRepository {
 
     /**
-     * Esporta tutte le tabelle del database
+     * Export all tables
      */
     override suspend fun exportAllTables(): DatabaseBackup {
-        Timber.Forest.d("Inizio export database via repository")
+        Timber.Forest.d("Export db tables via repository")
 
         return try {
             databaseExporter.exportAllTables()
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Errore export database in repository")
+            Timber.Forest.e(e, "Export db tables via repository failed")
             throw e
         }
     }
 
     /**
-     * Importa tutte le tabelle nel database
+     * Import all tables
      */
     override suspend fun importAllTables(
         databaseBackup: DatabaseBackup,
         strategy: RestoreStrategy
     ): Result<Unit> {
-        Timber.Forest.d("Inizio import database via repository - strategia: $strategy")
+        Timber.Forest.d("Import db tables via repository (strategy: $strategy)")
 
         return try {
             databaseImporter.importAllTables(databaseBackup, strategy)
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Errore import database in repository")
+            Timber.Forest.e(e, "Import db tables via repository failed")
             Result.failure(e)
         }
     }
 
     /**
-     * Valida l'integrità del database corrente
+     * DB integrity check
      */
     override suspend fun validateDatabaseIntegrity(): BackupValidationResult {
-        Timber.Forest.d("Validazione integrità database")
+        Timber.Forest.d("Database integrity check")
 
         return try {
             databaseExporter.validateDatabaseIntegrity()
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Errore validazione database")
-            BackupValidationResult.Companion.invalid(listOf("Errore validazione: ${e.message}"))
+            Timber.Forest.e(e, "Database integrity check failed")
+            BackupValidationResult.Companion.invalid(listOf("Database integrity check failed: ${e.message}"))
         }
     }
 
     /**
-     * Pulisce tutte le tabelle del database
-     * ATTENZIONE: Operazione irreversibile!
+     * Clear all tables
+     * tips: use DatabaseImporter for a secure clean up with FK order
      */
     override suspend fun clearAllTables(): Result<Unit> {
-        Timber.Forest.w("⚠️  CLEAR ALL TABLES - Operazione irreversibile richiesta")
+        Timber.Forest.w("CLEAR ALL TABLES")
 
         return try {
-            // Usa l'importer per clear sicuro con ordine FK
             val emptyBackup = DatabaseBackup(
                 checkUps = emptyList(),
                 checkItems = emptyList(),
@@ -91,23 +87,23 @@ class DatabaseExportRepositoryImpl @Inject constructor(
                 exportedAt = Clock.System.now()
             )
 
-            // Import backup vuoto con REPLACE_ALL = clear completo
+            // Import empty backup with strategy REPLACE_ALL
             databaseImporter.importAllTables(emptyBackup, RestoreStrategy.REPLACE_ALL)
 
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Errore clear database")
+            Timber.Forest.e(e, "Clear all tables failed")
             Result.failure(e)
         }
     }
 
     /**
-     * Conta i record totali stimati nel database
+     * Count total records
      */
     override suspend fun getEstimatedRecordCount(): Int {
         return try {
             databaseExporter.getEstimatedRecordCount()
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Errore conteggio record")
+            Timber.Forest.e(e, "Estimated record count failed")
             0
         }
     }

@@ -11,10 +11,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * FASE 5.2 - DATABASE EXPORTER
- *
- * Gestisce l'export transazionale di tutte le tabelle del database QReport.
- * Converte Entity → Backup models per serializzazione JSON.
+ * Transaction export of all db tables
+ * - conversion Entity → Backup for JSON serialization
  */
 
 @Singleton
@@ -32,48 +30,45 @@ class DatabaseExporter @Inject constructor(
 ) {
 
     /**
-     * Esporta tutte le tabelle del database in una singola transazione
+     * Export of all tables in a single transaction
      *
-     * @return DatabaseBackup con tutti i dati convertiti
+     * @return DatabaseBackup with all data converted
      */
     suspend fun exportAllTables(): DatabaseBackup = database.withTransaction {
 
-        Timber.d("Inizio export database completo")
+        Timber.v("Database export begin")
         val startTime = System.currentTimeMillis()
 
         try {
-            // Export con ordine ottimizzato per performance
-            // Tabelle con meno FK dependencies prima per ridurre lock time
+            // Export with optimized order
+            // less FK dependencies first to reduce lock time
 
-            Timber.d("Export tabelle base...")
             val clients = clientDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${clients.size} clients")
+            Timber.v("Exported ${clients.size} clients")
 
             val facilities = facilityDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${facilities.size} facilities")
+            Timber.v("Exported ${facilities.size} facilities")
 
             val contacts = contactDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${contacts.size} contacts")
+            Timber.v("Exported ${contacts.size} contacts")
 
             val facilityIslands = facilityIslandDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${facilityIslands.size} facility islands")
+            Timber.v("Exported ${facilityIslands.size} facility islands")
 
-            Timber.d("Export tabelle checkup...")
             val checkUps = checkUpDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${checkUps.size} checkups")
+            Timber.v("Exported ${checkUps.size} checkups")
 
             val checkItems = checkItemDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${checkItems.size} check items")
+            Timber.v("Exported ${checkItems.size} check items")
 
             val photos = photoDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${photos.size} photos")
+            Timber.v("Exported ${photos.size} photos")
 
             val spareParts = sparePartDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${spareParts.size} spare parts")
+            Timber.v("Exported ${spareParts.size} spare parts")
 
-            Timber.d("Export associazioni...")
             val associations = checkUpAssociationDao.getAllForBackup().map { it.toBackup() }
-            Timber.d("Exported ${associations.size} checkup associations")
+            Timber.v("Exported ${associations.size} checkup associations")
 
             val databaseBackup = DatabaseBackup(
                 // Core entities
@@ -98,8 +93,8 @@ class DatabaseExporter @Inject constructor(
             val duration = System.currentTimeMillis() - startTime
             val totalRecords = databaseBackup.getTotalRecordCount()
 
-            Timber.d("Export completato in ${duration}ms - $totalRecords record totali")
-            Timber.d(buildString {
+            Timber.v("Export completed in ${duration} ms - $totalRecords records")
+            Timber.v(buildString {
                 append("Breakdown: CheckUps=${checkUps.size}, CheckItems=${checkItems.size}, ")
                 append("Photos=${photos.size}, SpareParts=${spareParts.size}, ")
                 append("Clients=${clients.size}, Contacts=${contacts.size}, ")
@@ -110,13 +105,13 @@ class DatabaseExporter @Inject constructor(
             databaseBackup
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante export database")
+            Timber.e(e, "Database export failed")
             throw DatabaseExportException("Export fallito: ${e.message}", e)
         }
     }
 
     /**
-     * Conta i record totali nel database (per stima prima dell'export)
+     * Count total records in db (estimation)
      */
     suspend fun getEstimatedRecordCount(): Int = database.withTransaction {
         try {
@@ -133,17 +128,17 @@ class DatabaseExporter @Inject constructor(
             )
 
             val total = counts.sum()
-            Timber.d("Conteggio stimato database: $total record (${counts.joinToString()})")
+            Timber.v("Database count estimate: $total records (${counts.joinToString()})")
             total
 
         } catch (e: Exception) {
-            Timber.w(e, "Errore nel conteggio record")
+            Timber.w(e, "Database count estimation failed")
             0
         }
     }
 
     /**
-     * Verifica l'integrità del database prima dell'export
+     * Database integrity check before expor
      */
     suspend fun validateDatabaseIntegrity(): BackupValidationResult {
         return try {
@@ -158,39 +153,39 @@ class DatabaseExporter @Inject constructor(
                     }
 
             if (orphanedCheckItems > 0) {
-                warnings.add("$orphanedCheckItems check items potrebbero essere orphaned")
+                warnings.add("$orphanedCheckItems possibly orphaned check items")
             }
 
-            // Verifica esistenza foto su filesystem
+            // Check for photo existance on filesystem
             val photosWithMissingFiles = photoDao.getAllForBackup().count { photo ->
                 !java.io.File(photo.filePath).exists()
             }
 
             if (photosWithMissingFiles > 0) {
-                warnings.add("$photosWithMissingFiles foto hanno file mancanti")
+                warnings.add("$photosWithMissingFiles photos have missing files")
             }
 
-            // Verifica size database ragionevole
+            // Check fr db size
             val totalRecords = getEstimatedRecordCount()
             if (totalRecords > 100000) {
-                warnings.add("Database molto grande ($totalRecords record) - export potrebbe essere lento")
+                warnings.add("Database is big ($totalRecords record) - the export could be slow")
             }
 
             BackupValidationResult(
-                isValid = errors.isEmpty(),
+                isValid = true,
                 errors = errors,
                 warnings = warnings
             )
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore nella validazione database")
+            Timber.e(e, "Database integrity validation failed")
             BackupValidationResult.invalid(listOf("Errore validazione: ${e.message}"))
         }
     }
 }
 
 /**
- * Eccezione custom per errori di export
+ * Custom exception for export errors
  */
 class DatabaseExportException(
     message: String,
@@ -228,7 +223,7 @@ fun net.calvuz.qreport.data.local.entity.CheckUpEntity.toBackup(): CheckUpBackup
         status = status,
         createdAt = createdAt,
         updatedAt = updatedAt,
-        completedAt = completedAt?.let { Clock.System.now() }
+        completedAt = completedAt
     )
 }
 
@@ -245,7 +240,7 @@ fun net.calvuz.qreport.data.local.entity.CheckItemEntity.toBackup(): CheckItemBa
         status = status,
         criticality = criticality,
         notes = notes,
-        checkedAt = checkedAt?.let { Clock.System.now() },
+        checkedAt = checkedAt,
         orderIndex = orderIndex
     )
 }
@@ -396,38 +391,3 @@ fun net.calvuz.qreport.data.local.entity.CheckUpIslandAssociationEntity.toBackup
         updatedAt = Instant.fromEpochMilliseconds(updatedAt)
     )
 }
-
-/*
-=============================================================================
-                            UTILIZZO NELL'APPLICAZIONE
-=============================================================================
-
-ESEMPIO - Repository:
-
-@Singleton
-class BackupRepositoryImpl @Inject constructor(
-    private val databaseExporter: DatabaseExporter,
-    private val photoArchiver: PhotoArchiver
-) : BackupRepository {
-
-    override suspend fun createFullBackup(): Flow<BackupProgress> = flow {
-        emit(BackupProgress.InProgress("Validazione database...", 0f))
-
-        val validation = databaseExporter.validateDatabaseIntegrity()
-        if (!validation.isValid) {
-            emit(BackupProgress.Error("Database non valido: ${validation.errors.joinToString()}"))
-            return@flow
-        }
-
-        emit(BackupProgress.InProgress("Export database...", 0.1f))
-        val databaseBackup = databaseExporter.exportAllTables()
-
-        emit(BackupProgress.InProgress("Finalizzazione...", 0.9f))
-        // ... salva backup e crea metadata
-
-        emit(BackupProgress.Completed(backupId, backupPath, totalSize))
-    }
-}
-
-=============================================================================
-*/

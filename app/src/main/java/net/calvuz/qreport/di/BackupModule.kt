@@ -4,10 +4,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import net.calvuz.qreport.data.local.file.BackupFileManagerImpl
+import net.calvuz.qreport.data.local.file.FileManagerImpl
 import net.calvuz.qreport.data.repository.backup.BackupRepositoryImpl
 import net.calvuz.qreport.data.repository.backup.DatabaseExportRepositoryImpl
-import net.calvuz.qreport.domain.model.file.BackupFileManager
+import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.repository.backup.BackupRepository
 import net.calvuz.qreport.domain.repository.backup.DatabaseExportRepository
 import javax.inject.Singleton
@@ -24,13 +24,13 @@ import javax.inject.Singleton
 abstract class BackupModule {
 
     /**
-     * Bind BackupFileManager interface alla sua implementazione
+     * Bind FileManager interface alla sua implementazione
      */
     @Binds
     @Singleton
     abstract fun bindBackupFileManager(
-        backupFileManagerImpl: BackupFileManagerImpl
-    ): BackupFileManager
+        fileManagerImpl: FileManagerImpl
+    ): FileManager
 
     /**
      * Bind DatabaseExportRepository interface alla sua implementazione
@@ -58,7 +58,7 @@ abstract class BackupModule {
 
 Questo module configura la dependency injection per:
 
-✅ BackupFileManager → BackupFileManagerImpl
+✅ FileManager → FileManagerImpl
 ✅ DatabaseExportRepository → DatabaseExportRepositoryImpl
 ✅ BackupRepository → BackupRepositoryImpl
 ✅ PhotoArchiveRepository → PhotoArchiveRepositoryImpl (Fase 5.3)

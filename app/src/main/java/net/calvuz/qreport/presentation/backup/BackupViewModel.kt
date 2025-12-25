@@ -12,6 +12,7 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.data.backup.model.BackupInfo
 import net.calvuz.qreport.domain.model.backup.*
 import net.calvuz.qreport.domain.usecase.backup.*
+import net.calvuz.qreport.util.SizeUtils.getFormattedSize
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -161,7 +162,7 @@ class BackupViewModel @Inject constructor(
                     includePhotos = currentState.includePhotos,
                     includeThumbnails = currentState.includeThumbnails,
                     backupMode = currentState.backupMode,
-                    description = currentState.backupDescription.ifEmpty { null }
+                    description = currentState.backupDescription.ifEmpty { "" }
                 ).collect { progress ->
                     _backupProgress.value = progress
 
@@ -181,7 +182,7 @@ class BackupViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Unexpected error during backup")
+                Timber.e(e, "Backup creation failed")
                 _backupProgress.value = BackupProgress.Error("Errore imprevisto: ${e.message}")
                 showErrorMessage("Errore imprevisto durante backup")
             }
@@ -341,10 +342,9 @@ class BackupViewModel @Inject constructor(
                         isLoading = false
                     )
                 }
-
-                Timber.d("Loaded ${backups.size} available backups")
+                Timber.d("Backups loaded ${backups.size}")
             } catch (e: Exception) {
-                Timber.e(e, "Error loading available backups")
+                Timber.e(e, "Loading available backups failed")
                 _uiState.update { it.copy(isLoading = false) }
                 showErrorMessage("Errore caricamento backup")
             }
@@ -360,7 +360,7 @@ class BackupViewModel @Inject constructor(
                 val size = getBackupSizeUseCase(uiState.value.includePhotos)
                 _uiState.update { it.copy(estimatedBackupSize = size) }
 
-                Timber.d("Estimated backup size: ${size / (1024 * 1024)}MB")
+                Timber.d("Estimated backup size: ${size.getFormattedSize()}")
             } catch (e: Exception) {
                 Timber.e(e, "Error calculating backup size")
                 // Non è critico, continua senza estimate

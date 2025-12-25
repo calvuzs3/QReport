@@ -1,6 +1,7 @@
 package net.calvuz.qreport.domain.usecase.backup
 
 import net.calvuz.qreport.domain.repository.backup.BackupRepository
+import net.calvuz.qreport.util.SizeUtils.getFormattedSize
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -12,11 +13,9 @@ class GetBackupSizeUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(includePhotos: Boolean = true): Long {
         return try {
-            Timber.Forest.d("Calculating backup size estimate: includePhotos=$includePhotos")
-
             val estimatedSize = backupRepository.getEstimatedBackupSize(includePhotos)
 
-            Timber.Forest.d("Estimated backup size: ${estimatedSize / (1024 * 1024)}MB")
+            Timber.Forest.d("Estimated backup size (photos included: ${includePhotos}): ${estimatedSize.getFormattedSize()}")
             estimatedSize
 
         } catch (e: Exception) {

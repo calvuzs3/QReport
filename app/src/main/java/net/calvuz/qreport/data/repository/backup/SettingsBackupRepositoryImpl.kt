@@ -10,7 +10,6 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import dagger.Provides
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
@@ -22,11 +21,9 @@ import javax.inject.Singleton
 import kotlin.collections.iterator
 
 /**
- * FASE 5.3 - SETTINGS BACKUP REPOSITORY IMPLEMENTATION
- *
- * Gestisce backup/restore delle impostazioni app:
+ * App's Settings backup/restore
  * - SharedPreferences legacy
- * - DataStore preferences moderne
+ * - DataStore preferences
  * - User settings custom
  * - App configuration
  */
@@ -63,19 +60,19 @@ class SettingsBackupRepositoryImpl @Inject constructor(
     // ===== EXPORT SETTINGS =====
 
     /**
-     * Esporta tutte le impostazioni app
+     * Export app's settings
      */
     override suspend fun exportSettings(): SettingsBackup {
         return try {
-            Timber.d("Inizio export settings")
+            Timber.v("Inizio export settings via repository")
 
             // 1. Export SharedPreferences legacy
             val sharedPrefs = exportSharedPreferences()
-            Timber.d("Exported ${sharedPrefs.size} shared preferences")
+            Timber.v("Exported ${sharedPrefs.size} shared preferences")
 
             // 2. Export DataStore preferences
             val dataStorePrefs = exportDataStorePreferences()
-            Timber.d("Exported ${dataStorePrefs.size} datastore preferences")
+            Timber.v("Exported ${dataStorePrefs.size} datastore preferences")
 
             // 3. Combine all settings
             val allPreferences = sharedPrefs + dataStorePrefs
@@ -101,7 +98,6 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             val allPrefs = prefs.all
             val stringPrefs = mutableMapOf<String, String>()
 
-            // Converte tutti i valori in stringhe per serializzazione
             for ((key, value) in allPrefs) {
                 when (value) {
                     is String -> stringPrefs["legacy_$key"] = value
@@ -117,20 +113,19 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             stringPrefs
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore export SharedPreferences")
+            Timber.e(e, "SharedPreferences export failed")
             emptyMap()
         }
     }
 
     /**
-     * Export DataStore preferences moderne
+     * Export DataStore preferences
      */
     private suspend fun exportDataStorePreferences(): Map<String, String> {
         return try {
             val preferences = context.settingsDataStore.data.first()
             val dataStorePrefs = mutableMapOf<String, String>()
 
-            // Export settings specifiche con type safety
             preferences[TECHNICIAN_NAME]?.let {
                 dataStorePrefs["technician_name"] = it
             }
@@ -186,7 +181,7 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             dataStorePrefs
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore export DataStore preferences")
+            Timber.e(e, "DataStore preferences export failed")
             emptyMap()
         }
     }
@@ -210,7 +205,7 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             userSettings
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore export user settings")
+            Timber.e(e, "User specific settings export failed")
             emptyMap()
         }
     }
@@ -218,38 +213,38 @@ class SettingsBackupRepositoryImpl @Inject constructor(
     // ===== IMPORT SETTINGS =====
 
     /**
-     * Importa tutte le impostazioni app
+     * Import app's settings
      */
     override suspend fun importSettings(settingsBackup: SettingsBackup): Result<Unit> {
         return try {
-            Timber.d("Inizio import settings")
+            Timber.v("Inizio import settings")
 
             // 1. Import SharedPreferences legacy
             val legacyPrefs = settingsBackup.preferences.filterKeys { it.startsWith("legacy_") }
             if (legacyPrefs.isNotEmpty()) {
                 importSharedPreferences(legacyPrefs)
-                Timber.d("Imported ${legacyPrefs.size} legacy preferences")
+                Timber.v("Imported ${legacyPrefs.size} legacy preferences")
             }
 
             // 2. Import DataStore preferences moderne
             val modernPrefs = settingsBackup.preferences.filterKeys { !it.startsWith("legacy_") }
             if (modernPrefs.isNotEmpty()) {
                 importDataStorePreferences(modernPrefs)
-                Timber.d("Imported ${modernPrefs.size} modern preferences")
+                Timber.v("Imported ${modernPrefs.size} modern preferences")
             }
 
             // 3. Import user settings (opzionale)
             if (settingsBackup.userSettings.isNotEmpty()) {
                 importUserSpecificSettings(settingsBackup.userSettings)
-                Timber.d("Imported ${settingsBackup.userSettings.size} user settings")
+                Timber.v("Imported ${settingsBackup.userSettings.size} user settings")
             }
 
-            Timber.d("Import settings completato con successo")
+            Timber.v("App settings import completed")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore import settings")
-            Result.failure(SettingsImportException("Import settings fallito: ${e.message}", e))
+            Timber.e(e, "App settings import failed")
+            Result.failure(SettingsImportException("App settings import failed: ${e.message}", e))
         }
     }
 
@@ -264,7 +259,7 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             for ((prefixedKey, value) in legacyPrefs) {
                 val key = prefixedKey.removePrefix("legacy_")
 
-                // Auto-detect type e applica
+                // Auto-detect type and apply
                 when {
                     value.equals("true", ignoreCase = true) || value.equals("false", ignoreCase = true) -> {
                         editor.putBoolean(key, value.toBoolean())
@@ -281,12 +276,12 @@ class SettingsBackupRepositoryImpl @Inject constructor(
                         editor.putFloat(key, value.toFloat())
                     }
                     value.contains("|") -> {
-                        // Set<String> serializzato
+                        // Set<String> serialized
                         val stringSet = value.split("|").toSet()
                         editor.putStringSet(key, stringSet)
                     }
                     else -> {
-                        // String normale
+                        // Normal String
                         editor.putString(key, value)
                     }
                 }
@@ -295,12 +290,12 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             editor.apply()
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore import SharedPreferences")
+            Timber.e(e, "Import SharedPreferences legacy failed")
         }
     }
 
     /**
-     * Import DataStore preferences moderne
+     * Import DataStore preferences
      */
     private suspend fun importDataStorePreferences(modernPrefs: Map<String, String>) {
         try {
@@ -360,16 +355,16 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore import DataStore preferences")
+            Timber.e(e, "Import DataStore preferences failed")
         }
     }
 
     /**
-     * Import settings utente (informativo)
+     * User settings Import
      */
     private fun importUserSpecificSettings(userSettings: Map<String, String>) {
         try {
-            // Log device info differences per debugging
+            // Log device info differences for debugging
             val currentModel = Build.MODEL
             val backupModel = userSettings["device_model"]
 
@@ -384,17 +379,17 @@ class SettingsBackupRepositoryImpl @Inject constructor(
                 Timber.w("Android version change: $backupAndroid → $currentAndroid")
             }
 
-            Timber.d("Settings backup created on: ${userSettings["settings_exported_at"]}")
+            Timber.v("Settings backup created on: ${userSettings["settings_exported_at"]}")
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore processing user settings")
+            Timber.e(e, "User settings Import failed")
         }
     }
 
     // ===== UTILITY METHODS =====
 
     /**
-     * Resetta tutte le impostazioni ai valori default
+     * Reset all settings to defaults
      */
     suspend fun resetAllSettings(): Result<Unit> {
         return try {
@@ -407,17 +402,17 @@ class SettingsBackupRepositoryImpl @Inject constructor(
                 preferences.clear()
             }
 
-            Timber.d("Tutte le impostazioni resettate")
+            Timber.v("All settings reset")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore reset settings")
+            Timber.e(e, "All settings reset failed")
             Result.failure(e)
         }
     }
 
     /**
-     * Ottiene summary delle impostazioni correnti
+     * All settings summary
      */
     suspend fun getSettingsSummary(): Map<String, String> {
         val summary = mutableMapOf<String, String>()
@@ -438,7 +433,7 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             summary["ui_theme"] = dataStorePrefs[UI_THEME] ?: "auto"
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore settings summary")
+            Timber.e(e, "Settings summary failed")
             summary["error"] = e.message ?: "Unknown error"
         }
 
@@ -447,7 +442,7 @@ class SettingsBackupRepositoryImpl @Inject constructor(
 }
 
 /**
- * Eccezione custom per errori import settings
+ * Custom exception for import settings
  */
 class SettingsImportException(
     message: String,
@@ -488,16 +483,6 @@ SettingsBackup JSON Structure:
   },
   "backupDateTime": "2024-12-20T14:30:22Z"
 }
-
-FEATURES:
-✅ SharedPreferences legacy support
-✅ DataStore preferences moderne
-✅ Type-safe settings keys
-✅ Auto-detection tipi durante import
-✅ Device info tracking
-✅ Settings summary per debug
-✅ Reset functionality
-✅ Error handling robusto
 
 =============================================================================
 */

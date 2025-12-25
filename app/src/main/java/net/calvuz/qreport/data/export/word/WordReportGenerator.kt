@@ -3,10 +3,10 @@ package net.calvuz.qreport.data.export.word
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.calvuz.qreport.data.export.photo.PhotoExportManager
-import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.model.checkup.CheckItem
 import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
 import net.calvuz.qreport.domain.model.export.*
+import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.model.photo.*
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.util.DateTimeUtils.toFilenameSafeDate
@@ -35,7 +35,7 @@ import javax.inject.Singleton
 @Singleton
 class WordReportGenerator @Inject constructor(
     private val photoExportManager: PhotoExportManager,
-    private val fileManager: FileManager  // ✅ CORRETTO: Usa interface invece di implementation
+    private val fileManager: FileManager
 ) {
 
     /**

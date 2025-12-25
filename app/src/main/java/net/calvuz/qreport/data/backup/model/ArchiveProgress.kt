@@ -1,7 +1,7 @@
 package net.calvuz.qreport.data.backup.model
 
 /**
- * Progress archivio foto
+ * Photo Archive Progress
  */
 sealed class ArchiveProgress {
     data class InProgress(
@@ -14,8 +14,11 @@ sealed class ArchiveProgress {
     data class Completed(
         val archivePath: String,
         val totalFiles: Int,
-        val totalSizeMB: Double
+        val totalSize: Long
     ) : ArchiveProgress()
 
-    data class Error(val message: String, val throwable: Throwable? = null) : ArchiveProgress()
+    data class Error(
+        val message: String,
+        val throwable: Throwable? = null
+    ) : ArchiveProgress()
 }

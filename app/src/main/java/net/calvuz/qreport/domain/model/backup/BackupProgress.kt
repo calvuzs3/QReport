@@ -1,5 +1,7 @@
 package net.calvuz.qreport.domain.model.backup
 
+import kotlin.time.Duration
+
 /**
  * BackupProgress - Progress stato backup
  */
@@ -18,9 +20,12 @@ sealed class BackupProgress {
         val backupId: String,
         val backupPath: String,
         val totalSize: Long,
-        val duration: Long,
+        val duration: Duration,
         val tablesBackedUp: Int = 9
     ) : BackupProgress()
 
-    data class Error(val message: String, val throwable: Throwable? = null) : BackupProgress()
+    data class Error(
+        val message: String,
+        val throwable: Throwable? = null
+    ) : BackupProgress()
 }

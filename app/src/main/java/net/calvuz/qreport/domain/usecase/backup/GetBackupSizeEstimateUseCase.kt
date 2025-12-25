@@ -7,6 +7,7 @@ import javax.inject.Inject
 
 /**
  * Use case per ottenere stima dimensione backup
+ * NOT USED
  */
 class GetBackupSizeEstimateUseCase @Inject constructor(
     private val backupRepository: BackupRepository

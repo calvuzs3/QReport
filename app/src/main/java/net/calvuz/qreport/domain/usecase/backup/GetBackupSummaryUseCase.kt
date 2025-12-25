@@ -16,13 +16,13 @@ class GetBackupSummaryUseCase @Inject constructor(
             Timber.Forest.d("Getting backup system summary")
 
             val availableBackups = backupRepository.getAvailableBackups()
-            val totalSize = availableBackups.sumOf { it.totalSizeMB.toLong() }
+            val totalSize = availableBackups.sumOf { it.totalSize }
             val lastBackup = availableBackups.maxByOrNull { it.timestamp }
             val hasPhotos = availableBackups.any { it.includesPhotos }
 
             BackupSummary(
                 totalBackups = availableBackups.size,
-                totalSizeMB = totalSize,
+                totalSize = totalSize,
                 lastBackupTimestamp = lastBackup?.timestamp,
                 hasPhotoBackups = hasPhotos,
                 oldestBackupTimestamp = availableBackups.minByOrNull { it.timestamp }?.timestamp

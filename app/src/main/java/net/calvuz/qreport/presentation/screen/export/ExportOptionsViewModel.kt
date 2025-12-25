@@ -7,11 +7,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.domain.model.export.*
+import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.repository.ExportRepository
 import net.calvuz.qreport.domain.usecase.checkup.GetCheckUpDetailsUseCase
-import net.calvuz.qreport.domain.model.file.FileManager
 import timber.log.Timber
-import java.time.LocalDateTime
 import javax.inject.Inject
 
 /**

@@ -9,7 +9,7 @@ data class BackupInfo(
     val id: String,
     val timestamp: Instant,
     val description: String?,
-    val totalSizeMB: Double,
+    val totalSize: Long,
     val includesPhotos: Boolean,
     val dirPath: String,
     val filePath: String,

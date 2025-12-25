@@ -12,7 +12,7 @@ import net.calvuz.qreport.data.backup.model.ArchiveProgress
 import net.calvuz.qreport.data.backup.model.ExtractionProgress
 import net.calvuz.qreport.data.local.QReportDatabase
 import net.calvuz.qreport.domain.model.backup.*
-import net.calvuz.qreport.domain.model.file.BackupFileManager
+import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.repository.backup.BackupRepository
 import net.calvuz.qreport.domain.repository.backup.PhotoArchiveRepository
 import net.calvuz.qreport.domain.repository.backup.SettingsBackupRepository
@@ -62,7 +62,7 @@ class BackupUnitTest {
     lateinit var settingsBackupRepository: SettingsBackupRepository
 
     @Inject
-    lateinit var backupFileManager: BackupFileManager
+    lateinit var fileManager: FileManager
 
     private lateinit var context: Context
     private lateinit var database: QReportDatabase
@@ -134,11 +134,11 @@ class BackupUnitTest {
         // ===== BACKUP VALIDATION =====
 
         // 6. Valida backup file
-        val validation = backupFileManager.validateBackupFile(backupPath)
+        val validation = fileManager.validateBackupFile(backupPath)
         assertTrue(validation.isValid, "Backup deve essere valido")
 
         // 7. Carica backup per verifica
-        val backupData = backupFileManager.loadBackup(backupPath)
+        val backupData = fileManager.loadBackup(backupPath)
 
         assertEquals(3, backupData.database.clients.size)
         assertEquals(2, backupData.database.checkUps.size)

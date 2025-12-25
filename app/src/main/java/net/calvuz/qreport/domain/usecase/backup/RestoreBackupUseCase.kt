@@ -36,7 +36,7 @@ class RestoreBackupUseCase @Inject constructor(
             }
 
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Error in RestoreBackupUseCase")
+            Timber.Forest.e(e, "Backup restoring failed")
             emit(RestoreProgress.Error("Restore failed: ${e.message}"))
         }
     }

@@ -276,8 +276,8 @@ class ValidateBackupUseCase @Inject constructor(
             errors.add("Numero foto non valido: ${manifest.totalPhotos}")
         }
 
-        if (manifest.totalSizeMB < 0) {
-            errors.add("Dimensione foto non valida: ${manifest.totalSizeMB}")
+        if (manifest.totalSize < 0) {
+            errors.add("Dimensione foto non valida: ${manifest.totalSize}")
         }
 
         if (manifest.photos.size != manifest.totalPhotos) {

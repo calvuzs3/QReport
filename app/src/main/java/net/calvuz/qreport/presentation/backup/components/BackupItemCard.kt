@@ -88,7 +88,7 @@ fun BackupItemCard(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = backup.getFormattedSize(),
+                        text = backup.totalSize.getFormattedSize(),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary

@@ -8,6 +8,7 @@ import kotlinx.serialization.json.*
 import kotlinx.serialization.modules.*
 import net.calvuz.qreport.data.backup.model.BackupSerializationException
 import net.calvuz.qreport.domain.model.backup.*
+import net.calvuz.qreport.util.SizeUtils.getFormattedSize
 import timber.log.Timber
 import java.io.File
 import java.security.MessageDigest
@@ -15,17 +16,17 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * FASE 5.2 - JSON SERIALIZATION MANAGER
- *
- * Gestisce la serializzazione/deserializzazione JSON dei backup QReport
- * usando kotlinx.serialization con support per Instant e gestione errori.
+ * JSON backup serialization/deserialization
+ * - kotlinx.serialization
+ * - Instant support
+ * - error handling
  */
 
 @Singleton
 class BackupJsonSerializer @Inject constructor() {
 
     /**
-     * Configurazione JSON con custom serializers
+     * JSON configuration with custom serializer
      */
     private val json = Json {
         // Configuration
@@ -40,34 +41,34 @@ class BackupJsonSerializer @Inject constructor() {
     }
 
     /**
-     * Serializza BackupData in JSON string
+     * Serialize BackupData into JSON string
      */
     fun serializeBackup(backupData: BackupData): Result<String> {
         return try {
             val jsonString = json.encodeToString<BackupData>( backupData)
-            Timber.d("Backup serializzato: ${jsonString.length} caratteri")
+            Timber.d("Serialized backup: ${jsonString.length} chars")
             Result.success(jsonString)
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore serializzazione backup")
-            Result.failure(BackupSerializationException("Serializzazione fallita: ${e.message}", e))
+            Timber.e(e, "JSON backup serialization failed")
+            Result.failure(BackupSerializationException("JSON backup serialization failed: ${e.message}", e))
         }
     }
 
     /**
-     * Deserializza JSON string in BackupData
+     * Deserialize JSON string into BackupData
      */
     fun deserializeBackup(jsonString: String): Result<BackupData> {
         return try {
             val backupData = json.decodeFromString<BackupData>( jsonString)
-            Timber.d("Backup deserializzato: ${backupData.database.getTotalRecordCount()} record")
+            Timber.d("Deserializad backup: ${backupData.database.getTotalRecordCount()} records")
             Result.success(backupData)
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore deserializzazione backup")
+            Timber.e(e, "JSON backup deserialization failed")
             Result.failure(
                 BackupSerializationException(
-                    "Deserializzazione fallita: ${e.message}",
+                    "JSON backup deserialization failed: ${e.message}",
                     e
                 )
             )
@@ -75,7 +76,7 @@ class BackupJsonSerializer @Inject constructor() {
     }
 
     /**
-     * Salva BackupData in file JSON
+     * Save BackupData in JSON file
      */
     fun saveBackupToFile(backupData: BackupData, file: File): Result<Unit> {
         return try {
@@ -88,14 +89,14 @@ class BackupJsonSerializer @Inject constructor() {
             file.writeText(jsonResult.getOrThrow())
 
             val fileSize = file.length()
-            Timber.d("Backup salvato in ${file.path} (${fileSize / 1024} KB)")
+            Timber.d("Backup saved in ${file.path} (${fileSize.getFormattedSize()})")
             Result.success(Unit)
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore salvataggio backup file")
+            Timber.e(e, "Backup saving failed")
             Result.failure(
                 BackupSerializationException(
-                    "Salvataggio file fallito: ${e.message}",
+                    "Backup saving failed: ${e.message}",
                     e
                 )
             )
@@ -103,24 +104,24 @@ class BackupJsonSerializer @Inject constructor() {
     }
 
     /**
-     * Carica BackupData da file JSON
+     * Load BackupData from JSON file
      */
     fun loadBackupFromFile(file: File): Result<BackupData> {
         return try {
             if (!file.exists()) {
-                return Result.failure(BackupSerializationException("File backup non trovato: ${file.path}"))
+                return Result.failure(BackupSerializationException("Backup file not found: ${file.path}"))
             }
 
             val jsonString = file.readText()
-            Timber.d("Caricamento backup da ${file.path} (${jsonString.length} caratteri)")
+            Timber.d("Backup loading from ${file.path} (${jsonString.length} chars)")
 
             deserializeBackup(jsonString)
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore caricamento backup file")
+            Timber.e(e, "Backup file loading failed")
             Result.failure(
                 BackupSerializationException(
-                    "Caricamento file fallito: ${e.message}",
+                    "Loading file failed: ${e.message}",
                     e
                 )
             )
@@ -128,33 +129,33 @@ class BackupJsonSerializer @Inject constructor() {
     }
 
     /**
-     * Valida formato JSON backup senza deserializzazione completa
+     * Validate JSON backup format without complete deserialization
      */
     fun validateBackupJson(jsonString: String): BackupValidationResult {
         return try {
-            // Parse JSON per verificare struttura base
+            // Parse JSON for base structure check
             val jsonElement = json.parseToJsonElement(jsonString)
             val jsonObject = jsonElement.jsonObject
 
             val errors = mutableListOf<String>()
             val warnings = mutableListOf<String>()
 
-            // Verifica campi obbligatori
+            // Check mandatory fields
             val requiredFields = listOf("metadata", "database", "settings", "photoManifest")
             for (field in requiredFields) {
                 if (field !in jsonObject) {
-                    errors.add("Campo obbligatorio mancante: $field")
+                    errors.add("Missing field: $field")
                 }
             }
 
-            // Verifica metadata se presente
+            // Check metadata if present
             jsonObject["metadata"]?.jsonObject?.let { metadata ->
-                if ("id" !in metadata) errors.add("metadata.id mancante")
-                if ("timestamp" !in metadata) errors.add("metadata.timestamp mancante")
-                if ("appVersion" !in metadata) errors.add("metadata.appVersion mancante")
+                if ("id" !in metadata) errors.add("missing metadata.id ")
+                if ("timestamp" !in metadata) errors.add("missing metadata.timestamp ")
+                if ("appVersion" !in metadata) errors.add("missing metadata.appVersion ")
             }
 
-            // Verifica database se presente
+            // Check database if present
             jsonObject["database"]?.jsonObject?.let { database ->
                 val expectedTables = listOf(
                     "checkUps", "checkItems", "photos", "spareParts",
@@ -169,20 +170,22 @@ class BackupJsonSerializer @Inject constructor() {
                 }
             }
 
-            BackupValidationResult(
+            val result = BackupValidationResult(
                 isValid = errors.isEmpty(),
                 errors = errors,
                 warnings = warnings
             )
+            Timber.d("JSON BackupData validation: $result")
+            result
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore validazione JSON backup")
+            Timber.e(e, "JSON BackupData validation failed")
             BackupValidationResult.invalid(listOf("JSON non valido: ${e.message}"))
         }
     }
 
     /**
-     * Calcola checksum SHA256 di backup JSON
+     * Calculate JSON backup SHA256 checksum
      */
     fun calculateBackupChecksum(backupData: BackupData): Result<String> {
         return try {
@@ -196,11 +199,11 @@ class BackupJsonSerializer @Inject constructor() {
             val hashBytes = digest.digest(jsonBytes)
             val checksum = hashBytes.joinToString("") { "%02x".format(it) }
 
-            Timber.d("Checksum calcolato: $checksum")
+            Timber.d("BackupData checksum: $checksum")
             Result.success(checksum)
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore calcolo checksum")
+            Timber.e(e, "BackupData checksum failed")
             Result.failure(
                 BackupSerializationException(
                     "Calcolo checksum fallito: ${e.message}",
@@ -211,13 +214,20 @@ class BackupJsonSerializer @Inject constructor() {
     }
 
     /**
-     * Verifica integrità backup tramite checksum
+     * Backup integrity verification through checksum
      */
-    fun verifyBackupIntegrity(backupData: BackupData, expectedChecksum: String): Boolean {
+    fun verifyBackupIntegrity(backupData: BackupData): Boolean {
         return try {
-            val calculatedChecksumResult = calculateBackupChecksum(backupData)
+            // Get the expected value
+            val expectedChecksum = backupData.metadata.checksum
+            // Recreate first checksum conditions
+            val tmpMetadata = backupData.metadata.copy(checksum = "", totalSize = 0L)
+            val tmpBackupData = backupData.copy(metadata = tmpMetadata)
+
+            // Verify
+            val calculatedChecksumResult = calculateBackupChecksum(tmpBackupData)
             if (calculatedChecksumResult.isFailure) {
-                Timber.w("Impossibile calcolare checksum per verifica")
+                Timber.w("Checksum calculation impossible")
                 return false
             }
 
@@ -225,15 +235,15 @@ class BackupJsonSerializer @Inject constructor() {
             val isValid = calculatedChecksum == expectedChecksum
 
             if (isValid) {
-                Timber.d("✓ Checksum backup valido")
+                Timber.v("✓ Checksum backup is valid")
             } else {
-                Timber.w("✗ Checksum backup non valido - Atteso: $expectedChecksum, Calcolato: $calculatedChecksum")
+                Timber.w("✗ Checksum backup is not valid\n- expected:  $expectedChecksum\ncalculated: $calculatedChecksum")
             }
 
             isValid
 
         } catch (e: Exception) {
-            Timber.e(e, "Errore verifica integrità backup")
+            Timber.e(e, "Backup integrity verification failed")
             false
         }
     }
@@ -253,38 +263,3 @@ object InstantSerializer : KSerializer<Instant> {
         return Instant.parse(decoder.decodeString())
     }
 }
-
-/*
-=============================================================================
-                            UTILIZZO ESEMPIO
-=============================================================================
-
-// Serializzazione
-val jsonSerializer = BackupJsonSerializer()
-val backupData = createBackupData()
-
-val jsonResult = jsonSerializer.serializeBackup(backupData)
-jsonResult.fold(
-    onSuccess = { json ->
-        val file = File("/path/to/backup.json")
-        jsonSerializer.saveBackupToFile(backupData, file)
-    },
-    onFailure = { error ->
-        Timber.e("Serialization failed: ${error.message}")
-    }
-)
-
-// Deserializzazione
-val file = File("/path/to/backup.json")
-val loadResult = jsonSerializer.loadBackupFromFile(file)
-loadResult.fold(
-    onSuccess = { backupData ->
-        // Process backup data
-    },
-    onFailure = { error ->
-        Timber.e("Load failed: ${error.message}")
-    }
-)
-
-=============================================================================
-*/
