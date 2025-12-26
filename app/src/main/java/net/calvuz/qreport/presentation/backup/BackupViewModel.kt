@@ -17,12 +17,14 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * UI State per BackupScreen
+ * BackupScreen UI State
+ *
+ * includeThumbnails is tightly coupled with includePhotos for the time being
  */
 data class BackupUiState(
     // Opzioni backup
     val includePhotos: Boolean = true,
-    val includeThumbnails: Boolean = false,
+    val includeThumbnails: Boolean = true,
     val backupMode: BackupMode = BackupMode.LOCAL,
     val backupDescription: String = "",
 
@@ -41,12 +43,10 @@ data class BackupUiState(
 )
 
 /**
- * BACKUP VIEW MODEL - FASE 5.4
- *
- * Gestisce state management per BackupScreen con:
+ * State management for BackupScreen
  * - Progress tracking backup/restore
- * - Configurazione opzioni backup
- * - Lista backup disponibili
+ * - Backup options
+ * - Available backups list
  * - Actions (create, restore, delete, share)
  */
 
@@ -93,11 +93,12 @@ class BackupViewModel @Inject constructor(
         _uiState.update { currentState ->
             val newState = currentState.copy(includePhotos = !currentState.includePhotos)
             // Se disabilito foto, disabilito anche thumbnail
-            if (!newState.includePhotos) {
-                newState.copy(includeThumbnails = false)
-            } else {
-                newState
-            }
+//            if (!newState.includePhotos) {
+//                newState.copy(includeThumbnails = false)
+//            } else {
+//                newState
+//            }
+            newState.copy(includeThumbnails = !currentState.includeThumbnails)
         }
 
         // Ricalcola stima dimensione

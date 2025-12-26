@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Backup
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Restore
@@ -31,21 +32,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import net.calvuz.qreport.domain.model.backup.BackupProgress
-import net.calvuz.qreport.domain.model.backup.RestoreProgress
 import net.calvuz.qreport.presentation.components.DialogItemRow
+import net.calvuz.qreport.util.SizeUtils.getFormattedSize
 
 /**
- * Restore progress Dialog
+ * Backup progress Dialog
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RestoreBackupProgressDialog(
+fun BackupProgressDialog(
     modifier: Modifier = Modifier,
-    progress: RestoreProgress,
+    progress: BackupProgress,
     onCancel: () -> Unit,
     onDismiss: () -> Unit = {}
 ) {
-    val isInProgress = progress is RestoreProgress.InProgress
+    val isInProgress = progress is BackupProgress.InProgress
 
     Dialog(
         onDismissRequest = if (isInProgress) {
@@ -67,7 +68,7 @@ fun RestoreBackupProgressDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 when (progress) {
-                    is RestoreProgress.InProgress -> {
+                    is BackupProgress.InProgress -> {
                         // ===== HEADER =====
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -75,14 +76,14 @@ fun RestoreBackupProgressDialog(
                         ) {
                             // Progress in corso
                             Icon(
-                                imageVector = Icons.Default.Restore,
+                                imageVector = Icons.Default.Backup,
                                 contentDescription = null,
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
 
                             Text(
-                                text = "Ripristino in corso...",
+                                text = "Backup in corso...",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -93,7 +94,7 @@ fun RestoreBackupProgressDialog(
                         // TODO verificare se --> .message
                         DialogItemRow(
                             icon = Icons.Default.Restore,
-                            label = "Ripristino in corso...",
+                            label = "Backup in corso...",
                             value = progress.step,
                             enabled = true
                         )
@@ -124,13 +125,13 @@ fun RestoreBackupProgressDialog(
                         }
                     }
 
-                    is RestoreProgress.Completed -> {
+                    is BackupProgress.Completed -> {
                         // ===== HEADER =====
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            // Ripristino completato
+                            // Backup completato
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
@@ -139,7 +140,7 @@ fun RestoreBackupProgressDialog(
                             )
 
                             Text(
-                                text = "Ripristino Completato",
+                                text = "Backup Completato",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -157,27 +158,28 @@ fun RestoreBackupProgressDialog(
                         // ===== BACKUP SUMMARY =====
                         DialogItemRow(
                             icon = Icons.Default.CheckCircle,
-                            label = "Records ripritinati",
-                            value = "${progress.processedRecords}",
+                            label = "Tabelle salvate",
+                            value = "${progress.tablesBackedUp}",
+                            enabled = true,
+                        )
+                        if (progress.totalSize > 0) {
+                            DialogItemRow(
+                                icon = Icons.Default.CheckCircle,
+                                label = "Dati salvati",
+                                value = progress.totalSize.getFormattedSize(),
+                                enabled = true
+                            )
+                        }
+                        DialogItemRow(
+                            icon = Icons.Default.CheckCircle,
+                            label = "Tempo impiegato",
+                            value = "${(progress.duration / 1000)}",
                             enabled = true,
                         )
 
-//                                if (progress. .restoredPhotos > 0) {
-//                                    Text(
-//                                        text = "📸 ${progress.restoredPhotos} foto ripristinate",
-//                                        style = MaterialTheme.typography.bodyMedium
-//                                    )
-//                                }
-//                                Text(
-//                                    text = "⏱️ Durata: ${progress.duration / 1000}s",
-//                                    style = MaterialTheme.typography.bodySmall,
-//                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-//                                )
-                            }
+                    }
 
-
-
-                    is RestoreProgress.Error -> {
+                    is BackupProgress.Error -> {
                         // ===== HEADER =====
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -191,7 +193,7 @@ fun RestoreBackupProgressDialog(
                             )
 
                             Text(
-                                text = "Errore Ripristino",
+                                text = "Errore Backup",
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center,
@@ -208,7 +210,8 @@ fun RestoreBackupProgressDialog(
                         )
                     }
 
-                    is RestoreProgress.Idle -> {
+
+                    is BackupProgress.Idle -> {
                         // Stato idle - shouldn't be the case
                         Text("Nessuna operazione in corso")
                     }
@@ -224,15 +227,15 @@ fun RestoreBackupProgressDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 when (progress) {
-                    is RestoreProgress.InProgress -> {
+                    is BackupProgress.InProgress -> {
                         // press CANCEL during process
                         TextButton(onClick = onCancel) {
                             Text("Annulla")
                         }
                     }
 
-                    is RestoreProgress.Completed,
-                    is RestoreProgress.Error -> {
+                    is BackupProgress.Completed,
+                    is BackupProgress.Error -> {
                         // press OK to close
                         Button(
                             onClick = onDismiss,

@@ -155,6 +155,7 @@ class BackupUnitTest {
         val restoreProgressList = mutableListOf<RestoreProgress>()
 
         backupRepository.restoreFromBackup(
+            dirPath = backupPath.substringBeforeLast("/"),
             backupPath = backupPath,
             strategy = RestoreStrategy.REPLACE_ALL
         ).toList().also { progressList ->

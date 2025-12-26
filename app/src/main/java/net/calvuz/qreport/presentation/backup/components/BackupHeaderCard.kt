@@ -155,10 +155,10 @@ private fun BackupStatItem(
 @Composable
 fun BackupOptionsCard(
     includePhotos: Boolean,
-    includeThumbnails: Boolean,
+//    includeThumbnails: Boolean,
     backupMode: BackupMode,
     onTogglePhotos: () -> Unit,
-    onToggleThumbnails: () -> Unit,
+//    onToggleThumbnails: () -> Unit,
     onModeChange: (BackupMode) -> Unit,
     estimatedSize: Long,
     modifier: Modifier = Modifier
@@ -194,14 +194,14 @@ fun BackupOptionsCard(
             )
 
             // Thumbnail option (enabled only if photos are included)
-            OptionToggleItem(
-                icon = Icons.Outlined.PhotoSizeSelectLarge,
-                title = "Includi miniature",
-                description = "Backup delle miniature (richiede foto)",
-                checked = includeThumbnails,
-                enabled = includePhotos,
-                onCheckedChange = { onToggleThumbnails() }
-            )
+//            OptionToggleItem(
+//                icon = Icons.Outlined.PhotoSizeSelectLarge,
+//                title = "Includi miniature",
+//                description = "Backup delle miniature (richiede foto)",
+//                checked = includeThumbnails,
+//                enabled = includePhotos,
+//                onCheckedChange = { onToggleThumbnails() }
+//            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -387,7 +387,7 @@ private fun BackupSizeIndicator(
 fun BackupActionCard(
     isBackupInProgress: Boolean,
     backupProgress: BackupProgress,
-    onCreateBackup: () -> Unit,
+    onShowBackupConfirmation: () -> Unit,
     onCancelBackup: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -413,7 +413,7 @@ fun BackupActionCard(
                 )
             } else {
                 BackupActionContent(
-                    onCreateBackup = onCreateBackup,
+                    onShowBackupConfirmation = onShowBackupConfirmation,
                     showResult = backupProgress is BackupProgress.Completed || backupProgress is BackupProgress.Error,
                     progress = backupProgress
                 )
@@ -509,7 +509,7 @@ private fun BackupProgressContent(
 
 @Composable
 private fun BackupActionContent(
-    onCreateBackup: () -> Unit,
+    onShowBackupConfirmation: () -> Unit,
     showResult: Boolean,
     progress: BackupProgress,
     modifier: Modifier = Modifier
@@ -591,7 +591,7 @@ private fun BackupActionContent(
         }
 
         Button(
-            onClick = onCreateBackup,
+            onClick = onShowBackupConfirmation,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary
@@ -614,36 +614,3 @@ private fun BackupActionContent(
         }
     }
 }
-
-
-/*
-=============================================================================
-                            BACKUP UI COMPONENTS
-=============================================================================
-
-COMPONENTI IMPLEMENTATI:
-✅ BackupHeaderCard - Overview sistema backup con statistiche
-✅ BackupOptionsCard - Configurazione opzioni backup con toggle
-✅ BackupActionCard - Pulsante backup + progress tracking + result
-
-DESIGN PATTERNS:
-✅ Material Design 3 components
-✅ QReport design tokens per consistency
-✅ Industrial-friendly sizing (glove compatible)
-✅ High contrast per visibilità
-✅ Semantic colors per status
-✅ Animation per smooth UX
-
-ACCESSIBILITÀ:
-✅ ContentDescription per screen reader
-✅ Semantic roles (Button, Switch, RadioButton)
-✅ Touch targets >= 48dp
-✅ Color contrast compliance
-
-RESPONSIVE:
-✅ fillMaxWidth per tablet compatibility
-✅ Flexible layouts con weight(1f)
-✅ Appropriate spacing scale
-
-=============================================================================
-*/

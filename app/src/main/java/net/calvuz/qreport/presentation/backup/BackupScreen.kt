@@ -31,6 +31,7 @@ import net.calvuz.qreport.presentation.components.EmptyState
  * - Dialogs conferma e gestione errori
  */
 
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackupScreen(
@@ -44,9 +45,53 @@ fun BackupScreen(
     val restoreProgress by viewModel.restoreProgress.collectAsStateWithLifecycle()
 
     // Dialog states
+    var showBackupDialog by remember { mutableStateOf(false) }
     var showRestoreDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var selectedBackup by remember { mutableStateOf<BackupInfo?>(null) }
+
+    // Dialogs visibility
+    var showRestoreProgressDialog by remember { mutableStateOf(false) }
+    var showBackupProgressDialog by remember { mutableStateOf(false) }
+
+    // SnackBar
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(restoreProgress) {
+        when (restoreProgress) {
+            is RestoreProgress.InProgress -> {
+                // Dialog già aperto, non fare nulla
+            }
+            is RestoreProgress.Completed,
+            is RestoreProgress.Error -> {
+                // Mantieni dialog aperto per permettere all'utente di vedere il risultato
+                // Il dialog si chiuderà solo con onDismiss
+            }
+            is RestoreProgress.Idle -> {
+                showRestoreProgressDialog = false
+            }
+        }
+    }
+
+    LaunchedEffect(backupProgress) {
+        when (backupProgress) {
+            is BackupProgress.InProgress -> {
+                // If Dialog is not opened, let's open it
+                if (!showBackupProgressDialog) {
+                    showBackupProgressDialog = true  // open dialog when backup starts
+                }
+            }
+            is BackupProgress.Completed,
+            is BackupProgress.Error -> {
+                // Keep dialog opened
+                // onDismiss will close it
+            }
+            is BackupProgress.Idle -> {
+                showBackupProgressDialog = false
+            }
+        }
+    }
+
 
     // ===== MAIN LAYOUT =====
 
@@ -59,7 +104,7 @@ fun BackupScreen(
             )
         },
         snackbarHost = {
-            SnackbarHost(hostState = SnackbarHostState())
+            SnackbarHost(hostState = snackbarHostState )
         },
         modifier = modifier
     ) { paddingValues ->
@@ -89,10 +134,10 @@ fun BackupScreen(
                 item {
                     BackupOptionsCard(
                         includePhotos = uiState.includePhotos,
-                        includeThumbnails = uiState.includeThumbnails,
+//                        includeThumbnails = uiState.includeThumbnails,
                         backupMode = uiState.backupMode,
                         onTogglePhotos = viewModel::toggleIncludePhotos,
-                        onToggleThumbnails = viewModel::toggleIncludeThumbnails,
+//                        onToggleThumbnails = viewModel::toggleIncludeThumbnails,
                         onModeChange = viewModel::updateBackupMode,
                         estimatedSize = uiState.estimatedBackupSize
                     )
@@ -103,7 +148,7 @@ fun BackupScreen(
                     BackupActionCard(
                         isBackupInProgress = backupProgress is BackupProgress.InProgress,
                         backupProgress = backupProgress,
-                        onCreateBackup = viewModel::createBackup,
+                        onShowBackupConfirmation = { showBackupDialog = true },
                         onCancelBackup = viewModel::cancelBackup
                     )
                 }
@@ -188,7 +233,28 @@ fun BackupScreen(
 
     // ===== DIALOGS =====
 
-    // Restore confirmation dialog
+    // Backup confirmation Dialog
+    if (showBackupDialog) {
+        BackupConfirmationDialog(
+            backupOptions = BackupOptions(
+                includePhotos = uiState.includePhotos,
+                includeThumbnails = uiState.includeThumbnails,
+                backupMode = uiState.backupMode,
+                description = uiState.backupDescription,
+                estimatedSize = uiState.estimatedBackupSize
+            ),
+            onConfirm = {
+                viewModel.createBackup()  // ✅ Ora chiamato dal dialog
+                showBackupDialog = false
+                showBackupProgressDialog = true  // ✅ Apri subito progress dialog
+            },
+            onDismiss = {
+                showBackupDialog = false
+            }
+        )
+    }
+
+    // Restore confirmation Dialog
     selectedBackup?.let { backup ->
         if (showRestoreDialog) {
             RestoreBackupConfirmationDialog(
@@ -196,7 +262,8 @@ fun BackupScreen(
                 onConfirm = { strategy ->
                     viewModel.restoreBackup(backup.id, strategy)
                     showRestoreDialog = false
-                    selectedBackup = null
+                    showRestoreProgressDialog = true
+                    // do not set selectedBackup to null here
                 },
                 onDismiss = {
                     showRestoreDialog = false
@@ -205,7 +272,7 @@ fun BackupScreen(
             )
         }
 
-        // Delete confirmation dialog
+        // Delete confirmation Dialog
         if (showDeleteDialog) {
             DeleteBackupDialog(
                 backup = backup,
@@ -222,11 +289,33 @@ fun BackupScreen(
         }
     }
 
-    // Restore progress dialog
-    if (restoreProgress is RestoreProgress.InProgress) {
+    // Show ProgressDialog
+    if (showRestoreProgressDialog) {
         RestoreBackupProgressDialog(
             progress = restoreProgress,
-            onCancel = viewModel::cancelRestore
+            onCancel = {
+                viewModel.cancelRestore()
+                showRestoreProgressDialog = false
+                selectedBackup = null
+            },
+            onDismiss = {
+                showRestoreProgressDialog = false
+                selectedBackup = null
+            }
+        )
+    }
+
+    // Show ProgressDialog
+    if (showBackupProgressDialog) {
+        BackupProgressDialog(
+            progress = backupProgress,
+            onCancel = {
+                viewModel.cancelBackup()
+                showBackupProgressDialog = false
+            },
+            onDismiss = {
+                showBackupProgressDialog = false
+            }
         )
     }
 
@@ -236,6 +325,7 @@ fun BackupScreen(
     LaunchedEffect(uiState.successMessage) {
         uiState.successMessage?.let { message ->
             // Show snackbar for success
+            snackbarHostState.showSnackbar(message)
             viewModel.dismissMessage()
         }
     }
@@ -243,6 +333,7 @@ fun BackupScreen(
     LaunchedEffect(uiState.errorMessage) {
         uiState.errorMessage?.let { message ->
             // Show snackbar for error
+            snackbarHostState.showSnackbar(message)
             viewModel.dismissMessage()
         }
     }
@@ -250,6 +341,7 @@ fun BackupScreen(
     LaunchedEffect(uiState.infoMessage) {
         uiState.infoMessage?.let { message ->
             // Show snackbar for info
+            snackbarHostState.showSnackbar(message)
             viewModel.dismissMessage()
         }
     }
@@ -318,51 +410,3 @@ private fun BackupScreenPreview() {
          BackupScreen(onNavigateBack = {})
     }
 }
-
-/*
-=============================================================================
-                            BACKUP SCREEN INTEGRATION
-=============================================================================
-
-FUNZIONALITÀ IMPLEMENTATE:
-✅ Layout principale con LazyColumn per performance
-✅ Top bar con navigazione e refresh
-✅ Integration completa ViewModels + UI components
-✅ Dialog management per restore/delete confirmation
-✅ Progress tracking per operazioni long-running
-✅ Error handling con snackbar messages
-✅ Empty state e lista backup
-✅ Refresh manual con pull-to-refresh pattern
-
-ARCHITETTURA UTILIZZATA:
-✅ Jetpack Compose best practices
-✅ State hoisting con ViewModel
-✅ Flow-based reactive UI
-✅ Dialog state management locale
-✅ Scaffold pattern per layout
-✅ Material Design 3 theming
-✅ QReport design tokens compliance
-
-UX PATTERNS:
-✅ Industrial-friendly touch targets
-✅ Loading states e progress indicators
-✅ Confirmation dialogs per azioni distruttive
-✅ Visual feedback per stati operazioni
-✅ Accessibility compliance
-✅ Error prevention e recovery
-
-NAVIGATION INTEGRATION:
-✅ Back navigation handling
-✅ Parametri navigation (future)
-✅ Deep linking ready (future)
-✅ Bottom navigation integration ready
-
-TESTING STRATEGY:
-✅ Composable previews
-✅ UI state testing
-✅ Dialog interaction testing
-✅ Progress flow testing
-✅ Error scenario testing
-
-=============================================================================
-*/
