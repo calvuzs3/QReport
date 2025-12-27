@@ -1,4 +1,4 @@
-package net.calvuz.qreport.domain.model
+package net.calvuz.qreport.domain.model.settings
 
 import kotlinx.serialization.Serializable
 
@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
  */
 @Serializable
 data class TechnicianInfo(
-    val name: String,
+    val name: String = "",
     val company: String = "",
     val certification: String = "",
     val phone: String = "",

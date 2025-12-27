@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.domain.model.backup.SettingsBackup
 import net.calvuz.qreport.domain.repository.backup.SettingsBackupRepository
+import net.calvuz.qreport.domain.repository.settings.TechnicianSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -34,7 +35,8 @@ val Context.settingsDataStore: DataStore<androidx.datastore.preferences.core.Pre
 
 @Singleton
 class SettingsBackupRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val technicianSettingsRepository: TechnicianSettingsRepository
 ) : SettingsBackupRepository {
 
     companion object {
@@ -42,7 +44,6 @@ class SettingsBackupRepositoryImpl @Inject constructor(
         private const val SHARED_PREFS_NAME = "qreport_prefs"
 
         // DataStore keys (moderne)
-        val TECHNICIAN_NAME = stringPreferencesKey("technician_name")
         val AUTO_SAVE_CHECKUPS = booleanPreferencesKey("auto_save_checkups")
         val PHOTO_QUALITY = stringPreferencesKey("photo_quality")
         val BACKUP_AUTO_ENABLED = booleanPreferencesKey("backup_auto_enabled")
@@ -74,18 +75,43 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             val dataStorePrefs = exportDataStorePreferences()
             Timber.v("Exported ${dataStorePrefs.size} datastore preferences")
 
-            // 3. Combine all settings
+            // 3. Export technician settings
+            val technicianSettings = exportTechnicianSettings()
+            Timber.v("Exported ${technicianSettings.size} technician settings")
+
+            // 4. Combine all settings
             val allPreferences = sharedPrefs + dataStorePrefs
 
             SettingsBackup(
                 preferences = allPreferences,
-                userSettings = exportUserSpecificSettings(),
+                userSettings = exportUserSpecificSettings() + technicianSettings,
                 backupDateTime = Clock.System.now()
             )
 
         } catch (e: Exception) {
             Timber.e(e, "Errore export settings")
             SettingsBackup.empty()
+        }
+    }
+
+    /**
+     * Export technician settings with tech_ prefix
+     */
+    private suspend fun exportTechnicianSettings(): Map<String, String> {
+        return try {
+            val technicianBackupData = technicianSettingsRepository.exportForBackup()
+
+            // Add tech_ prefix for namespace separation
+            val prefixedData = mutableMapOf<String, String>()
+            technicianBackupData.forEach { (key, value) ->
+                prefixedData["tech_$key"] = value
+            }
+
+            prefixedData
+
+        } catch (e: Exception) {
+            Timber.e(e, "Technician settings export failed")
+            emptyMap()
         }
     }
 
@@ -125,10 +151,6 @@ class SettingsBackupRepositoryImpl @Inject constructor(
         return try {
             val preferences = context.settingsDataStore.data.first()
             val dataStorePrefs = mutableMapOf<String, String>()
-
-            preferences[TECHNICIAN_NAME]?.let {
-                dataStorePrefs["technician_name"] = it
-            }
 
             preferences[AUTO_SAVE_CHECKUPS]?.let {
                 dataStorePrefs["auto_save_checkups"] = it.toString()
@@ -301,10 +323,6 @@ class SettingsBackupRepositoryImpl @Inject constructor(
         try {
             context.settingsDataStore.edit { preferences ->
 
-                modernPrefs["technician_name"]?.let {
-                    preferences[TECHNICIAN_NAME] = it
-                }
-
                 modernPrefs["auto_save_checkups"]?.toBoolean()?.let {
                     preferences[AUTO_SAVE_CHECKUPS] = it
                 }
@@ -427,7 +445,6 @@ class SettingsBackupRepositoryImpl @Inject constructor(
             summary["modern_preferences_count"] = dataStorePrefs.asMap().size.toString()
 
             // Settings key
-            summary["technician_name"] = dataStorePrefs[TECHNICIAN_NAME] ?: "Non impostato"
             summary["auto_save_enabled"] = dataStorePrefs[AUTO_SAVE_CHECKUPS]?.toString() ?: "false"
             summary["backup_auto_enabled"] = dataStorePrefs[BACKUP_AUTO_ENABLED]?.toString() ?: "false"
             summary["ui_theme"] = dataStorePrefs[UI_THEME] ?: "auto"
@@ -448,41 +465,3 @@ class SettingsImportException(
     message: String,
     cause: Throwable? = null
 ) : Exception(message, cause)
-
-/*
-=============================================================================
-                            SETTINGS BACKUP STRUCTURE
-=============================================================================
-
-SettingsBackup JSON Structure:
-{
-  "preferences": {
-    // SharedPreferences legacy (prefixed with "legacy_")
-    "legacy_user_preference_1": "value1",
-    "legacy_auto_backup_enabled": "true",
-
-    // DataStore preferences moderne
-    "technician_name": "Mario Rossi",
-    "auto_save_checkups": "true",
-    "photo_quality": "high",
-    "backup_auto_enabled": "false",
-    "backup_frequency_days": "7",
-    "export_format_default": "word",
-    "ui_theme": "dark",
-    "notification_enabled": "true",
-    "analytics_enabled": "false",
-    "app_version_last_used": "1.2.0",
-    "total_checkups_completed": "42"
-  },
-  "userSettings": {
-    "device_model": "Pixel 7",
-    "device_manufacturer": "Google",
-    "android_version": "14",
-    "app_package": "net.calvuz.qreport",
-    "settings_exported_at": "2024-12-20T14:30:22Z"
-  },
-  "backupDateTime": "2024-12-20T14:30:22Z"
-}
-
-=============================================================================
-*/

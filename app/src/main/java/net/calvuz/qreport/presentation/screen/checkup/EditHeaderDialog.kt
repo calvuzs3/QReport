@@ -15,13 +15,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
 import net.calvuz.qreport.domain.model.island.IslandInfo
+import net.calvuz.qreport.domain.model.settings.TechnicianInfo
+import net.calvuz.qreport.presentation.components.SectionCard
+import net.calvuz.qreport.presentation.settings.technician.TechnicianSettingsViewModel
 
 /**
  * Dialog per l'editing delle informazioni dell'header del check-up
  */
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditHeaderDialog(
@@ -29,7 +35,8 @@ fun EditHeaderDialog(
     onDismiss: () -> Unit,
     onConfirm: (CheckUpHeader) -> Unit,
     isLoading: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    technicianViewModel: TechnicianSettingsViewModel = hiltViewModel()
 ) {
     // Client Info State
     var companyName by remember { mutableStateOf(header.clientInfo.companyName) }
@@ -54,8 +61,31 @@ fun EditHeaderDialog(
     var technicianPhone by remember { mutableStateOf(header.technicianInfo.phone) }
     var technicianEmail by remember { mutableStateOf(header.technicianInfo.email) }
 
+    // ===== TECHNICIAN SETTINGS INTEGRATION =====
+    val technicianSettings by technicianViewModel.currentTechnicianInfo.collectAsStateWithLifecycle()
+    val hasTechnicianData by technicianViewModel.hasTechnicianData.collectAsStateWithLifecycle()
+
     // Notes
     var notes by remember { mutableStateOf(header.notes) }
+
+    // ===== AUTO-LOAD TECHNICIAN DATA =====
+    var isAutoLoaded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(technicianSettings) {
+        // Solo se i campi tecnico sono vuoti E ci sono settings salvate
+        if (technicianName.isBlank() &&
+            technicianCompany.isBlank() &&
+            hasTechnicianData &&
+            (technicianSettings.name.isNotBlank() || technicianSettings.company.isNotBlank())
+        ) {
+            technicianName = technicianSettings.name
+            technicianCompany = technicianSettings.company
+            certification = technicianSettings.certification
+            technicianPhone = technicianSettings.phone
+            technicianEmail = technicianSettings.email
+            isAutoLoaded = true
+        }
+    }
 
     // Validation
     val isValidForm = companyName.isNotBlank() && serialNumber.isNotBlank()
@@ -108,6 +138,35 @@ fun EditHeaderDialog(
                         .padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
+
+                    // ===== AUTO-LOAD SUCCESS MESSAGE =====
+                    if (isAutoLoaded) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.AutoAwesome,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    "Dati tecnico caricati automaticamente dal profilo",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+
                     // Client Information Section
                     SectionCard(
                         title = "Informazioni Cliente",
@@ -259,6 +318,32 @@ fun EditHeaderDialog(
                         Column(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
+
+                            // Load from Profile Button (if data available and not auto-loaded)
+                            if (hasTechnicianData && !isAutoLoaded) {
+                                OutlinedButton(
+                                    onClick = {
+                                        technicianName = technicianSettings.name
+                                        technicianCompany = technicianSettings.company
+                                        certification = technicianSettings.certification
+                                        technicianPhone = technicianSettings.phone
+                                        technicianEmail = technicianSettings.email
+                                        isAutoLoaded = true
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        Icons.Default.Download,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Carica da Profilo Tecnico")
+                                }
+
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+
                             OutlinedTextField(
                                 value = technicianName,
                                 onValueChange = { technicianName = it },
@@ -324,6 +409,7 @@ fun EditHeaderDialog(
 
                 // Actions
                 HorizontalDivider()
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -382,41 +468,6 @@ fun EditHeaderDialog(
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun SectionCard(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            content()
         }
     }
 }

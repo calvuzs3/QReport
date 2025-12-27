@@ -10,6 +10,7 @@ import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
 import net.calvuz.qreport.domain.model.island.IslandInfo
 import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.domain.model.settings.TechnicianInfo
 import net.calvuz.qreport.domain.usecase.checkup.*
 import timber.log.Timber
 import javax.inject.Inject

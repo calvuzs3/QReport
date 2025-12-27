@@ -25,7 +25,7 @@ class DatabaseExportRepositoryImpl @Inject constructor(
      * Export all tables
      */
     override suspend fun exportAllTables(): DatabaseBackup {
-        Timber.Forest.d("Export db tables via repository")
+        Timber.Forest.i("Export db tables via repository")
 
         return try {
             databaseExporter.exportAllTables()
@@ -42,7 +42,7 @@ class DatabaseExportRepositoryImpl @Inject constructor(
         databaseBackup: DatabaseBackup,
         strategy: RestoreStrategy
     ): Result<Unit> {
-        Timber.Forest.d("Import db tables via repository (strategy: $strategy)")
+        Timber.Forest.i("Import db tables via repository (strategy: $strategy)")
 
         return try {
             databaseImporter.importAllTables(databaseBackup, strategy)
@@ -56,7 +56,7 @@ class DatabaseExportRepositoryImpl @Inject constructor(
      * DB integrity check
      */
     override suspend fun validateDatabaseIntegrity(): BackupValidationResult {
-        Timber.Forest.d("Database integrity check")
+        Timber.Forest.i("Database integrity check")
 
         return try {
             databaseExporter.validateDatabaseIntegrity()
@@ -71,7 +71,7 @@ class DatabaseExportRepositoryImpl @Inject constructor(
      * tips: use DatabaseImporter for a secure clean up with FK order
      */
     override suspend fun clearAllTables(): Result<Unit> {
-        Timber.Forest.w("CLEAR ALL TABLES")
+        Timber.Forest.w("Clear all tables")
 
         return try {
             val emptyBackup = DatabaseBackup(
@@ -100,10 +100,12 @@ class DatabaseExportRepositoryImpl @Inject constructor(
      * Count total records
      */
     override suspend fun getEstimatedRecordCount(): Int {
+        Timber.Forest.i("Get estimated record count")
+
         return try {
             databaseExporter.getEstimatedRecordCount()
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Estimated record count failed")
+            Timber.Forest.e(e, "Get estimated record count failed")
             0
         }
     }

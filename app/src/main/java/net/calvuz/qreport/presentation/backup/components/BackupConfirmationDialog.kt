@@ -9,13 +9,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Backup
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DataUsage
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.PhotoSizeSelectLarge
-import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
@@ -105,17 +102,9 @@ fun BackupConfirmationDialog(
 
                 // Modalità backup
                 DialogItemRow(
-                    icon = when (backupOptions.backupMode) {
-                        BackupMode.LOCAL -> Icons.Default.Storage
-                        BackupMode.CLOUD -> Icons.Default.Cloud
-                        BackupMode.BOTH -> Icons.Default.CloudSync
-                    },
+                    icon = backupOptions.backupMode.icon,
                     label = "Modalità",
-                    value = when (backupOptions.backupMode) {
-                        BackupMode.LOCAL -> "Locale"
-                        BackupMode.CLOUD -> "Cloud"
-                        BackupMode.BOTH -> "Locale + Cloud"
-                    },
+                    value = backupOptions.backupMode.displayName               ,
                     enabled = true
                 )
 

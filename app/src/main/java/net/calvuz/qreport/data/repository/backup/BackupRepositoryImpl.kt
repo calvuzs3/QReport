@@ -9,7 +9,7 @@ import net.calvuz.qreport.domain.model.backup.*
 import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.repository.backup.BackupRepository
 import net.calvuz.qreport.domain.repository.backup.PhotoArchiveRepository
-import net.calvuz.qreport.domain.repository.backup.SettingsBackupRepository
+import net.calvuz.qreport.domain.repository.settings.SettingsRepository
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -23,7 +23,7 @@ import javax.inject.Singleton
 class BackupRepositoryImpl @Inject constructor(
     private val databaseExportRepository: DatabaseExportRepository,
     private val photoArchiveRepository: PhotoArchiveRepository,
-    private val settingsBackupRepository: SettingsBackupRepository,
+    private val settingsRepository: SettingsRepository,
     private val jsonSerializer: net.calvuz.qreport.data.backup.BackupJsonSerializer,
     private val fileManager: FileManager
 ) : BackupRepository {
@@ -81,7 +81,7 @@ class BackupRepositoryImpl @Inject constructor(
                 //
                 Timber.d("3. Export settings")
                 emit(BackupProgress.InProgress("3. Export settings", 0.3f))
-                val settingsBackup = settingsBackupRepository.exportSettings()
+                val settingsBackup = settingsRepository.exportSettings()
                 emit(
                     BackupProgress.InProgress(
                         "- Settings exported", 0.35f))
@@ -284,7 +284,7 @@ class BackupRepositoryImpl @Inject constructor(
                                 // 6. Ripristino impostazioni
                                 //
                                 emit(RestoreProgress.InProgress("Restoring settings", 0.95f))
-                                val settingsResult = settingsBackupRepository.importSettings(backupData.settings)
+                                val settingsResult = settingsRepository.importSettings(backupData.settings)
 
                                 settingsResult.fold(
                                     onSuccess = {

@@ -1,6 +1,5 @@
 package net.calvuz.qreport.presentation.navigation
 
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
@@ -28,7 +27,7 @@ import net.calvuz.qreport.presentation.screen.checkup.CheckUpDetailScreen
 import net.calvuz.qreport.presentation.screen.camera.CameraScreen
 import net.calvuz.qreport.presentation.screen.client.client.ClientDetailScreen
 import net.calvuz.qreport.presentation.screen.photo.PhotoGalleryScreen
-import net.calvuz.qreport.presentation.screen.settings.SettingsScreen
+import net.calvuz.qreport.presentation.settings.SettingsScreen
 import net.calvuz.qreport.presentation.screen.export.ExportOptionsScreen
 import net.calvuz.qreport.presentation.screen.client.client.ClientListScreen
 import net.calvuz.qreport.presentation.screen.client.client.ClientFormScreen
@@ -42,9 +41,11 @@ import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIsla
 import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandDetailScreen
 import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandListScreen
 import net.calvuz.qreport.presentation.screen.photo.PhotoImportPreviewScreen
+import net.calvuz.qreport.presentation.settings.technician.TechnicianSettingsScreen
 import timber.log.Timber
 import java.net.URLDecoder
 import java.net.URLEncoder
+import androidx.core.net.toUri
 
 /**
  * Sistema di navigazione QReport - COMPLETO
@@ -108,6 +109,9 @@ object QReportRoutes {
     const val CLIENTS = "clients"
     const val CHECKUPS = "checkups"
     const val SETTINGS = "settings"
+
+    // Settings
+    const val TECHNICIAN_SETTINGS = "technician_settings"
 
     // Check up management routes
     const val CHECKUP_CREATE = "checkup_create"
@@ -285,6 +289,21 @@ fun QReportNavigation(
                     SettingsScreen(
                         onNavigateToBackup = {
                             navController.navigate(QReportRoutes.BACKUP)
+                        },
+                        onNavigateToTechnicianSettings = {
+                            navController.navigate(QReportRoutes.TECHNICIAN_SETTINGS)
+                        }
+                    )
+                }
+
+                // ============================================================
+                // SETTINGS DESTINATIONS
+                // ============================================================
+
+                composable(QReportRoutes.TECHNICIAN_SETTINGS) {
+                    TechnicianSettingsScreen(
+                        onNavigateBack = {
+                            navController.popBackStack()
                         }
                     )
                 }
@@ -401,7 +420,7 @@ fun QReportNavigation(
                     val photoUriString =
                         backStackEntry.arguments?.getString("photoUri") ?: return@composable
 
-                    val photoUri = Uri.parse(photoUriString)
+                    val photoUri = photoUriString.toUri()
 
                     PhotoImportPreviewScreen(
                         checkItemId = checkItemId,

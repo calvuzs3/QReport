@@ -7,9 +7,11 @@ import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.data.local.file.FileManagerImpl
 import net.calvuz.qreport.data.repository.backup.BackupRepositoryImpl
 import net.calvuz.qreport.data.repository.backup.DatabaseExportRepositoryImpl
+import net.calvuz.qreport.data.repository.backup.PhotoArchiveRepositoryImpl
 import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.repository.backup.BackupRepository
 import net.calvuz.qreport.domain.repository.backup.DatabaseExportRepository
+import net.calvuz.qreport.domain.repository.backup.PhotoArchiveRepository
 import javax.inject.Singleton
 
 /**
@@ -49,4 +51,13 @@ abstract class BackupModule {
     abstract fun bindBackupRepository(
         backupRepositoryImpl: BackupRepositoryImpl
     ): BackupRepository
+
+    /**
+     * PhotoArchiveRepository - Fase 5.3 ✅
+     */
+    @Binds
+    @Singleton
+    abstract fun bindPhotoArchiveRepository(
+        photoArchiveRepositoryImpl: PhotoArchiveRepositoryImpl
+    ): PhotoArchiveRepository
 }

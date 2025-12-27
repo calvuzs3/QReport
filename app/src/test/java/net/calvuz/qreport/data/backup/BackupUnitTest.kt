@@ -15,7 +15,7 @@ import net.calvuz.qreport.domain.model.backup.*
 import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.repository.backup.BackupRepository
 import net.calvuz.qreport.domain.repository.backup.PhotoArchiveRepository
-import net.calvuz.qreport.domain.repository.backup.SettingsBackupRepository
+import net.calvuz.qreport.domain.repository.settings.SettingsRepository
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -59,7 +59,7 @@ class BackupUnitTest {
     lateinit var photoArchiveRepository: PhotoArchiveRepository
 
     @Inject
-    lateinit var settingsBackupRepository: SettingsBackupRepository
+    lateinit var mSettingsRepository: SettingsRepository
 
     @Inject
     lateinit var fileManager: FileManager
@@ -240,7 +240,7 @@ class BackupUnitTest {
         setupTestSettings()
 
         // When - Export settings
-        val settingsBackup = settingsBackupRepository.exportSettings()
+        val settingsBackup = mSettingsRepository.exportSettings()
 
         // Then - Verifica export
         assertTrue(settingsBackup.preferences.isNotEmpty())
@@ -248,7 +248,7 @@ class BackupUnitTest {
 
         // When - Clear e import settings
         clearTestSettings()
-        val importResult = settingsBackupRepository.importSettings(settingsBackup)
+        val importResult = mSettingsRepository.importSettings(settingsBackup)
 
         // Then - Verifica import
         assertTrue(importResult.isSuccess)
@@ -282,7 +282,7 @@ class BackupUnitTest {
     }
 
     private fun setupTestSettings() {
-        // TODO: Setup impostazioni test usando SettingsBackupRepository
+        // TODO: Setup impostazioni test usando SettingsRepository
         println("⚙️ Test settings configured")
     }
 

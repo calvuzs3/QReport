@@ -94,7 +94,7 @@ class DatabaseExporter @Inject constructor(
             val totalRecords = databaseBackup.getTotalRecordCount()
 
             Timber.v("Export completed in ${duration} ms - $totalRecords records")
-            Timber.v(buildString {
+            Timber.i(buildString {
                 append("Breakdown: CheckUps=${checkUps.size}, CheckItems=${checkItems.size}, ")
                 append("Photos=${photos.size}, SpareParts=${spareParts.size}, ")
                 append("Clients=${clients.size}, Contacts=${contacts.size}, ")
@@ -147,7 +147,10 @@ class DatabaseExporter @Inject constructor(
 
             // Verifica FK consistency
             val orphanedCheckItems = checkItemDao.count() -
-                    database.query("SELECT COUNT(*) FROM check_items ci WHERE EXISTS (SELECT 1 FROM checkups c WHERE c.id = ci.checkup_id)", null).use {
+                    database.query(
+                        "SELECT COUNT(*) FROM check_items ci WHERE EXISTS (SELECT 1 FROM checkups c WHERE c.id = ci.checkup_id)",
+                        null
+                    ).use {
                         it.moveToFirst()
                         it.getInt(0)
                     }

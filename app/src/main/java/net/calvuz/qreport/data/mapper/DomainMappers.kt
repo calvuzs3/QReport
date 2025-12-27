@@ -11,6 +11,7 @@ import net.calvuz.qreport.domain.model.island.IslandInfo
 import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.model.module.ModuleType
 import net.calvuz.qreport.domain.model.photo.Photo
+import net.calvuz.qreport.domain.model.settings.TechnicianInfo
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.model.spare.SparePartCategory
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency

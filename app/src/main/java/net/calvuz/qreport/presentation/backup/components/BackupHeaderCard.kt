@@ -37,7 +37,7 @@ import kotlin.math.roundToInt
 fun BackupHeaderCard(
     modifier: Modifier = Modifier,
     totalBackups: Int,
-    lastBackupDate: Instant?= null,
+    lastBackupDate: Instant? = null,
     estimatedSize: Long,
 ) {
     Card(
@@ -256,7 +256,7 @@ private fun OptionToggleItem(
                 MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )
 
-        Spacer(modifier = Modifier.width ( 16.dp))
+        Spacer(modifier = Modifier.width(16.dp))
 
         Column(
             modifier = Modifier.weight(1f)
@@ -315,21 +315,13 @@ private fun BackupModeSelector(
 
                 Column {
                     Text(
-                        text = when (mode) {
-                            BackupMode.LOCAL -> "Locale"
-                            BackupMode.CLOUD -> "Cloud"
-                            BackupMode.BOTH -> "Locale + Cloud"
-                        },
+                        text = mode.displayName,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
 
                     Text(
-                        text = when (mode) {
-                            BackupMode.LOCAL -> "Salva solo su dispositivo"
-                            BackupMode.CLOUD -> "Carica su servizio cloud"
-                            BackupMode.BOTH -> "Salva locale e carica su cloud"
-                        },
+                        text = mode.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                     )
@@ -490,6 +482,7 @@ private fun BackupProgressContent(
                     }
                 }
             }
+
             else -> {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth()
@@ -545,7 +538,9 @@ private fun BackupActionContent(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "File salvato in: ${progress.backupPath.split("/").lastOrNull() ?: ""}",
+                        text = "File salvato in: ${
+                            progress.backupPath.split("/").lastOrNull() ?: ""
+                        }",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center
@@ -584,7 +579,8 @@ private fun BackupActionContent(
                     )
                 }
 
-                else -> { /* Non dovrebbe succedere */ }
+                else -> { /* Non dovrebbe succedere */
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
