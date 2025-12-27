@@ -84,7 +84,7 @@ fun RestoreBackupConfirmationDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "📅 ${(backup.timestamp).toItalianDate()}",
+                                text = "📅 ${(backup.createdAt).toItalianDate()}",
                                 style = MaterialTheme.typography.bodySmall
                             )
                             Text(

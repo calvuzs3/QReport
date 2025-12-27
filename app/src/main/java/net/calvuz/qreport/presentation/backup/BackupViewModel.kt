@@ -12,6 +12,7 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.data.backup.model.BackupInfo
 import net.calvuz.qreport.domain.model.backup.*
 import net.calvuz.qreport.domain.usecase.backup.*
+import net.calvuz.qreport.util.DateTimeUtils.toItalianDateTime
 import net.calvuz.qreport.util.SizeUtils.getFormattedSize
 import timber.log.Timber
 import javax.inject.Inject
@@ -39,7 +40,12 @@ data class BackupUiState(
     val isLoading: Boolean = false,
     val successMessage: String? = null,
     val errorMessage: String? = null,
-    val infoMessage: String? = null
+    val infoMessage: String? = null,
+
+    // Share
+    val showShareDialog: Boolean = false,
+    val shareBackupPath: String? = null,
+    val shareBackupName: String? = null
 )
 
 /**
@@ -57,7 +63,6 @@ class BackupViewModel @Inject constructor(
     private val getAvailableBackupsUseCase: GetAvailableBackupsUseCase,
     private val deleteBackupUseCase: DeleteBackupUseCase,
     private val getBackupSizeUseCase: GetBackupSizeUseCase,
-    private val shareBackupUseCase: ShareBackupUseCase,
     private val validateBackupUseCase: ValidateBackupUseCase
 ) : ViewModel() {
 
@@ -82,6 +87,49 @@ class BackupViewModel @Inject constructor(
         Timber.d("Loading initial backup data")
         loadBackupEstimate()
         loadAvailableBackups()
+    }
+// ===== SHARE DIALOG MANAGEMENT =====
+
+    /**
+     * ✅ CORRECTED: Show share dialog with proper backup info
+     */
+    fun showShareDialog(backupId: String) {
+        val backup = uiState.value.availableBackups.find { it.id == backupId }
+        if (backup == null) {
+            showErrorMessage("Backup non trovato")
+            return
+        }
+
+        // Use directory path instead of file path
+        val backupPath = if (backup.dirPath.isNotEmpty()) {
+            backup.dirPath  // ✅ Directory path for structure analysis
+        } else {
+            backup.filePath // ✅ Fallback to file path if no directory
+        }
+
+        _uiState.update {
+            it.copy(
+                showShareDialog = true,
+                shareBackupPath = backupPath,  // Directory
+                shareBackupName = backup.createdAt.toItalianDateTime()
+            )
+        }
+
+        Timber.d("Share dialog shown for backup: ${backup.id}")
+    }
+
+    /**
+     * ✅ CORRECTED: Hide share dialog
+     */
+    fun hideShareDialog() {
+        _uiState.update {
+            it.copy(
+                showShareDialog = false,
+                shareBackupPath = null,
+                shareBackupName = null
+            )
+        }
+        Timber.d("Share dialog hidden")
     }
 
     // ===== BACKUP OPTIONS =====
@@ -296,33 +344,35 @@ class BackupViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Condividi backup selezionato
-     */
-    fun shareBackup(backupId: String) {
-        viewModelScope.launch {
-            try {
-                val backup = uiState.value.availableBackups.find { it.id == backupId }
-                if (backup == null) {
-                    showErrorMessage("Backup non trovato")
-                    return@launch
-                }
-
-                val result = shareBackupUseCase(backup.filePath)
-
-                if (result.isSuccess) {
-                    showSuccessMessage("Backup condiviso")
-                    Timber.d("Backup shared: $backupId")
-                } else {
-                    val error = result.exceptionOrNull()?.message ?: "Errore sconosciuto"
-                    showErrorMessage("Impossibile condividere backup: $error")
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Error sharing backup $backupId")
-                showErrorMessage("Errore durante condivisione backup")
-            }
-        }
-    }
+//    /**
+//     * Condividi backup selezionato
+//     */
+//    fun shareBackup(backupId: String) {
+//        viewModelScope.launch {
+//            try {
+//                Timber.i("Sharing backup $backupId")
+//
+//                val backup = uiState.value.availableBackups.find { it.id == backupId }
+//                if (backup == null) {
+//                    showErrorMessage("Backup non trovato")
+//                    return@launch
+//                }
+//
+//                val result = shareBackupUseCase(backup.filePath)
+//
+//                if (result.isSuccess) {
+//                    showSuccessMessage("Backup condiviso")
+//                    Timber.d("Backup shared: $backupId")
+//                } else {
+//                    val error = result.exceptionOrNull()?.message ?: "Errore sconosciuto"
+//                    showErrorMessage("Impossibile condividere backup: $error")
+//                }
+//            } catch (e: Exception) {
+//                Timber.e(e, "Error sharing backup $backupId")
+//                showErrorMessage("Errore durante condivisione backup")
+//            }
+//        }
+//    }
 
     // ===== DATA LOADING =====
 
@@ -339,7 +389,7 @@ class BackupViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         availableBackups = backups,
-                        lastBackupDate = backups.maxByOrNull { backup -> backup.timestamp }?.timestamp,
+                        lastBackupDate = backups.maxByOrNull { backup -> backup.createdAt }?.createdAt,
                         isLoading = false
                     )
                 }

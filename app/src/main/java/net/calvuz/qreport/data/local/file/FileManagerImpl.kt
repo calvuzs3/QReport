@@ -4,6 +4,10 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.data.backup.BackupJsonSerializer
 import net.calvuz.qreport.data.backup.model.BackupInfo
@@ -15,7 +19,13 @@ import net.calvuz.qreport.util.DateTimeUtils.formatTimestampToDateTime
 import net.calvuz.qreport.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.util.SizeUtils.getFormattedSize
 import timber.log.Timber
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -250,7 +260,7 @@ class FileManagerImpl @Inject constructor(
                             backupInfoList.add(
                                 BackupInfo(
                                     id = backupData.metadata.id,
-                                    timestamp = backupData.metadata.timestamp,
+                                    createdAt = backupData.metadata.timestamp,
                                     description = backupData.metadata.description,
                                     totalSize = backupData.metadata.totalSize,
                                     includesPhotos = backupData.includesPhotos(),
@@ -461,6 +471,186 @@ class FileManagerImpl @Inject constructor(
         } catch (e: Exception) {
             Timber.w(e, "Failed to get app version")
             "unknown"
+        }
+    }
+
+    // COMPRESSED FILES
+
+    /**
+     * ✅ NEW: Create compressed ZIP backup for sharing
+     *
+     * @param backupPath Path to backup (directory or single file)
+     * @param includeAllFiles If true, compress all files; if false, only main JSON
+     * @return Result<File> ZIP file ready for sharing
+     */
+    override suspend fun createCompressedBackup(
+        backupPath: String,
+        includeAllFiles: Boolean
+    ): Result<File> {
+        return try {
+            val backupFile = File(backupPath)
+
+            if (!backupFile.exists()) {
+                return Result.failure(IllegalArgumentException("Backup path does not exist: $backupPath"))
+            }
+
+            // Create temporary ZIP file in cache directory
+//            val tempDir = context.cacheDir  // ✅ Direct cache directory
+            val tempDir = File(context.cacheDir, "shared")  // ❌ Subfolder might be wrong
+            tempDir.mkdirs()
+
+            val timestamp = System.currentTimeMillis()
+            val zipFileName = "qreport_backup_$timestamp.zip"
+            val zipFile = File(tempDir, zipFileName)
+
+            // Create ZIP archive
+            ZipOutputStream(BufferedOutputStream(FileOutputStream(zipFile))).use { zos ->
+
+                if (backupFile.isDirectory) {
+                    // Directory backup - compress files based on includeAllFiles flag
+                    val filesToCompress = if (includeAllFiles) {
+                        // All files in directory
+                        backupFile.listFiles()?.filter { it.isFile } ?: emptyList()
+                    } else {
+                        // Only main JSON file
+                        val mainFile = findMainBackupFile(backupFile)
+                        if (mainFile != null) listOf(mainFile) else emptyList()
+                    }
+
+                    Timber.d("Compressing ${filesToCompress.size} files from directory to ZIP")
+
+                    filesToCompress.forEach { file ->
+                        addFileToZip(zos, file, file.name)
+                    }
+
+                } else {
+                    // Single file backup
+                    Timber.d("Compressing single file to ZIP: ${backupFile.name}")
+                    addFileToZip(zos, backupFile, backupFile.name)
+                }
+            }
+
+            Timber.d("ZIP backup created successfully:")
+            Timber.d("  - File: ${zipFile.absolutePath}")
+            Timber.d("  - Size: ${(zipFile.length()).getFormattedSize()}")
+
+            // Schedule automatic cleanup after 10 minutes
+            scheduleZipCleanup(zipFile, delayMinutes = 10)
+
+            Result.success(zipFile)
+
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create compressed backup")
+            Result.failure(e)
+        }
+    }
+
+
+    /**
+     * ✅ NEW: Clean up all temporary ZIP backups (call on app start)
+     */
+    override suspend fun cleanupTempZipBackups() {
+        try {
+            val tempDir = File(context.cacheDir, "shared_backups")
+            if (!tempDir.exists()) return
+
+            val zipFiles = tempDir.listFiles()?.filter {
+                it.extension.equals("zip", ignoreCase = true)
+            } ?: return
+
+            var cleanedCount = 0
+            zipFiles.forEach { zipFile ->
+                try {
+                    if (zipFile.delete()) {
+                        cleanedCount++
+                    }
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to cleanup ZIP: ${zipFile.name}")
+                }
+            }
+
+            if (cleanedCount > 0) {
+                Timber.d("Cleaned up $cleanedCount temporary ZIP backups")
+            }
+
+        } catch (e: Exception) {
+            Timber.w(e, "Error during ZIP cleanup")
+        }
+    }
+
+    // COMPRESSED HELPERS
+
+    /**
+     * ✅ NEW: Add single file to ZIP archive
+     */
+    private fun addFileToZip(zos: ZipOutputStream, file: File, entryName: String) {
+        if (!file.exists() || !file.canRead()) {
+            Timber.w("Skipping unreadable file: ${file.name}")
+            return
+        }
+
+        try {
+            val entry = ZipEntry(entryName).apply {
+                time = file.lastModified()
+                // Set compression method
+                method = ZipEntry.DEFLATED
+            }
+
+            zos.putNextEntry(entry)
+
+            FileInputStream(file).use { fis ->
+                BufferedInputStream(fis).use { bis ->
+                    bis.copyTo(zos, bufferSize = 8192)
+                }
+            }
+
+            zos.closeEntry()
+            Timber.d("Added to ZIP: $entryName (${file.length().getFormattedSize()})")
+
+        } catch (e: Exception) {
+            Timber.e(e, "Error adding file to ZIP: $entryName")
+            throw e
+        }
+    }
+
+    /**
+     * ✅ NEW: Find main backup JSON file in directory
+     */
+    private fun findMainBackupFile(backupDir: File): File? {
+        val files = backupDir.listFiles()?.filter { it.isFile } ?: return null
+
+        // Priority order for main backup file
+        val candidates = listOf(
+            "qreport_backup_full.json",
+            "database.json",
+            "backup.json"
+        )
+
+        return candidates.firstNotNullOfOrNull { fileName ->
+            files.find { it.name == fileName }
+        } ?: files.find { it.extension.equals("json", ignoreCase = true) }
+    }
+
+    /**
+     * ✅ NEW: Schedule automatic ZIP file cleanup
+     */
+    private fun scheduleZipCleanup(zipFile: File, delayMinutes: Long = 10) {
+        // Using coroutine for cleanup (requires CoroutineScope)
+        CoroutineScope(Dispatchers.IO).launch {
+            delay(delayMinutes * 60 * 1000) // Convert minutes to milliseconds
+
+            try {
+                if (zipFile.exists()) {
+                    val deleted = zipFile.delete()
+                    if (deleted) {
+                        Timber.d("Auto-cleaned ZIP backup: ${zipFile.name}")
+                    } else {
+                        Timber.w("Failed to delete ZIP backup: ${zipFile.name}")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.w(e, "Error during ZIP cleanup: ${zipFile.name}")
+            }
         }
     }
 

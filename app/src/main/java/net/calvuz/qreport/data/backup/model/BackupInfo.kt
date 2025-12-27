@@ -7,7 +7,7 @@ import kotlinx.datetime.Instant
  */
 data class BackupInfo(
     val id: String,
-    val timestamp: Instant,
+    val createdAt: Instant,
     val description: String?,
     val totalSize: Long,
     val includesPhotos: Boolean,

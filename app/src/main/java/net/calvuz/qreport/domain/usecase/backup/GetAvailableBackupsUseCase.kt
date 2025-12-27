@@ -24,7 +24,7 @@ class GetAvailableBackupsUseCase @Inject constructor(
             val backups = backupRepository.getAvailableBackups()
 
             Timber.d("Backup found ${backups.size}")
-            backups.sortedByDescending { it.timestamp } // Most recent first
+            backups.sortedByDescending { it.createdAt } // Most recent first
 
         } catch (e: Exception) {
             Timber.e(e, "Getting available backups failed")

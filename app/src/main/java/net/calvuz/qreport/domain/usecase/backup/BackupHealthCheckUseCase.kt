@@ -25,7 +25,7 @@ class BackupHealthCheckUseCase @Inject constructor(
 
             // Check backup age
             val backups = backupRepository.getAvailableBackups()
-            val lastBackup = backups.maxByOrNull { it.timestamp }
+            val lastBackup = backups.maxByOrNull { it.createdAt }
 
             // TODO: Add more health checks:
             // - Last backup age > 30 days

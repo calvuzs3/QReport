@@ -1,5 +1,6 @@
 package net.calvuz.qreport.presentation.backup
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,15 +11,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dagger.hilt.android.qualifiers.ApplicationContext
 import net.calvuz.qreport.domain.model.backup.*
 import net.calvuz.qreport.presentation.backup.components.*
 import net.calvuz.qreport.data.backup.model.BackupInfo
 import net.calvuz.qreport.presentation.components.EmptyState
+import net.calvuz.qreport.presentation.share.ShareBackupDialog
+import net.calvuz.qreport.presentation.share.ShareBackupViewModel
 
 /**
  * BACKUP SCREEN - FASE 5.4
@@ -37,12 +42,15 @@ import net.calvuz.qreport.presentation.components.EmptyState
 fun BackupScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: BackupViewModel = hiltViewModel()
+    backupViewModel: BackupViewModel = hiltViewModel(),
+    shareViewModel: ShareBackupViewModel = hiltViewModel(),
+    @ApplicationContext context: Context = LocalContext.current
 ) {
     // Collect UI state
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val backupProgress by viewModel.backupProgress.collectAsStateWithLifecycle()
-    val restoreProgress by viewModel.restoreProgress.collectAsStateWithLifecycle()
+    val backupUiState by backupViewModel.uiState.collectAsStateWithLifecycle()
+    val shareUiState by shareViewModel.uiState.collectAsStateWithLifecycle()
+    val backupProgress by backupViewModel.backupProgress.collectAsStateWithLifecycle()
+    val restoreProgress by backupViewModel.restoreProgress.collectAsStateWithLifecycle()
 
     // Dialog states
     var showBackupDialog by remember { mutableStateOf(false) }
@@ -99,8 +107,8 @@ fun BackupScreen(
         topBar = {
             BackupTopBar(
                 onNavigateBack = onNavigateBack,
-                onRefresh = viewModel::refreshData,
-                isRefreshing = uiState.isLoading
+                onRefresh = backupViewModel::refreshData,
+                isRefreshing = backupUiState.isLoading
             )
         },
         snackbarHost = {
@@ -124,22 +132,22 @@ fun BackupScreen(
                 // ===== BACKUP HEADER =====
                 item {
                     BackupHeaderCard(
-                        totalBackups = uiState.availableBackups.size,
-                        lastBackupDate = uiState.lastBackupDate,
-                        estimatedSize = uiState.estimatedBackupSize
+                        totalBackups = backupUiState.availableBackups.size,
+                        lastBackupDate = backupUiState.lastBackupDate,
+                        estimatedSize = backupUiState.estimatedBackupSize
                     )
                 }
 
                 // ===== BACKUP OPTIONS =====
                 item {
                     BackupOptionsCard(
-                        includePhotos = uiState.includePhotos,
+                        includePhotos = backupUiState.includePhotos,
 //                        includeThumbnails = uiState.includeThumbnails,
-                        backupMode = uiState.backupMode,
-                        onTogglePhotos = viewModel::toggleIncludePhotos,
+                        backupMode = backupUiState.backupMode,
+                        onTogglePhotos = backupViewModel::toggleIncludePhotos,
 //                        onToggleThumbnails = viewModel::toggleIncludeThumbnails,
-                        onModeChange = viewModel::updateBackupMode,
-                        estimatedSize = uiState.estimatedBackupSize
+                        onModeChange = backupViewModel::updateBackupMode,
+                        estimatedSize = backupUiState.estimatedBackupSize
                     )
                 }
 
@@ -149,7 +157,7 @@ fun BackupScreen(
                         isBackupInProgress = backupProgress is BackupProgress.InProgress,
                         backupProgress = backupProgress,
                         onShowBackupConfirmation = { showBackupDialog = true },
-                        onCancelBackup = viewModel::cancelBackup
+                        onCancelBackup = backupViewModel::cancelBackup
                     )
                 }
 
@@ -166,9 +174,9 @@ fun BackupScreen(
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
-                        if (uiState.availableBackups.isNotEmpty()) {
+                        if (backupUiState.availableBackups.isNotEmpty()) {
                             Text(
-                                text = "${uiState.availableBackups.size} backup",
+                                text = "${backupUiState.availableBackups.size} backup",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
@@ -177,7 +185,7 @@ fun BackupScreen(
                 }
 
                 // ===== BACKUP LIST OR EMPTY STATE =====
-                if (uiState.availableBackups.isEmpty()) {
+                if (backupUiState.availableBackups.isEmpty()) {
                     item {
                         EmptyState(
                             textTitle = "Nessun backup trovato",
@@ -188,7 +196,7 @@ fun BackupScreen(
                     }
                 } else {
                     items(
-                        items = uiState.availableBackups,
+                        items = backupUiState.availableBackups,
                         key = { backup -> backup.id }
                     ) { backup ->
                         BackupItemCard(
@@ -202,7 +210,7 @@ fun BackupScreen(
                                 showDeleteDialog = true
                             },
                             onShare = {
-                                viewModel.shareBackup(backup.id)
+                                backupViewModel.showShareDialog(backup.id)
                             },
                             isRestoreInProgress = restoreProgress is RestoreProgress.InProgress
                         )
@@ -218,7 +226,7 @@ fun BackupScreen(
             }
 
             // ===== LOADING OVERLAY =====
-            if (uiState.isLoading) {
+            if (backupUiState.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -237,14 +245,14 @@ fun BackupScreen(
     if (showBackupDialog) {
         BackupConfirmationDialog(
             backupOptions = BackupOptions(
-                includePhotos = uiState.includePhotos,
-                includeThumbnails = uiState.includeThumbnails,
-                backupMode = uiState.backupMode,
-                description = uiState.backupDescription,
-                estimatedSize = uiState.estimatedBackupSize
+                includePhotos = backupUiState.includePhotos,
+                includeThumbnails = backupUiState.includeThumbnails,
+                backupMode = backupUiState.backupMode,
+                description = backupUiState.backupDescription,
+                estimatedSize = backupUiState.estimatedBackupSize
             ),
             onConfirm = {
-                viewModel.createBackup()  // ✅ Ora chiamato dal dialog
+                backupViewModel.createBackup()  // ✅ Ora chiamato dal dialog
                 showBackupDialog = false
                 showBackupProgressDialog = true  // ✅ Apri subito progress dialog
             },
@@ -260,7 +268,7 @@ fun BackupScreen(
             RestoreBackupConfirmationDialog(
                 backup = backup,
                 onConfirm = { strategy ->
-                    viewModel.restoreBackup(backup.id, strategy)
+                    backupViewModel.restoreBackup(backup.id, strategy)
                     showRestoreDialog = false
                     showRestoreProgressDialog = true
                     // do not set selectedBackup to null here
@@ -277,7 +285,7 @@ fun BackupScreen(
             DeleteBackupDialog(
                 backup = backup,
                 onConfirm = {
-                    viewModel.deleteBackup(backup.id)
+                    backupViewModel.deleteBackup(backup.id)
                     showDeleteDialog = false
                     selectedBackup = null
                 },
@@ -294,7 +302,7 @@ fun BackupScreen(
         RestoreBackupProgressDialog(
             progress = restoreProgress,
             onCancel = {
-                viewModel.cancelRestore()
+                backupViewModel.cancelRestore()
                 showRestoreProgressDialog = false
                 selectedBackup = null
             },
@@ -310,7 +318,7 @@ fun BackupScreen(
         BackupProgressDialog(
             progress = backupProgress,
             onCancel = {
-                viewModel.cancelBackup()
+                backupViewModel.cancelBackup()
                 showBackupProgressDialog = false
             },
             onDismiss = {
@@ -319,30 +327,67 @@ fun BackupScreen(
         )
     }
 
+    // SHARE DIALOG
+    if (backupUiState.showShareDialog && backupUiState.shareBackupPath != null) {
+        val backupPath = backupUiState.shareBackupPath!!
+        val backupName = backupUiState.shareBackupName ?: "Backup"
+
+        LaunchedEffect(backupPath) {
+            shareViewModel.loadShareOptions(backupPath)
+        }
+
+        ShareBackupDialog(
+            backupPath = backupPath,
+            backupName = backupName,
+            shareOptions = shareUiState.shareOptions,
+            isLoading = shareUiState.isLoading,
+            onShareSelected = { option ->
+                shareViewModel.shareBackup(
+                    backupPath = backupPath,
+                    option = option,
+                    onIntentReady = { intent ->
+                        // ✅ CORRECTED: Start share intent
+                        context.startActivity(intent)
+                        backupViewModel.hideShareDialog()
+                    }
+                )
+            },
+            onDismiss = backupViewModel::hideShareDialog
+        )
+    }
+
+    // ✅ CORRECTED: Handle sharing errors from ShareViewModel
+    LaunchedEffect(shareUiState.error) {
+        shareUiState.error?.let { error ->
+            snackbarHostState.showSnackbar("Errore condivisione: $error")
+            shareViewModel.clearError()
+        }
+    }
+
     // ===== UI MESSAGES =====
 
     // Handle UI messages (success, error, info)
-    LaunchedEffect(uiState.successMessage) {
-        uiState.successMessage?.let { message ->
+    LaunchedEffect(backupUiState.successMessage) {
+        backupUiState.successMessage?.let { message ->
             // Show snackbar for success
             snackbarHostState.showSnackbar(message)
-            viewModel.dismissMessage()
+            backupViewModel.dismissMessage()
         }
     }
 
-    LaunchedEffect(uiState.errorMessage) {
-        uiState.errorMessage?.let { message ->
+    LaunchedEffect(backupUiState.errorMessage) {
+        backupUiState.errorMessage?.let { message ->
             // Show snackbar for error
             snackbarHostState.showSnackbar(message)
-            viewModel.dismissMessage()
+            backupViewModel.dismissMessage()
         }
     }
 
-    LaunchedEffect(uiState.infoMessage) {
-        uiState.infoMessage?.let { message ->
+    LaunchedEffect(backupUiState.infoMessage) {
+        backupUiState.infoMessage?.let { message ->
             // Show snackbar for info
             snackbarHostState.showSnackbar(message)
-            viewModel.dismissMessage()
+            backupViewModel.dismissMessage()
         }
     }
 }

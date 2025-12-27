@@ -191,7 +191,7 @@ object DateTimeUtils {
      * Formatta data in italiano
      */
     fun BackupInfo.getFormattedDate(): String {
-        return timestamp.toItalianDate()
+        return createdAt.toItalianDate()
     }
 
     /**

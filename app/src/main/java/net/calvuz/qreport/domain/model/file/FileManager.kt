@@ -5,6 +5,8 @@ import net.calvuz.qreport.domain.model.backup.BackupData
 import net.calvuz.qreport.domain.model.backup.BackupMode
 import net.calvuz.qreport.domain.model.backup.BackupValidationResult
 import net.calvuz.qreport.domain.model.export.ExportResult
+import java.io.File
+import java.util.zip.ZipOutputStream
 
 /**
  * File manager
@@ -34,4 +36,8 @@ interface FileManager {
     fun openExportedFile(exportResult: ExportResult.Success): Result<Unit>
     fun shareExportedFile(exportResult: ExportResult.Success): Result<Unit>
     fun getAppVersion(): String
+
+    // Compressed files
+    suspend fun createCompressedBackup(backupPath: String, includeAllFiles: Boolean = true): Result<File>
+    suspend fun cleanupTempZipBackups()
 }

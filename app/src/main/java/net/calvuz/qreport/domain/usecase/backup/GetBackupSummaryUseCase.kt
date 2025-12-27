@@ -17,15 +17,15 @@ class GetBackupSummaryUseCase @Inject constructor(
 
             val availableBackups = backupRepository.getAvailableBackups()
             val totalSize = availableBackups.sumOf { it.totalSize }
-            val lastBackup = availableBackups.maxByOrNull { it.timestamp }
+            val lastBackup = availableBackups.maxByOrNull { it.createdAt }
             val hasPhotos = availableBackups.any { it.includesPhotos }
 
             BackupSummary(
                 totalBackups = availableBackups.size,
                 totalSize = totalSize,
-                lastBackupTimestamp = lastBackup?.timestamp,
+                lastBackupTimestamp = lastBackup?.createdAt,
                 hasPhotoBackups = hasPhotos,
-                oldestBackupTimestamp = availableBackups.minByOrNull { it.timestamp }?.timestamp
+                oldestBackupTimestamp = availableBackups.minByOrNull { it.createdAt }?.createdAt
             )
 
         } catch (e: Exception) {
