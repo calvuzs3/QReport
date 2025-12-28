@@ -12,7 +12,7 @@ import javax.inject.Inject
  *
  * AGGIORNATO per usare:
  * - CheckItemModules (invece di CheckItemTemplates)
- * - Strutture dati esistenti (CheckUpStatistics, CheckUpProgress)
+ * - Strutture dati esistenti (CheckUpSingleStatistics, CheckUpProgress)
  * - CheckUpStatus con EXPORTED, ARCHIVED
  */
 

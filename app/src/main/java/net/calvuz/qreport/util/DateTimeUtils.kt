@@ -85,6 +85,29 @@ object DateTimeUtils {
     }
 
     /**
+     * Formatta data in modo relativo rispetto a oggi
+     */
+    fun Instant.toItalianLastModified(): String {
+        val now = Clock.System.now()
+        val diffMillis = (now - this).inWholeMilliseconds
+
+        return when {
+            diffMillis < 60000 -> "Aggiornato ora"
+            diffMillis < 3600000 -> "Aggiornato ${diffMillis / 60000} min fa"
+            diffMillis < 86400000 -> "Aggiornato ${diffMillis / 3600000}h fa"
+            else -> {
+                val days = (this - Clock.System.now()).inWholeDays
+
+                return when {
+                    days == 1L -> "Aggiornato ieri"
+                    days < 28 -> "Aggiornato $days giorni fa"
+                    else -> "Aggiornato il ${this.toItalianDate()}"
+                }
+            }
+        }
+    }
+
+    /**
      * Formatta per messaggi di scadenza
      * Esempi: "scade oggi", "scade domani", "scade il 15/11/2024", "scaduta il 10/11/2024"
      */
@@ -162,29 +185,6 @@ object DateTimeUtils {
         val thisDate = this.toLocalDateTime(TimeZone.currentSystemDefault()).date
         val todayDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
         return thisDate == todayDate
-    }
-
-    /**
-     * Formatta data in modo relativo rispetto a oggi
-     */
-    fun formattedLastModified(lastModified: Instant): String {
-        val now = Clock.System.now()
-        val diffMillis = (now - lastModified).inWholeMilliseconds
-
-        return when {
-            diffMillis < 60000 -> "Aggiornato ora"
-            diffMillis < 3600000 -> "Aggiornato ${diffMillis / 60000} min fa"
-            diffMillis < 86400000 -> "Aggiornato ${diffMillis / 3600000}h fa"
-            else -> {
-                val days = (lastModified - Clock.System.now()).inWholeDays
-
-                return when {
-                    days == 1L -> "Aggiornato ieri"
-                    days < 28 -> "Aggiornato $days giorni fa"
-                    else -> "Aggiornato il ${lastModified.toItalianDate()}"
-                }
-            }
-        }
     }
 
     /**

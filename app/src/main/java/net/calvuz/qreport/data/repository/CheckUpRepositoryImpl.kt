@@ -12,7 +12,7 @@ import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
 import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
-import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
+import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
 import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.model.module.ModuleProgress
@@ -26,7 +26,7 @@ import javax.inject.Singleton
  *
  * VERSIONE FINALE che usa:
  * - Mappers unificati (.toDomain() per Repository/Use Cases)
- * - CheckUpStatistics con struttura corretta
+ * - CheckUpSingleStatistics con struttura corretta
  * - DAO queries esistenti e testate
  * - Gestione corretta delle relazioni
  */
@@ -117,7 +117,7 @@ class CheckUpRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun getCheckUpStatistics(id: String): CheckUpStatistics {
+    override suspend fun getCheckUpStatistics(id: String): CheckUpSingleStatistics {
         // Usa le query del tuo CheckItemDao esistente
         val totalItems = checkItemDao.getTotalItemsCount(id)
         val completedItems = checkItemDao.getCompletedItemsCount(id)
@@ -137,7 +137,7 @@ class CheckUpRepositoryImpl @Inject constructor(
             (completedItems.toFloat() / totalItems) * 100f
         } else 0f
 
-        return CheckUpStatistics(
+        return CheckUpSingleStatistics(
             totalItems = totalItems,
             completedItems = completedItems,
             okItems = okItems,

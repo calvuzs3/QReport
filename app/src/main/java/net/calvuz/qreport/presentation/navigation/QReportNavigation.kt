@@ -19,29 +19,29 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.navigation.NavType
-import net.calvuz.qreport.presentation.backup.BackupScreen
-import net.calvuz.qreport.presentation.screen.home.HomeScreen
-import net.calvuz.qreport.presentation.screen.checkup.CheckUpListScreen
-import net.calvuz.qreport.presentation.screen.checkup.NewCheckUpScreen
-import net.calvuz.qreport.presentation.screen.checkup.CheckUpDetailScreen
-import net.calvuz.qreport.presentation.screen.camera.CameraScreen
-import net.calvuz.qreport.presentation.screen.client.client.ClientDetailScreen
-import net.calvuz.qreport.presentation.screen.photo.PhotoGalleryScreen
-import net.calvuz.qreport.presentation.settings.SettingsScreen
-import net.calvuz.qreport.presentation.screen.export.ExportOptionsScreen
-import net.calvuz.qreport.presentation.screen.client.client.ClientListScreen
-import net.calvuz.qreport.presentation.screen.client.client.ClientFormScreen
-import net.calvuz.qreport.presentation.screen.client.contact.ContactDetailScreen
-import net.calvuz.qreport.presentation.screen.client.contact.ContactFormScreen
-import net.calvuz.qreport.presentation.screen.client.contact.ContactListScreen
-import net.calvuz.qreport.presentation.screen.client.facility.FacilityDetailScreen
-import net.calvuz.qreport.presentation.screen.client.facility.FacilityFormScreen
-import net.calvuz.qreport.presentation.screen.client.facility.FacilityListScreen
-import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandFormScreen
-import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandDetailScreen
-import net.calvuz.qreport.presentation.screen.client.facilityisland.FacilityIslandListScreen
-import net.calvuz.qreport.presentation.screen.photo.PhotoImportPreviewScreen
-import net.calvuz.qreport.presentation.settings.technician.TechnicianSettingsScreen
+import net.calvuz.qreport.presentation.feature.backup.BackupScreen
+import net.calvuz.qreport.presentation.feature.home.HomeScreen
+import net.calvuz.qreport.presentation.feature.checkup.CheckUpListScreen
+import net.calvuz.qreport.presentation.feature.checkup.NewCheckUpScreen
+import net.calvuz.qreport.presentation.feature.checkup.CheckUpDetailScreen
+import net.calvuz.qreport.presentation.feature.camera.CameraScreen
+import net.calvuz.qreport.presentation.feature.client.client.ClientDetailScreen
+import net.calvuz.qreport.presentation.feature.photo.PhotoGalleryScreen
+import net.calvuz.qreport.presentation.feature.settings.SettingsScreen
+import net.calvuz.qreport.presentation.feature.export.ExportOptionsScreen
+import net.calvuz.qreport.presentation.feature.client.client.ClientListScreen
+import net.calvuz.qreport.presentation.feature.client.client.ClientFormScreen
+import net.calvuz.qreport.presentation.feature.client.contact.ContactDetailScreen
+import net.calvuz.qreport.presentation.feature.client.contact.ContactFormScreen
+import net.calvuz.qreport.presentation.feature.client.contact.ContactListScreen
+import net.calvuz.qreport.presentation.feature.client.facility.FacilityDetailScreen
+import net.calvuz.qreport.presentation.feature.client.facility.FacilityFormScreen
+import net.calvuz.qreport.presentation.feature.client.facility.FacilityListScreen
+import net.calvuz.qreport.presentation.feature.client.facilityisland.FacilityIslandFormScreen
+import net.calvuz.qreport.presentation.feature.client.facilityisland.FacilityIslandDetailScreen
+import net.calvuz.qreport.presentation.feature.client.facilityisland.FacilityIslandListScreen
+import net.calvuz.qreport.presentation.feature.photo.PhotoImportPreviewScreen
+import net.calvuz.qreport.presentation.feature.settings.technician.TechnicianSettingsScreen
 import timber.log.Timber
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -277,6 +277,9 @@ fun QReportNavigation(
                 composable(QReportRoutes.CHECKUPS) {
                     CheckUpListScreen(
                         onNavigateToCheckUpDetail = { checkUpId ->
+                            navController.navigate(QReportRoutes.checkupDetail(checkUpId))
+                        },
+                        onNavigateToEditCheckUp = { checkUpId ->
                             navController.navigate(QReportRoutes.checkupDetail(checkUpId))
                         },
                         onCreateNewCheckUp = {

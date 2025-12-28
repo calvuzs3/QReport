@@ -8,7 +8,7 @@ import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.photo.PhotoErrorType
 import net.calvuz.qreport.domain.model.photo.PhotoResult
 import net.calvuz.qreport.domain.repository.PhotoRepository
-import net.calvuz.qreport.presentation.screen.photo.ImageInfo
+import net.calvuz.qreport.presentation.feature.photo.ImageInfo
 import javax.inject.Inject
 
 

@@ -2,7 +2,7 @@ package net.calvuz.qreport.domain.model.export
 
 import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckItem
-import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
+import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
 import net.calvuz.qreport.domain.model.module.ModuleType
 
@@ -12,7 +12,7 @@ import net.calvuz.qreport.domain.model.module.ModuleType
  * AGGIORNATO per utilizzare SOLO i modelli domain esistenti:
  * - CheckUp (contiene già header con ClientInfo, TechnicianInfo, IslandInfo)
  * - CheckItem (contiene già Photo)
- * - CheckUpStatistics e CheckUpProgress per metadati
+ * - CheckUpSingleStatistics e CheckUpProgress per metadati
  * - Raggruppamento per ModuleType invece di "sections" artificiali
  */
 data class ExportData(
@@ -34,7 +34,7 @@ data class ExportData(
     /**
      * Statistiche del checkup (modello reale esistente)
      */
-    val statistics: CheckUpStatistics,
+    val statistics: CheckUpSingleStatistics,
 
     /**
      * Progresso compilazione (modello reale esistente)

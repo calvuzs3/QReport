@@ -3,7 +3,7 @@ package net.calvuz.qreport.domain.usecase.checkup
 import net.calvuz.qreport.domain.model.checkup.CheckItem
 import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
-import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
+import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import net.calvuz.qreport.domain.repository.CheckItemRepository
@@ -30,7 +30,7 @@ data class CheckUpDetails(
     val checkUp: CheckUp,
     val checkItems: List<CheckItem>,
     val spareParts: List<SparePart>,
-    val statistics: CheckUpStatistics,
+    val statistics: CheckUpSingleStatistics,
     val progress: CheckUpProgress
 )
 

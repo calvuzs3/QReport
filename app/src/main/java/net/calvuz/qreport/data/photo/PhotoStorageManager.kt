@@ -22,7 +22,7 @@ import androidx.core.graphics.scale
 import androidx.exifinterface.media.ExifInterface
 import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.model.photo.PhotoLocation
-import net.calvuz.qreport.presentation.screen.photo.ImageInfo
+import net.calvuz.qreport.presentation.feature.photo.ImageInfo
 import java.io.InputStream
 
 /**

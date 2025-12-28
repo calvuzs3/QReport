@@ -3,7 +3,7 @@ package net.calvuz.qreport.domain.repository
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
-import net.calvuz.qreport.domain.model.checkup.CheckUpStatistics
+import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
 import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.model.spare.SparePart
@@ -30,7 +30,7 @@ interface CheckUpRepository {
 
     suspend fun completeCheckUp(id: String)
 
-    suspend fun getCheckUpStatistics(id: String): CheckUpStatistics
+    suspend fun getCheckUpStatistics(id: String): CheckUpSingleStatistics
 
     suspend fun getCheckUpProgress(id: String): CheckUpProgress
 
