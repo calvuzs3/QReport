@@ -6,10 +6,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.client.ClientInfo
 import net.calvuz.qreport.domain.model.island.IslandInfo
 import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.model.settings.TechnicianInfo

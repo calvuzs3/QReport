@@ -3,7 +3,7 @@ package net.calvuz.qreport.domain.model.checkup
 import android.annotation.SuppressLint
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-import net.calvuz.qreport.domain.model.ClientInfo
+import net.calvuz.qreport.domain.model.client.ClientInfo
 import net.calvuz.qreport.domain.model.island.IslandInfo
 import net.calvuz.qreport.domain.model.settings.TechnicianInfo
 

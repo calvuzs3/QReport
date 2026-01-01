@@ -23,36 +23,32 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.R
 import net.calvuz.qreport.domain.model.checkup.CheckItem
 import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
-import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
 import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
-import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.client.CriticalityLevel
 import net.calvuz.qreport.domain.model.module.ModuleType
 import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.spare.SparePart
-import net.calvuz.qreport.domain.model.spare.SparePartCategory
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency
+import net.calvuz.qreport.presentation.feature.checkup.components.AddSparePartDialog
 import net.calvuz.qreport.presentation.feature.checkup.components.AssociationManagementDialog
 import net.calvuz.qreport.presentation.feature.checkup.components.CheckUpHeaderCard
+import net.calvuz.qreport.presentation.feature.checkup.components.CheckupItemStatusChip
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckItemStatusExt.getNextStatus
+import net.calvuz.qreport.presentation.feature.photo.components.PhotoCountBadge
+import net.calvuz.qreport.util.NumberUtils.toItalianChange
 
 /**
- * Screen per la visualizzazione e interazione con un check-up - AGGIORNATO
- *
- * Features:
- * - Header info (cliente, isola, tecnico)
- * - Progress overview
- * - Interactive checklist con moduli espandibili
- * - Quick status change per check items
- * - Aggiunta foto e note
- * - Dialog per aggiungere spare parts
+ * Check up Detail Screen
  */
 @Composable
 fun CheckUpDetailScreen(
@@ -60,7 +56,7 @@ fun CheckUpDetailScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCamera: (String) -> Unit,
     onNavigateToPhotoGallery: (String) -> Unit,
-    onNavigateToExportOptions: (String) -> Unit, // ✅ NUOVO
+    onNavigateToExportOptions: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CheckUpDetailViewModel = hiltViewModel()
 ) {
@@ -68,14 +64,13 @@ fun CheckUpDetailScreen(
     val expandedModules by viewModel.expandedModules.collectAsStateWithLifecycle()
 
     // Initialize with checkUpId
-    // Una sola volta per checkUpId
     LaunchedEffect(checkUpId) {
         if (checkUpId.isNotBlank()) {
             viewModel.loadCheckUp(checkUpId)
         }
     }
 
-    // Refresh foto quando si torna dalla camera/gallery
+    // Refresh photos when come back from camera/gallery
     LaunchedEffect(uiState.photoCountsByCheckItem) {
         // Questo trigger quando cambiano i conteggi foto
         // Utile per refresh automatico
@@ -88,7 +83,7 @@ fun CheckUpDetailScreen(
         TopAppBar(
             title = {
                 Text(
-                    text = uiState.checkUp?.header?.clientInfo?.companyName ?: "Check-up",
+                    text = stringResource(R.string.checkup_screen_detail_title_default), // "Check-up",
                     maxLines = 1
                 )
             },
@@ -96,7 +91,7 @@ fun CheckUpDetailScreen(
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Indietro"
+                        contentDescription = stringResource(R.string.checkup_screen_detail_back)
                     )
                 }
             },
@@ -107,7 +102,7 @@ fun CheckUpDetailScreen(
                 IconButton(onClick = { showStatusMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Menu"
+                        contentDescription = stringResource(R.string.checkup_screen_detail_menu)
                     )
                 }
 
@@ -116,7 +111,7 @@ fun CheckUpDetailScreen(
                     onDismissRequest = { showStatusMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Completa Check-up") },
+                        text = { Text(stringResource(R.string.checkup_screen_detail_action_complete)) },
                         onClick = {
                             viewModel.completeCheckUp()
                             showStatusMenu = false
@@ -126,7 +121,7 @@ fun CheckUpDetailScreen(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Esporta Report") },
+                        text = { Text(stringResource(R.string.checkup_screen_detail_action_export)) },
                         onClick = {
                             onNavigateToExportOptions(checkUpId)
                             showStatusMenu = false
@@ -169,7 +164,7 @@ fun CheckUpDetailScreen(
                             color = MaterialTheme.colorScheme.error
                         )
                         Button(onClick = { viewModel.loadCheckUp(checkUpId) }) {
-                            Text("Riprova")
+                            Text(stringResource(R.string.checkup_screen_detail_error_retry))
                         }
                     }
                 }
@@ -187,22 +182,21 @@ fun CheckUpDetailScreen(
                             checkUp = uiState.checkUp!!,
                             progress = uiState.progress,
                             onEditHeader = viewModel::showEditHeaderDialog,
-                            associations = uiState.checkUpAssociations, // ✅ NUOVO
-                            onManageAssociation = viewModel::showAssociationDialog // ✅ NUOVO
+                            associations = uiState.checkUpAssociations,
+                            onManageAssociation = viewModel::showAssociationDialog
                         )
                     }
 
                     // Progress Overview
                     item {
                         ProgressOverviewCard(
-                            progress = uiState.progress,
                             statistics = uiState.statistics
                         )
                     }
 
                     // Check Items by Module
                     uiState.checkItemsByModule.forEach { (moduleType, items) ->
-                        item(key = "module_${moduleType.name}") {  // ✅ Chiave stabile
+                        item(key = "module_${moduleType.name}") {
                             ModuleSectionWithPhotos(
                                 moduleType = moduleType,
                                 items = items,
@@ -222,7 +216,7 @@ fun CheckUpDetailScreen(
                     item {
                         SparePartsSection(
                             spareParts = uiState.spareParts,
-                            onAddSparePart = viewModel::showAddSparePartDialog  // ✅ CORRETTO
+                            onAddSparePart = viewModel::showAddSparePartDialog
                         )
                     }
                 }
@@ -284,214 +278,6 @@ fun CheckUpDetailScreen(
     }
 }
 
-/**
- * Dialog per aggiungere spare parts
- */
-@Composable
-private fun AddSparePartDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (String, String, Int, SparePartUrgency, SparePartCategory, Double?, String, String) -> Unit,
-    isLoading: Boolean,
-    modifier: Modifier = Modifier
-) {
-    var partNumber by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var quantity by remember { mutableStateOf("1") }
-    var selectedUrgency by remember { mutableStateOf(SparePartUrgency.MEDIUM) }
-    var selectedCategory by remember { mutableStateOf(SparePartCategory.OTHER) }
-    var estimatedCost by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
-    var supplierInfo by remember { mutableStateOf("") }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        modifier = modifier,
-        title = { Text("Aggiungi Ricambio") },
-        text = {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.heightIn(max = 400.dp)
-            ) {
-                item {
-                    OutlinedTextField(
-                        value = partNumber,
-                        onValueChange = { partNumber = it },
-                        label = { Text("Numero Parte *") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
-                        label = { Text("Descrizione *") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 2
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = quantity,
-                        onValueChange = { if (it.all { char -> char.isDigit() }) quantity = it },
-                        label = { Text("Quantità *") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-                }
-
-                item {
-                    var urgencyExpanded by remember { mutableStateOf(false) }
-
-                    ExposedDropdownMenuBox(
-                        expanded = urgencyExpanded,
-                        onExpandedChange = { urgencyExpanded = !urgencyExpanded }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedUrgency.displayName,
-                            onValueChange = { },
-                            readOnly = true,
-                            label = { Text("Urgenza") },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = urgencyExpanded)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
-                        )
-
-                        ExposedDropdownMenu(
-                            expanded = urgencyExpanded,
-                            onDismissRequest = { urgencyExpanded = false }
-                        ) {
-                            SparePartUrgency.entries.forEach { urgency ->
-                                DropdownMenuItem(
-                                    text = { Text(urgency.displayName) },
-                                    onClick = {
-                                        selectedUrgency = urgency
-                                        urgencyExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    var categoryExpanded by remember { mutableStateOf(false) }
-
-                    ExposedDropdownMenuBox(
-                        expanded = categoryExpanded,
-                        onExpandedChange = { categoryExpanded = !categoryExpanded }
-                    ) {
-                        OutlinedTextField(
-                            value = selectedCategory.displayName,
-                            onValueChange = { },
-                            readOnly = true,
-                            label = { Text("Categoria") },
-                            trailingIcon = {
-                                ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
-                        )
-
-                        ExposedDropdownMenu(
-                            expanded = categoryExpanded,
-                            onDismissRequest = { categoryExpanded = false }
-                        ) {
-                            SparePartCategory.entries.forEach { category ->
-                                DropdownMenuItem(
-                                    text = { Text(category.displayName) },
-                                    onClick = {
-                                        selectedCategory = category
-                                        categoryExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = estimatedCost,
-                        onValueChange = {
-                            // Allow only numbers and decimal point
-                            if (it.isEmpty() || it.matches(Regex("^\\d*\\.?\\d*$"))) {
-                                estimatedCost = it
-                            }
-                        },
-                        label = { Text("Costo Stimato (€)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        prefix = { Text("€ ") }
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        label = { Text("Note") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 3
-                    )
-                }
-
-                item {
-                    OutlinedTextField(
-                        value = supplierInfo,
-                        onValueChange = { supplierInfo = it },
-                        label = { Text("Info Fornitore") },
-                        modifier = Modifier.fillMaxWidth(),
-                        maxLines = 2
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val quantityInt = quantity.toIntOrNull() ?: 1
-                    val costDouble = estimatedCost.toDoubleOrNull()
-
-                    onConfirm(
-                        partNumber.trim(),
-                        description.trim(),
-                        quantityInt,
-                        selectedUrgency,
-                        selectedCategory,
-                        costDouble,
-                        notes.trim(),
-                        supplierInfo.trim()
-                    )
-                },
-                enabled = !isLoading && partNumber.isNotBlank() && description.isNotBlank()
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
-                } else {
-                    Text("Aggiungi")
-                }
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                enabled = !isLoading
-            ) {
-                Text("Annulla")
-            }
-        }
-    )
-}
 
 // ============================================================
 // COMPONENTI ESISTENTI (copiati dal file originale)
@@ -499,7 +285,6 @@ private fun AddSparePartDialog(
 
 @Composable
 private fun ProgressOverviewCard(
-    progress: CheckUpProgress,
     statistics: CheckUpSingleStatistics,
     modifier: Modifier = Modifier
 ) {
@@ -511,7 +296,7 @@ private fun ProgressOverviewCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Panoramica Progresso",
+                text = stringResource(R.string.checkup_screen_detail_progress_title) ,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -523,20 +308,20 @@ private fun ProgressOverviewCard(
                 StatItem(
                     icon = Icons.AutoMirrored.Default.Assignment,
                     value = statistics.totalItems.toString(),
-                    label = "Totali"
+                    label = stringResource(R.string.checkup_screen_detail_progress_total_label)
                 )
 
                 StatItem(
                     icon = Icons.Default.CheckCircle,
                     value = statistics.completedItems.toString(),
-                    label = "Completati",
+                    label = stringResource(R.string.checkup_screen_detail_progress_completed_label),
                     color = Color(0xFF4CAF50)
                 )
 
                 StatItem(
                     icon = Icons.Default.Error,
                     value = statistics.nokItems.toString(),
-                    label = "NOK",
+                    label = stringResource(R.string.checkup_screen_detail_progress_nok_label),
                     color = Color(0xFFF44336)
                 )
 
@@ -544,7 +329,7 @@ private fun ProgressOverviewCard(
                     StatItem(
                         icon = Icons.Default.Warning,
                         value = statistics.criticalIssues.toString(),
-                        label = "Critici",
+                        label = stringResource(R.string.checkup_screen_detail_progress_critical_label),
                         color = Color(0xFFFF5722)
                     )
                 }
@@ -589,8 +374,8 @@ private fun StatItem(
 private fun ModuleSectionWithPhotos(
     moduleType: ModuleType,
     items: List<CheckItem>,
-    isExpanded: Boolean,  // ✅ NUOVO: riceve stato da outside
-    onToggleExpansion: () -> Unit,  // ✅ NUOVO: callback per toggle expansion
+    isExpanded: Boolean,
+    onToggleExpansion: () -> Unit,
     photosByItem: Map<String, List<Photo>>,
     photoCountsByItem: Map<String, Int>,
     onItemStatusChange: (String, CheckItemStatus) -> Unit,
@@ -633,7 +418,8 @@ private fun ModuleSectionWithPhotos(
 
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (isExpanded) "Comprimi" else "Espandi"
+                        contentDescription = if (isExpanded)
+                            stringResource(R.string.checkup_screen_detail_module_collapse) else stringResource(R.string.checkup_screen_detail_module_expand)
                     )
                 }
             }
@@ -704,16 +490,16 @@ private fun CheckItemCardWithPhotos(
                     )
                 }
 
-                StatusChip(
+                CheckupItemStatusChip(
                     status = checkItem.status,
                     onClick = {
-                        val nextStatus = getNextStatus(checkItem.status)
+                        val nextStatus = checkItem.status.getNextStatus()
                         onStatusChange(checkItem.id, nextStatus)
                     }
                 )
             }
 
-            // ✅ NUOVO: Photo Section
+            // Photo Section
             PhotoSection(
                 photos = photos,
                 photoCount = photoCount,
@@ -736,14 +522,14 @@ private fun CheckItemCardWithPhotos(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Note")
+                    Text(stringResource(R.string.checkup_screen_detail_item_notes_button))
                 }
 
                 // Criticality indicator
                 if (checkItem.criticality == CriticalityLevel.CRITICAL) {
                     Icon(
                         imageVector = Icons.Default.Warning,
-                        contentDescription = "Critico",
+                        contentDescription = stringResource(R.string.checkup_screen_detail_item_critical),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -786,13 +572,13 @@ private fun NotesDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Modifica Note") },
+        title = { Text(stringResource(R.string.checkup_screen_detail_dialog_notes_title)) },
         text = {
             TextField(
                 value = notes,
                 onValueChange = { notes = it },
-                label = { Text("Note") },
-                placeholder = { Text("Inserisci note per questo check item...") },
+                label = { Text(stringResource(R.string.checkup_screen_detail_dialog_notes_label)) },
+                placeholder = { Text(stringResource(R.string.checkup_screen_detail_dialog_notes_placeholder)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5
@@ -800,14 +586,15 @@ private fun NotesDialog(
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(notes) }) {
-                Text("Salva")
+                Text(stringResource(R.string.checkup_screen_detail_dialog_notes_action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Annulla")
+                Text(stringResource(R.string.checkup_screen_detail_dialog_notes_action_cancel))
             }
-        }
+        },
+        modifier = modifier
     )
 }
 
@@ -834,7 +621,7 @@ private fun PhotoSection(
             )
         } else {
             Text(
-                text = "Nessuna foto",
+                text = stringResource(R.string.checkup_screen_detail_photo_empty),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
@@ -852,12 +639,12 @@ private fun PhotoSection(
             ) {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
-                    contentDescription = "Scatta foto",
+                    contentDescription = stringResource(R.string.checkup_screen_detail_photo_action_take),
                     modifier = Modifier.size(16.dp)
                 )
             }
 
-            // TODO: true for the view action button visible
+            // true = view_all action button visible, always
             // View photos button (only if has photos)
             if ( true or photos.isNotEmpty()) {
                 IconButton(
@@ -866,41 +653,11 @@ private fun PhotoSection(
                 ) {
                     Icon(
                         imageVector = Icons.Default.PhotoLibrary,
-                        contentDescription = "Visualizza foto",
+                        contentDescription = stringResource(R.string.checkup_screen_detail_photo_action_view),
                         modifier = Modifier.size(16.dp)
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun PhotoCountBadge(
-    count: Int,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.primaryContainer
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.PhotoCamera,
-                contentDescription = null,
-                modifier = Modifier.size(12.dp),
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            Text(
-                text = count.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
         }
     }
 }
@@ -921,7 +678,7 @@ private fun PhotoPreviewRow(
         photos.take(3).forEach { photo ->
             AsyncImage(
                 model = photo.thumbnailPath ?: photo.filePath,
-                contentDescription = photo.caption.ifBlank { "Foto check item" },
+                contentDescription = photo.caption.ifBlank { stringResource(R.string.checkup_screen_detail_photo_caption_default) },
                 modifier = Modifier
                     .size(24.dp)
                     .clip(RoundedCornerShape(4.dp)),
@@ -932,7 +689,7 @@ private fun PhotoPreviewRow(
         // Count indicator
         if (totalCount > 3) {
             Text(
-                text = "+${totalCount - 3}",
+                text = stringResource(R.string.checkup_screen_detail_photo_count_more, totalCount - 3),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -945,7 +702,7 @@ private fun PhotoPreviewRow(
             contentPadding = PaddingValues(horizontal = 4.dp)
         ) {
             Text(
-                text = "Vedi tutto",
+                text = stringResource(R.string.checkup_screen_detail_photo_view_all),
                 style = MaterialTheme.typography.labelSmall
             )
         }
@@ -971,19 +728,19 @@ private fun SparePartsSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Ricambi Necessari",
+                    text = stringResource(R.string.checkup_screen_detail_spare_parts_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
 
                 IconButton(onClick = onAddSparePart) {
-                    Icon(Icons.Default.Add, contentDescription = "Aggiungi ricambio")
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.checkup_screen_detail_spare_parts_add))
                 }
             }
 
             if (spareParts.isEmpty()) {
                 Text(
-                    text = "Nessun ricambio segnalato",
+                    text = stringResource(R.string.checkup_screen_detail_spare_parts_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1027,7 +784,7 @@ private fun SparePartItem(
             }
 
             Text(
-                text = "P/N: ${sparePart.partNumber}",
+                text = stringResource(R.string.checkup_screen_detail_spare_parts_part_number, sparePart.partNumber),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1036,7 +793,7 @@ private fun SparePartItem(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Qtà: ${sparePart.quantity}",
+                    text = stringResource(R.string.checkup_screen_detail_spare_parts_quantity, sparePart.quantity),
                     style = MaterialTheme.typography.bodySmall
                 )
 
@@ -1047,7 +804,7 @@ private fun SparePartItem(
 
                 sparePart.estimatedCost?.let { cost ->
                     Text(
-                        text = "€ ${String.format("%.2f", cost)}",
+                        text = cost.toFloat().toItalianChange(),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium
                     )
@@ -1099,84 +856,6 @@ private fun UrgencyChip(
             )
         },
         colors = colors,
-        modifier = modifier
-    )
-}
-
-@Composable
-private fun StatusChip(
-    status: CheckItemStatus,
-    onClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    val colors = when (status) {
-        CheckItemStatus.OK -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFF4CAF50),
-            labelColor = Color.White
-        )
-        CheckItemStatus.NOK -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFFF44336),
-            labelColor = Color.White
-        )
-        CheckItemStatus.PENDING -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFFFF9800),
-            labelColor = Color.White
-        )
-        CheckItemStatus.NA -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFF9E9E9E),
-            labelColor = Color.White
-        )
-    }
-
-    if (onClick != null) {
-        AssistChip(
-            onClick = onClick,
-            label = { Text(status.displayName) },
-            colors = colors,
-            modifier = modifier
-        )
-    } else {
-        AssistChip(
-            onClick = { },
-            label = { Text(status.displayName) },
-            colors = colors,
-            modifier = modifier
-        )
-    }
-}
-
-// ============================================================
-// HELPER FUNCTIONS
-// ============================================================
-
-private fun getNextStatus(currentStatus: CheckItemStatus): CheckItemStatus {
-    return when (currentStatus) {
-        CheckItemStatus.PENDING -> CheckItemStatus.OK
-        CheckItemStatus.OK -> CheckItemStatus.NOK
-        CheckItemStatus.NOK -> CheckItemStatus.NA
-        CheckItemStatus.NA -> CheckItemStatus.PENDING
-    }
-}
-
-@Composable
-fun StatusChipForCheckUp(
-    status: CheckUpStatus,
-    modifier: Modifier = Modifier
-) {
-    val (text, containerColor) = when (status) {
-        CheckUpStatus.DRAFT -> "Bozza" to MaterialTheme.colorScheme.surfaceVariant
-        CheckUpStatus.IN_PROGRESS -> "In Corso" to MaterialTheme.colorScheme.primaryContainer
-        CheckUpStatus.COMPLETED -> "Completato" to MaterialTheme.colorScheme.tertiaryContainer
-        CheckUpStatus.EXPORTED -> "Esportato" to MaterialTheme.colorScheme.secondaryContainer
-        CheckUpStatus.ARCHIVED -> "Archiviato" to MaterialTheme.colorScheme.outline
-    }
-
-    AssistChip(
-        onClick = { },
-        label = { Text(text) },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = containerColor
-        ),
         modifier = modifier
     )
 }

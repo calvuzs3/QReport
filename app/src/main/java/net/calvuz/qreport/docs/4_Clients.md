@@ -132,7 +132,7 @@ package net.calvuz.qreport.domain.model.client
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-import net.calvuz.qreport.domain.model.ClientInfo // ← Import esistente
+import net.calvuz.qreport.domain.model.client.ClientInfo // ← Import esistente
 
 /**
  * Cliente industriale completo

@@ -8,12 +8,12 @@ import net.calvuz.qreport.data.local.dao.CheckItemDao
 import net.calvuz.qreport.data.local.dao.SparePartDao
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.data.mapper.*
-import net.calvuz.qreport.domain.model.*
 import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
 import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
 import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
+import net.calvuz.qreport.domain.model.client.CriticalityLevel
 import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.model.module.ModuleProgress
 import net.calvuz.qreport.domain.model.spare.SparePart
@@ -118,7 +118,8 @@ class CheckUpRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getCheckUpStatistics(id: String): CheckUpSingleStatistics {
-        // Usa le query del tuo CheckItemDao esistente
+
+        // CheckItemDao queries
         val totalItems = checkItemDao.getTotalItemsCount(id)
         val completedItems = checkItemDao.getCompletedItemsCount(id)
         val okItems = checkItemDao.getItemsCountByStatus(id, CheckItemStatus.OK.name)
@@ -129,12 +130,12 @@ class CheckUpRepositoryImpl @Inject constructor(
         val criticalIssues = checkItemDao.getCriticalIssuesCount(id, CriticalityLevel.CRITICAL.name)
         val importantIssues = checkItemDao.getCriticalIssuesCount(id, CriticalityLevel.IMPORTANT.name)
 
-        // Conta foto e spare parts usando i tuoi DAO
+        // Count photos and spares
         val photosCount = getPhotosCountForCheckUp(id)
         val sparePartsCount = sparePartDao.getSparePartsCount(id)
 
         val completionPercentage = if (totalItems > 0) {
-            (completedItems.toFloat() / totalItems) * 100f
+            (completedItems.toFloat() / totalItems) // * 100f - between 0 and 1
         } else 0f
 
         return CheckUpSingleStatistics(

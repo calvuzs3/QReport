@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+
+
+    <!-- Checkup Status -->
+
+    <string name="enum_checkup_status_draft">Bozza</string>
+    <string name="enum_checkup_status_in_progress">In corso</string>
+    <string name="enum_checkup_status_completed">Completato</string>
+    <string name="enum_checkup_status_exported">Esportato</string>
+    <string name="enum_checkup_status_archived">Archiviato</string>
+    <!-- Checkup Status Filter-->
+    <string name="enum_checkup_status_filter_all">Tutti</string>
+<!--    <string name="enum_checkup_status_filter_draft">Bozza</string>-->
+<!--    <string name="enum_checkup_status_filter_completed">Completato</string>-->
+<!--    <string name="enum_checkup_status_filter_exported">Esportato</string>-->
+<!--    <string name="enum_checkup_status_filter_archived">Archiviato</string>-->
+    <!-- Checkup Sort Order -->
+    <string name="enum_checkup_sort_order_recent_first">Recenti</string>
+    <string name="enum_checkup_sort_order_oldest_first">Più vecchi</string>
+    <string name="enum_checkup_sort_order_client_name">Nome</string>
+    <string name="enum_checkup_sort_order_status">Stato</string>
+
+    <!-- Checkup Item Status -->enum_checkup_sort_order_recent_first
+
+    <string name="enum_checkup_item_status_pending">In corso</string>
+    <string name="enum_checkup_item_status_ok">OK</string>
+    <string name="enum_checkup_item_status_nok">NOK</string>
+    <string name="enum_checkup_item_status_na">N/A</string>
+
+
+
+
+    <!-- Checkup Island Association -->
+
+    <string name="enum_association_type_standard">Standard</string>
+    <string name="enum_association_type_standard_desc">CheckUp singola isola</string>
+
+    <string name="enum_association_type_multi_island">Multi-Isola</string>
+    <string name="enum_association_type_multi_island_desc">CheckUp comparativo su più isole</string>
+
+    <string name="enum_association_type_comparison">Confronto</string>
+    <string name="enum_association_type_comparison_desc">CheckUp per confronto performance</string>
+
+    <string name="enum_association_type_maintenance">Manutenzione</string>
+    <string name="enum_association_type_maintenance_desc">CheckUp post-manutenzione specifica</string>
+
+    <string name="enum_association_type_emergency">Emergenza</string>
+    <string name="enum_association_type_emergency_desc">CheckUp di emergenza per guasto</string>
+
+</resources>

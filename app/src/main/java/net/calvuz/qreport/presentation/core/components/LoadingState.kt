@@ -10,11 +10,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 
 @Composable
 fun LoadingState(textMessage: String? = null) {
-    val message = textMessage ?: "Caricamento.."
+    val message = textMessage ?: stringResource(R.string.core_component_loading_in_progress)
 
     Box(
         modifier = Modifier.fillMaxSize(),

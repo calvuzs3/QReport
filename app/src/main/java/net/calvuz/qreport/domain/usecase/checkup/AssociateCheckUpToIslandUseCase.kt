@@ -1,4 +1,4 @@
-package net.calvuz.qreport.domain.usecase.checkup.association
+package net.calvuz.qreport.domain.usecase.checkup
 
 import net.calvuz.qreport.domain.model.checkup.AssociationType
 import net.calvuz.qreport.domain.model.checkup.CheckUpIslandAssociation
@@ -29,7 +29,6 @@ class AssociateCheckUpToIslandUseCase @Inject constructor(
             ?: return Result.failure(Exception("CheckUp non trovato"))
 
         val island = islandRepository.getIslandById(islandId)
-            ?: return Result.failure(Exception("Isola non trovata"))
 
         // Verifica se già associato
         if (associationRepository.isAssociated(checkupId, islandId)) {

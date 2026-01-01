@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="err_unknown">Errore sconosciuto</string>
+    <string name="err_load">Errore caricamento</string>
+    <string name="err_reload">Errore ricaricamento</string>
+    <string name="err_create">Errore creazione</string>
+    <string name="err_delete">Errore cancellazione</string>
+    <string name="err_fields_required">Compilare i campi richiesti</string>
+    <string name="err_refresh">Errore refresh</string>
+
+    <string name="err_checkup_not_found">CheckUp non trovato</string>
+    <string name="err_checkup_load_checkup">Errore caricamento CheckUp</string>
+    <string name="err_checkup_load_photos">Errore caricamento foto</string>
+    <string name="err_checkup_update_status">Aggiornamento Stato fallito</string>
+    <string name="err_checkup_update_notes">Aggiornamento Note fallito</string>
+    <string name="err_checkup_update_header">Aggiornamento Header fallito</string>
+    <string name="err_checkup_not_available">CheckUp non disponibile</string>
+    <string name="err_checkup_spare_add">Aggiunta ricambio fallita</string>
+    <string name="err_checkup_association">Associazione fallita</string>
+    <string name="err_checkup_association_remove">Rimozione Associazione fallita</string>
+    <string name="err_checkup_finalize">Completamento fallito</string>
+    <string name="err_checkup_export">Esportazione fallita</string>
+
+    <string name="err_client_load_client">Caricamento Cliente fallito</string>
+    <string name="err_facility_load_facility">Caricamento Stabilimento fallito</string>
+    <string name="err_island_load_island">Caricamento Isola fallito</string>
+</resources>

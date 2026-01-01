@@ -34,9 +34,22 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
 
-    <!-- Permessi granulari per Android 13+ -->
+    <!-- Permessi per Android 13+ (Tiramisu) -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+
+    <!-- Nuovo permesso per Android 14+ (Upside Down Cake) -->
+    <!-- Permette l'accesso granulare alle foto selezionate -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
+
+    <!-- Permessi legacy per Android < 13 -->
     <uses-permission
-        android:name="android.permission.READ_MEDIA_IMAGES" />
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+
+    <!-- Per salvare foto (se necessario) -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
 
     <!--Photo Picker feature (opzionale, per ottimizzazione) -->
     <uses-feature
@@ -73,25 +86,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <!-- Supporto per intent di condivisione foto (opzionale) -->
-<!--        <activity-->
-<!--            android:name=".presentation.screen.photo.PhotoImportActivity"-->
-<!--            android:exported="true"-->
-<!--            android:theme="@style/Theme.QReport">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.SEND" />-->
-<!--                <category android:name="android.intent.category.DEFAULT" />-->
-<!--                <data android:mimeType="image/*" />-->
-<!--            </intent-filter>-->
-<!--        </activity>-->
-
-        <!--        &lt;!&ndash; Camera activity per acquisizione foto &ndash;&gt;-->
-        <!--        <activity-->
-        <!--            android:name=".presentation.camera.CameraActivity"-->
-        <!--            android:exported="false"-->
-        <!--            android:theme="@style/Theme.QReport.Fullscreen"-->
-        <!--            android:screenOrientation="portrait" />-->
 
         <!-- File provider per condivisione documenti -->
         <provider

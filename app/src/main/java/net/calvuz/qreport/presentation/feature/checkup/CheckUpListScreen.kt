@@ -14,26 +14,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 import net.calvuz.qreport.presentation.core.components.ActiveFiltersChipRow
 import net.calvuz.qreport.presentation.core.components.EmptyState
 import net.calvuz.qreport.presentation.core.components.ErrorState
 import net.calvuz.qreport.presentation.core.components.LoadingState
 import net.calvuz.qreport.presentation.core.components.QReportSearchBar
+import net.calvuz.qreport.presentation.core.model.getDisplayName
 import net.calvuz.qreport.presentation.feature.checkup.components.CheckupCard
 import net.calvuz.qreport.presentation.feature.checkup.components.CheckupCardVariant
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpFilter
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpSortOrder
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpWithStats
+import net.calvuz.qreport.presentation.feature.checkup.model.getDisplayName
 
 /**
- * Screen per la lista check-up con dati reali
- *
- * Features:
- * - Lista check-up dal database
- * - Ricerca e filtri
- * - Pull to refresh
- * - Stati loading/error
- * - Navigazione ai dettagli
+ * Check up list Screen
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +51,7 @@ fun CheckUpListScreen(
     ) {
         // Top App Bar con ricerca
         TopAppBar(
-            title = { Text("Check-up") },
+            title = { Text(stringResource(R.string.checkup_screen_list_title)) },
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
@@ -60,14 +60,14 @@ fun CheckUpListScreen(
                 IconButton(onClick = { showSortMenu = true }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Default.Sort,
-                        contentDescription = "Ordinamento"
+                        contentDescription = stringResource(R.string.checkup_screen_list_action_sort)
                     )
                 }
 
                 IconButton(onClick = { showFilterMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.FilterList,
-                        contentDescription = "Filtri"
+                        contentDescription = stringResource(R.string.checkup_screen_list_action_filter)
                     )
                 }
 
@@ -93,17 +93,17 @@ fun CheckUpListScreen(
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Ricerca Check-up",
+            placeholder = stringResource(R.string.checkup_screen_list_search_placeholder),
             modifier = Modifier.padding(16.dp)
         )
 
         // Filter chips
         if (uiState.selectedFilter != CheckUpFilter.ALL || uiState.checkUpSortOrder != CheckUpSortOrder.RECENT_FIRST) {
             ActiveFiltersChipRow(
-                selectedFilter = getFilterDisplayName(uiState.selectedFilter),
-                avoidFilter = getFilterDisplayName(CheckUpFilter.ALL),
-                selectedSort = getSortOrderDisplayName(uiState.checkUpSortOrder),
-                avoidSort = getSortOrderDisplayName(CheckUpSortOrder.RECENT_FIRST),
+                selectedFilter = uiState.selectedFilter.getDisplayName(),
+                avoidFilter = CheckUpFilter.ALL.getDisplayName(),
+                selectedSort = uiState.checkUpSortOrder.getDisplayName(),
+                avoidSort = CheckUpSortOrder.RECENT_FIRST.getDisplayName(),
                 onClearFilter = { viewModel.updateFilter(CheckUpFilter.ALL) },
                 onClearSort = { viewModel.updateSortOrder(CheckUpSortOrder.RECENT_FIRST) },
                 modifier = Modifier.padding(horizontal = 16.dp)
@@ -134,7 +134,11 @@ fun CheckUpListScreen(
         ) {
 
             // Store error in local variable to avoid smart cast issues
-            val currentError = uiState.error
+                val currentError = if (uiState.error != null) {
+                    uiState.error
+                } else {
+                    null
+                }
 
             when {
                 uiState.isLoading -> {
@@ -143,7 +147,7 @@ fun CheckUpListScreen(
 
                 currentError != null -> {
                     ErrorState(
-                        error = currentError, // Smart work correctly
+                        error = currentError.getDisplayName(), // Smart work correctly
                         onRetry = viewModel::loadCheckUps,
                         onDismiss = viewModel::dismissError
                     )
@@ -151,23 +155,30 @@ fun CheckUpListScreen(
 
                 uiState.filteredCheckUps.isEmpty() -> {
                     val (title, message) = when {
-                        uiState.checkUps.isEmpty() -> "Nessun Check-Up" to "Non ci sono ancora Check-Up"
-                        uiState.selectedFilter != CheckUpFilter.ALL -> "Nessun risultato" to "Non ci sono Check-Up che corrispondono al filtro '${
-                            getFilterDisplayName(
-                                uiState.selectedFilter
-                            )
-                        }'"
-
-                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                        uiState.checkUps.isEmpty() -> {
+                            stringResource(R.string.checkup_screen_list_empty_title) to
+                                    stringResource(R.string.checkup_screen_list_empty_message)
+                        }
+                        uiState.selectedFilter != CheckUpFilter.ALL -> {
+                            stringResource(R.string.checkup_screen_list_empty_no_results_title) to
+                                    stringResource(
+                                        R.string.checkup_screen_list_empty_no_results_message,
+                                        uiState.selectedFilter.getDisplayName()
+                                    )
+                        }
+                        else -> {
+                            stringResource(R.string.checkup_screen_list_empty_error_title) to
+                                    stringResource(R.string.checkup_screen_list_empty_error_message)
+                        }
                     }
                     EmptyState(
                         textTitle = title,
                         textMessage = message,
                         iconImageVector = Icons.AutoMirrored.Filled.Assignment,
-                        iconContentDescription = "Check-Up",
+                        iconContentDescription = stringResource(R.string.checkup_screen_list_empty_icon_content_desc),
                         iconActionImageVector = Icons.Default.Add,
-                        iconActionContentDescription = "Nuovo Check-Up",
-                        textAction = "Nuovo Check-Up",
+                        iconActionContentDescription = stringResource(R.string.checkup_screen_list_fab_new),
+                        textAction = stringResource(R.string.checkup_screen_list_action_new),
                         onAction = onCreateNewCheckUp
                     )
                 }
@@ -199,7 +210,7 @@ fun CheckUpListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Nuovo Check-up"
+                    contentDescription = stringResource(R.string.checkup_screen_list_fab_new)
                 )
             }
         }
@@ -242,13 +253,14 @@ private fun SortMenu(
     onSortSelected: (CheckUpSortOrder) -> Unit,
     onDismiss: () -> Unit
 ) {
+
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss
     ) {
         CheckUpSortOrder.entries.forEach { checkupSortOrder ->
             DropdownMenuItem(
-                text = { Text(getSortOrderDisplayName(checkupSortOrder)) },
+                text = { Text(checkupSortOrder.getDisplayName()) },
                 onClick = {
                     onSortSelected(checkupSortOrder)
                     onDismiss()
@@ -268,13 +280,14 @@ private fun FilterMenu(
     onFilterSelected: (CheckUpFilter) -> Unit,
     onDismiss: () -> Unit
 ) {
+
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss
     ) {
         CheckUpFilter.entries.forEach { filter ->
             DropdownMenuItem(
-                text = { Text(getFilterDisplayName(filter)) },
+                text = { Text(filter.getDisplayName()) },
                 onClick = {
                     onFilterSelected(filter)
                     onDismiss()
@@ -284,25 +297,5 @@ private fun FilterMenu(
                 } else null
             )
         }
-    }
-}
-
-// Helper functions
-
-private fun getFilterDisplayName(filter: CheckUpFilter): String {
-    return when (filter) {
-        CheckUpFilter.ALL -> "Tutti"
-        CheckUpFilter.DRAFT -> "Bozze"
-        CheckUpFilter.IN_PROGRESS -> "In corso"
-        CheckUpFilter.COMPLETED -> "Completati"
-    }
-}
-
-private fun getSortOrderDisplayName(sortOrder: CheckUpSortOrder): String {
-    return when (sortOrder) {
-        CheckUpSortOrder.RECENT_FIRST -> "Recenti"
-        CheckUpSortOrder.OLDEST_FIRST -> "Datati"
-        CheckUpSortOrder.CLIENT_NAME -> "Nome cliente"
-        CheckUpSortOrder.STATUS -> "Stato"
     }
 }

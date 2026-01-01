@@ -18,14 +18,3 @@ data class CheckUpIslandAssociation(
     val updatedAt: Instant
 )
 
-/**
- * Tipologie di associazione CheckUp-Isola
- */
-@Serializable
-enum class AssociationType(val displayName: String, val description: String) {
-    STANDARD("Standard", "CheckUp singola isola"),
-    MULTI_ISLAND("Multi-Isola", "CheckUp comparativo su più isole"),
-    COMPARISON("Confronto", "CheckUp per confronto performance"),
-    MAINTENANCE("Manutenzione", "CheckUp post-manutenzione specifica"),
-    EMERGENCY("Emergenza", "CheckUp di emergenza per guasto")
-}

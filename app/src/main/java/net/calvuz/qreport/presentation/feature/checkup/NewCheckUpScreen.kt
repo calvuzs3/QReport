@@ -9,11 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 import net.calvuz.qreport.domain.model.island.IslandType
 
 /**
@@ -47,12 +49,12 @@ fun NewCheckUpScreen(
     ) {
         // Top App Bar
         TopAppBar(
-            title = { Text("Nuovo Check-up") },
+            title = { Text(stringResource(R.string.checkup_screen_new_title)) },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Indietro"
+                        contentDescription = stringResource(R.string.checkup_screen_new_back)
                     )
                 }
             }
@@ -109,7 +111,7 @@ fun NewCheckUpScreen(
                         onClick = onNavigateBack,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Annulla")
+                        Text(stringResource(R.string.checkup_screen_new_action_cancel))
                     }
 
                     Button(
@@ -123,7 +125,7 @@ fun NewCheckUpScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Crea Check-up")
+                            Text(stringResource(R.string.checkup_screen_new_action_create))
                         }
                     }
                 }
@@ -132,11 +134,12 @@ fun NewCheckUpScreen(
     }
 
     // Error handling
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
-            // Show snackbar or dialog
-        }
-    }
+//    if (uiState.error != null ) {
+//        // TODO: handle errors
+//        LaunchedEffect(error) {
+//            // Show snackbar or dialog
+//        }
+//    }
 }
 
 @Composable
@@ -157,7 +160,7 @@ private fun ClientInfoSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Informazioni Cliente",
+                text = stringResource(R.string.checkup_screen_new_section_client_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -165,7 +168,7 @@ private fun ClientInfoSection(
             OutlinedTextField(
                 value = clientName,
                 onValueChange = onClientNameChange,
-                label = { Text("Nome Cliente *") },
+                label = { Text(stringResource(R.string.checkup_screen_new_client_name_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -173,7 +176,7 @@ private fun ClientInfoSection(
             OutlinedTextField(
                 value = contactPerson,
                 onValueChange = onContactPersonChange,
-                label = { Text("Persona di Contatto") },
+                label = { Text(stringResource(R.string.checkup_screen_new_contact_person_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -181,7 +184,7 @@ private fun ClientInfoSection(
             OutlinedTextField(
                 value = site,
                 onValueChange = onSiteChange,
-                label = { Text("Stabilimento/Sede") },
+                label = { Text(stringResource(R.string.checkup_screen_new_site_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -203,13 +206,13 @@ private fun IslandTypeSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Tipo Isola *",
+                text = stringResource(R.string.checkup_screen_new_section_island_type_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
 
             Text(
-                text = "Seleziona il tipo di isola robotizzata da controllare",
+                text = stringResource(R.string.checkup_screen_new_island_type_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -306,7 +309,7 @@ private fun IslandInfoSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Informazioni Isola",
+                text = stringResource(R.string.checkup_screen_new_section_island_info_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -314,7 +317,7 @@ private fun IslandInfoSection(
             OutlinedTextField(
                 value = serialNumber,
                 onValueChange = onSerialNumberChange,
-                label = { Text("Numero Seriale") },
+                label = { Text(stringResource(R.string.checkup_screen_new_serial_number_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -322,7 +325,7 @@ private fun IslandInfoSection(
             OutlinedTextField(
                 value = model,
                 onValueChange = onModelChange,
-                label = { Text("Modello") },
+                label = { Text(stringResource(R.string.checkup_screen_new_model_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )

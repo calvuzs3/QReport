@@ -8,22 +8,18 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
-import kotlinx.datetime.Clock
-import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
 import net.calvuz.qreport.domain.usecase.checkup.*
+import net.calvuz.qreport.presentation.core.model.QReportState
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpFilter
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpSortOrder
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpWithStats
 import timber.log.Timber
 import javax.inject.Inject
 
 /**
  * ViewModel per CheckUpListScreen
- *
- * Gestisce:
- * - Lista check-up con filtri
- * - Ricerca e ordinamento
- * - Gestione stati
- * - Pull-to-refresh
  */
 
 data class CheckUpListUiState(
@@ -31,19 +27,11 @@ data class CheckUpListUiState(
     val filteredCheckUps: List<CheckUpWithStats> = emptyList(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
-    val error: String? = null,
+    val error: QReportState? = null,
     val searchQuery: String = "",
     val selectedFilter: CheckUpFilter = CheckUpFilter.ALL,
     val checkUpSortOrder: CheckUpSortOrder = CheckUpSortOrder.RECENT_FIRST
 )
-
-enum class CheckUpFilter {
-    ALL, DRAFT, IN_PROGRESS, COMPLETED
-}
-
-enum class CheckUpSortOrder {
-    RECENT_FIRST, OLDEST_FIRST, CLIENT_NAME, STATUS
-}
 
 @HiltViewModel
 class CheckUpListViewModel @Inject constructor(
@@ -82,51 +70,27 @@ class CheckUpListViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                error = "Errore caricamento check-ups: ${exception.message}"
+                                error =  QReportState.ERR_LOAD // "Errore caricamento check-ups: ${exception.message}"
                             )
                         }
                     }
                     .collect { checkUps ->
-                        // ✅ CORRETTO: Controlla cancellazione prima di processare
+                        // Check deleting before processing
                         if (!currentCoroutineContext().isActive) {
                             Timber.d("Skipping check-ups processing - job cancelled")
                             return@collect
                         }
 
-                        // Enrich with statistics - TUTTO DENTRO IL COLLECT
+                        // Enrich with statistics
                         val checkUpsWithStats = checkUps.map { checkUp ->
                             val stats = try {
                                 getCheckUpStatsUseCase(checkUp.id).getOrElse {
                                     Timber.w("Failed to get stats for check-up ${checkUp.id}: ${it.message}")
-                                    CheckUpSingleStatistics(
-                                        totalItems = 0,
-                                        completedItems = 0,
-                                        okItems = 0,
-                                        nokItems = 0,
-                                        naItems = 0,
-                                        pendingItems = 0,
-                                        criticalIssues = 0,
-                                        importantIssues = 0,
-                                        photosCount = 0,
-                                        sparePartsCount = 0,
-                                        completionPercentage = 0f
-                                    )
+                                    CheckUpSingleStatistics() // Everything to 0
                                 }
                             } catch (e: Exception) {
                                 Timber.e(e, "Exception getting stats for check-up ${checkUp.id}")
-                                CheckUpSingleStatistics(
-                                    totalItems = 0,
-                                    completedItems = 0,
-                                    okItems = 0,
-                                    nokItems = 0,
-                                    naItems = 0,
-                                    pendingItems = 0,
-                                    criticalIssues = 0,
-                                    importantIssues = 0,
-                                    photosCount = 0,
-                                    sparePartsCount = 0,
-                                    completionPercentage = 0f
-                                )
+                                CheckUpSingleStatistics() // Everything to 0
                             }
 
                             CheckUpWithStats(
@@ -135,7 +99,6 @@ class CheckUpListViewModel @Inject constructor(
                             )
                         }
 
-                        // ✅ CORRETTO: Aggiorna UI solo se ancora attivo, TUTTO DENTRO COLLECT
                         if (currentCoroutineContext().isActive) {
                             val currentState = _uiState.value
                             val filteredAndSorted = applyFiltersAndSort(
@@ -157,18 +120,17 @@ class CheckUpListViewModel @Inject constructor(
                         }
                     }
 
-            } catch (e: CancellationException) {
-                // ✅ CORRETTO: Gestione cancellazione
+            } catch (_: CancellationException) {
                 Timber.d("Check-ups loading cancelled (normal during navigation)")
                 // Non aggiornare UI se cancellato
+
             } catch (e: Exception) {
-                // ✅ CORRETTO: Usa currentCoroutineContext().isActive
                 if (currentCoroutineContext().isActive) {
                     Timber.e(e, "Failed to load check-ups")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = "Errore caricamento check-ups: ${e.message}"
+                        error = QReportState.ERR_LOAD // "Errore caricamento check-ups: ${e.message}"
                     )
                 } else {
                     Timber.d("Error handling skipped - job cancelled")
@@ -197,35 +159,11 @@ class CheckUpListViewModel @Inject constructor(
                     val stats = try {
                         getCheckUpStatsUseCase(checkUp.id).getOrElse {
                             Timber.w("Failed to get stats for check-up ${checkUp.id}: ${it.message}")
-                            CheckUpSingleStatistics(
-                                totalItems = 0,
-                                completedItems = 0,
-                                okItems = 0,
-                                nokItems = 0,
-                                naItems = 0,
-                                pendingItems = 0,
-                                criticalIssues = 0,
-                                importantIssues = 0,
-                                photosCount = 0,
-                                sparePartsCount = 0,
-                                completionPercentage = 0f
-                            )
+                            CheckUpSingleStatistics( )
                         }
                     } catch (e: Exception) {
                         Timber.e(e, "Exception getting stats for check-up ${checkUp.id}")
-                        CheckUpSingleStatistics(
-                            totalItems = 0,
-                            completedItems = 0,
-                            okItems = 0,
-                            nokItems = 0,
-                            naItems = 0,
-                            pendingItems = 0,
-                            criticalIssues = 0,
-                            importantIssues = 0,
-                            photosCount = 0,
-                            sparePartsCount = 0,
-                            completionPercentage = 0f
-                        )
+                        CheckUpSingleStatistics()
                     }
 
                     CheckUpWithStats(
@@ -246,7 +184,7 @@ class CheckUpListViewModel @Inject constructor(
                     _uiState.value = currentState.copy(
                         checkUps = checkUpsWithStats,
                         filteredCheckUps = filteredAndSorted,
-                        isRefreshing = false,  // ✅ SEMPRE resettato
+                        isRefreshing = false,  // always reset
                         error = null
                     )
 
@@ -255,7 +193,7 @@ class CheckUpListViewModel @Inject constructor(
                     Timber.d("Skipping refresh UI update - job cancelled")
                 }
 
-            } catch (e: CancellationException) {
+            } catch (_: CancellationException) {
                 Timber.d("Refresh cancelled")
                 // Reset isRefreshing state even if cancelled
                 if (currentCoroutineContext().isActive) {
@@ -266,7 +204,7 @@ class CheckUpListViewModel @Inject constructor(
                     Timber.e(e, "Failed to refresh check-ups")
                     _uiState.value = _uiState.value.copy(
                         isRefreshing = false,
-                        error = "Errore refresh: ${e.message}"
+                        error = QReportState.ERR_REFRESH // "Errore refresh: ${e.message}"
                     )
                 } else {
                     Timber.d("Refresh error handling skipped - job cancelled")
@@ -285,23 +223,23 @@ class CheckUpListViewModel @Inject constructor(
                         Timber.d("Check-up deleted successfully")
                         // The list will be automatically updated via Flow
                     },
-                    onFailure = { error ->
+                    onFailure = { e ->
                         if (currentCoroutineContext().isActive) {
-                            Timber.e(error, "Failed to delete check-up")
+                            Timber.e(e, "Failed to delete check-up")
                             _uiState.value = _uiState.value.copy(
-                                error = "Errore eliminazione check-up: ${error.message}"
+                                error = QReportState.ERR_DELETE //"Errore eliminazione check-up: ${error.message}"
                             )
                         }
                     }
                 )
 
-            } catch (e: CancellationException) {
+            } catch (_: CancellationException) {
                 Timber.d("Delete operation cancelled")
             } catch (e: Exception) {
                 if (currentCoroutineContext().isActive) {
                     Timber.e(e, "Exception deleting check-up")
                     _uiState.value = _uiState.value.copy(
-                        error = "Errore imprevisto: ${e.message}"
+                        error = QReportState.ERR_UNKNOWN
                     )
                 }
             }
@@ -374,9 +312,9 @@ class CheckUpListViewModel @Inject constructor(
             CheckUpFilter.ALL -> filtered
             CheckUpFilter.DRAFT -> filtered.filter { it.checkUp.status == CheckUpStatus.DRAFT }
             CheckUpFilter.IN_PROGRESS -> filtered.filter { it.checkUp.status == CheckUpStatus.IN_PROGRESS }
-            CheckUpFilter.COMPLETED -> filtered.filter {
-                it.checkUp.status in listOf(CheckUpStatus.COMPLETED, CheckUpStatus.EXPORTED, CheckUpStatus.ARCHIVED)
-            }
+            CheckUpFilter.COMPLETED -> filtered.filter { it.checkUp.status == CheckUpStatus.COMPLETED }
+            CheckUpFilter.EXPORTED -> filtered.filter { it.checkUp.status == CheckUpStatus.EXPORTED }
+            CheckUpFilter.ARCHIVED -> filtered.filter { it.checkUp.status == CheckUpStatus.ARCHIVED }
         }
 
         // Apply search query
@@ -385,7 +323,10 @@ class CheckUpListViewModel @Inject constructor(
                 val checkUp = checkUpWithStats.checkUp
                 checkUp.header.clientInfo.companyName.contains(searchQuery, ignoreCase = true) ||
                         checkUp.header.clientInfo.site.contains(searchQuery, ignoreCase = true) ||
-                        checkUp.header.islandInfo.serialNumber.contains(searchQuery, ignoreCase = true) ||
+                        checkUp.header.islandInfo.serialNumber.contains(
+                            searchQuery,
+                            ignoreCase = true
+                        ) ||
                         checkUp.header.islandInfo.model.contains(searchQuery, ignoreCase = true)
             }
         }
@@ -402,10 +343,3 @@ class CheckUpListViewModel @Inject constructor(
     }
 }
 
-/**
- * Data class per check-up con statistiche
- */
-data class CheckUpWithStats(
-    val checkUp: CheckUp,
-    val statistics: CheckUpSingleStatistics
-)

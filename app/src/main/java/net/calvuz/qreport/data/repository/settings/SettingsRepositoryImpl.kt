@@ -10,7 +10,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Implementazione estesa di SettingsRepository che include le settings del tecnico
+ * SettingsRepository implementation
  *
  * SettingsBackup structure:
  * - preferences: Map<String, String> -> app preferences generali
@@ -46,7 +46,7 @@ class SettingsRepositoryImpl @Inject constructor(
                 backupDateTime = Clock.System.now()
             )
 
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Return empty backup if error
             SettingsBackup(
                 preferences = emptyMap(),
@@ -65,7 +65,8 @@ class SettingsRepositoryImpl @Inject constructor(
 
             if (technicianBackupData.isNotEmpty()) {
                 // Import technician settings
-                val importResult = technicianSettingsRepository.importFromBackup(technicianBackupData)
+                val importResult =
+                    technicianSettingsRepository.importFromBackup(technicianBackupData)
 
                 if (importResult.isFailure) {
                     return Result.failure(
@@ -90,7 +91,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun hasTechnicianSettingsToExport(): Boolean {
         return try {
             technicianSettingsRepository.hasTechnicianData().first()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -101,7 +102,7 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun exportTechnicianSettingsOnly(): Map<String, String> {
         return try {
             technicianSettingsRepository.exportForBackup()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             emptyMap()
         }
     }
@@ -148,15 +149,23 @@ class SettingsRepositoryImpl @Inject constructor(
                 }
             }
 
-            return ValidationResult(
-                isValid = issues.isEmpty(),
-                issues = issues
-            )
+            return if (issues.isEmpty()) {
+                ValidationResult.Valid(
+                    // It could return ValidationResultEmpty
+                    isValid = true,
+                    message = "Validazione riuscita"
+                )
+            } else {
+                ValidationResult.NotValid(
+                    isValid = false,
+                    issues = issues
+                )
+            }
 
         } catch (e: Exception) {
-            return ValidationResult(
+            return ValidationResult.NotValid(
                 isValid = false,
-                issues = listOf("Errore validazione backup: ${e.message}")
+                issues = listOf("Errore validazione backup: ${e.message}"),
             )
         }
     }

@@ -1,8 +1,10 @@
 package net.calvuz.qreport.data.export.text
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.calvuz.qreport.domain.model.CriticalityLevel
+import net.calvuz.qreport.domain.model.client.CriticalityLevel
 import net.calvuz.qreport.domain.model.checkup.*
 import net.calvuz.qreport.domain.model.export.ExportData
 import net.calvuz.qreport.domain.model.export.ExportOptions
@@ -10,6 +12,10 @@ import net.calvuz.qreport.domain.model.export.PhotoNamingStrategy
 import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckItemStatusExt.getDisplayName
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckItemStatusExt.getIcon
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpStatusExt.getDisplayName
+import net.calvuz.qreport.util.NumberUtils.toItalianPercentage
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -21,8 +27,9 @@ import javax.inject.Singleton
  * Crea file .txt leggibili universalmente con tutte le informazioni del checkup
  */
 @Singleton
-class TextReportGenerator @Inject constructor() {
-
+class TextReportGenerator @Inject constructor(
+    @ApplicationContext private val context: Context
+) {
     /**
      * Genera report testuale completo
      *
@@ -136,7 +143,7 @@ class TextReportGenerator @Inject constructor() {
             appendLine("Durata Totale:        ${hours}h ${minutes}m")
         }
 
-        appendLine("Stato Checkup:        ${(checkup.status.displayName)}")
+        appendLine("Stato Checkup:        ${(checkup.status.getDisplayName(context))}")
 
         if (checkup.header.notes.isNotBlank()) {   //} .notes.isNotBlank()) {
             appendLine("Note Generali:        ${checkup.header.notes}")    // .notes}")
@@ -153,9 +160,9 @@ class TextReportGenerator @Inject constructor() {
         appendLine("-".repeat(18))
         appendLine("Stato Generale:       ${getOverallStatusText(stats)}")
         appendLine("Controlli Totali:     ${stats.totalItems}")
-        appendLine("Controlli OK:         ${stats.okItems} (${String.format("%.1f", stats.okPercentage)}%)")
-        appendLine("Controlli NOK:        ${stats.nokItems} (${String.format("%.1f", stats.nokPercentage)}%)")
-        appendLine("Controlli N/A:        ${stats.naItems} (${String.format("%.1f", stats.naPercentage)}%)")
+        appendLine("Controlli OK:         ${stats.okItems} (${stats.okPercentage.toItalianPercentage()})")
+        appendLine("Controlli NOK:        ${stats.nokItems} (${stats.nokPercentage.toItalianPercentage()})")
+        appendLine("Controlli N/A:        ${stats.naItems} (${stats.naPercentage.toItalianPercentage()})")
         appendLine("Controlli Pending:    ${stats.pendingItems}")
         appendLine("Criticità Rilevate:   ${stats.criticalIssues}")
         appendLine("Avvisi Importanti:    ${stats.importantIssues}")
@@ -223,7 +230,7 @@ class TextReportGenerator @Inject constructor() {
         }
 
         // Foto del modulo (opzionale)
-        if (options.generatePhotoIndex == true) {
+        if (options.generatePhotoIndex) {
             val modulePhotos = checkItems.flatMap { it.photos }
             if (modulePhotos.isNotEmpty()) {
                 appendLine()
@@ -240,12 +247,7 @@ class TextReportGenerator @Inject constructor() {
         itemIndex: Int,
         options: ExportOptions
     ) {
-        val statusIcon = when (item.status) {
-            CheckItemStatus.OK -> "✅"
-            CheckItemStatus.NOK -> "❌"
-            CheckItemStatus.PENDING -> "⏳"
-            CheckItemStatus.NA -> "➖"
-        }
+        val statusIcon = item.status.getIcon()
 
         val criticalityIcon = when (item.criticality) {
             CriticalityLevel.CRITICAL -> "🔴"
@@ -256,7 +258,7 @@ class TextReportGenerator @Inject constructor() {
 
         appendLine("${itemIndex}. ${item.description}")
         appendLine("   Codice:      ${item.itemCode}")
-        appendLine("   Stato:       $statusIcon ${item.status.displayName}")
+        appendLine("   Stato:       $statusIcon ${item.status.getDisplayName(context)}")
         appendLine("   Criticità:   $criticalityIcon ${item.criticality.name}")
 
         if (item.notes.isNotBlank()) {

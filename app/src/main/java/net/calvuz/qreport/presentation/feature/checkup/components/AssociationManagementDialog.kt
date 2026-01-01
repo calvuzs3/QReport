@@ -12,15 +12,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import net.calvuz.qreport.R
 import net.calvuz.qreport.domain.model.checkup.CheckUpIslandAssociation
 import net.calvuz.qreport.domain.model.client.Client
 import net.calvuz.qreport.domain.model.client.Facility
 import net.calvuz.qreport.domain.model.client.FacilityIsland
+import net.calvuz.qreport.presentation.core.components.LoadingState
+import timber.log.Timber
 
 /**
  * ✅ DIALOG COMPLETO per gestione associazioni CheckUp-Isole
@@ -75,7 +79,8 @@ fun AssociationManagementDialog(
 
                 // Content
                 if (isLoading) {
-                    LoadingContent()
+                    LoadingState(stringResource(R.string.checkup_component_association_dialog_loading))
+
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
@@ -131,28 +136,26 @@ private fun AssociationDialogHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
+        Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Gestione Associazione",
+                text = stringResource(R.string.checkup_component_association_dialog_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
 
             if (currentAssociations.isNotEmpty()) {
                 Text(
-                    text = "Associato a: ${currentAssociations.first().islandId}",
+                    text = stringResource(
+                        R.string.checkup_component_association_dialog_associated_to,
+                        currentAssociations.first().islandId
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Remove button (se esiste associazione)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (currentAssociations.isNotEmpty()) {
                 TextButton(
                     onClick = onRemoveAssociation,
@@ -166,37 +169,16 @@ private fun AssociationDialogHeader(
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Rimuovi")
+                    Text(stringResource(R.string.checkup_component_association_dialog_remove))
                 }
             }
 
-            // Close button
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Default.Close,
-                    contentDescription = "Chiudi"
+                    contentDescription = stringResource(R.string.checkup_component_association_dialog_close)
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun LoadingContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            CircularProgressIndicator()
-            Text(
-                text = "Caricamento clienti...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
 }
@@ -209,12 +191,14 @@ private fun ClientSelectionStep(
 ) {
     SelectionStepCard(
         stepNumber = 1,
-        title = "Seleziona Cliente",
+        title = stringResource(R.string.checkup_component_association_dialog_step_client),
         isCompleted = selectedClientId != null,
         isEmpty = clients.isEmpty()
     ) {
         if (clients.isEmpty()) {
-            EmptyStateMessage("Nessun cliente attivo trovato")
+            EmptyStateMessage(
+                stringResource(R.string.checkup_component_association_dialog_empty_clients)
+            )
         } else {
             clients.forEach { client ->
                 SelectionItem(
@@ -236,12 +220,12 @@ private fun FacilitySelectionStep(
 ) {
     SelectionStepCard(
         stepNumber = 2,
-        title = "Seleziona Stabilimento",
+        title = stringResource(R.string.checkup_component_association_dialog_step_facility),
         isCompleted = selectedFacilityId != null,
         isEmpty = facilities.isEmpty()
     ) {
         if (facilities.isEmpty()) {
-            EmptyStateMessage("Nessuno stabilimento trovato per questo cliente")
+            EmptyStateMessage(stringResource(R.string.checkup_component_association_dialog_empty_facilities))
         } else {
             facilities.forEach { facility ->
                 SelectionItem(
@@ -262,17 +246,27 @@ private fun IslandSelectionStep(
 ) {
     SelectionStepCard(
         stepNumber = 3,
-        title = "Seleziona Isola",
+        title = stringResource(R.string.checkup_component_association_dialog_step_island),
         isCompleted = false,
         isEmpty = islands.isEmpty()
     ) {
         if (islands.isEmpty()) {
-            EmptyStateMessage("Nessuna isola trovata per questo stabilimento")
+            EmptyStateMessage(
+                stringResource(R.string.checkup_component_association_dialog_empty_islands)
+            )
         } else {
             islands.forEach { island ->
                 SelectionItem(
                     title = "${island.islandType.displayName} • ${island.serialNumber}",
-                    subtitle = "Modello: ${island.model}",
+                    subtitle =
+                        if (island.model != null) {
+                            stringResource(
+                                R.string.checkup_component_association_dialog_model_prefix,
+                                island.model
+                            )
+                        } else {
+                            stringResource(R.string.checkup_component_association_dialog_model_not_specified)
+                        },
                     isSelected = false,
                     onClick = { onIslandSelected(island.id) },
                     isClickable = true
@@ -290,6 +284,10 @@ private fun SelectionStepCard(
     isEmpty: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    if (isEmpty) {
+        Timber.d("Empty selection step Card ($title)")
+    }
+
     Card(
         colors = CardDefaults.cardColors(
             containerColor = when {
@@ -395,13 +393,13 @@ private fun SelectionItem(
             if (isSelected) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Selezionato",
+                    contentDescription = stringResource(R.string.checkup_component_association_dialog_selected),
                     tint = MaterialTheme.colorScheme.primary
                 )
             } else if (isClickable) {
                 Icon(
                     imageVector = Icons.Default.RadioButtonUnchecked,
-                    contentDescription = "Non selezionato",
+                    contentDescription = stringResource(R.string.checkup_component_association_dialog_not_selected),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

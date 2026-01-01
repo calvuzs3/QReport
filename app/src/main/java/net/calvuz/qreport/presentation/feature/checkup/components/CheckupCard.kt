@@ -16,8 +16,6 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.PrecisionManufacturing
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -32,9 +30,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
@@ -90,7 +91,7 @@ fun CheckupCard(
     // Delete confirmation dialog
     if (showDeleteDialog && onDelete != null) {
         ConfirmDeleteDialog(
-            objectName = "Check-up",
+            objectName = stringResource(R.string.checkup_component_card_delete_object_name),
             objectDesc = checkup.header.checkUpDate.toItalianDateTime(),
             onConfirm = {
                 onDelete()
@@ -139,7 +140,7 @@ private fun FullCheckupCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
-                                contentDescription = "Modifica Check-up",
+                                contentDescription = stringResource(R.string.checkup_component_card_action_edit),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -192,7 +193,10 @@ private fun FullCheckupCard(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Isola ${checkup.header.islandInfo.serialNumber}",
+                text = stringResource(
+                    R.string.checkup_component_card_island_prefix,
+                    checkup.header.islandInfo.serialNumber
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -213,7 +217,7 @@ private fun FullCheckupCard(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = "Progresso",
+                        text = stringResource(R.string.checkup_component_card_progress),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -224,9 +228,14 @@ private fun FullCheckupCard(
                     )
                 }
 
+                val progress =
+                    if (stats.completionPercentage > 1) stats.completionPercentage / 100 else stats.completionPercentage
                 LinearProgressIndicator(
-                    progress = { stats.completionPercentage },
+                    progress = { progress },
                     modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onSecondary,
+                    trackColor = MaterialTheme.colorScheme.secondary,
+                    strokeCap = StrokeCap.Butt
                 )
             }
 
@@ -238,14 +247,14 @@ private fun FullCheckupCard(
                 ListStatItem(
                     icon = Icons.Default.CheckCircle,
                     value = "${stats.okItems}/${stats.totalItems}",
-                    label = "OK"
+                    label = stringResource(R.string.checkup_component_card_stat_ok)
                 )
 
                 if (stats.nokItems > 0) {
                     ListStatItem(
                         icon = Icons.Default.Error,
                         value = stats.nokItems.toString(),
-                        label = "NOK",
+                        label = stringResource(R.string.checkup_component_card_stat_nok),
                         color = MaterialTheme.colorScheme.error
                     )
                 }
@@ -254,7 +263,7 @@ private fun FullCheckupCard(
                     ListStatItem(
                         icon = Icons.Default.PhotoCamera,
                         value = stats.photosCount.toString(),
-                        label = "Foto"
+                        label = stringResource(R.string.checkup_component_card_stat_photos)
                     )
                 }
 
@@ -287,7 +296,6 @@ private fun FullCheckupCard(
 }
 
 
-
 @Composable
 private fun CompactCheckupCard(
     checkup: CheckUp,
@@ -307,14 +315,12 @@ private fun CompactCheckupCard(
                 overflow = TextOverflow.Ellipsis
             )
 
-            if (true) {
-                Text(
-                    text = checkup.header.clientInfo.companyName,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
-                )
-            }
+            Text(
+                text = checkup.header.clientInfo.companyName,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
         }
 
         if (stats != null) {
@@ -324,13 +330,13 @@ private fun CompactCheckupCard(
                 ListStatItem(
                     icon = Icons.Default.Business,
                     value = stats.okItems.toString(),
-                    label = "OK",
+                    label = stringResource(R.string.checkup_component_card_stat_ok),
                     compact = true
                 )
                 ListStatItem(
                     icon = Icons.AutoMirrored.Default.Assignment,
                     value = stats.pendingItems.toString(),
-                    label = "Pending",
+                    label = stringResource(R.string.checkup_component_card_stat_pending),
                     compact = true
                 )
             }
@@ -357,30 +363,6 @@ private fun MinimalCheckupCard(checkup: CheckUp) {
 
         StatusIndicator(isActive = checkup.status == CheckUpStatus.COMPLETED)
     }
-}
-
-
-@Composable
-private fun CheckupStatusChip(
-    status: CheckUpStatus,
-    modifier: Modifier = Modifier
-) {
-    val (text, containerColor) = when (status) {
-        CheckUpStatus.DRAFT -> "Bozza" to MaterialTheme.colorScheme.tertiaryContainer
-        CheckUpStatus.IN_PROGRESS -> "In Corso" to MaterialTheme.colorScheme.primaryContainer
-        CheckUpStatus.COMPLETED -> "Completato" to MaterialTheme.colorScheme.surfaceVariant
-        CheckUpStatus.EXPORTED -> "Esportato" to MaterialTheme.colorScheme.secondaryContainer
-        CheckUpStatus.ARCHIVED -> "Archiviato" to MaterialTheme.colorScheme.outline
-    }
-
-    AssistChip(
-        onClick = { },
-        label = { Text(text) },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = containerColor
-        ),
-        modifier = modifier
-    )
 }
 
 /**

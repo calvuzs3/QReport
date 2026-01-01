@@ -25,7 +25,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import net.calvuz.qreport.domain.model.photo.Photo
-import net.calvuz.qreport.util.photo.rememberPhotoPickerLauncher
+import net.calvuz.qreport.util.rememberPhotoPickerLauncher
 import timber.log.Timber
 import java.io.File
 

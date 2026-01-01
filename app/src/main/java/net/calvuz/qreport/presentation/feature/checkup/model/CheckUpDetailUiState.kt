@@ -1,6 +1,6 @@
 package net.calvuz.qreport.presentation.feature.checkup.model
 
-import net.calvuz.qreport.domain.model.CriticalityLevel
+import net.calvuz.qreport.domain.model.client.CriticalityLevel
 import net.calvuz.qreport.domain.model.checkup.CheckItem
 import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
 import net.calvuz.qreport.domain.model.checkup.CheckUp
@@ -10,6 +10,7 @@ import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.module.ModuleType
 import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.spare.SparePart
+import net.calvuz.qreport.presentation.core.model.UiText
 
 data class CheckUpDetailUiState(
 
@@ -30,22 +31,20 @@ data class CheckUpDetailUiState(
     val statistics: CheckUpSingleStatistics = CheckUpSingleStatistics(), // ? = null
 
     // ============================================================
-    // PHOTO DATA - ✅ NUOVO
+    // PHOTO DATA
     // ============================================================
     /**
-     * Foto raggruppate per check item ID.
-     * Key: checkItemId, Value: Lista delle foto per quel check item
+     * Photos grouped by check item ID
      */
     val photosByCheckItem: Map<String, List<Photo>> = emptyMap(),
 
     /**
-     * Contatori foto per check item (per performance UI).
-     * Key: checkItemId, Value: Numero di foto per quel check item
+     * Counters photo per chek item
      */
     val photoCountsByCheckItem: Map<String, Int> = emptyMap(),
 
     /**
-     * Stato loading foto (mostra skeleton/spinner durante caricamento)
+     * State loading photo (show skeleton/spinner during loading)
      */
     val isLoadingPhotos: Boolean = false,
 
@@ -57,7 +56,7 @@ data class CheckUpDetailUiState(
     val isExporting: Boolean = false,
     val isAddingSparePart: Boolean = false,
     val isUpdatingHeader: Boolean = false,
-    val expandedModules: Set<String> = emptySet(),  // ✅ NUOVO
+    val expandedModules: Set<String> = emptySet(),
 
     // ============================================================
     // DIALOG STATES
@@ -69,7 +68,7 @@ data class CheckUpDetailUiState(
 // ============================================================
     // ERROR HANDLING
     // ============================================================
-    val error: String? = null,
+    val error: UiText? = null,
     val exportError: String? = null
 
 ) {
@@ -78,38 +77,38 @@ data class CheckUpDetailUiState(
 
 
     // ============================================================
-    // COMPUTED PROPERTIES - ✅ NUOVO: Helper per le foto
+    // COMPUTED PROPERTIES
     // ============================================================
 
     /**
-     * Ottiene le foto per un check item specifico
+     * check item' photos
      */
     fun getPhotosForCheckItem(checkItemId: String): List<Photo> {
         return photosByCheckItem[checkItemId] ?: emptyList()
     }
 
     /**
-     * Ottiene il numero di foto per un check item specifico
+     * check item photos count
      */
     fun getPhotoCountForCheckItem(checkItemId: String): Int {
         return photoCountsByCheckItem[checkItemId] ?: 0
     }
 
     /**
-     * Verifica se un check item ha foto
+     * check if a chek item has photos
      */
     fun hasPhotosForCheckItem(checkItemId: String): Boolean {
         return getPhotoCountForCheckItem(checkItemId) > 0
     }
 
     /**
-     * Numero totale di foto in tutto il check-up
+     *  total number of photos
      */
     val totalPhotoCount: Int
         get() = photoCountsByCheckItem.values.sum()
 
     /**
-     * Check items che hanno foto associate
+     * Check items with photos
      */
     val checkItemsWithPhotos: List<String>
         get() = photoCountsByCheckItem.filter { it.value > 0 }.keys.toList()
@@ -147,7 +146,7 @@ data class CheckUpDetailUiState(
 
 
     /**
-     * Aggiorna le foto per un check item specifico
+     * update photos for a check item
      */
     fun updatePhotosForCheckItem(
         checkItemId: String,
@@ -167,7 +166,7 @@ data class CheckUpDetailUiState(
     }
 
     /**
-     * Rimuove tutte le foto di un check item
+     * remove all photos from a check item
      */
     fun clearPhotosForCheckItem(checkItemId: String): CheckUpDetailUiState {
         val updatedPhotos = photosByCheckItem.toMutableMap()
@@ -183,7 +182,7 @@ data class CheckUpDetailUiState(
     }
 
     /**
-     * Aggiunge una foto a un check item
+     * Add a photo to a check item
      */
     fun addPhotoToCheckItem(
         checkItemId: String,
@@ -196,7 +195,7 @@ data class CheckUpDetailUiState(
     }
 
     /**
-     * Rimuove una foto da un check item
+     * remove a photo from a check item
      */
     fun removePhotoFromCheckItem(
         checkItemId: String,

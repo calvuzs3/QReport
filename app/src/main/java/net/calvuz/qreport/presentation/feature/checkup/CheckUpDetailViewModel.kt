@@ -14,9 +14,9 @@ import net.calvuz.qreport.domain.model.photo.PhotoResult
 import net.calvuz.qreport.domain.model.spare.SparePartCategory
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency
 import net.calvuz.qreport.domain.usecase.checkup.*
-import net.calvuz.qreport.domain.usecase.checkup.association.AssociateCheckUpToIslandUseCase
-import net.calvuz.qreport.domain.usecase.checkup.association.GetAssociationsForCheckUpUseCase
-import net.calvuz.qreport.domain.usecase.checkup.association.RemoveCheckUpAssociationUseCase
+import net.calvuz.qreport.domain.usecase.checkup.AssociateCheckUpToIslandUseCase
+import net.calvuz.qreport.domain.usecase.checkup.GetAssociationsForCheckUpUseCase
+import net.calvuz.qreport.domain.usecase.checkup.RemoveCheckUpAssociationUseCase
 import net.calvuz.qreport.domain.usecase.client.client.GetAllActiveClientsUseCase
 import net.calvuz.qreport.domain.usecase.client.facility.GetFacilitiesByClientUseCase
 import net.calvuz.qreport.domain.usecase.client.facilityisland.GetFacilityIslandsByFacilityUseCase
@@ -24,24 +24,18 @@ import net.calvuz.qreport.domain.usecase.export.ExportCheckUpUseCase
 import net.calvuz.qreport.domain.usecase.photo.CapturePhotoUseCase
 import net.calvuz.qreport.domain.usecase.photo.DeletePhotoUseCase
 import net.calvuz.qreport.domain.usecase.photo.GetCheckItemPhotosUseCase
+import net.calvuz.qreport.presentation.core.model.QReportState
+import net.calvuz.qreport.presentation.core.model.UiText
 import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpDetailUiState
 import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * ViewModel per CheckUpDetailScreen - VERSIONE COMPLETA
- *
- * Gestisce:
- * - Caricamento check-up details
- * - Aggiornamento stati check items
- * - Gestione note e foto
- * - Calcolo statistiche e progresso
- * - Export functionality
- * - Gestione spare parts
+ * CheckUpDetailScreen ViewModel
  */
 
 
-// ✅ NUOVO: Actions per foto
+// Photos' Actions
 sealed class PhotoAction {
     data class NavigateToCamera(val checkItemId: String) : PhotoAction()
     data class NavigateToGallery(val checkItemId: String) : PhotoAction()
@@ -57,15 +51,16 @@ class CheckUpDetailViewModel @Inject constructor(
     private val addSparePartUseCase: AddSparePartUseCase,
     private val exportCheckUpUseCase: ExportCheckUpUseCase,
     private val updateCheckUpHeaderUseCase: UpdateCheckUpHeaderUseCase,
-    // New
-    private val getCheckItemPhotosUseCase: GetCheckItemPhotosUseCase,  // ✅ NUOVO
-    private val capturePhotoUseCase: CapturePhotoUseCase,              // ✅ NUOVO
-    private val deletePhotoUseCase: DeletePhotoUseCase,                 // ✅ NUOVO
 
-    // ✅ NUOVI USE CASES PER ASSOCIAZIONI
-    private val getAllActiveClientsUseCase: GetAllActiveClientsUseCase, // ← Già esistente!
-    private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase, // Dai repository esistenti
-    private val getIslandsByFacilityUseCase: GetFacilityIslandsByFacilityUseCase, // Dai repository esistenti
+    // Photo
+    private val getCheckItemPhotosUseCase: GetCheckItemPhotosUseCase,
+    private val capturePhotoUseCase: CapturePhotoUseCase,
+    private val deletePhotoUseCase: DeletePhotoUseCase,
+
+    // Association
+    private val getAllActiveClientsUseCase: GetAllActiveClientsUseCase,
+    private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase,
+    private val getIslandsByFacilityUseCase: GetFacilityIslandsByFacilityUseCase,
     private val associateCheckUpToIslandUseCase: AssociateCheckUpToIslandUseCase,
     private val getAssociationsForCheckUpUseCase: GetAssociationsForCheckUpUseCase,
     private val removeCheckUpAssociationUseCase: RemoveCheckUpAssociationUseCase
@@ -74,17 +69,17 @@ class CheckUpDetailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
     val uiState: StateFlow<CheckUpDetailUiState> = _uiState.asStateFlow()
 
-    // ✅ NUOVO: Gestione stati espansione moduli
+    // Module expansion handler
     private val _expandedModules = MutableStateFlow<Set<String>>(emptySet())
     val expandedModules: StateFlow<Set<String>> = _expandedModules.asStateFlow()
 
-    // ✅ NUOVO STATE PER ASSOCIAZIONI
+    // Association state
     private val _associationState = MutableStateFlow(AssociationDialogState())
     val associationState = _associationState.asStateFlow()
 
 
     init {
-        Timber.d("CheckUpDetailViewModel initialized")
+        Timber.i("CheckUpDetailViewModel initialized")
     }
 
     // ============================================================
@@ -99,12 +94,12 @@ class CheckUpDetailViewModel @Inject constructor(
             )
 
             try {
-                Timber.d("Loading check-up details: $checkUpId")
+                Timber.d("Loading check-up details {$checkUpId}")
 
                 getCheckUpDetailsUseCase(checkUpId).fold(
 
                     onSuccess = { checkUpDetails ->
-                        Timber.d("Check-up loaded: ${checkUpDetails.checkUp.id}")
+                        Timber.d("Check-up details loaded {${checkUpDetails.checkUp.id}}")
 
                         _uiState.value = _uiState.value.copy(
                             checkUp = checkUpDetails.checkUp,
@@ -115,15 +110,18 @@ class CheckUpDetailViewModel @Inject constructor(
                             isLoading = false,
                             error = null
                         )
-                        // ✅ AGGIUNGI QUESTE CHIAMATE:
+
+                        // Load photos
                         loadPhotosForCheckUp()
-                        loadCurrentAssociations() // ← NUOVO!
+
+                        //Load associations
+                        loadCurrentAssociations()
                     },
                     onFailure = { error ->
-                        Timber.e(error, "Failed to load check-up details")
+                        Timber.e(error, "Check-up details load failed")
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = "Errore caricamento check-up: ${error.message}"
+                            error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_LOAD_CHEKUP, error.message)
                         )
                     }
                 )
@@ -132,7 +130,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Exception loading check-up details")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) //"Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -158,7 +156,7 @@ class CheckUpDetailViewModel @Inject constructor(
                         Timber.e(error, "Failed to update item status")
                         _uiState.value = _uiState.value.copy(
                             isUpdating = false,
-                            error = "Errore aggiornamento status: ${error.message}"
+                            error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_UPDATE_STATUS, error.message) // "Errore aggiornamento status: ${error.message}"
                         )
                     }
                 )
@@ -167,7 +165,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Exception updating item status")
                 _uiState.value = _uiState.value.copy(
                     isUpdating = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -189,11 +187,11 @@ class CheckUpDetailViewModel @Inject constructor(
                             reloadCheckUpData(checkUpId)
                         }
                     },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to update item notes")
+                    onFailure = { e ->
+                        Timber.e(e, "Failed to update item notes")
                         _uiState.value = _uiState.value.copy(
                             isUpdating = false,
-                            error = "Errore aggiornamento note: ${error.message}"
+                            error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_UPDATE_NOTES, e.message) // "Errore aggiornamento note: ${e.message}"
                         )
                     }
                 )
@@ -202,7 +200,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Exception updating item notes")
                 _uiState.value = _uiState.value.copy(
                     isUpdating = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -222,7 +220,7 @@ class CheckUpDetailViewModel @Inject constructor(
             val checkUpId = _uiState.value.checkUp?.id
             if (checkUpId == null) {
                 _uiState.value = _uiState.value.copy(
-                    error = "Check-up non disponibile"
+                    error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_NOT_AVAILABLE) //"Check-up non disponibile"
                 )
                 return@launch
             }
@@ -248,11 +246,11 @@ class CheckUpDetailViewModel @Inject constructor(
                         // Ricarica i dati per includere il nuovo spare part
                         reloadCheckUpData(checkUpId)
                     },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to add spare part")
+                    onFailure = { e ->
+                        Timber.e(e, "Failed to add spare part")
                         _uiState.value = _uiState.value.copy(
                             isAddingSparePart = false,
-                            error = "Errore aggiunta ricambio: ${error.message}"
+                            error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_SPARE_ADD, e.message) //"Errore aggiunta ricambio: ${error.message}"
                         )
                     }
                 )
@@ -261,7 +259,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Exception adding spare part")
                 _uiState.value = _uiState.value.copy(
                     isAddingSparePart = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -281,11 +279,11 @@ class CheckUpDetailViewModel @Inject constructor(
                         // Ricarica per aggiornare il status
                         reloadCheckUpData(checkUpId)
                     },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to complete check-up")
+                    onFailure = { e ->
+                        Timber.e(e, "Failed to complete check-up")
                         _uiState.value = _uiState.value.copy(
                             isUpdating = false,
-                            error = "Errore completamento: ${error.message}"
+                            error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_FINALIZE, e.message) //"Errore completamento: ${error.message}"
                         )
                     }
                 )
@@ -294,7 +292,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Exception completing check-up")
                 _uiState.value = _uiState.value.copy(
                     isUpdating = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -314,11 +312,11 @@ class CheckUpDetailViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(isUpdating = false)
                         // TODO: Show success message or open file
                     },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to export report")
+                    onFailure = { e ->
+                        Timber.e(e, "Failed to export report")
                         _uiState.value = _uiState.value.copy(
                             isUpdating = false,
-                            error = "Errore export: ${error.message}"
+                            error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_EXPORT, e.message) // "Errore export: ${error.message}"
                         )
                     }
                 )
@@ -327,7 +325,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Exception exporting report")
                 _uiState.value = _uiState.value.copy(
                     isUpdating = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -346,25 +344,25 @@ class CheckUpDetailViewModel @Inject constructor(
     }
 
     /**
-     * Carica le foto per tutti i CheckItems del CheckUp
+     * Load photos for all CheckItems
      */
     fun loadPhotosForCheckUp() {
         viewModelScope.launch {
             val checkItems = _uiState.value.checkItems
             if (checkItems.isEmpty()) {
-                Timber.d("Nessun check item trovato, skip caricamento foto")
+                Timber.w("No check item found, skipping loading photos")
                 return@launch
             }
 
             _uiState.value = _uiState.value.copy(isLoadingPhotos = true)
-            Timber.d("Caricamento foto per ${checkItems.size} check items")
+            Timber.v("Loading photos for ${checkItems.size} check items")
 
 
             try {
                 val photosByItem = mutableMapOf<String, List<Photo>>()
                 val photoCountsByItem = mutableMapOf<String, Int>()
 
-                // ✅ CORRETTO: Usa first() invece di collect per evitare loop infiniti
+                // use first() instead of collect to avoid infinite loops
                 checkItems.forEach { checkItem ->
                     try {
                         val photosResult = getCheckItemPhotosUseCase(checkItem.id).first()
@@ -373,23 +371,23 @@ class CheckUpDetailViewModel @Inject constructor(
                             is PhotoResult.Success -> {
                                 photosByItem[checkItem.id] = photosResult.data
                                 photoCountsByItem[checkItem.id] = photosResult.data.size
-                                Timber.d("Caricate ${photosResult.data.size} foto per item ${checkItem.id}")
+                                Timber.v("Loaded ${photosResult.data.size} photos for item ${checkItem.id}")
                             }
 
                             is PhotoResult.Error -> {
-                                Timber.e("Errore caricamento foto per item ${checkItem.id}: ${photosResult.exception}")
+                                Timber.e("Error loading photos for item ${checkItem.id}: ${photosResult.exception}")
                                 photosByItem[checkItem.id] = emptyList()
                                 photoCountsByItem[checkItem.id] = 0
                             }
 
                             is PhotoResult.Loading -> {
-                                Timber.d("Loading foto per item ${checkItem.id}")
+                                Timber.v("Loading photos for item ${checkItem.id}")
                                 photosByItem[checkItem.id] = emptyList()
                                 photoCountsByItem[checkItem.id] = 0
                             }
                         }
                     } catch (e: Exception) {
-                        Timber.e(e, "Eccezione caricamento foto per item ${checkItem.id}")
+                        Timber.e(e, "Photo load for Item failed {${checkItem.id}}")
                         photosByItem[checkItem.id] = emptyList()
                         photoCountsByItem[checkItem.id] = 0
                     }
@@ -403,13 +401,13 @@ class CheckUpDetailViewModel @Inject constructor(
                 )
 
                 val totalPhotos = photoCountsByItem.values.sum()
-                Timber.d("Caricamento foto completato: $totalPhotos foto totali")
+                Timber.d("Caricamento foto completato: $totalPhotos")
 
             } catch (e: Exception) {
-                Timber.e(e, "Eccezione durante caricamento foto del check-up")
+                Timber.e(e, "Photo load for Checkup failed")
                 _uiState.value = _uiState.value.copy(
                     isLoadingPhotos = false,
-                    error = "Errore caricamento foto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_LOAD_PHOTOS, e.message) // "Errore caricamento foto: ${e.message}"
                 )
             }
         }
@@ -422,7 +420,7 @@ class CheckUpDetailViewModel @Inject constructor(
         try {
             Timber.d("Ricaricamento foto per item: $checkItemId")
 
-            // ✅ CORRETTO: Usa first() invece di collect
+            // use first() instead of collect
             val photosResult = getCheckItemPhotosUseCase(checkItemId).first()
 
             when (photosResult) {
@@ -438,19 +436,19 @@ class CheckUpDetailViewModel @Inject constructor(
                         photoCountsByCheckItem = currentCounts
                     )
 
-                    Timber.d("Ricaricate ${photosResult.data.size} foto per item $checkItemId")
+                    Timber.v("Reloaded photos: ${photosResult.data.size}, item: $checkItemId")
                 }
 
                 is PhotoResult.Error -> {
-                    Timber.e("Errore ricaricamento foto per item $checkItemId: ${photosResult.exception}")
+                    Timber.e("Load photos for item failed {$checkItemId}: ${photosResult.exception}")
                 }
 
                 is PhotoResult.Loading -> {
-                    Timber.d("Loading ricaricamento foto per item $checkItemId")
+                    Timber.v("Loading photo for item {$checkItemId}")
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Eccezione ricaricamento foto per item $checkItemId")
+            Timber.e(e, "Loading photo for item failed {$checkItemId}")
         }
     }
 
@@ -536,7 +534,7 @@ class CheckUpDetailViewModel @Inject constructor(
             val checkUpId = _uiState.value.checkUp?.id
             if (checkUpId == null) {
                 _uiState.value = _uiState.value.copy(
-                    error = "Check-up non disponibile"
+                    error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_NOT_AVAILABLE) // "Check-up non disponibile"
                 )
                 return@launch
             }
@@ -555,11 +553,11 @@ class CheckUpDetailViewModel @Inject constructor(
                             showEditHeaderDialog = false
                         )
                     },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to update header")
+                    onFailure = { e ->
+                        Timber.e(e, "Failed to update header")
                         _uiState.value = _uiState.value.copy(
                             isUpdatingHeader = false,
-                            error = "Errore aggiornamento header: ${error.message}"
+                            error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_UPDATE_HEADER, e.message) // "Errore aggiornamento header: ${error.message}"
                         )
                     }
                 )
@@ -568,16 +566,16 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Exception updating header")
                 _uiState.value = _uiState.value.copy(
                     isUpdatingHeader = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
                 )
             }
         }
     }
 
-    // ✅ NUOVI METODI PER GESTIONE ASSOCIAZIONI
+    // Association handling
 
     /**
-     * Mostra dialog gestione associazione
+     * Show Association Dialog
      */
     fun showAssociationDialog() {
         _associationState.value = _associationState.value.copy(
@@ -589,16 +587,10 @@ class CheckUpDetailViewModel @Inject constructor(
         loadCurrentAssociations()
     }
 
-    /**
-     * Nascondi dialog
-     */
     fun hideAssociationDialog() {
         _associationState.value = AssociationDialogState() // Reset completo
     }
 
-    /**
-     * Cliente selezionato nel dialog
-     */
     fun onClientSelected(clientId: String) {
         _associationState.value = _associationState.value.copy(
             selectedClientId = clientId,
@@ -611,9 +603,6 @@ class CheckUpDetailViewModel @Inject constructor(
         loadFacilitiesForClient(clientId)
     }
 
-    /**
-     * Facility selezionata nel dialog
-     */
     fun onFacilitySelected(facilityId: String) {
         _associationState.value = _associationState.value.copy(
             selectedFacilityId = facilityId,
@@ -624,15 +613,12 @@ class CheckUpDetailViewModel @Inject constructor(
         loadIslandsForFacility(facilityId)
     }
 
-    /**
-     * Isola selezionata - crea associazione
-     */
     fun onIslandSelected(islandId: String) {
         viewModelScope.launch {
             val checkUpId = _uiState.value.checkUp?.id
             if (checkUpId == null) {
                 _uiState.value = _uiState.value.copy(
-                    error = "CheckUp non disponibile"
+                    error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_NOT_AVAILABLE) // "CheckUp non disponibile"
                 )
                 return@launch
             }
@@ -649,22 +635,19 @@ class CheckUpDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         error = null
                     )
-                }.onFailure { error ->
+                }.onFailure { e ->
                     _uiState.value = _uiState.value.copy(
-                        error = "Errore associazione: ${error.message}"
+                        error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_ASSOCIATION, e.message) // "Errore associazione: ${e.message}"
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
                 )
             }
         }
     }
 
-    /**
-     * Rimuovi associazione esistente
-     */
     fun removeAssociation() {
         viewModelScope.launch {
             val checkUpId = _uiState.value.checkUp?.id
@@ -679,14 +662,14 @@ class CheckUpDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         error = null
                     )
-                }.onFailure { error ->
+                }.onFailure { e ->
                     _uiState.value = _uiState.value.copy(
-                        error = "Errore rimozione: ${error.message}"
+                        error = UiText.ErrStringResource(QReportState.ERR_CHECKUP_ASSOCIATION_REMOVE, e.message) // "Errore rimozione: ${error.message}"
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -698,7 +681,7 @@ class CheckUpDetailViewModel @Inject constructor(
     // ============================================================
 
     /**
-     * Ricarica i dati del check-up senza mostrare il loading
+     * Reload CheckUp data without loading message show
      */
     private suspend fun reloadCheckUpData(checkUpId: String) {
         try {
@@ -714,16 +697,16 @@ class CheckUpDetailViewModel @Inject constructor(
                         isAddingSparePart = false,
                         isUpdatingHeader = false
                     )
-                    // ✅ AGGIUNGI REFRESH FOTO:
+                    // Photos REFRESH
                     loadPhotosForCheckUp()
                 },
-                onFailure = { error ->
-                    Timber.e(error, "Failed to reload check-up data")
+                onFailure = { e ->
+                    Timber.e(e, "Failed to reload check-up data")
                     _uiState.value = _uiState.value.copy(
                         isUpdating = false,
                         isAddingSparePart = false,
                         isUpdatingHeader = false,
-                        error = "Errore ricaricamento dati: ${error.message}"
+                        error = UiText.ErrStringResource(QReportState.ERR_RELOAD, e.message) // "Errore ricaricamento dati: ${error.message}"
                     )
                 }
             )
@@ -733,29 +716,28 @@ class CheckUpDetailViewModel @Inject constructor(
                 isUpdating = false,
                 isAddingSparePart = false,
                 isUpdatingHeader = false,
-                error = "Errore imprevisto: ${e.message}"
+                error = UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
             )
         }
     }
 
-    // Funzione per toggle espansione modulo
+    // Module expansion/collapsing toggle
     fun toggleModuleExpansion(moduleType: ModuleType) {
         val moduleKey = moduleType.name
         val current = _expandedModules.value
         _expandedModules.value = if (moduleKey in current) {
-            current - moduleKey  // Chiudi modulo
+            current - moduleKey  // Collapse module
         } else {
-            current + moduleKey  // Apri modulo
+            current + moduleKey  // Expand module
         }
     }
 
-    // Funzione per controllare se un modulo è espanso
     fun isModuleExpanded(moduleType: ModuleType): Boolean {
         return moduleType.name in _expandedModules.value
     }
 
     /**
-     * Carica associazioni correnti per questo checkup
+     * Load current associations for this checkup
      */
     private fun loadCurrentAssociations() {
         viewModelScope.launch {
@@ -772,13 +754,13 @@ class CheckUpDetailViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to load current associations")
+                Timber.e(e, "Load current associations failed")
             }
         }
     }
 
     /**
-     * Carica tutti i clienti attivi
+     * Load all active clients
      */
     private fun loadAvailableClients() {
         viewModelScope.launch {
@@ -790,12 +772,12 @@ class CheckUpDetailViewModel @Inject constructor(
                             isLoadingClients = false
                         )
                     }
-                    .onFailure { error ->
+                    .onFailure { e ->
                         _associationState.value = _associationState.value.copy(
                             isLoadingClients = false
                         )
                         _uiState.value = _uiState.value.copy(
-                            error = "Errore caricamento clienti: ${error.message}"
+                            error = UiText.ErrStringResource(QReportState.ERR_CLIENT_LOAD, e.message) // "Errore caricamento clienti: ${error.message}"
                         )
                     }
             } catch (e: Exception) {
@@ -803,14 +785,14 @@ class CheckUpDetailViewModel @Inject constructor(
                     isLoadingClients = false
                 )
                 _uiState.value = _uiState.value.copy(
-                    error = "Errore caricamento clienti: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_CLIENT_LOAD, e.message) // "Errore caricamento clienti: ${e.message}"
                 )
             }
         }
     }
 
     /**
-     * Carica facilities per cliente selezionato
+     * Load all facilities for this client
      */
     private fun loadFacilitiesForClient(clientId: String) {
         viewModelScope.launch {
@@ -820,12 +802,12 @@ class CheckUpDetailViewModel @Inject constructor(
                         availableFacilities = facilities,
                         isLoadingFacilities = false
                     )
-                }.onFailure { error ->
+                }.onFailure { e ->
                     _associationState.value = _associationState.value.copy(
                         isLoadingFacilities = false
                     )
                     _uiState.value = _uiState.value.copy(
-                        error = "Errore caricamento stabilimenti: ${error.message}"
+                        error = UiText.ErrStringResource(QReportState.ERR_FACILITY_LOAD, e.message) // "Errore caricamento stabilimenti: ${error.message}"
                     )
                 }
             } catch (e: Exception) {
@@ -833,14 +815,14 @@ class CheckUpDetailViewModel @Inject constructor(
                     isLoadingFacilities = false
                 )
                 _uiState.value = _uiState.value.copy(
-                    error = "Errore caricamento stabilimenti: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_FACILITY_LOAD, e.message) //"Errore caricamento stabilimenti: ${e.message}"
                 )
             }
         }
     }
 
     /**
-     * Carica isole per facility selezionata
+     * Load facility islands for this facility
      */
     private fun loadIslandsForFacility(facilityId: String) {
         viewModelScope.launch {
@@ -850,12 +832,12 @@ class CheckUpDetailViewModel @Inject constructor(
                         availableIslands = islands,
                         isLoadingIslands = false
                     )
-                }.onFailure { error ->
+                }.onFailure { e ->
                     _associationState.value = _associationState.value.copy(
                         isLoadingIslands = false
                     )
                     _uiState.value = _uiState.value.copy(
-                        error = "Errore caricamento isole: ${error.message}"
+                        error = UiText.ErrStringResource(QReportState.ERR_ISLAND_LOAD, e.message) // "Errore caricamento isole: ${error.message}"
                     )
                 }
             } catch (e: Exception) {
@@ -863,7 +845,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     isLoadingIslands = false
                 )
                 _uiState.value = _uiState.value.copy(
-                    error = "Errore caricamento isole: ${e.message}"
+                    error = UiText.ErrStringResource(QReportState.ERR_ISLAND_LOAD, e.message) // "Errore caricamento isole: ${e.message}"
                 )
             }
         }

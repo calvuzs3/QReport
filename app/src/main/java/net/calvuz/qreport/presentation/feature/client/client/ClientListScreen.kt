@@ -106,10 +106,10 @@ fun ClientListScreen(
             ActiveFiltersChipRow(
                 selectedFilter = getFilterDisplayName(uiState.selectedFilter),
                 avoidFilter = getFilterDisplayName(ClientFilter.ALL),
-                selectedSort = getSortOrderDisplayName(uiState.clientSortOrder),
-                avoidSort = getSortOrderDisplayName(ClientSortOrder.COMPANY_NAME),
                 onClearFilter = { viewModel.updateFilter(ClientFilter.ALL) },
-                onClearSort = { viewModel.updateSortOrder(ClientSortOrder.COMPANY_NAME) },
+                selectedSort = getSortOrderDisplayName(uiState.clientSortOrder),
+                avoidSort = getSortOrderDisplayName(ClientSortOrder.CREATED_RECENT),
+                onClearSort = { viewModel.updateSortOrder(ClientSortOrder.CREATED_RECENT) },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }

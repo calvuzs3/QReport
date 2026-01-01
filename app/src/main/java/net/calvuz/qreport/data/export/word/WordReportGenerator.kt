@@ -1,14 +1,19 @@
 package net.calvuz.qreport.data.export.word
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.calvuz.qreport.data.export.photo.PhotoExportManager
 import net.calvuz.qreport.domain.model.checkup.CheckItem
 import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
+import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.export.*
 import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.model.photo.*
 import net.calvuz.qreport.domain.model.spare.SparePart
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckItemStatusExt.getDisplayName
+import net.calvuz.qreport.presentation.feature.checkup.model.CheckItemStatusExt.getReportColor
 import net.calvuz.qreport.util.DateTimeUtils.toFilenameSafeDate
 import org.apache.poi.xwpf.usermodel.*
 import org.apache.poi.util.Units
@@ -34,6 +39,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class WordReportGenerator @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val photoExportManager: PhotoExportManager,
     private val fileManager: FileManager
 ) {
@@ -245,8 +251,8 @@ class WordReportGenerator @Inject constructor(
             "Controlli totali: ${stats.totalItems}",
             "Controlli OK: ${stats.okItems} (${stats.okPercentage}%)",
             "Controlli NOK: ${stats.nokItems} (${stats.nokPercentage}%)",
-            "Elementi critici: ${stats.criticalItems}",
-            "Foto totali: ${stats.totalPhotos}",
+            "Elementi critici: ${stats.criticalIssues}",
+            "Foto totali: ${stats.photosCount}",
             "Moduli verificati: ${stats.modulesCount}"
         )
 
@@ -320,15 +326,8 @@ class WordReportGenerator @Inject constructor(
 
             row.getCell(0).text = item.description
             row.getCell(1).apply {
-                text = item.status.displayName
-                // Colore basato su stato
-                val statusColor = when (item.status) {
-                    CheckItemStatus.OK -> "00B050"
-                    CheckItemStatus.NOK -> "FF0000"
-                    CheckItemStatus.PENDING -> "FFC000"
-                    else -> "000000"
-                }
-                paragraphs[0].runs[0].color = statusColor
+                text = item.status.getDisplayName(context = context)
+                paragraphs[0].runs[0].color = item.status.getReportColor()
             }
             row.getCell(2).text = item.criticality.displayName
             row.getCell(3).text = item.notes
@@ -513,34 +512,17 @@ class WordReportGenerator @Inject constructor(
     /**
      * Calcola statistiche checkup usando domain models
      */
-    private fun calculateCheckupStatistics(exportData: ExportData): CheckupStatistics {
+    private fun calculateCheckupStatistics(exportData: ExportData): CheckUpSingleStatistics {
         val allItems = exportData.itemsByModule.values.flatten()
         val totalPhotos = allItems.sumOf { it.photos.size }
 
-        return CheckupStatistics(
+        return CheckUpSingleStatistics(
             totalItems = allItems.size,
             okItems = allItems.count { it.status == CheckItemStatus.OK },
             nokItems = allItems.count { it.status == CheckItemStatus.NOK },
-            criticalItems = allItems.count { it.criticality.name == "CRITICAL" },
-            totalPhotos = totalPhotos,
-            modulesCount = exportData.itemsByModule.size
+            criticalIssues = allItems.count { it.criticality.name == "CRITICAL" },
+            photosCount = totalPhotos,
+            totalModules = exportData.itemsByModule.size
         )
     }
-}
-
-// ===== DATA CLASSES =====
-
-/**
- * Statistiche checkup per executive summary
- */
-private data class CheckupStatistics(
-    val totalItems: Int,
-    val okItems: Int,
-    val nokItems: Int,
-    val criticalItems: Int,
-    val totalPhotos: Int,
-    val modulesCount: Int
-) {
-    val okPercentage: Int get() = if (totalItems > 0) (okItems * 100) / totalItems else 0
-    val nokPercentage: Int get() = if (totalItems > 0) (nokItems * 100) / totalItems else 0
 }

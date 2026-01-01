@@ -16,25 +16,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.calvuz.qreport.presentation.ui.theme.QReportTheme
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import net.calvuz.qreport.domain.model.checkup.CheckUp
-import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
 import net.calvuz.qreport.domain.model.island.IslandType
+import net.calvuz.qreport.presentation.core.components.LoadingState
+import net.calvuz.qreport.presentation.feature.checkup.components.CheckupStatusChip
 
 /**
- * Home Screen - Dashboard principale QReport
- *
- * Features:
- * - Statistiche dashboard in cards
- * - Check-up recenti e in corso
- * - Quick actions per nuovi check-up
- * - Navigazione rapida alle sezioni principali
+ * Home Screen - QReport Dashboard
  */
 @Composable
 fun HomeScreen(
@@ -58,8 +51,8 @@ fun HomeScreen(
     // Handle quick create success
     LaunchedEffect(uiState.quickCreatedCheckUpId) {
         uiState.quickCreatedCheckUpId?.let { checkUpId ->
-            onNavigateToCheckUpDetail(checkUpId)  // ✅ AGGIUNTO
-            viewModel.clearSelectedCheckUp()  // ✅ Reset dopo navigazione
+            onNavigateToCheckUpDetail(checkUpId)
+            viewModel.clearSelectedCheckUp() // Reset after navigation
         }
     }
 
@@ -94,12 +87,12 @@ fun HomeScreen(
 
         // Dashboard content
         if (uiState.isLoading) {
-            LoadingContent()
+            LoadingState()
         } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
-                // Statistics Cards
+                // stats Cards
                 item {
                     DashboardStatsSection(
                         stats = uiState.dashboardStats,
@@ -107,7 +100,7 @@ fun HomeScreen(
                     )
                 }
 
-                // ✅ NEW: Navigation Actions
+                // Navigation Actions
                 item {
                     NavigationActionsSection(
                         onNavigateToClients = onNavigateToClients,
@@ -150,7 +143,7 @@ fun HomeScreen(
 }
 
 /**
- * Header della home con titolo e azioni
+ * HEADER
  */
 @Composable
 private fun HomeHeader(
@@ -188,7 +181,7 @@ private fun HomeHeader(
 }
 
 /**
- * Sezione statistiche dashboard
+ * Dashboard stats
  */
 @Composable
 private fun DashboardStatsSection(
@@ -325,16 +318,15 @@ private fun QuickActionsSection(
 }
 
 /**
- * Card per quick action
+ * Quick Action Card
  */
-// CORRETTA - Righe 310-352
 @Composable
 private fun QuickActionCard(
     islandType: IslandType,
     onClick: () -> Unit,
     isLoading: Boolean
 ) {
-    // ✅ USA islandType.icon e displayName direttamente
+    // use islandType.icon and displayName
     Card(
         onClick = onClick,
         enabled = !isLoading,
@@ -345,7 +337,7 @@ private fun QuickActionCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = islandType.icon,  // ✅ CORRETTO
+                imageVector = islandType.icon,
                 contentDescription = null,
                 modifier = Modifier.size(32.dp)
             )
@@ -353,7 +345,7 @@ private fun QuickActionCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = islandType.displayName,  // ✅ CORRETTO
+                text = islandType.displayName,
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -363,15 +355,14 @@ private fun QuickActionCard(
 }
 
 /**
- * Dialog per creazione rapida check-up
+ * Quick Creation Dialog
  */
-// CORRETTA - Righe 357-406
 @Composable
 private fun QuickCreateDialog(
     onDismiss: () -> Unit,
     onConfirm: (IslandType, String) -> Unit
 ) {
-    // ✅ Default POLY_MOVE invece di vecchi tipi
+    // Default POLY_MOVE invece di vecchi tipi
     var selectedIslandType by remember { mutableStateOf(IslandType.POLY_MOVE) }
     var clientName by remember { mutableStateOf("") }
 
@@ -396,7 +387,7 @@ private fun QuickCreateDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // ✅ Dropdown per selezione famiglia POLY
+                // Dropdown per selezione famiglia POLY
                 var expanded by remember { mutableStateOf(false) }
 
                 ExposedDropdownMenuBox(
@@ -465,7 +456,7 @@ private fun QuickCreateDialog(
 }
 
 /**
- * Sezione check-up recenti
+ * Recent Check-up
  */
 @Composable
 private fun RecentCheckUpsSection(
@@ -494,7 +485,7 @@ private fun RecentCheckUpsSection(
 }
 
 /**
- * Sezione check-up in corso
+ * In progress Check-up
  */
 @Composable
 private fun InProgressCheckUpsSection(
@@ -521,7 +512,7 @@ private fun InProgressCheckUpsSection(
 }
 
 /**
- * Card per singolo check-up
+ * Single Check-up Card
  */
 @Composable
 private fun CheckUpCard(
@@ -560,32 +551,10 @@ private fun CheckUpCard(
                     )
                 }
 
-                StatusChip(status = checkUp.status)
+                CheckupStatusChip(status = checkUp.status)
             }
         }
     }
-}
-
-/**
- * Chip per status check-up
- */
-@Composable
-private fun StatusChip(status: CheckUpStatus) {
-    val (color, text) = when (status) {
-        CheckUpStatus.DRAFT -> MaterialTheme.colorScheme.outline to "Bozza"
-        CheckUpStatus.IN_PROGRESS -> MaterialTheme.colorScheme.primary to "In Corso"
-        CheckUpStatus.COMPLETED -> MaterialTheme.colorScheme.tertiary to "Completato"
-        CheckUpStatus.EXPORTED -> MaterialTheme.colorScheme.secondary to "Esportato"
-        CheckUpStatus.ARCHIVED -> MaterialTheme.colorScheme.surfaceVariant to "Archiviato"
-    }
-
-    AssistChip(
-        onClick = { },
-        label = { Text(text, style = MaterialTheme.typography.labelSmall) },
-        colors = AssistChipDefaults.assistChipColors(
-            labelColor = color
-        )
-    )
 }
 
 /**
@@ -611,19 +580,6 @@ private fun EmptyStateCard(message: String) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-    }
-}
-
-/**
- * Loading content
- */
-@Composable
-private fun LoadingContent() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
     }
 }
 
@@ -733,24 +689,5 @@ private fun NavigationActionCard(
                 overflow = TextOverflow.Ellipsis
             )
         }
-    }
-}
-
-// ============================================================
-// PREVIEWS
-// ============================================================
-
-// CORRETTO - Righe 575-584
-@Preview(showBackground = true)
-@Composable
-private fun HomeScreenPreview() {
-    QReportTheme {
-        HomeScreen(
-            onNavigateToClients = {},
-            onNavigateToCheckUps = {},
-            onNavigateToNewCheckUp = {},
-            onNavigateToCheckUpDetail = {},
-
-            )
     }
 }

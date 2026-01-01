@@ -2,7 +2,7 @@ package net.calvuz.qreport.domain.model.checkup
 
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
-import net.calvuz.qreport.domain.model.CriticalityLevel
+import net.calvuz.qreport.domain.model.client.CriticalityLevel
 import net.calvuz.qreport.domain.model.module.ModuleType
 import net.calvuz.qreport.domain.model.photo.Photo
 

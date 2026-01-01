@@ -1,6 +1,6 @@
 package net.calvuz.qreport.domain.model.checkup
 
-import net.calvuz.qreport.domain.model.CriticalityLevel
+import net.calvuz.qreport.domain.model.client.CriticalityLevel
 import net.calvuz.qreport.domain.model.island.IslandType
 
 /**

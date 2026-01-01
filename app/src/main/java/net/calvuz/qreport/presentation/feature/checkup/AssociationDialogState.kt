@@ -5,9 +5,6 @@ import net.calvuz.qreport.domain.model.client.Client
 import net.calvuz.qreport.domain.model.client.Facility
 import net.calvuz.qreport.domain.model.client.FacilityIsland
 
-/**
- * ✅ NUOVO DATA CLASS per stato dialog associazione
- */
 data class AssociationDialogState(
     val showDialog: Boolean = false,
     val currentAssociations: List<CheckUpIslandAssociation> = emptyList(),

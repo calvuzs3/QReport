@@ -11,14 +11,16 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.calvuz.qreport.domain.model.*
+import net.calvuz.qreport.R
 import net.calvuz.qreport.domain.model.checkup.CheckUpHeader
+import net.calvuz.qreport.domain.model.client.ClientInfo
 import net.calvuz.qreport.domain.model.island.IslandInfo
 import net.calvuz.qreport.domain.model.settings.TechnicianInfo
 import net.calvuz.qreport.presentation.core.components.SectionCard
@@ -115,7 +117,9 @@ fun EditHeaderDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Modifica Informazioni",
+                        text = stringResource(
+                            R.string.checkup_dialog_edit_header_title
+                        ), // "Modifica Informazioni",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -123,7 +127,7 @@ fun EditHeaderDialog(
                     IconButton(onClick = onDismiss) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Chiudi"
+                            contentDescription = stringResource(R.string.checkup_dialog_edit_header_close) // "Chiudi"
                         )
                     }
                 }
@@ -143,7 +147,9 @@ fun EditHeaderDialog(
                     if (isAutoLoaded) {
                         Card(
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(
+                                    alpha = 0.7f
+                                )
                             ),
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -159,7 +165,7 @@ fun EditHeaderDialog(
                                     tint = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    "Dati tecnico caricati automaticamente dal profilo",
+                                    text = stringResource(R.string.checkup_dialog_edit_header_autoload_message), //"Dati tecnico caricati automaticamente dal profilo",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
@@ -169,7 +175,7 @@ fun EditHeaderDialog(
 
                     // Client Information Section
                     SectionCard(
-                        title = "Informazioni Cliente",
+                        title = stringResource(R.string.checkup_dialog_edit_header_section_client), // "Informazioni Cliente",
                         icon = Icons.Default.Business
                     ) {
                         Column(
@@ -178,7 +184,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = companyName,
                                 onValueChange = { companyName = it },
-                                label = { Text("Nome Azienda *") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_client_company_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 isError = companyName.isBlank()
@@ -187,7 +193,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = contactPerson,
                                 onValueChange = { contactPerson = it },
-                                label = { Text("Persona di Contatto") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_client_contact_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -195,7 +201,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = site,
                                 onValueChange = { site = it },
-                                label = { Text("Stabilimento/Sede") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_client_site_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -203,7 +209,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = address,
                                 onValueChange = { address = it },
-                                label = { Text("Indirizzo") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_client_address_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 maxLines = 2
                             )
@@ -215,7 +221,7 @@ fun EditHeaderDialog(
                                 OutlinedTextField(
                                     value = phone,
                                     onValueChange = { phone = it },
-                                    label = { Text("Telefono") },
+                                    label = { Text(stringResource(R.string.checkup_dialog_edit_header_client_phone_label)) },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true
                                 )
@@ -223,7 +229,7 @@ fun EditHeaderDialog(
                                 OutlinedTextField(
                                     value = email,
                                     onValueChange = { email = it },
-                                    label = { Text("Email") },
+                                    label = { Text(stringResource(R.string.checkup_dialog_edit_header_client_email_label)) },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true
                                 )
@@ -233,7 +239,7 @@ fun EditHeaderDialog(
 
                     // Island Information Section
                     SectionCard(
-                        title = "Informazioni Isola",
+                        title = stringResource(R.string.checkup_dialog_edit_header_section_island), //"Informazioni Isola",
                         icon = Icons.Default.PrecisionManufacturing
                     ) {
                         Column(
@@ -242,7 +248,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = serialNumber,
                                 onValueChange = { serialNumber = it },
-                                label = { Text("Numero Seriale *") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_island_serial_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 isError = serialNumber.isBlank()
@@ -251,7 +257,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = model,
                                 onValueChange = { model = it },
-                                label = { Text("Modello") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_island_model_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -263,19 +269,19 @@ fun EditHeaderDialog(
                                 OutlinedTextField(
                                     value = installationDate,
                                     onValueChange = { installationDate = it },
-                                    label = { Text("Data Installazione") },
+                                    label = { Text(stringResource(R.string.checkup_dialog_edit_header_island_installation_label)) },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true,
-                                    placeholder = { Text("dd/mm/yyyy") }
+                                    placeholder = { Text(stringResource(R.string.checkup_dialog_edit_header_island_installation_placeholder)) }
                                 )
 
                                 OutlinedTextField(
                                     value = lastMaintenanceDate,
                                     onValueChange = { lastMaintenanceDate = it },
-                                    label = { Text("Ultima Manutenzione") },
+                                    label = { Text(stringResource(R.string.checkup_dialog_edit_header_island_maintenance_label)) },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true,
-                                    placeholder = { Text("dd/mm/yyyy") }
+                                    placeholder = { Text(stringResource(R.string.checkup_dialog_edit_header_island_maintenance_placeholder)) }
                                 )
                             }
 
@@ -290,7 +296,7 @@ fun EditHeaderDialog(
                                             operatingHours = value
                                         }
                                     },
-                                    label = { Text("Ore di Lavoro") },
+                                    label = { Text(stringResource(R.string.checkup_dialog_edit_header_island_hours_label)) },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true
                                 )
@@ -302,7 +308,7 @@ fun EditHeaderDialog(
                                             cycleCount = value
                                         }
                                     },
-                                    label = { Text("Contatore Cicli") },
+                                    label = { Text(stringResource(R.string.checkup_dialog_edit_header_island_cycles_label)) },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true
                                 )
@@ -312,7 +318,7 @@ fun EditHeaderDialog(
 
                     // Technician Information Section
                     SectionCard(
-                        title = "Informazioni Tecnico",
+                        title = stringResource(R.string.checkup_dialog_edit_header_section_technician),
                         icon = Icons.Default.Engineering // .EngineeringOutlined
                     ) {
                         Column(
@@ -338,7 +344,7 @@ fun EditHeaderDialog(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Carica da Profilo Tecnico")
+                                    Text(stringResource(R.string.checkup_dialog_edit_header_technician_load_profile))
                                 }
 
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -347,7 +353,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = technicianName,
                                 onValueChange = { technicianName = it },
-                                label = { Text("Nome Tecnico") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_technician_name_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -355,7 +361,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = technicianCompany,
                                 onValueChange = { technicianCompany = it },
-                                label = { Text("Azienda") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_technician_company_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -363,7 +369,7 @@ fun EditHeaderDialog(
                             OutlinedTextField(
                                 value = certification,
                                 onValueChange = { certification = it },
-                                label = { Text("Certificazione") },
+                                label = { Text(stringResource(R.string.checkup_dialog_edit_header_technician_certification_label)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true
                             )
@@ -375,7 +381,7 @@ fun EditHeaderDialog(
                                 OutlinedTextField(
                                     value = technicianPhone,
                                     onValueChange = { technicianPhone = it },
-                                    label = { Text("Telefono") },
+                                    label = { Text(stringResource(R.string.checkup_dialog_edit_header_technician_phone_label)) },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true
                                 )
@@ -383,7 +389,7 @@ fun EditHeaderDialog(
                                 OutlinedTextField(
                                     value = technicianEmail,
                                     onValueChange = { technicianEmail = it },
-                                    label = { Text("Email") },
+                                    label = { Text(stringResource(R.string.checkup_dialog_edit_header_technician_email_label)) },
                                     modifier = Modifier.weight(1f),
                                     singleLine = true
                                 )
@@ -393,16 +399,16 @@ fun EditHeaderDialog(
 
                     // Notes Section
                     SectionCard(
-                        title = "Note Aggiuntive",
+                        title = stringResource(R.string.checkup_dialog_edit_header_section_notes),
                         icon = Icons.AutoMirrored.Default.Notes
                     ) {
                         OutlinedTextField(
                             value = notes,
                             onValueChange = { notes = it },
-                            label = { Text("Note") },
+                            label = { Text(stringResource(R.string.checkup_dialog_edit_header_notes_label)) },
                             modifier = Modifier.fillMaxWidth(),
                             maxLines = 3,
-                            placeholder = { Text("Inserisci note aggiuntive...") }
+                            placeholder = { Text(stringResource(R.string.checkup_dialog_edit_header_notes_placeholder)) }
                         )
                     }
                 }
@@ -421,7 +427,7 @@ fun EditHeaderDialog(
                         modifier = Modifier.weight(1f),
                         enabled = !isLoading
                     ) {
-                        Text("Annulla")
+                        Text(stringResource(R.string.checkup_dialog_edit_header_action_cancel))
                     }
 
                     Button(
@@ -463,7 +469,7 @@ fun EditHeaderDialog(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text("Salva")
+                            Text(stringResource(R.string.checkup_dialog_edit_header_action_save))
                         }
                     }
                 }

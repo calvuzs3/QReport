@@ -1,4 +1,4 @@
-package net.calvuz.qreport.util.photo
+package net.calvuz.qreport.util
 
 import android.content.Context
 import android.content.Intent
@@ -6,12 +6,10 @@ import android.net.Uri
 import android.provider.MediaStore
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 
 /**
  * Utility per gestire la selezione di foto dalla galleria.
@@ -20,27 +18,12 @@ import androidx.compose.ui.platform.LocalContext
 object PhotoPickerUtil {
 
     /**
-     * Verifica se il dispositivo supporta il nuovo Photo Picker API (Android 13+).
+     * Intent per Android 13+ (Photo Picker)
      */
-    fun supportsPhotoPicker(): Boolean {
-        return true
-    }
-
-    /**
-     * Crea un Intent per aprire la galleria con la strategia migliore per il dispositivo.
-     */
-    fun createGalleryIntent(context: Context): Intent {
-        return if (supportsPhotoPicker()) {
-            // Android 13+: Usa il nuovo Photo Picker
-            Intent(MediaStore.ACTION_PICK_IMAGES).apply {
-                type = "image/*"
-                putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, 1)
-            }
-        } else {
-            // Android < 13: Usa il classico Intent
-            Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
-                type = "image/*"
-            }
+    private fun createPhotoPickerIntent(): Intent {
+        return Intent(MediaStore.ACTION_PICK_IMAGES).apply {
+            type = "image/*"
+            putExtra(MediaStore.EXTRA_PICK_IMAGES_MAX, 1)
         }
     }
 }
@@ -52,7 +35,6 @@ object PhotoPickerUtil {
 fun rememberPhotoPickerLauncher(
     onPhotoSelected: (Uri?) -> Unit
 ): PhotoPickerLauncher {
-    val context = LocalContext.current
 
     // Android 13+ Photo Picker
     val modernPickerLauncher = rememberLauncherForActivityResult(
@@ -61,19 +43,9 @@ fun rememberPhotoPickerLauncher(
         onPhotoSelected(uri)
     }
 
-    // Fallback per Android < 13
-    val legacyPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val uri = result.data?.data
-        onPhotoSelected(uri)
-    }
-
     return remember {
         PhotoPickerLauncher(
             modernLauncher = modernPickerLauncher,
-            legacyLauncher = legacyPickerLauncher,
-            context = context
         )
     }
 }
@@ -83,23 +55,14 @@ fun rememberPhotoPickerLauncher(
  */
 class PhotoPickerLauncher(
     private val modernLauncher: ManagedActivityResultLauncher<PickVisualMediaRequest, Uri?>,
-    private val legacyLauncher: ManagedActivityResultLauncher<Intent, ActivityResult>,
-    private val context: Context
 ) {
     /**
      * Lancia la selezione foto usando l'API appropriata per il dispositivo.
      */
     fun launch() {
-        if (PhotoPickerUtil.supportsPhotoPicker()) {
-            // Android 13+: Usa il nuovo Photo Picker
             modernLauncher.launch(
                 PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             )
-        } else {
-            // Android < 13: Usa Intent tradizionale
-            val intent = PhotoPickerUtil.createGalleryIntent(context)
-            legacyLauncher.launch(intent)
-        }
     }
 }
 
@@ -114,7 +77,7 @@ object PhotoUriUtils {
     fun isValidPhotoUri(context: Context, uri: Uri): Boolean {
         return try {
             context.contentResolver.openInputStream(uri)?.use { true } ?: false
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }

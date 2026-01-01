@@ -6,25 +6,25 @@ import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
 import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.repository.CheckUpRepository
-import net.calvuz.qreport.domain.repository.CheckItemRepository
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.data.mapper.toDomain
+import net.calvuz.qreport.presentation.core.model.QReportState
 import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Use Case per ottenere tutti i dettagli di un check-up
+ * Get a CheckUp details
  *
- * Combina:
- * - Dati del check-up
- * - Check items (✅ CON FOTO!)
+ * Combine:
+ * - Check-up data
+ * - Check items (with photos)
  * - Spare parts
- * - Statistiche
- * - Progresso
+ * - Stats
+ * - Progress
  */
 
 /**
- * Data class per i dettagli completi del check-up
+ * Complete Checkup details Data class
  */
 data class CheckUpDetails(
     val checkUp: CheckUp,
@@ -36,64 +36,63 @@ data class CheckUpDetails(
 
 class GetCheckUpDetailsUseCase @Inject constructor(
     private val checkUpRepository: CheckUpRepository,
-    private val checkItemRepository: CheckItemRepository,
-    private val photoDao: PhotoDao  // ✅ AGGIUNTO: Per caricare foto
+    private val photoDao: PhotoDao  // In order to load photos
 ) {
     suspend operator fun invoke(checkUpId: String): Result<CheckUpDetails> {
         return try {
-            Timber.d("Loading CheckUp details for: $checkUpId")
+            Timber.d("Loading Checkup details for: $checkUpId")
 
-            // 1. Ottieni il check-up base (senza foto)
+            // 1. Get base Check-up (without photos)
             val checkUp = checkUpRepository.getCheckUpWithDetails(checkUpId)
-                ?: return Result.failure(Exception("Check-up non trovato"))
+                ?: return Result.failure(Exception(QReportState.ERR_CHECKUP_NOT_FOUND.name))
 
-            // 2. ✅ LOAD PHOTOS FOR EACH CHECK ITEM
+            // 2. LOAD PHOTOS FOR EACH CHECK ITEM
             val checkItemsWithPhotos = checkUp.checkItems.map { checkItem ->
                 try {
-                    // Carica foto per questo check item specifico
+                    // Load photos for this check item
                     val photoEntities = photoDao.getPhotosByCheckItemId(checkItem.id)
                     val photos = photoEntities.map { it.toDomain() }
 
-                    // Crea nuovo CheckItem con foto caricate
+                    // Create new Check up with photos
                     checkItem.copy(photos = photos)
 
                 } catch (e: Exception) {
-                    Timber.w(e, "Failed to load photos for CheckItem: ${checkItem.id}")
+                    Timber.w(e, "CheckItem load failed {${checkItem.id}}")
                     // In caso di errore, restituisci CheckItem senza foto
                     checkItem.copy(photos = emptyList())
                 }
             }
 
-            // 3. Debug logging per verifica
+            // 3. Debug logging
             val totalPhotos = checkItemsWithPhotos.sumOf { it.photos.size }
-            Timber.i("✅ CheckUp loaded: ${checkItemsWithPhotos.size} items, $totalPhotos photos total")
+            Timber.d("CheckUp details loaded {items: ${checkItemsWithPhotos.size}, photos: $totalPhotos")
 
             checkItemsWithPhotos.forEach { item ->
                 if (item.photos.isNotEmpty()) {
-                    Timber.d("  Item '${item.description}': ${item.photos.size} photos")
+                    Timber.v("  item: ${item.description}, photos: ${item.photos.size}")
                 }
             }
 
-            // 4. Ottieni le statistiche
+            // 4. Get stats
             val statistics = checkUpRepository.getCheckUpStatistics(checkUpId)
 
-            // 5. Ottieni il progresso
+            // 5. Get progress
             val progress = checkUpRepository.getCheckUpProgress(checkUpId)
 
-            // 6. Crea l'oggetto completo CON FOTO
+            // 6. Final object
             val details = CheckUpDetails(
-                checkUp = checkUp.copy(checkItems = checkItemsWithPhotos), // ✅ CheckUp con foto
-                checkItems = checkItemsWithPhotos,  // ✅ CheckItems con foto
+                checkUp = checkUp.copy(checkItems = checkItemsWithPhotos), // CheckUp with photos
+                checkItems = checkItemsWithPhotos,  // CheckItems with photos
                 spareParts = checkUp.spareParts,
                 statistics = statistics,
                 progress = progress
             )
 
-            Result.success(details)
+            Result.success( details  )
 
         } catch (e: Exception) {
-            Timber.e(e, "Failed to load CheckUp details for: $checkUpId")
-            Result.failure(e)
+            Timber.e(e, "CheckUp details load failed {$checkUpId}")
+            Result.failure(Exception(QReportState.ERR_CHECKUP_LOAD_CHEKUP.name))
         }
     }
 }
