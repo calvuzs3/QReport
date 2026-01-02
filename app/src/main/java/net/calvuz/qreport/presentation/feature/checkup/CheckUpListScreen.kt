@@ -21,16 +21,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.presentation.core.components.ActiveFiltersChipRow
 import net.calvuz.qreport.presentation.core.components.EmptyState
-import net.calvuz.qreport.presentation.core.components.ErrorState
+import net.calvuz.qreport.presentation.core.components.ErrorDialog
 import net.calvuz.qreport.presentation.core.components.LoadingState
 import net.calvuz.qreport.presentation.core.components.QReportSearchBar
-import net.calvuz.qreport.presentation.core.model.getDisplayName
+import net.calvuz.qreport.presentation.core.model.asUiText
 import net.calvuz.qreport.presentation.feature.checkup.components.CheckupCard
 import net.calvuz.qreport.presentation.feature.checkup.components.CheckupCardVariant
 import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpFilter
 import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpSortOrder
 import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpWithStats
-import net.calvuz.qreport.presentation.feature.checkup.model.getDisplayName
+import net.calvuz.qreport.presentation.feature.checkup.model.asString
 
 /**
  * Check up list Screen
@@ -100,10 +100,10 @@ fun CheckUpListScreen(
         // Filter chips
         if (uiState.selectedFilter != CheckUpFilter.ALL || uiState.checkUpSortOrder != CheckUpSortOrder.RECENT_FIRST) {
             ActiveFiltersChipRow(
-                selectedFilter = uiState.selectedFilter.getDisplayName(),
-                avoidFilter = CheckUpFilter.ALL.getDisplayName(),
-                selectedSort = uiState.checkUpSortOrder.getDisplayName(),
-                avoidSort = CheckUpSortOrder.RECENT_FIRST.getDisplayName(),
+                selectedFilter = uiState.selectedFilter.asString(),
+                avoidFilter = CheckUpFilter.ALL.asString(),
+                selectedSort = uiState.checkUpSortOrder.asString(),
+                avoidSort = CheckUpSortOrder.RECENT_FIRST.asString(),
                 onClearFilter = { viewModel.updateFilter(CheckUpFilter.ALL) },
                 onClearSort = { viewModel.updateSortOrder(CheckUpSortOrder.RECENT_FIRST) },
                 modifier = Modifier.padding(horizontal = 16.dp)
@@ -134,11 +134,11 @@ fun CheckUpListScreen(
         ) {
 
             // Store error in local variable to avoid smart cast issues
-                val currentError = if (uiState.error != null) {
+                val currentError = /*if*/ (uiState.error )//!= null) /*{*/
                     uiState.error
-                } else {
-                    null
-                }
+//                } else {
+//                    null
+//                }
 
             when {
                 uiState.isLoading -> {
@@ -146,10 +146,10 @@ fun CheckUpListScreen(
                 }
 
                 currentError != null -> {
-                    ErrorState(
-                        error = currentError.getDisplayName(), // Smart work correctly
-                        onRetry = viewModel::loadCheckUps,
-                        onDismiss = viewModel::dismissError
+                    ErrorDialog(
+                        onDismiss = viewModel::dismissError,
+                        message = "",
+                        title = currentError.asUiText().asString(),
                     )
                 }
 
@@ -163,7 +163,7 @@ fun CheckUpListScreen(
                             stringResource(R.string.checkup_screen_list_empty_no_results_title) to
                                     stringResource(
                                         R.string.checkup_screen_list_empty_no_results_message,
-                                        uiState.selectedFilter.getDisplayName()
+                                        uiState.selectedFilter.asString()
                                     )
                         }
                         else -> {
@@ -260,7 +260,7 @@ private fun SortMenu(
     ) {
         CheckUpSortOrder.entries.forEach { checkupSortOrder ->
             DropdownMenuItem(
-                text = { Text(checkupSortOrder.getDisplayName()) },
+                text = { Text(checkupSortOrder.asString()) },
                 onClick = {
                     onSortSelected(checkupSortOrder)
                     onDismiss()
@@ -287,7 +287,7 @@ private fun FilterMenu(
     ) {
         CheckUpFilter.entries.forEach { filter ->
             DropdownMenuItem(
-                text = { Text(filter.getDisplayName()) },
+                text = { Text(filter.asString()) },
                 onClick = {
                     onFilterSelected(filter)
                     onDismiss()

@@ -11,7 +11,7 @@ import kotlinx.coroutines.isActive
 import net.calvuz.qreport.domain.model.checkup.CheckUpSingleStatistics
 import net.calvuz.qreport.domain.model.checkup.CheckUpStatus
 import net.calvuz.qreport.domain.usecase.checkup.*
-import net.calvuz.qreport.presentation.core.model.QReportState
+import net.calvuz.qreport.presentation.core.model.DataError
 import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpFilter
 import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpSortOrder
 import net.calvuz.qreport.presentation.feature.checkup.model.CheckUpWithStats
@@ -27,7 +27,7 @@ data class CheckUpListUiState(
     val filteredCheckUps: List<CheckUpWithStats> = emptyList(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
-    val error: QReportState? = null,
+    val error: DataError.CheckupError? = null,
     val searchQuery: String = "",
     val selectedFilter: CheckUpFilter = CheckUpFilter.ALL,
     val checkUpSortOrder: CheckUpSortOrder = CheckUpSortOrder.RECENT_FIRST
@@ -70,7 +70,7 @@ class CheckUpListViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                error =  QReportState.ERR_LOAD // "Errore caricamento check-ups: ${exception.message}"
+                                error =  DataError.CheckupError.LOAD // "Errore caricamento check-ups: ${exception.message}"
                             )
                         }
                     }
@@ -130,7 +130,7 @@ class CheckUpListViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = QReportState.ERR_LOAD // "Errore caricamento check-ups: ${e.message}"
+                        error = DataError.CheckupError.LOAD // "Errore caricamento check-ups: ${e.message}"
                     )
                 } else {
                     Timber.d("Error handling skipped - job cancelled")
@@ -204,43 +204,10 @@ class CheckUpListViewModel @Inject constructor(
                     Timber.e(e, "Failed to refresh check-ups")
                     _uiState.value = _uiState.value.copy(
                         isRefreshing = false,
-                        error = QReportState.ERR_REFRESH // "Errore refresh: ${e.message}"
+                        error = DataError.CheckupError.REFRESH // "Errore refresh: ${e.message}"
                     )
                 } else {
                     Timber.d("Refresh error handling skipped - job cancelled")
-                }
-            }
-        }
-    }
-
-    fun deleteCheckUp(checkUpId: String) {
-        viewModelScope.launch {
-            try {
-                Timber.d("Deleting check-up: $checkUpId")
-
-                deleteCheckUpUseCase(checkUpId).fold(
-                    onSuccess = {
-                        Timber.d("Check-up deleted successfully")
-                        // The list will be automatically updated via Flow
-                    },
-                    onFailure = { e ->
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e(e, "Failed to delete check-up")
-                            _uiState.value = _uiState.value.copy(
-                                error = QReportState.ERR_DELETE //"Errore eliminazione check-up: ${error.message}"
-                            )
-                        }
-                    }
-                )
-
-            } catch (_: CancellationException) {
-                Timber.d("Delete operation cancelled")
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Exception deleting check-up")
-                    _uiState.value = _uiState.value.copy(
-                        error = QReportState.ERR_UNKNOWN
-                    )
                 }
             }
         }
@@ -342,4 +309,3 @@ class CheckUpListViewModel @Inject constructor(
         return filtered
     }
 }
-

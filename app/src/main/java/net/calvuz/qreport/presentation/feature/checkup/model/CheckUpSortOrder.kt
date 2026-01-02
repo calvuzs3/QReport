@@ -9,7 +9,7 @@ enum class CheckUpSortOrder {
     RECENT_FIRST, OLDEST_FIRST, CLIENT_NAME, STATUS
 }
 
-fun CheckUpSortOrder.getDisplayName(context: Context): String {
+fun CheckUpSortOrder.asString(context: Context): String {
     return when (this) {
         CheckUpSortOrder.RECENT_FIRST -> context.getString(R.string.enum_checkup_sort_order_recent_first)
         CheckUpSortOrder.OLDEST_FIRST -> context.getString(R.string.enum_checkup_sort_order_oldest_first)
@@ -19,7 +19,7 @@ fun CheckUpSortOrder.getDisplayName(context: Context): String {
 }
 
 @Composable
-fun CheckUpSortOrder.getDisplayName(): String {
+fun CheckUpSortOrder.asString(): String {
     return when (this) {
         CheckUpSortOrder.RECENT_FIRST -> stringResource(R.string.enum_checkup_sort_order_recent_first)
         CheckUpSortOrder.OLDEST_FIRST -> stringResource(R.string.enum_checkup_sort_order_oldest_first)

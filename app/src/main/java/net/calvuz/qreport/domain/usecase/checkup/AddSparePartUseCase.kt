@@ -60,9 +60,8 @@ class AddSparePartUseCase @Inject constructor(
                 addedAt = Clock.System.now()
             )
 
-            // TODO: Aggiungere metodo addSparePart al repository
             // Per ora assume che il metodo esista
-            // checkUpRepository.addSparePart(sparePart)
+             checkUpRepository.addSparePart(sparePart)
 
             Result.success(sparePartId)
 

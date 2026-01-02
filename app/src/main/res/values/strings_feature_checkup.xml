@@ -82,6 +82,7 @@
 
     <!-- Association Info -->
     <string name="checkup_component_header_association_title">CheckUp Associato</string>
+    <string name="checkup_component_header_association_subtitle">Associazione tipo</string>
     <string name="checkup_component_header_association_island">Isola: %1$s</string>
 
 
@@ -160,10 +161,13 @@
     <string name="checkup_screen_detail_title_default">Check-up</string>
     <string name="checkup_screen_detail_back">Indietro</string>
     <string name="checkup_screen_detail_menu">Menu</string>
+    <string name="checkup_screen_detail_delete">Elimina</string>
 
     <!-- Menu Actions -->
     <string name="checkup_screen_detail_action_complete">Completa Check-up</string>
     <string name="checkup_screen_detail_action_export">Esporta Report</string>
+    <string name="checkup_screen_detail_action_delete">Elimina Check-up</string>
+    <string name="checkup_screen_detail_action_delete_confirmation">Sei sicuro di voler eliminare %1$s? Questa azione non può essere annullata.</string>
 
     <!-- Error State -->
     <string name="checkup_screen_detail_error_retry">Riprova</string>

@@ -10,7 +10,6 @@
     <string name="core_component_loading_in_progress">Caricamento..</string>
 
 
-
     <!-- Navigation -->
     <string name="nav_home">Home</string>
     <string name="nav_checkups">Check-up</string>
@@ -58,7 +57,10 @@
     <string name="module_packaging">Confezionamento</string>
 
     <!-- Actions -->
+    <string name="action_ok">OK</string>
     <string name="action_create">Crea</string>
+    <string name="action_open">Apri</string>
+    <string name="action_close">Chiudi</string>
     <string name="action_edit">Modifica</string>
     <string name="action_delete">Elimina</string>
     <string name="action_save">Salva</string>
@@ -72,6 +74,8 @@
     <string name="action_collapse">Comprimi</string>
     <string name="action_expand">Espandi</string>
     <string name="action_view_all">Vedi tutto</string>
+    <string name="action_retry">Riprova</string>
+    <string name="action_back">Indietro</string>
 
     <!-- Forms -->
     <string name="field_title">Titolo</string>

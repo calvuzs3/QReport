@@ -1,5 +1,6 @@
 package net.calvuz.qreport.presentation.feature.export
 
+import net.calvuz.qreport.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
@@ -7,25 +8,27 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import net.calvuz.qreport.presentation.core.model.UiText
 
 /**
- * Dialog per mostrare il progresso dell'export
+ * Export Progress Dialog
  *
  * Features:
- * - Progresso animato con percentuale
- * - Descrizione dell'operazione in corso
- * - Bottone per annullare l'export
- * - Tempo stimato rimanente
+ * - Animated progress with percentage
+ * - Actual operation description
+ * - Cancel operation button
+ * - Remaining time estimation
  */
 @Composable
 fun ExportProgressDialog(
     progress: ExportProgress,
-    onCancel: () -> Unit,
+    onCancel: @Composable () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Dialog(
@@ -49,33 +52,33 @@ fun ExportProgressDialog(
                 verticalArrangement = Arrangement.spacedBy(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header con titolo e bottone chiudi
+                // Header
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Export in Corso",
+                        text = stringResource(R.string.export_dialog_progress_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.SemiBold
                     )
 
-                    IconButton(onClick = onCancel) {
+                    IconButton(onClick = { onCancel }) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Annulla export"
+                            contentDescription = stringResource(R.string.action_cancel)
                         )
                     }
                 }
 
-                // Indicatore progresso circolare con percentuale
+                // Progress indicator
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.size(120.dp)
                 ) {
                     CircularProgressIndicator(
-                        progress = progress.percentage / 100f,
+                        progress = { progress.percentage / 100f },
                         modifier = Modifier.fillMaxSize(),
                         strokeWidth = 8.dp,
                         color = MaterialTheme.colorScheme.primary
@@ -89,13 +92,13 @@ fun ExportProgressDialog(
                     )
                 }
 
-                // Informazioni dettagliate
+                // Info
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = progress.currentOperation,
+                        text = progress.currentOperation.asString(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center
@@ -103,14 +106,14 @@ fun ExportProgressDialog(
 
                     if (progress.estimatedTimeRemaining.isNotBlank()) {
                         Text(
-                            text = "Tempo stimato: ${progress.estimatedTimeRemaining}",
+                            text = stringResource(R.string.export_dialog_progress_time_label,progress.estimatedTimeRemaining ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
                     }
 
-                    // Progress lineare per step corrente
+                    // Linear progress
                     if (progress.currentStepProgress > 0f) {
                         Column(
                             modifier = Modifier.fillMaxWidth(),
@@ -123,7 +126,7 @@ fun ExportProgressDialog(
                             )
 
                             LinearProgressIndicator(
-                                progress = progress.currentStepProgress,
+                                progress = { progress.currentStepProgress },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(6.dp),
@@ -133,7 +136,7 @@ fun ExportProgressDialog(
                     }
                 }
 
-                // Statistiche export
+                // Export Stats
                 ExportStatsRow(
                     processedItems = progress.processedItems,
                     totalItems = progress.totalItems,
@@ -141,12 +144,12 @@ fun ExportProgressDialog(
                     totalPhotos = progress.totalPhotos
                 )
 
-                // Bottone annulla
+                // Cancel button
                 OutlinedButton(
-                    onClick = onCancel,
+                    onClick = { onCancel },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Annulla Export")
+                    Text( stringResource(R.string.action_cancel))
                 }
             }
         }
@@ -174,13 +177,13 @@ private fun ExportStatsRow(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             StatItem(
-                label = "Items",
+                label = stringResource(R.string.export_dialog_progress_stat_items),
                 value = "$processedItems/$totalItems"
             )
 
             if (totalPhotos > 0) {
                 StatItem(
-                    label = "Foto",
+                    label = stringResource(R.string.export_dialog_progress_stat_photos),
                     value = "$processedPhotos/$totalPhotos"
                 )
             }
@@ -212,11 +215,11 @@ private fun StatItem(
 }
 
 /**
- * Data class per il progresso dell'export
+ * Export progress data class
  */
 data class ExportProgress(
     val percentage: Float = 0f,
-    val currentOperation: String = "",
+    val currentOperation: UiText = UiText.StringResource(R.string.export_dialog_progress_state_init),
     val currentStepDescription: String = "",
     val currentStepProgress: Float = 0f,
     val estimatedTimeRemaining: String = "",
@@ -226,18 +229,20 @@ data class ExportProgress(
     val totalPhotos: Int = 0
 ) {
     companion object {
-        fun initial() = ExportProgress(
-            currentOperation = "Inizializzazione export..."
-        )
+//        fun initial() = ExportProgress(
+//            currentOperation = "Inizializzazione export..."
+//        )
 
-        fun preparing() = ExportProgress(
+        fun initial(msg: UiText) = ExportProgress(currentOperation = msg)
+
+        fun preparing(msg: UiText) = ExportProgress(
             percentage = 10f,
-            currentOperation = "Preparazione dati..."
+            currentOperation = msg
         )
 
         fun processing(
             percentage: Float,
-            operation: String,
+            operation: UiText,
             processedItems: Int = 0,
             totalItems: Int = 0,
             processedPhotos: Int = 0,

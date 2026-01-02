@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Export Options Screen Strings -->
+
+    <!-- Top Bar -->
+    <string name="export_screen_title">Opzioni Export</string>
+
+    <!-- Preview Card -->
+    <string name="export_screen_preview_title">Anteprima Export</string>
+    <string name="export_screen_preview_items">%d items</string>
+    <string name="export_screen_preview_photos">%d foto</string>
+
+    <!-- Format Section -->
+    <string name="export_screen_format_title">Formato Export</string>
+
+    <!-- Export Formats -->
+    <string name="export_screen_format_word_name">Documento Word</string>
+    <string name="export_screen_format_word_desc">Documento professionale con foto integrate</string>
+    <string name="export_screen_format_text_name">Report Testuale</string>
+    <string name="export_screen_format_text_desc">Report testuale universalmente leggibile</string>
+    <string name="export_screen_format_photos_name">Cartella Foto</string>
+    <string name="export_screen_format_photos_desc">Foto organizzate per sezione</string>
+    <string name="export_screen_format_package_name">Package Completo</string>
+    <string name="export_screen_format_package_desc">Tutti i formati insieme</string>
+
+    <!-- Photo Options -->
+    <string name="export_screen_photo_options_title">Opzioni Foto</string>
+    <string name="export_screen_photo_include_label">Includi Foto</string>
+    <string name="export_screen_photo_include_desc">Inserisci le foto nel documento</string>
+    <string name="export_screen_photo_quality_label">Qualità Foto</string>
+
+    <!-- Compression Levels -->
+    <string name="export_screen_compression_high">Alta</string>
+    <string name="export_screen_compression_medium">Media</string>
+    <string name="export_screen_compression_low">Bassa</string>
+
+    <!-- Additional Options -->
+    <string name="export_screen_additional_title">Opzioni Aggiuntive</string>
+    <string name="export_screen_notes_include_label">Includi Note</string>
+    <string name="export_screen_notes_include_desc">Inserisci note e commenti tecnici</string>
+
+    <!-- Actions -->
+    <string name="export_screen_action_start">Avvia Export</string>
+    <string name="export_screen_action_retry">Riprova</string>
+
+
+
+    <!-- Export Progress Dialog Strings -->
+
+    <!-- Dialog Title -->
+    <string name="export_dialog_progress_title">Export in Corso</string>
+    <string name="export_dialog_progress_cancel_desc">Annulla export</string>
+
+    <!-- Progress Info -->
+    <string name="export_dialog_progress_time_label">Tempo stimato: %s</string>
+
+    <!-- Stats Labels -->
+    <string name="export_dialog_progress_stat_items">Items</string>
+    <string name="export_dialog_progress_stat_photos">Foto</string>
+
+    <!-- Actions -->
+    <string name="export_dialog_progress_action_cancel">Annulla Export</string>
+
+    <!-- Progress States -->
+    <string name="export_dialog_progress_state_init">Inizializzazione export…</string>
+    <string name="export_dialog_progress_state_preparing">Preparazione dati…</string>
+
+
+    <!-- Export Result Dialog Strings -->
+
+    <!-- Success -->
+    <string name="export_dialog_result_success_title">Export Completato!</string>
+    <string name="export_dialog_result_success_action_open">Apri</string>
+    <string name="export_dialog_result_success_action_share">Condividi</string>
+    <string name="export_dialog_result_success_action_close">Chiudi</string>
+
+    <!-- File Details -->
+    <string name="export_dialog_result_file_label">File Esportato</string>
+    <string name="export_dialog_result_file_size">Dimensione: %s</string>
+
+    <!-- Error -->
+    <string name="export_dialog_result_error_title">Export Fallito</string>
+    <string name="export_dialog_result_error_label">Errore:</string>
+    <string name="export_dialog_result_error_unknown">Errore sconosciuto</string>
+    <string name="export_dialog_result_error_code">Codice: %s</string>
+    <string name="export_dialog_result_error_action_close">Chiudi</string>
+
+    <!-- Loading -->
+    <string name="export_dialog_result_loading_title">Export in corso…</string>
+    <string name="export_dialog_result_loading_action_close">Chiudi</string>
+
+    <!-- Error Suggestions -->
+    <string name="export_dialog_result_suggestions_title">Suggerimenti:</string>
+    <string name="export_dialog_result_suggestions_bullet">•</string>
+
+    <!-- Error Suggestions - INSUFFICIENT_STORAGE -->
+    <string name="export_error_suggestion_storage_1">Liberare spazio di archiviazione</string>
+    <string name="export_error_suggestion_storage_2">Ridurre la qualità delle foto</string>
+    <string name="export_error_suggestion_storage_3">Escludere le foto dall\'export</string>
+
+    <!-- Error Suggestions - PERMISSION_DENIED -->
+    <string name="export_error_suggestion_permission_1">Verificare i permessi di scrittura</string>
+    <string name="export_error_suggestion_permission_2">Riavviare l\'app</string>
+    <string name="export_error_suggestion_permission_3">Cambiare directory di destinazione</string>
+
+    <!-- Error Suggestions - TEMPLATE_NOT_FOUND -->
+    <string name="export_error_suggestion_template_1">Verificare i template disponibili</string>
+    <string name="export_error_suggestion_template_2">Usare il template predefinito</string>
+    <string name="export_error_suggestion_template_3">Reinstallare l\'app</string>
+
+    <!-- Error Suggestions - DOCUMENT_GENERATION_ERROR -->
+    <string name="export_error_suggestion_docgen_1">Riprovare l\'operazione</string>
+    <string name="export_error_suggestion_docgen_2">Verificare i dati del checkup</string>
+    <string name="export_error_suggestion_docgen_3">Riavviare l\'app</string>
+
+    <!-- Error Suggestions - IMAGE_PROCESSING_ERROR -->
+    <string name="export_error_suggestion_image_1">Verificare che le foto siano valide</string>
+    <string name="export_error_suggestion_image_2">Ridurre la qualità delle foto</string>
+    <string name="export_error_suggestion_image_3">Escludere le foto problematiche</string>
+
+    <!-- Error Suggestions - PHOTO_FOLDER_ERROR -->
+    <string name="export_error_suggestion_photofolder_1">Verificare i permessi di scrittura</string>
+    <string name="export_error_suggestion_photofolder_2">Liberare spazio di archiviazione</string>
+    <string name="export_error_suggestion_photofolder_3">Cambiare directory di destinazione</string>
+
+    <!-- Error Suggestions - TEXT_GENERATION_ERROR -->
+    <string name="export_error_suggestion_textgen_1">Verificare i dati del checkup</string>
+    <string name="export_error_suggestion_textgen_2">Riprovare l\'operazione</string>
+    <string name="export_error_suggestion_textgen_3">Contattare il supporto</string>
+
+    <!-- Error Suggestions - INVALID_DATA -->
+    <string name="export_error_suggestion_invaliddata_1">Completare tutti i campi richiesti</string>
+    <string name="export_error_suggestion_invaliddata_2">Verificare i dati inseriti</string>
+    <string name="export_error_suggestion_invaliddata_3">Riavviare l\'app</string>
+
+    <!-- Error Suggestions - PROCESSING_TIMEOUT -->
+    <string name="export_error_suggestion_timeout_1">Ridurre il numero di foto</string>
+    <string name="export_error_suggestion_timeout_2">Riprovare più tardi</string>
+    <string name="export_error_suggestion_timeout_3">Riavviare l\'app</string>
+
+    <!-- Error Suggestions - NETWORK_ERROR -->
+    <string name="export_error_suggestion_network_1">Verificare la connessione internet</string>
+    <string name="export_error_suggestion_network_2">Riprovare più tardi</string>
+    <string name="export_error_suggestion_network_3">Usare export offline</string>
+
+    <!-- Error Suggestions - SYSTEM_ERROR -->
+    <string name="export_error_suggestion_system_1">Riavviare l\'app</string>
+    <string name="export_error_suggestion_system_2">Riavviare il dispositivo</string>
+    <string name="export_error_suggestion_system_3">Contattare il supporto</string>
+
+
+    <!-- Export Progress Operations Strings (ViewModel) -->
+
+    <string name="export_operation_generating_word">Generazione documento Word...</string>
+    <string name="export_operation_generating_text">Generazione report testuale...</string>
+    <string name="export_operation_organizing_photos">Organizzazione foto...</string>
+    <string name="export_operation_finalizing">Finalizzazione export...</string>
+    <string name="export_operation_creating_package">Creazione package finale...</string>
+
+</resources>

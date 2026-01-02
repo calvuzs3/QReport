@@ -11,7 +11,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -20,10 +19,11 @@ import net.calvuz.qreport.domain.model.checkup.CheckItemStatus
 import net.calvuz.qreport.domain.model.checkup.CheckUp
 import net.calvuz.qreport.domain.model.checkup.CheckUpIslandAssociation
 import net.calvuz.qreport.domain.model.checkup.CheckUpProgress
-import net.calvuz.qreport.presentation.feature.checkup.model.AssociationTypeExt.getDisplayName
+import net.calvuz.qreport.presentation.feature.checkup.model.AssociationTypeExt.asString
+import net.calvuz.qreport.presentation.feature.checkup.model.AssociationTypeExt.getDescription
 
 /**
- * Header card con informazioni del check-up e pulsante edit
+ * Header card with CheckUp info and Edit Button
  */
 @Composable
 fun CheckUpHeaderCard(
@@ -109,13 +109,6 @@ fun CheckUpHeaderCard(
                 }
             }
 
-            // Association info
-            if (associations.isNotEmpty()) {
-                AssociationInfoSection(associations = associations)
-            }
-
-            HorizontalDivider()
-
             // Island details
             Row(horizontalArrangement = Arrangement.SpaceBetween) {
                 if (checkUp.header.islandInfo.model.isNotBlank()) {
@@ -145,6 +138,27 @@ fun CheckUpHeaderCard(
                     )
                 }
             }
+
+            HorizontalDivider()
+
+            // Association
+            if (associations.isNotEmpty()) {
+                InfoRow(
+                    icon = Icons.Default.Link,
+                    label = stringResource(R.string.checkup_component_header_association_title),
+                    value =stringResource(
+                        R.string.checkup_component_header_association_island,
+                        associations[0].islandId
+                    ),
+                )
+                InfoRow(
+                    icon = Icons.Default.Link,
+                    label = stringResource(R.string.checkup_component_header_association_subtitle),
+                    value = "${associations[0].associationType.asString()} - ${associations[0].associationType.getDescription()}"
+                )
+            }
+
+            HorizontalDivider()
 
             // Contact info
             if (checkUp.header.clientInfo.contactPerson.isNotBlank() ||
@@ -252,99 +266,25 @@ fun CheckUpHeaderCard(
 }
 
 @Composable
-private fun AssociationInfoSection(
-    associations: List<CheckUpIslandAssociation>,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Link,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-
-                Text(
-                    text = stringResource(R.string.checkup_component_header_association_title),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            associations.forEach { association ->
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = stringResource(
-                                R.string.checkup_component_header_association_island,
-                                association.islandId
-                            ),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    AssistChip(
-                        onClick = { },
-                        label = {
-                            Text(
-                                text = association.associationType.getDisplayName(LocalContext.current),
-                                style = MaterialTheme.typography.labelSmall
-                            )
-                        },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        )
-                    )
-                }
-
-                if (!association.notes.isNullOrBlank()) {
-                    Text(
-                        text = association.notes,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 private fun InfoRow(
-    icon: ImageVector,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
     label: String,
-    value: String,
-    modifier: Modifier = Modifier
+    value: String
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
+        if( icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
         Column {
             Text(
                 text = label,

@@ -39,13 +39,16 @@ import net.calvuz.qreport.domain.model.module.ModuleType
 import net.calvuz.qreport.domain.model.photo.Photo
 import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.model.spare.SparePartUrgency
+import net.calvuz.qreport.presentation.core.components.ErrorDialog
 import net.calvuz.qreport.presentation.feature.checkup.components.AddSparePartDialog
 import net.calvuz.qreport.presentation.feature.checkup.components.AssociationManagementDialog
 import net.calvuz.qreport.presentation.feature.checkup.components.CheckUpHeaderCard
 import net.calvuz.qreport.presentation.feature.checkup.components.CheckupItemStatusChip
 import net.calvuz.qreport.presentation.feature.checkup.model.CheckItemStatusExt.getNextStatus
 import net.calvuz.qreport.presentation.feature.photo.components.PhotoCountBadge
+import net.calvuz.qreport.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.util.NumberUtils.toItalianChange
+import timber.log.Timber
 
 /**
  * Check up Detail Screen
@@ -57,11 +60,46 @@ fun CheckUpDetailScreen(
     onNavigateToCamera: (String) -> Unit,
     onNavigateToPhotoGallery: (String) -> Unit,
     onNavigateToExportOptions: (String) -> Unit,
+    onNavigateToDeleteCheckUp: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CheckUpDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val expandedModules by viewModel.expandedModules.collectAsStateWithLifecycle()
+
+    // ✅ Handle delete success - Navigate back automatically
+    LaunchedEffect(uiState.deleteSuccess) {
+        if (uiState.deleteSuccess) {
+            viewModel.resetDeleteState()
+            onNavigateToDeleteCheckUp()  // Navigate back to client list
+        }
+    }
+
+    // ✅ Delete confirmation dialog
+    if (uiState.showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = viewModel::hideDeleteConfirmation,
+            title = { Text(stringResource(R.string.checkup_screen_detail_action_delete)) },
+            text = {
+                Text(stringResource(R.string.checkup_screen_detail_action_delete_confirmation, uiState.checkUp?.header?.checkUpDate?.toItalianDate() as Any))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = viewModel::deleteCheckUp,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(stringResource(R.string.action_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::hideDeleteConfirmation) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
 
     // Initialize with checkUpId
     LaunchedEffect(checkUpId) {
@@ -98,6 +136,24 @@ fun CheckUpDetailScreen(
             actions = {
                 // Status menu
                 var showStatusMenu by remember { mutableStateOf(false) }
+
+                // Delete button
+                if (uiState.hasData) {
+                    IconButton(
+                        onClick = viewModel::showDeleteConfirmation,  // Show confirmation dialog
+                        enabled = !uiState.isDeleting
+                    ) {
+                        if (uiState.isDeleting) {
+                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                tint = MaterialTheme.colorScheme.error,
+                                contentDescription = stringResource(R.string.checkup_screen_detail_delete)
+                            )
+                        }
+                    }
+                }
 
                 IconButton(onClick = { showStatusMenu = true }) {
                     Icon(
@@ -144,30 +200,15 @@ fun CheckUpDetailScreen(
                 }
             }
 
+
             uiState.error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Error,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text = uiState.error.toString(),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Button(onClick = { viewModel.loadCheckUp(checkUpId) }) {
-                            Text(stringResource(R.string.checkup_screen_detail_error_retry))
-                        }
-                    }
-                }
+                val error = uiState.error
+
+                ErrorDialog(
+                    title = error!!.asString(),
+                    message = error.asStringArgs(),
+                    onDismiss = { viewModel.loadCheckUp(checkUpId) }
+                )
             }
 
             uiState.checkUp != null -> {
@@ -251,6 +292,9 @@ fun CheckUpDetailScreen(
         AddSparePartDialog(
             onDismiss = viewModel::hideAddSparePartDialog,
             onConfirm = { partNumber, description, quantity, urgency, category, estimatedCost, notes, supplierInfo ->
+                Timber.d("🟦 DIALOG: onConfirm chiamato")
+                Timber.d("🟦 DIALOG: partNumber=$partNumber, description=$description")
+
                 viewModel.addSparePart(
                     partNumber = partNumber,
                     description = description,
@@ -765,7 +809,7 @@ private fun SparePartItem(
         )
     ) {
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Row(
@@ -830,19 +874,19 @@ private fun UrgencyChip(
 ) {
     val colors = when (urgency) {
         SparePartUrgency.LOW -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFF4CAF50).copy(alpha = 0.2f),
+            containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f),
             labelColor = Color(0xFF2E7D32)
         )
         SparePartUrgency.MEDIUM -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFFFF9800).copy(alpha = 0.2f),
+            containerColor = Color(0xFFFF9800).copy(alpha = 0.1f),
             labelColor = Color(0xFFE65100)
         )
         SparePartUrgency.HIGH -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFFF44336).copy(alpha = 0.2f),
+            containerColor = Color(0xFFF44336).copy(alpha = 0.1f),
             labelColor = Color(0xFFC62828)
         )
         SparePartUrgency.IMMEDIATE -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFF9C27B0).copy(alpha = 0.2f),
+            containerColor = Color(0xFF9C27B0).copy(alpha = 0.1f),
             labelColor = Color(0xFF6A1B9A)
         )
     }

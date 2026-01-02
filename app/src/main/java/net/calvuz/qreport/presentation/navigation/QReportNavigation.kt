@@ -235,7 +235,7 @@ fun QReportNavigation(
                 modifier = Modifier.fillMaxSize()
             ) {
                 // ============================================================
-                // MAIN DESTINATIONS (Bottom Navigation)
+                // ✅ MAIN DESTINATIONS (Bottom Navigation)
                 // ============================================================
 
                 composable(QReportRoutes.HOME) {
@@ -300,7 +300,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // SETTINGS DESTINATIONS
+                // ✅ SETTINGS DESTINATIONS
                 // ============================================================
 
                 composable(QReportRoutes.TECHNICIAN_SETTINGS) {
@@ -356,6 +356,14 @@ fun QReportNavigation(
                         },
                         onNavigateToExportOptions = { checkUpId ->
                             navController.navigate(QReportRoutes.exportOptions(checkUpId))
+                        },
+                        onNavigateToDeleteCheckUp = {
+                            // Navigate back to checkup list after delete
+                            navController.navigate(QReportRoutes.CHECKUPS) {
+                                popUpTo(QReportRoutes.checkupDetail(checkUpId)) {
+                                    inclusive = true  // Remove checkup detail from stack
+                                }
+                            }
                         }
                     )
                 }
@@ -452,10 +460,6 @@ fun QReportNavigation(
                         checkUpId = checkUpId,
                         onNavigateBack = {
                             navController.popBackStack()
-                        },
-                        onExportStarted = {
-                            // Torna al detail screen dopo l'export
-                            navController.popBackStack()
                         }
                     )
                 }
@@ -463,21 +467,6 @@ fun QReportNavigation(
                 // ============================================================
                 // ✅ CLIENT MANAGEMENT DESTINATIONS
                 // ============================================================
-//
-//                // Client List Screen
-//                composable(QReportRoutes.CLIENTS) {
-//                    ClientListScreen(
-//                        onNavigateToClientDetail = { clientId ->
-//                            navController.navigate(QReportRoutes.clientDetail(clientId))
-//                        },
-//                        onNavigateToEditClient = { clientId ->
-//                            navController.navigate(QReportRoutes.clientEdit(clientId))
-//                        },
-//                        onCreateNewClient = {
-//                            navController.navigate(QReportRoutes.CLIENT_CREATE)
-//                        }
-//                    )
-//                }
 
                 composable(
                     route = QReportRoutes.CLIENT_DETAIL,
@@ -499,7 +488,7 @@ fun QReportNavigation(
                             navController.popBackStack()
                         },
                         onDeleteClient = {
-                            // ✅ %Navigate back to client list after delete
+                            // Navigate back to client list after delete
                             navController.navigate(QReportRoutes.CLIENTS) {
                                 popUpTo(QReportRoutes.clientDetail(clientId, clientName)) {
                                     inclusive = true  // Remove client detail from stack

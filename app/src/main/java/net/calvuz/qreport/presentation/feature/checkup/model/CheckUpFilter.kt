@@ -9,7 +9,7 @@ enum class CheckUpFilter {
     ALL, DRAFT, IN_PROGRESS, COMPLETED, EXPORTED, ARCHIVED
 }
 
-fun CheckUpFilter.getDisplayName(context: Context): String {
+fun CheckUpFilter.asString(context: Context): String {
     return when (this) {
         CheckUpFilter.ALL -> context.getString(R.string.enum_checkup_status_filter_all)
         CheckUpFilter.DRAFT -> context.getString(R.string.enum_checkup_status_draft)
@@ -21,7 +21,7 @@ fun CheckUpFilter.getDisplayName(context: Context): String {
 }
 
 @Composable
-fun CheckUpFilter.getDisplayName(): String {
+fun CheckUpFilter.asString(): String {
     return when (this) {
         CheckUpFilter.ALL -> stringResource(R.string.enum_checkup_status_filter_all)
         CheckUpFilter.DRAFT -> stringResource(R.string.enum_checkup_status_draft)

@@ -1,4 +1,4 @@
-package net.calvuz.qreport.presentation.feature.checkup
+package net.calvuz.qreport.presentation.feature.checkup.model
 
 import net.calvuz.qreport.domain.model.checkup.CheckUpIslandAssociation
 import net.calvuz.qreport.domain.model.client.Client
@@ -23,4 +23,3 @@ data class AssociationDialogState(
     val availableIslands: List<FacilityIsland> = emptyList(),
     val isLoadingIslands: Boolean = false
 )
-

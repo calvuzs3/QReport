@@ -429,7 +429,13 @@ class FileManagerImpl @Inject constructor(
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
 
-            context.startActivity(Intent.createChooser(intent, "Apri con"))
+            val chooser = Intent.createChooser(intent, "Apri con")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)  // ✅ On CHOOSER!
+            context.startActivity(chooser)
+
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//            context.startActivity(Intent.createChooser(intent, "Apri con"))
+
             Result.success(Unit)
 
         } catch (e: Exception) {
@@ -456,7 +462,11 @@ class FileManagerImpl @Inject constructor(
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
 
-            context.startActivity(Intent.createChooser(intent, "Condividi"))
+            val chooser = Intent.createChooser(intent, "Apri con")
+            chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)  // ✅ On CHOOSER!
+            context.startActivity(chooser)
+
+//            context.startActivity(Intent.createChooser(intent, "Condividi"))
             Result.success(Unit)
 
         } catch (e: Exception) {

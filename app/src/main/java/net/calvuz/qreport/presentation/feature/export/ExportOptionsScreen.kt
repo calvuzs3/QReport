@@ -2,6 +2,7 @@
 
 package net.calvuz.qreport.presentation.feature.export
 
+import net.calvuz.qreport.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -14,13 +15,14 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,21 +31,26 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.domain.model.export.CompressionLevel
 import net.calvuz.qreport.domain.model.export.ExportFormat
+import net.calvuz.qreport.presentation.core.model.UiText
+import net.calvuz.qreport.presentation.core.model.asUiText
+import net.calvuz.qreport.presentation.feature.export.model.getDescription
+import net.calvuz.qreport.presentation.feature.export.model.getDisplayName
+import net.calvuz.qreport.presentation.feature.export.model.icon
+import net.calvuz.qreport.presentation.feature.export.model.supportsPhotos
 
 /**
- * Screen per la configurazione delle opzioni di export
+ * Export Options Screen
  *
  * Permette di scegliere:
- * - Formato di export (Word, Text, Foto, Package Completo)
- * - Qualità delle foto (Bassa/Media/Alta)
- * - Inclusione di foto e note
- * - Directory di destinazione
+ * - Export format (Word, Text, Foto, Package Completo)
+ * - Photo quality (Bassa/Media/Alta)
+ * - Notes and photo inclusion
+ * - Destination Dir
  */
 @Composable
 fun ExportOptionsScreen(
     checkUpId: String,
     onNavigateBack: () -> Unit,
-    onExportStarted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: ExportOptionsViewModel = hiltViewModel()
 ) {
@@ -54,31 +61,26 @@ fun ExportOptionsScreen(
         viewModel.initialize(checkUpId)
     }
 
-    // Navigate back on export completion
-    LaunchedEffect(uiState.exportCompleted) {
-        if (uiState.exportCompleted) {
-            onExportStarted()
-        }
-    }
-
     Column(
         modifier = modifier.fillMaxSize()
     ) {
         // Top App Bar
         TopAppBar(
             title = {
-                Text("Opzioni Export")
+                Text(stringResource(R.string.export_screen_title))
             },
+            
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Indietro"
+                        contentDescription = stringResource(R.string.action_back)
                     )
                 }
             }
         )
 
+        val currentError = uiState.error
         when {
             uiState.isLoading -> {
                 Box(
@@ -89,11 +91,17 @@ fun ExportOptionsScreen(
                 }
             }
 
-            uiState.error != null -> {
+            (currentError != null) -> {
                 ErrorContent(
-                    error = uiState.error!!,
-                    onRetry = { viewModel.initialize(checkUpId) }
+                    error = currentError.asUiText().asString(),
+                    onRetry ={ viewModel.initialize(checkUpId) },
+                    modifier = Modifier
                 )
+//                ErrorDialog(
+//                    title = currentError.asUiText().asString(),
+//                    message = "",
+//                    onDismiss = { viewModel.initialize(checkUpId) }
+//                )
             }
 
             else -> {
@@ -114,7 +122,7 @@ fun ExportOptionsScreen(
     if (uiState.isExporting) {
         ExportProgressDialog(
             progress = uiState.exportProgress,
-            onCancel = viewModel::cancelExport
+            onCancel = { viewModel.cancelExport(UiText.StringResource(R.string.export_dialog_progress_state_init)) }
         )
     }
 
@@ -122,7 +130,10 @@ fun ExportOptionsScreen(
     if (uiState.showResultDialog) {
         ExportResultDialog(
             result = uiState.exportResult,
-            onDismiss = viewModel::dismissResult,
+            onDismiss = {
+                viewModel.dismissResult()
+                onNavigateBack()
+            },
             onOpenFile = viewModel::openExportedFile,
             onShareFile = viewModel::shareExportedFile
         )
@@ -199,7 +210,7 @@ private fun ExportOptionsContent(
                     contentDescription = null
                 )
                 Text(
-                    text = "Avvia Export",
+                    text = stringResource(R.string.export_screen_action_start),
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -226,7 +237,7 @@ private fun CheckUpPreviewCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Anteprima Export",
+                text = stringResource(R.string.export_screen_preview_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -243,11 +254,11 @@ private fun CheckUpPreviewCard(
             ) {
                 InfoChip(
                     icon = Icons.AutoMirrored.Default.Assignment,
-                    text = "$itemCount items"
+                    text = stringResource(R.string.export_screen_preview_items, itemCount)
                 )
                 InfoChip(
                     icon = Icons.Default.Photo,
-                    text = "$photoCount foto"
+                    text = stringResource(R.string.export_screen_preview_photos, photoCount)
                 )
                 InfoChip(
                     icon = Icons.Default.Storage,
@@ -269,7 +280,7 @@ private fun ExportFormatSection(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Formato Export",
+            text = stringResource(R.string.export_screen_format_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
@@ -278,7 +289,7 @@ private fun ExportFormatSection(
             modifier = Modifier.selectableGroup(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            ExportFormat.values().forEach { format ->
+            ExportFormat.entries.forEach { format ->
                 FormatOptionCard(
                     format = format,
                     isSelected = selectedFormat == format,
@@ -314,7 +325,7 @@ private fun FormatOptionCard(
         border = if (isSelected) {
             CardDefaults.outlinedCardBorder().copy(
                 width = 2.dp,
-                brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary)
+                brush = SolidColor(MaterialTheme.colorScheme.primary)
             )
         } else {
             CardDefaults.outlinedCardBorder()
@@ -342,13 +353,13 @@ private fun FormatOptionCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = format.displayName,
+                    text = format.getDisplayName(),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                 )
 
                 Text(
-                    text = format.description,
+                    text = format.getDescription(),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -375,7 +386,7 @@ private fun PhotoOptionsSection(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Opzioni Foto",
+            text = stringResource(R.string.export_screen_photo_options_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
@@ -396,12 +407,12 @@ private fun PhotoOptionsSection(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Includi Foto",
+                        text = stringResource(R.string.export_screen_photo_include_label),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = "Inserisci le foto nel documento",
+                        text = stringResource(R.string.export_screen_photo_include_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -439,7 +450,7 @@ private fun CompressionLevelSection(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "Qualità Foto",
+            text = stringResource(R.string.export_screen_photo_quality_label),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -449,7 +460,7 @@ private fun CompressionLevelSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            CompressionLevel.values().forEach { level ->
+            CompressionLevel.entries.forEach { level ->
                 CompressionChip(
                     level = level,
                     isSelected = selectedLevel == level,
@@ -472,7 +483,7 @@ private fun CompressionChip(
         onClick = onClick,
         label = {
             Text(
-                text = level.displayName,
+                text = level.getDisplayName(),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -493,7 +504,7 @@ private fun AdditionalOptionsSection(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "Opzioni Aggiuntive",
+            text = stringResource(R.string.export_screen_additional_title) ,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
@@ -513,12 +524,12 @@ private fun AdditionalOptionsSection(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Includi Note",
+                        text = stringResource(R.string.export_screen_notes_include_label),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = "Inserisci note e commenti tecnici",
+                        text = stringResource(R.string.export_screen_notes_include_desc),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -581,46 +592,8 @@ private fun ErrorContent(
             )
 
             Button(onClick = onRetry) {
-                Text("Riprova")
+                Text(stringResource(R.string.action_retry))
             }
         }
     }
 }
-
-// Extension properties for ExportFormat
-private val ExportFormat.icon: ImageVector
-    get() = when (this) {
-        ExportFormat.WORD -> Icons.Default.Description
-        ExportFormat.TEXT -> Icons.AutoMirrored.Default.TextSnippet
-        ExportFormat.PHOTO_FOLDER -> Icons.Default.PhotoLibrary
-        ExportFormat.COMBINED_PACKAGE -> Icons.Default.Archive
-    }
-
-private val ExportFormat.displayName: String
-    get() = when (this) {
-        ExportFormat.WORD -> "Documento Word"
-        ExportFormat.TEXT -> "Report Testuale"
-        ExportFormat.PHOTO_FOLDER -> "Cartella Foto"
-        ExportFormat.COMBINED_PACKAGE -> "Package Completo"
-    }
-
-private val ExportFormat.description: String
-    get() = when (this) {
-        ExportFormat.WORD -> "Documento professionale con foto integrate"
-        ExportFormat.TEXT -> "Report testuale universalmente leggibile"
-        ExportFormat.PHOTO_FOLDER -> "Foto organizzate per sezione"
-        ExportFormat.COMBINED_PACKAGE -> "Tutti i formati insieme"
-    }
-
-private val ExportFormat.supportsPhotos: Boolean
-    get() = when (this) {
-        ExportFormat.WORD, ExportFormat.PHOTO_FOLDER, ExportFormat.COMBINED_PACKAGE -> true
-        ExportFormat.TEXT -> false
-    }
-
-private val CompressionLevel.displayName: String
-    get() = when (this) {
-        CompressionLevel.LOW -> "Alta"
-        CompressionLevel.MEDIUM -> "Media"
-        CompressionLevel.HIGH -> "Bassa"
-    }

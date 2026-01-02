@@ -41,6 +41,9 @@
         name="internal_exports"
         path="exports/" />
 
+    <external-path
+        name="qreport_exports"
+        path="Documents/QReport/" />
 
     <!-- BACKUP -->
 

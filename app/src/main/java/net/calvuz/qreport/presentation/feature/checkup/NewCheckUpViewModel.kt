@@ -12,8 +12,7 @@ import net.calvuz.qreport.domain.model.island.IslandInfo
 import net.calvuz.qreport.domain.model.island.IslandType
 import net.calvuz.qreport.domain.model.settings.TechnicianInfo
 import net.calvuz.qreport.domain.usecase.checkup.*
-import net.calvuz.qreport.presentation.core.model.QReportState
-import net.calvuz.qreport.presentation.core.model.UiText
+import net.calvuz.qreport.presentation.core.model.DataError
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -32,7 +31,7 @@ data class NewCheckUpUiState(
 
     // State
     val isCreating: Boolean = false,
-    val error: UiText? = null,
+    val error: DataError.CheckupError? = null,
     val createdCheckUpId: String? = null
 ) {
     val canCreate: Boolean
@@ -96,7 +95,7 @@ class NewCheckUpViewModel @Inject constructor(
 
         if (!currentState.canCreate) {
             _uiState.value = currentState.copy(
-                error = UiText.ErrStringResource(QReportState.ERR_FIELDS_REQUIRED) //"Compilare tutti i campi obbligatori"
+                error = (DataError.CheckupError.FIELDS_REQUIRED) //"Compilare tutti i campi obbligatori"
             )
             return
         }
@@ -133,7 +132,7 @@ class NewCheckUpViewModel @Inject constructor(
                         Timber.e(error, "Failed to create check-up")
                         _uiState.value = currentState.copy(
                             isCreating = false,
-                            error =UiText.ErrStringResource(QReportState.ERR_CREATE, error.message )  // "Errore creazione check-up: ${error.message}"
+                            error = DataError.CheckupError.CREATE  // "Errore creazione check-up: ${error.message}"
                         )
                     }
                 )
@@ -142,7 +141,7 @@ class NewCheckUpViewModel @Inject constructor(
                 Timber.e(e, "Exception during check-up creation")
                 _uiState.value = currentState.copy(
                     isCreating = false,
-                    error =UiText.ErrStringResource(QReportState.ERR_UNKNOWN, e.message) // "Errore imprevisto: ${e.message}"
+                    error = DataError.CheckupError.UNKNOWN // "Errore imprevisto: ${e.message}"
                 )
             }
         }

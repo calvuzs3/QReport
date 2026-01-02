@@ -6,21 +6,59 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.domain.core.QrResult
 import net.calvuz.qreport.domain.model.export.*
 import net.calvuz.qreport.domain.model.file.FileManager
 import net.calvuz.qreport.domain.repository.ExportRepository
 import net.calvuz.qreport.domain.usecase.checkup.GetCheckUpDetailsUseCase
+import net.calvuz.qreport.presentation.core.model.DataError
+import net.calvuz.qreport.presentation.core.model.UiText
 import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * ViewModel per ExportOptionsScreen
+ * UI State per ExportOptionsScreen
+ */
+data class ExportOptionsUiState(
+    // Loading states
+    val isLoading: Boolean = false,
+    val isExporting: Boolean = false,
+    val error: DataError.CheckupError? = null,
+
+    // Checkup info
+    val checkUpId: String = "",
+    val checkUpName: String = "",
+    val totalItems: Int = 0,
+    val totalPhotos: Int = 0,
+
+    // Export configuration
+    val exportFormat: ExportFormat = ExportFormat.WORD,
+    val compressionLevel: CompressionLevel = CompressionLevel.MEDIUM,
+    val includePhotos: Boolean = true,
+    val includeNotes: Boolean = true,
+
+    // Estimation
+    val estimatedSize: String = "",
+
+    // Export progress
+    val exportProgress: ExportProgress = ExportProgress.initial(UiText.StringResource(R.string.export_dialog_progress_state_init)),
+    val exportResult: ExportResult? = null,
+    val showResultDialog: Boolean = false,
+    val exportCompleted: Boolean = false
+) {
+    val canExport: Boolean
+        get() = checkUpId.isNotEmpty() && !isLoading && error == null
+}
+
+/**
+ *  Export Options Screen ViewModel
  *
- * Gestisce:
- * - Configurazione opzioni export
- * - Stima dimensioni e tempo
- * - Progress tracking durante export
- * - Apertura e condivisione file esportati
+ * Handles:
+ * - Export options
+ * - Estimated time and dimensions
+ * - Progress tracking
+ * - Open and share exported files
  */
 @HiltViewModel
 class ExportOptionsViewModel @Inject constructor(
@@ -59,16 +97,24 @@ class ExportOptionsViewModel @Inject constructor(
                 Timber.d("Initializing export options for checkup: $checkUpId")
 
                 // Load checkup details
-                getCheckUpDetailsUseCase(checkUpId).fold(
-                    onSuccess = { checkUpDetails ->
-                        val checkUp = checkUpDetails.checkUp
-                        val totalPhotos = checkUpDetails.checkItems.sumOf { it.photos.size }
+                when (val result = getCheckUpDetailsUseCase(checkUpId)) {
+                    is QrResult.Error -> {
+                        Timber.e("Failed to load checkup details")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            error = DataError.CheckupError.LOAD
+                        )
+                    }
+
+                    is QrResult.Success -> {
+                        val checkUp = result.data.checkUp
+                        val totalPhotos = result.data.checkItems.sumOf { it.photos.size }
 
                         _uiState.value = _uiState.value.copy(
                             checkUpId = checkUpId,
                             checkUpName = checkUp.header.clientInfo.companyName + " - " +
                                     checkUp.header.islandInfo.serialNumber,
-                            totalItems = checkUpDetails.checkItems.size,
+                            totalItems = result.data.checkItems.size,
                             totalPhotos = totalPhotos,
                             isLoading = false,
                             error = null
@@ -76,20 +122,39 @@ class ExportOptionsViewModel @Inject constructor(
 
                         // Calculate initial size estimation
                         updateSizeEstimation()
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to load checkup details")
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            error = "Errore caricamento check-up: ${error.message}"
-                        )
                     }
-                )
+                }
+//                getCheckUpDetailsUseCase(checkUpId).fold(
+//                    onSuccess = { checkUpDetails ->
+//                        val checkUp = checkUpDetails.checkUp
+//                        val totalPhotos = checkUpDetails.checkItems.sumOf { it.photos.size }
+//
+//                        _uiState.value = _uiState.value.copy(
+//                            checkUpId = checkUpId,
+//                            checkUpName = checkUp.header.clientInfo.companyName + " - " +
+//                                    checkUp.header.islandInfo.serialNumber,
+//                            totalItems = checkUpDetails.checkItems.size,
+//                            totalPhotos = totalPhotos,
+//                            isLoading = false,
+//                            error = null
+//                        )
+//
+//                        // Calculate initial size estimation
+//                        updateSizeEstimation()
+//                    },
+//                    onFailure = { error ->
+//                        Timber.e(error, "Failed to load checkup details")
+//                        _uiState.value = _uiState.value.copy(
+//                            isLoading = false,
+//                            error = "Errore caricamento check-up: ${error.message}"
+//                        )
+//                    }
+//                )
             } catch (e: Exception) {
                 Timber.e(e, "Exception initializing export options")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Errore inizializzazione: ${e.message}"
+                    error = DataError.CheckupError.UNKNOWN
                 )
             }
         }
@@ -126,12 +191,22 @@ class ExportOptionsViewModel @Inject constructor(
 
                 _uiState.value = _uiState.value.copy(
                     isExporting = true,
-                    exportProgress = ExportProgress.initial(),
+                    exportProgress = ExportProgress.initial(UiText.StringResource(R.string.export_dialog_progress_state_init)),
                     exportResult = null
                 )
 
                 // Get checkup details for export
-                val checkUpDetails = getCheckUpDetailsUseCase(currentCheckUpId).getOrThrow()
+                val checkUpDetails =
+                    when (val result = getCheckUpDetailsUseCase(currentCheckUpId)) {
+                        is QrResult.Success -> {
+                            result.data
+                        }
+
+                        is QrResult.Error -> {
+                            // This shouldn't happen
+                            throw Exception("Check up details load failed")
+                        }
+                    }
 
                 // Prepare export options using correct structure
                 val exportOptions = ExportOptions(
@@ -164,7 +239,7 @@ class ExportOptionsViewModel @Inject constructor(
                     }
 
             } catch (e: Exception) {
-                Timber.e(e, "Export failed")
+                Timber.e(e, "Failed to export checkup")
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
                     exportResult = ExportResult.Error(
@@ -177,14 +252,14 @@ class ExportOptionsViewModel @Inject constructor(
         }
     }
 
-    fun cancelExport() {
+    fun cancelExport(message: UiText) {
         Timber.d("Canceling export")
         exportJob?.cancel()
         exportJob = null
 
         _uiState.value = _uiState.value.copy(
             isExporting = false,
-            exportProgress = ExportProgress.initial(),
+            exportProgress = ExportProgress.initial(message),
             exportResult = null
         )
     }
@@ -207,7 +282,7 @@ class ExportOptionsViewModel @Inject constructor(
             onFailure = { e ->
                 Timber.e(e, "Failed to open exported file")
                 _uiState.value = _uiState.value.copy(
-                    error = "Impossibile aprire il file: ${e.message}"
+                    error = DataError.CheckupError.FILE_OPEN // "Impossibile aprire il file: ${e.message}"
                 )
             }
         )
@@ -223,7 +298,7 @@ class ExportOptionsViewModel @Inject constructor(
             onFailure = { e ->
                 Timber.e(e, "Failed to share exported file")
                 _uiState.value = _uiState.value.copy(
-                    error = "Impossibile condividere il file: ${e.message}"
+                    error = DataError.CheckupError.FILE_SHARE // "Impossibile condividere il file: ${e.message}"
                 )
             }
         )
@@ -240,7 +315,19 @@ class ExportOptionsViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 // Get checkup details for estimation
-                val checkUpDetails = getCheckUpDetailsUseCase(currentCheckUpId).getOrNull() ?: return@launch
+                val checkUpDetails =
+                    when (val result = getCheckUpDetailsUseCase(currentCheckUpId)) {
+                        is QrResult.Success -> {
+                            result.data
+                        }
+
+                        is QrResult.Error -> {
+                            _uiState.value = _uiState.value.copy(
+                                error = DataError.CheckupError.LOAD
+                            )
+                            return@launch
+                        }
+                    }
 
                 val exportOptions = ExportOptions(
                     exportFormats = setOf(state.exportFormat),
@@ -329,25 +416,36 @@ class ExportOptionsViewModel @Inject constructor(
         }
     }
 
-    private fun getCurrentOperation(result: MultiFormatExportResult): String {
+    private fun getCurrentOperation(result: MultiFormatExportResult): UiText {
         val format = _uiState.value.exportFormat
 
         return when (format) {
             ExportFormat.WORD ->
-                if (result.wordResult == null) "Generazione documento Word..."
-                else "Finalizzazione export..."
+                if (result.wordResult == null)
+                    UiText.StringResource(R.string.export_operation_generating_word)
+                else
+                    UiText.StringResource(R.string.export_operation_finalizing)
+
             ExportFormat.TEXT ->
-                if (result.textResult == null) "Generazione report testuale..."
-                else "Finalizzazione export..."
+                if (result.textResult == null)
+                    UiText.StringResource(R.string.export_operation_generating_text)
+                else
+                    UiText.StringResource(R.string.export_operation_finalizing)
+
             ExportFormat.PHOTO_FOLDER ->
-                if (result.photoFolderResult == null) "Organizzazione foto..."
-                else "Finalizzazione export..."
+                if (result.photoFolderResult == null)
+                    UiText.StringResource(R.string.export_operation_organizing_photos)
+                else
+                    UiText.StringResource(R.string.export_operation_finalizing)
+
             ExportFormat.COMBINED_PACKAGE -> {
                 when {
-                    result.wordResult == null -> "Generazione documento Word..."
-                    result.textResult == null -> "Generazione report testuale..."
-                    result.photoFolderResult == null -> "Organizzazione foto..."
-                    else -> "Creazione package finale..."
+                    result.wordResult == null -> UiText.StringResource(R.string.export_operation_generating_word)
+                    result.textResult == null -> UiText.StringResource(R.string.export_operation_generating_text)
+                    result.photoFolderResult == null -> UiText.StringResource(R.string.export_operation_organizing_photos)
+
+                    else -> UiText.StringResource(R.string.export_operation_creating_package)
+
                 }
             }
         }
@@ -379,7 +477,7 @@ class ExportOptionsViewModel @Inject constructor(
                 result.exportDirectory?.let { dir ->
                     ExportResult.Success(
                         filePath = dir,
-                        fileName = "Export_Package",
+                        fileName = "QReport_Export_Package",
                         fileSize = result.totalFileSize,
                         format = ExportFormat.COMBINED_PACKAGE
                     )
@@ -429,36 +527,3 @@ class ExportOptionsViewModel @Inject constructor(
     }
 }
 
-/**
- * UI State per ExportOptionsScreen
- */
-data class ExportOptionsUiState(
-    // Loading states
-    val isLoading: Boolean = false,
-    val isExporting: Boolean = false,
-    val error: String? = null,
-
-    // Checkup info
-    val checkUpId: String = "",
-    val checkUpName: String = "",
-    val totalItems: Int = 0,
-    val totalPhotos: Int = 0,
-
-    // Export configuration
-    val exportFormat: ExportFormat = ExportFormat.WORD,
-    val compressionLevel: CompressionLevel = CompressionLevel.MEDIUM,
-    val includePhotos: Boolean = true,
-    val includeNotes: Boolean = true,
-
-    // Estimation
-    val estimatedSize: String = "",
-
-    // Export progress
-    val exportProgress: ExportProgress = ExportProgress.initial(),
-    val exportResult: ExportResult? = null,
-    val showResultDialog: Boolean = false,
-    val exportCompleted: Boolean = false
-) {
-    val canExport: Boolean
-        get() = checkUpId.isNotEmpty() && !isLoading && error == null
-}

@@ -8,9 +8,12 @@
     <string name="err_delete">Errore cancellazione</string>
     <string name="err_fields_required">Compilare i campi richiesti</string>
     <string name="err_refresh">Errore refresh</string>
+    <string name="err_file_open">Errore apertura file</string>
+    <string name="err_file_share">Errore condivisione file</string>
 
     <string name="err_checkup_not_found">CheckUp non trovato</string>
     <string name="err_checkup_load_checkup">Errore caricamento CheckUp</string>
+    <string name="err_checkup_reload_checkup">Errore ri-caricamento CheckUp</string>
     <string name="err_checkup_load_photos">Errore caricamento foto</string>
     <string name="err_checkup_update_status">Aggiornamento Stato fallito</string>
     <string name="err_checkup_update_notes">Aggiornamento Note fallito</string>
@@ -21,8 +24,17 @@
     <string name="err_checkup_association_remove">Rimozione Associazione fallita</string>
     <string name="err_checkup_finalize">Completamento fallito</string>
     <string name="err_checkup_export">Esportazione fallita</string>
+    <string name="err_checkup_delete_unknown">Errore sconosciuto</string>
+    <string name="err_checkup_delete_not_found">Checkup non trovato</string>
+    <string name="err_checkup_delete_cannot_delete_completed">Non si possono cancellare check-up completati</string>
+    <string name="err_checkup_delete_cannot_delete_archived">Non si possono cancellare check-up archiviati</string>
+    <string name="err_checkup_delete_cannot_delete_exported">Non si possono cancellare check-up esportati</string>
 
     <string name="err_client_load_client">Caricamento Cliente fallito</string>
     <string name="err_facility_load_facility">Caricamento Stabilimento fallito</string>
     <string name="err_island_load_island">Caricamento Isola fallito</string>
+
+
+    <string name="err_network_request_timeout">Richiesta scaduta</string>
+
 </resources>

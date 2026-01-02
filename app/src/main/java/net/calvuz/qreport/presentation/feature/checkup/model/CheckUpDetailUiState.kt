@@ -30,27 +30,18 @@ data class CheckUpDetailUiState(
     val progress: CheckUpProgress = CheckUpProgress(), // ? =null
     val statistics: CheckUpSingleStatistics = CheckUpSingleStatistics(), // ? = null
 
-    // ============================================================
-    // PHOTO DATA
-    // ============================================================
-    /**
-     * Photos grouped by check item ID
-     */
+    // Photos
     val photosByCheckItem: Map<String, List<Photo>> = emptyMap(),
-
-    /**
-     * Counters photo per chek item
-     */
     val photoCountsByCheckItem: Map<String, Int> = emptyMap(),
-
-    /**
-     * State loading photo (show skeleton/spinner during loading)
-     */
     val isLoadingPhotos: Boolean = false,
 
-    // ============================================================
-    // UI STATES
-    // ============================================================
+    // Delete states
+    val isDeleting: Boolean = false,
+    val deleteSuccess: Boolean = false,
+    val deleteError: UiText? = null,
+    val showDeleteConfirmation: Boolean = false,
+
+    // Ui states
     val isLoading: Boolean = false,
     val isUpdating: Boolean = false,
     val isExporting: Boolean = false,
@@ -58,9 +49,7 @@ data class CheckUpDetailUiState(
     val isUpdatingHeader: Boolean = false,
     val expandedModules: Set<String> = emptySet(),
 
-    // ============================================================
-    // DIALOG STATES
-    // ============================================================
+    // Dialog states
     val showAddSparePartDialog: Boolean = false,
     val showEditHeaderDialog: Boolean = false,
     val showExportDialog: Boolean = false,
@@ -74,7 +63,6 @@ data class CheckUpDetailUiState(
 ) {
     val checkItemsByModule: Map<ModuleType, List<CheckItem>>
         get() = checkItems.groupBy { it.moduleType }
-
 
     // ============================================================
     // COMPUTED PROPERTIES
@@ -117,7 +105,7 @@ data class CheckUpDetailUiState(
     // EXISTING COMPUTED PROPERTIES
     // ============================================================
 
-    val hasCheckUp: Boolean
+    val hasData: Boolean
         get() = checkUp != null
 
     val hasError: Boolean
@@ -143,6 +131,10 @@ data class CheckUpDetailUiState(
 
     val hasDialogOpen: Boolean
         get() = showAddSparePartDialog || showEditHeaderDialog || showExportDialog
+
+
+    val checkupId: String?
+        get() = checkUp?.id
 
 
     /**

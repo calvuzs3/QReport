@@ -8,7 +8,8 @@ import net.calvuz.qreport.domain.model.spare.SparePart
 import net.calvuz.qreport.domain.repository.CheckUpRepository
 import net.calvuz.qreport.data.local.dao.PhotoDao
 import net.calvuz.qreport.data.mapper.toDomain
-import net.calvuz.qreport.presentation.core.model.QReportState
+import net.calvuz.qreport.domain.core.QrResult
+import net.calvuz.qreport.presentation.core.model.DataError
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -23,9 +24,6 @@ import javax.inject.Inject
  * - Progress
  */
 
-/**
- * Complete Checkup details Data class
- */
 data class CheckUpDetails(
     val checkUp: CheckUp,
     val checkItems: List<CheckItem>,
@@ -38,13 +36,13 @@ class GetCheckUpDetailsUseCase @Inject constructor(
     private val checkUpRepository: CheckUpRepository,
     private val photoDao: PhotoDao  // In order to load photos
 ) {
-    suspend operator fun invoke(checkUpId: String): Result<CheckUpDetails> {
+    suspend operator fun invoke(checkUpId: String): QrResult<CheckUpDetails, DataError.CheckupError> {
         return try {
-            Timber.d("Loading Checkup details for: $checkUpId")
+            Timber.d("Loading check-up details for: $checkUpId")
 
             // 1. Get base Check-up (without photos)
             val checkUp = checkUpRepository.getCheckUpWithDetails(checkUpId)
-                ?: return Result.failure(Exception(QReportState.ERR_CHECKUP_NOT_FOUND.name))
+                ?: return QrResult.Error(DataError.CheckupError.NOT_FOUND)
 
             // 2. LOAD PHOTOS FOR EACH CHECK ITEM
             val checkItemsWithPhotos = checkUp.checkItems.map { checkItem ->
@@ -57,7 +55,7 @@ class GetCheckUpDetailsUseCase @Inject constructor(
                     checkItem.copy(photos = photos)
 
                 } catch (e: Exception) {
-                    Timber.w(e, "CheckItem load failed {${checkItem.id}}")
+                    Timber.w(e, "Check-up item load failed {${checkItem.id}}")
                     // In caso di errore, restituisci CheckItem senza foto
                     checkItem.copy(photos = emptyList())
                 }
@@ -65,7 +63,7 @@ class GetCheckUpDetailsUseCase @Inject constructor(
 
             // 3. Debug logging
             val totalPhotos = checkItemsWithPhotos.sumOf { it.photos.size }
-            Timber.d("CheckUp details loaded {items: ${checkItemsWithPhotos.size}, photos: $totalPhotos")
+            Timber.v("Check-up details loaded {items=${checkItemsWithPhotos.size}, photos=$totalPhotos}")
 
             checkItemsWithPhotos.forEach { item ->
                 if (item.photos.isNotEmpty()) {
@@ -88,11 +86,11 @@ class GetCheckUpDetailsUseCase @Inject constructor(
                 progress = progress
             )
 
-            Result.success( details  )
+            QrResult.Success( details  )
 
         } catch (e: Exception) {
             Timber.e(e, "CheckUp details load failed {$checkUpId}")
-            Result.failure(Exception(QReportState.ERR_CHECKUP_LOAD_CHEKUP.name))
+            QrResult.Error((DataError.CheckupError.LOAD))
         }
     }
 }

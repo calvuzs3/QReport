@@ -1,5 +1,6 @@
 package net.calvuz.qreport.presentation.feature.export
 
+import net.calvuz.qreport.R
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
@@ -9,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -17,6 +19,9 @@ import androidx.compose.ui.window.DialogProperties
 import net.calvuz.qreport.domain.model.export.ExportResult
 import net.calvuz.qreport.domain.model.export.ExportFormat
 import net.calvuz.qreport.domain.model.export.ExportErrorCode
+import net.calvuz.qreport.presentation.feature.export.model.color
+import net.calvuz.qreport.presentation.feature.export.model.getDisplayName
+import net.calvuz.qreport.util.SizeUtils.getFormattedSize
 
 /**
  * Dialog per mostrare il risultato dell'export
@@ -96,7 +101,7 @@ private fun SuccessContent(
 
         // Title
         Text(
-            text = "Export Completato!",
+            text = stringResource(R.string.export_dialog_result_success_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center
@@ -137,7 +142,7 @@ private fun SuccessContent(
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
-                        Text("Apri")
+                        Text(stringResource(R.string.action_open))
                     }
                 }
 
@@ -155,7 +160,7 @@ private fun SuccessContent(
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
-                        Text("Condividi")
+                        Text(stringResource(R.string.action_share))
                     }
                 }
             }
@@ -165,7 +170,7 @@ private fun SuccessContent(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Chiudi")
+                Text(stringResource(R.string.action_close))
             }
         }
     }
@@ -192,7 +197,7 @@ private fun ErrorContent(
 
         // Title
         Text(
-            text = "Export Fallito",
+            text = stringResource(R.string.export_dialog_result_error_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.error,
@@ -211,20 +216,20 @@ private fun ErrorContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "Errore:",
+                    text = stringResource(R.string.export_dialog_result_error_label),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.error
                 )
 
                 Text(
-                    text = result.exception.message ?: "Errore sconosciuto",
+                    text = result.exception.message ?: stringResource(R.string.export_dialog_result_error_unknown),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Text(
-                    text = "Codice: ${result.errorCode}",
+                    text = stringResource(R.string.export_dialog_result_error_code, result.errorCode),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -242,7 +247,7 @@ private fun ErrorContent(
                 containerColor = MaterialTheme.colorScheme.error
             )
         ) {
-            Text("Chiudi")
+            Text(stringResource(R.string.action_close))
         }
     }
 }
@@ -260,7 +265,7 @@ private fun LoadingContent(
         CircularProgressIndicator()
 
         Text(
-            text = "Export in corso...",
+            text =stringResource(R.string.export_dialog_result_loading_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center
@@ -270,7 +275,7 @@ private fun LoadingContent(
             onClick = onDismiss,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Chiudi")
+            Text(stringResource(R.string.action_close))
         }
     }
 }
@@ -299,7 +304,7 @@ private fun FileDetailsCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "File Esportato",
+                    text = stringResource(R.string.export_dialog_result_file_label),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -318,7 +323,7 @@ private fun FileDetailsCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Dimensione: ${formatFileSize(fileSize)}",
+                    text = stringResource(R.string.export_dialog_result_file_size, fileSize.getFormattedSize()),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -340,72 +345,61 @@ private fun ErrorSuggestionsCard(
     modifier: Modifier = Modifier
 ) {
     val suggestions = when (errorCode) {
-        ExportErrorCode.INSUFFICIENT_STORAGE ->
-            listOf(
-                "Liberare spazio di archiviazione",
-                "Ridurre la qualità delle foto",
-                "Escludere le foto dall'export"
-            )
-        ExportErrorCode.PERMISSION_DENIED ->
-            listOf(
-                "Verificare i permessi di scrittura",
-                "Riavviare l'app",
-                "Cambiare directory di destinazione"
-            )
-        ExportErrorCode.TEMPLATE_NOT_FOUND ->
-            listOf(
-                "Verificare i template disponibili",
-                "Usare il template predefinito",
-                "Reinstallare l'app"
-            )
-        ExportErrorCode.DOCUMENT_GENERATION_ERROR ->
-            listOf(
-                "Riprovare l'operazione",
-                "Verificare i dati del checkup",
-                "Riavviare l'app"
-            )
-        ExportErrorCode.IMAGE_PROCESSING_ERROR ->
-            listOf(
-                "Verificare che le foto siano valide",
-                "Ridurre la qualità delle foto",
-                "Escludere le foto problematiche"
-            )
-        ExportErrorCode.PHOTO_FOLDER_ERROR ->
-            listOf(
-                "Verificare i permessi di scrittura",
-                "Liberare spazio di archiviazione",
-                "Cambiare directory di destinazione"
-            )
-        ExportErrorCode.TEXT_GENERATION_ERROR ->
-            listOf(
-                "Verificare i dati del checkup",
-                "Riprovare l'operazione",
-                "Contattare il supporto"
-            )
-        ExportErrorCode.INVALID_DATA ->
-            listOf(
-                "Completare tutti i campi richiesti",
-                "Verificare i dati inseriti",
-                "Riavviare l'app"
-            )
-        ExportErrorCode.PROCESSING_TIMEOUT ->
-            listOf(
-                "Ridurre il numero di foto",
-                "Riprovare più tardi",
-                "Riavviare l'app"
-            )
-        ExportErrorCode.NETWORK_ERROR ->
-            listOf(
-                "Verificare la connessione internet",
-                "Riprovare più tardi",
-                "Usare export offline"
-            )
-        ExportErrorCode.SYSTEM_ERROR ->
-            listOf(
-                "Riavviare l'app",
-                "Riavviare il dispositivo",
-                "Contattare il supporto"
-            )
+        ExportErrorCode.INSUFFICIENT_STORAGE -> listOf(
+            stringResource(R.string.export_error_suggestion_storage_1),
+            stringResource(R.string.export_error_suggestion_storage_2),
+            stringResource(R.string.export_error_suggestion_storage_3)
+        )
+        ExportErrorCode.PERMISSION_DENIED -> listOf(
+            stringResource(R.string.export_error_suggestion_permission_1),
+            stringResource(R.string.export_error_suggestion_permission_2),
+            stringResource(R.string.export_error_suggestion_permission_3)
+        )
+        ExportErrorCode.TEMPLATE_NOT_FOUND -> listOf(
+            stringResource(R.string.export_error_suggestion_template_1),
+            stringResource(R.string.export_error_suggestion_template_2),
+            stringResource(R.string.export_error_suggestion_template_3)
+        )
+        ExportErrorCode.DOCUMENT_GENERATION_ERROR -> listOf(
+            stringResource(R.string.export_error_suggestion_docgen_1),
+            stringResource(R.string.export_error_suggestion_docgen_2),
+            stringResource(R.string.export_error_suggestion_docgen_3)
+        )
+        ExportErrorCode.IMAGE_PROCESSING_ERROR -> listOf(
+            stringResource(R.string.export_error_suggestion_image_1),
+            stringResource(R.string.export_error_suggestion_image_2),
+            stringResource(R.string.export_error_suggestion_image_3)
+        )
+        ExportErrorCode.PHOTO_FOLDER_ERROR -> listOf(
+            stringResource(R.string.export_error_suggestion_photofolder_1),
+            stringResource(R.string.export_error_suggestion_photofolder_2),
+            stringResource(R.string.export_error_suggestion_photofolder_3)
+        )
+        ExportErrorCode.TEXT_GENERATION_ERROR -> listOf(
+            stringResource(R.string.export_error_suggestion_textgen_1),
+            stringResource(R.string.export_error_suggestion_textgen_2),
+            stringResource(R.string.export_error_suggestion_textgen_3)
+        )
+        ExportErrorCode.INVALID_DATA -> listOf(
+            stringResource(R.string.export_error_suggestion_invaliddata_1),
+            stringResource(R.string.export_error_suggestion_invaliddata_2),
+            stringResource(R.string.export_error_suggestion_invaliddata_3)
+        )
+        ExportErrorCode.PROCESSING_TIMEOUT -> listOf(
+            stringResource(R.string.export_error_suggestion_timeout_1),
+            stringResource(R.string.export_error_suggestion_timeout_2),
+            stringResource(R.string.export_error_suggestion_timeout_3)
+        )
+        ExportErrorCode.NETWORK_ERROR -> listOf(
+            stringResource(R.string.export_error_suggestion_network_1),
+            stringResource(R.string.export_error_suggestion_network_2),
+            stringResource(R.string.export_error_suggestion_network_3)
+        )
+        ExportErrorCode.SYSTEM_ERROR -> listOf(
+            stringResource(R.string.export_error_suggestion_system_1),
+            stringResource(R.string.export_error_suggestion_system_2),
+            stringResource(R.string.export_error_suggestion_system_3)
+        )
     }
 
     Card(
@@ -419,7 +413,7 @@ private fun ErrorSuggestionsCard(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Suggerimenti:",
+                text = stringResource(R.string.export_dialog_result_suggestions_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
@@ -449,29 +443,13 @@ private fun FormatBadge(
     format: ExportFormat,
     modifier: Modifier = Modifier
 ) {
-    val (text, containerColor) = when (format) {
-        ExportFormat.WORD -> "WORD" to Color(0xFF2E7D32)
-        ExportFormat.TEXT -> "TEXT" to Color(0xFF1976D2)
-        ExportFormat.PHOTO_FOLDER -> "FOTO" to Color(0xFFE65100)
-        ExportFormat.COMBINED_PACKAGE -> "PACK" to Color(0xFF6A1B9A)
-    }
-
     AssistChip(
         onClick = { },
-        label = { Text(text) },
+        label = { Text(format.getDisplayName()) },
         colors = AssistChipDefaults.assistChipColors(
-            containerColor = containerColor.copy(alpha = 0.1f),
-            labelColor = containerColor
+            containerColor = format.color.copy(alpha = 0.1f),
+            labelColor = format.color
         ),
         modifier = modifier
     )
-}
-
-private fun formatFileSize(bytes: Long): String {
-    return when {
-        bytes < 1024 -> "${bytes}B"
-        bytes < 1024 * 1024 -> "${String.format("%.1f", bytes / 1024.0)}KB"
-        bytes < 1024 * 1024 * 1024 -> "${String.format("%.1f", bytes / (1024.0 * 1024.0))}MB"
-        else -> "${String.format("%.1f", bytes / (1024.0 * 1024.0 * 1024.0))}GB"
-    }
 }
