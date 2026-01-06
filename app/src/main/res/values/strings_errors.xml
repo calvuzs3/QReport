@@ -1,6 +1,353 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
+    <!-- Not implemented Error Messages -->
+    <string name="err_not_implemented">Not implemented yet</string>
+
+
+    <!-- Errori contracts -->
+    <string name="err_contracts_client_id_empty">Nessun ID Cliente specificato</string>
+    <string name="err_contracts_client_not_found">Nessun Cliente trovato</string>
+    <string name="err_contracts_contract_not_found">Nessun Contratto trovato</string>
+
+
+    <!-- Errori Database -->
+    <string name="err_db_operation_failed">Si è verificato un errore durante l\'operazione sul database</string>
+    <string name="err_db_insert_failed">Impossibile salvare i dati</string>
+    <string name="err_db_update_failed">Impossibile aggiornare i dati</string>
+    <string name="err_db_delete_failed">Impossibile eliminare i dati</string>
+    <string name="err_db_not_found">L\'elemento richiesto non è stato trovato</string>
+
+
+    <!-- File Error Messages - Core File Operations -->
+
+    <!-- Directory Operations -->
+    <string name="err_file_directory_create">Errore durante la creazione della directory</string>
+    <string name="err_file_directory_access">Errore durante l\'accesso alla directory</string>
+    <string name="err_file_directory_delete">Errore durante l\'eliminazione della directory</string>
+    <string name="err_file_directory_not_found">Directory non trovata</string>
+    <string name="err_file_directory_not_empty">Impossibile eliminare: directory non vuota</string>
+    <string name="err_file_directory_permission_denied">Permessi insufficienti per accedere alla directory</string>
+
+    <!-- File Operations -->
+    <string name="err_file_create">Errore durante la creazione del file</string>
+    <string name="err_file_read">Errore durante la lettura del file</string>
+    <string name="err_file_write">Errore durante la scrittura del file</string>
+    <string name="err_file_delete">Errore durante l\'eliminazione del file</string>
+    <string name="err_file_copy">Errore durante la copia del file</string>
+    <string name="err_file_move">Errore durante lo spostamento del file</string>
+    <string name="err_file_rename">Errore durante la rinominazione del file</string>
+    <string name="err_file_access">Errore durante l\'accesso al file</string>
+    <string name="err_file_not_found">File non trovato</string>
+    <string name="err_file_already_exists">Il file esiste già</string>
+    <string name="err_file_locked">File bloccato o in uso</string>
+    <string name="err_file_corrupted">File corrotto o danneggiato</string>
+
+    <!-- Permissions -->
+    <string name="err_file_permission_denied">Permessi insufficienti per l\'operazione</string>
+    <string name="err_file_read_permission_denied">Permessi di lettura negati</string>
+    <string name="err_file_write_permission_denied">Permessi di scrittura negati</string>
+    <string name="err_file_execute_permission_denied">Permessi di esecuzione negati</string>
+
+    <!-- Storage Issues -->
+    <string name="err_file_insufficient_space">Spazio di archiviazione insufficiente</string>
+    <string name="err_file_disk_full">Disco pieno</string>
+    <string name="err_file_storage_unavailable">Spazio di archiviazione non disponibile</string>
+    <string name="err_file_quota_exceeded">Quota disco superata</string>
+
+    <!-- File Size & Limits -->
+    <string name="err_file_empty">File vuoto</string>
+    <string name="err_file_too_large">File troppo grande</string>
+    <string name="err_file_too_small">File troppo piccolo</string>
+    <string name="err_file_size_limit_exceeded">Limite dimensione file superato</string>
+    <string name="err_file_name_too_long">Nome file troppo lungo</string>
+    <string name="err_file_path_too_long">Percorso file troppo lungo</string>
+
+    <!-- File Format & Encoding -->
+    <string name="err_file_format_invalid">Formato file non valido</string>
+    <string name="err_file_encoding_error">Errore di codifica del file</string>
+    <string name="err_file_charset_unsupported">Set di caratteri non supportato</string>
+    <string name="err_file_binary_data_corrupted">Dati binari corrotti</string>
+
+    <!-- I/O Operations -->
+    <string name="err_file_io_error">Errore di input/output</string>
+    <string name="err_file_read_timeout">Timeout durante la lettura</string>
+    <string name="err_file_write_timeout">Timeout durante la scrittura</string>
+    <string name="err_file_operation_interrupted">Operazione interrotta</string>
+    <string name="err_file_concurrent_access">Accesso concorrente non permesso</string>
+
+    <!-- Network & External -->
+    <string name="err_file_network_unavailable">Rete non disponibile</string>
+    <string name="err_file_connection_lost">Connessione persa</string>
+    <string name="err_file_external_storage_removed">Memoria esterna rimossa</string>
+    <string name="err_file_device_busy">Dispositivo occupato</string>
+
+    <!-- Validation -->
+    <string name="err_file_path_invalid">Percorso file non valido</string>
+    <string name="err_file_name_invalid">Nome file non valido</string>
+    <string name="err_file_extension_invalid">Estensione file non valida</string>
+    <string name="err_file_checksum_mismatch">Checksum file non corrispondente</string>
+
+    <!-- Temporary & Cache -->
+    <string name="err_file_temp_file_creation_failed">Creazione file temporaneo fallita</string>
+    <string name="err_file_temp_dir_unavailable">Directory temporanea non disponibile</string>
+    <string name="err_file_cache_write_failed">Scrittura cache fallita</string>
+    <string name="err_file_cleanup_failed">Pulizia file fallita</string>
+
+    <!-- Locking & Synchronization -->
+    <string name="err_file_locked_by_other">File bloccato da altro processo</string>
+    <string name="err_file_lock_acquisition_failed">Acquisizione blocco file fallita</string>
+    <string name="err_file_unlock_failed">Rilascio blocco file fallito</string>
+
+    <!-- System Level -->
+    <string name="err_file_system_error">Errore di sistema</string>
+    <string name="err_file_resource_unavailable">Risorsa non disponibile</string>
+    <string name="err_file_handle_exhausted">Handle file esauriti</string>
+    <string name="err_file_filesystem_error">Errore del filesystem</string>
+    <string name="err_file_filesystem_readonly">Filesystem in sola lettura</string>
+
+    <!-- Operation Specific -->
+    <string name="err_file_copy_failed">Copia file fallita</string>
+    <string name="err_file_move_failed">Spostamento file fallito</string>
+    <string name="err_file_backup_failed">Backup file fallito</string>
+    <string name="err_file_restore_failed">Ripristino file fallito</string>
+    <string name="err_file_sync_failed">Sincronizzazione file fallita</string>
+
+    <!-- Metadata -->
+    <string name="err_file_metadata_read_failed">Lettura metadati fallita</string>
+    <string name="err_file_metadata_write_failed">Scrittura metadati fallita</string>
+    <string name="err_file_attributes_access_failed">Accesso attributi file fallito</string>
+    <string name="err_file_timestamp_update_failed">Aggiornamento timestamp fallito</string>
+
+
+    <!-- Export Error Messages - Feature Export -->
+
+    <!-- Directory Operations -->
+    <string name="err_export_directory_create">Errore durante la creazione della directory di export</string>
+    <string name="err_export_directory_access">Errore durante l\'accesso alla directory di export</string>
+    <string name="err_export_directory_delete">Errore durante l\'eliminazione della directory di export</string>
+
+    <!-- File Operations -->
+    <string name="err_export_file_create">Errore durante la creazione del file di export</string>
+    <string name="err_export_file_write">Errore durante la scrittura del file di export</string>
+    <string name="err_export_file_read">Errore durante la lettura del file di export</string>
+    <string name="err_export_file_copy">Errore durante la copia del file per l\'export</string>
+    <string name="err_export_file_move">Errore durante lo spostamento del file di export</string>
+    <string name="err_export_file_delete">Errore durante l\'eliminazione del file di export</string>
+
+    <!-- Export Generation -->
+    <string name="err_export_generation_failed">Errore durante la generazione dell\'export</string>
+    <string name="err_export_content_serialization">Errore durante la serializzazione dei contenuti</string>
+    <string name="err_export_format_not_supported">Formato di export non supportato</string>
+    <string name="err_export_template_processing">Errore durante l\'elaborazione del template</string>
+
+    <!-- Validation -->
+    <string name="err_export_validation_failed">Errore durante la validazione dell\'export</string>
+    <string name="err_export_file_corruption">File di export corrotto</string>
+    <string name="err_export_integrity_check_failed">Controllo di integrità dell\'export fallito</string>
+    <string name="err_export_structure_invalid">Struttura dell\'export non valida</string>
+
+    <!-- Storage & Space -->
+    <string name="err_export_storage_check_failed">Errore durante la verifica dello spazio disponibile</string>
+    <string name="err_export_insufficient_storage">Spazio di archiviazione insufficiente per l\'export</string>
+    <string name="err_export_size_calculation_failed">Errore durante il calcolo delle dimensioni dell\'export</string>
+    <string name="err_export_quota_exceeded">Quota di export superata</string>
+
+    <!-- Cleanup & Maintenance -->
+    <string name="err_export_cleanup_failed">Errore durante la pulizia dei file di export</string>
+    <string name="err_export_delete_failed">Errore durante l\'eliminazione dell\'export</string>
+    <string name="err_export_maintenance_failed">Errore durante la manutenzione degli export</string>
+
+    <!-- Listing & Metadata -->
+    <string name="err_export_list_failed">Errore durante il caricamento della lista export</string>
+    <string name="err_export_info_failed">Errore durante il recupero delle informazioni export</string>
+    <string name="err_export_metadata_failed">Errore durante la gestione dei metadati export</string>
+    <string name="err_export_index_creation_failed">Errore durante la creazione dell\'indice export</string>
+
+    <!-- Manifest & Tracking -->
+    <string name="err_export_manifest_create_failed">Errore durante la creazione del manifest export</string>
+    <string name="err_export_manifest_read_failed">Errore durante la lettura del manifest export</string>
+    <string name="err_export_tracking_failed">Errore durante il tracking dello stato export</string>
+
+    <!-- Export Packaging -->
+    <string name="err_export_compression_failed">Errore durante la compressione dell\'export</string>
+    <string name="err_export_archive_creation_failed">Errore durante la creazione dell\'archivio export</string>
+    <string name="err_export_package_assembly_failed">Errore durante l\'assemblaggio del package export</string>
+
+    <!-- Permissions & Access -->
+    <string name="err_export_permission_denied">Permessi insufficienti per l\'operazione di export</string>
+    <string name="err_export_access_restricted">Accesso limitato alla directory di export</string>
+    <string name="err_export_write_protected">Directory o file di export protetti in scrittura</string>
+
+    <!-- Export Configuration -->
+    <string name="err_export_configuration_invalid">Configurazione di export non valida</string>
+    <string name="err_export_options_conflict">Conflitto nelle opzioni di export</string>
+    <string name="err_export_parameter_missing">Parametro obbligatorio per l\'export mancante</string>
+
+    <!-- Temporary Files -->
+    <string name="err_export_temp_file_failed">Errore durante la gestione dei file temporanei</string>
+    <string name="err_export_temp_cleanup_failed">Errore durante la pulizia dei file temporanei</string>
+    <string name="err_export_temp_space_full">Spazio temporaneo per export esaurito</string>
+
+    <!-- External Dependencies -->
+    <string name="err_export_external_tool_failed">Errore dello strumento esterno per l\'export</string>
+    <string name="err_export_library_error">Errore della libreria di export</string>
+    <string name="err_export_system_resource_unavailable">Risorsa di sistema non disponibile per l\'export</string>
+
+    <string name="err_export_file_share_failed">Errore di condivisione file</string>
+
+
+    <!-- Share Error Messages -->
+
+    <string name="err_share_failed">Errore durante la condivisione del file</string>
+    <string name="err_share_intent_creation_failed">Errore durante la creazione dell\'intent di condivisione</string>
+    <string name="err_share_app_not_found">App specificata non trovata o non disponibile</string>
+    <string name="err_share_no_compatible_app">Nessuna app compatibile trovata</string>
+    <string name="err_share_open_failed">Errore durante l\'apertura del file</string>
+
+    <string name="err_share_file_not_found">File non trovato per la condivisione</string>
+    <string name="err_share_temp_file_failed">Errore durante la creazione del file temporaneo</string>
+    <string name="err_share_zip_creation_failed">Errore durante la creazione dell\'archivio ZIP</string>
+
+    <string name="err_share_uri_creation_failed">Errore durante la creazione dell\'URI condivisibile</string>
+    <string name="err_share_fileprovider_failed">Errore di configurazione FileProvider</string>
+
+    <string name="err_share_validation_failed">Errore durante la validazione del file per condivisione</string>
+    <string name="err_share_metadata_failed">Errore durante l\'estrazione dei metadati del file</string>
+
+    <string name="err_share_app_query_failed">Errore durante la ricerca delle app compatibili</string>
+    <string name="err_share_permission_denied">Permessi di accesso allo storage negati</string>
+
+    <string name="err_share_cleanup_failed">Errore durante la pulizia dei file temporanei</string>
+
+
+    <!-- Photo Error Messages -->
+
+
+    <!-- File Operations -->
+    <string name="err_photo_file_copy">Errore durante la copia del file foto</string>
+    <string name="err_photo_file_move">Errore durante lo spostamento del file foto</string>
+
+    <!-- Photo Processing -->
+    <string name="err_photo_crop">Errore durante il ritaglio della foto</string>
+
+    <!-- Thumbnail Operations -->
+    <string name="err_photo_thumbnail_access">Errore durante l\'accesso alla miniatura</string>
+
+    <!-- Metadata & EXIF -->
+    <string name="err_photo_metadata_write">Errore durante la scrittura dei metadati foto</string>
+    <string name="err_photo_exif_write">Errore durante la scrittura dei dati EXIF</string>
+    <string name="err_photo_orientation_read">Errore durante la lettura dell\'orientamento foto</string>
+
+    <!-- Image Processing -->
+    <string name="err_photo_decode">Errore durante la decodifica dell\'immagine</string>
+    <string name="err_photo_encode">Errore durante la codifica dell\'immagine</string>
+    <string name="err_photo_format_unsupported">Formato immagine non supportato</string>
+    <string name="err_photo_compression">Errore durante la compressione dell\'immagine</string>
+    <string name="err_photo_quality_adjustment">Errore durante l\'aggiustamento della qualità</string>
+
+    <!-- Validation -->
+    <string name="err_photo_size_validation">Errore di validazione delle dimensioni foto</string>
+
+    <!-- Import/Export -->
+    <string name="err_photo_import">Errore durante l\'importazione della foto</string>
+    <string name="err_photo_export">Errore durante l\'esportazione della foto</string>
+    <string name="err_photo_uri_access">Errore durante l\'accesso all\'URI della foto</string>
+
+    <!-- Management -->
+    <string name="err_photo_count">Errore durante il conteggio delle foto</string>
+
+    <!-- Camera Integration -->
+    <string name="err_photo_camera_access">Errore durante l\'accesso alla fotocamera</string>
+    <string name="err_photo_capture">Errore durante l\'acquisizione della foto</string>
+    <string name="err_photo_settings_apply">Errore durante l\'applicazione delle impostazioni fotocamera</string>
+
+    <!-- Directory Operations -->
+    <string name="err_photo_directory_create">Errore durante la creazione della cartella foto</string>
+    <string name="err_photo_directory_access">Errore durante l\'accesso alla cartella foto</string>
+    <string name="err_photo_thumbnails_dir_create">Errore durante la creazione della cartella miniature</string>
+
+    <!-- File Operations -->
+    <string name="err_photo_file_create">Errore durante la creazione del file foto</string>
+    <string name="err_photo_file_access">Errore durante l\'accesso al file foto</string>
+    <string name="err_photo_file_delete">Errore durante l\'eliminazione del file foto</string>
+
+    <!-- Photo Processing -->
+    <string name="err_photo_save">Errore durante il salvataggio della foto</string>
+    <string name="err_photo_load">Errore durante il caricamento della foto</string>
+    <string name="err_photo_resize">Errore durante il ridimensionamento della foto</string>
+    <string name="err_photo_rotate">Errore durante la rotazione della foto</string>
+
+    <!-- Thumbnail Operations -->
+    <string name="err_photo_thumbnail_create">Errore durante la creazione della miniatura</string>
+    <string name="err_photo_thumbnail_delete">Errore durante l\'eliminazione della miniatura</string>
+
+    <!-- Metadata & EXIF -->
+    <string name="err_photo_metadata_read">Errore durante la lettura dei metadati foto</string>
+    <string name="err_photo_exif_read">Errore durante la lettura dei dati EXIF</string>
+
+    <!-- Validation -->
+    <string name="err_photo_validation">Errore durante la validazione della foto</string>
+    <string name="err_photo_format_validation">Formato foto non supportato</string>
+    <string name="err_photo_corruption_detected">File foto danneggiato o corrotto</string>
+
+    <!-- Storage -->
+    <string name="err_photo_storage_access">Errore durante l\'accesso allo storage</string>
+    <string name="err_photo_storage_full">Spazio di archiviazione insufficiente</string>
+    <string name="err_photo_permissions">Permessi di accesso allo storage negati</string>
+
+    <!-- Management -->
+    <string name="err_photo_list">Errore durante l\'elenco delle foto</string>
+    <string name="err_photo_delete">Errore durante l\'eliminazione della foto</string>
+    <string name="err_photo_cleanup">Errore durante la pulizia delle foto</string>
+
+
+    <!-- Backup Error Messages -->
+
+    <!-- Basic Operations -->
+    <string name="err_backup_save">Errore durante il salvataggio del backup</string>
+    <string name="err_backup_load">Errore durante il caricamento del backup</string>
+    <string name="err_backup_delete">Errore durante l\'eliminazione del backup</string>
+    <string name="err_backup_create">Errore durante la creazione del backup</string>
+
+    <!-- Validation & Integrity -->
+    <string name="err_backup_validate">Errore durante la validazione del backup</string>
+    <string name="err_backup_corrupt">Il file di backup è danneggiato</string>
+    <string name="err_backup_checksum_mismatch">Checksum del backup non corrispondente</string>
+    <string name="err_backup_metadata_missing">Metadati del backup mancanti</string>
+    <string name="err_backup_structure_invalid">Struttura del backup non valida</string>
+
+    <!-- Compression Operations -->
+    <string name="err_backup_zip_create">Errore durante la creazione dell\'archivio ZIP</string>
+    <string name="err_backup_zip_extract">Errore durante l\'estrazione dell\'archivio ZIP</string>
+    <string name="err_backup_zip_corrupt">L\'archivio ZIP è danneggiato</string>
+    <string name="err_backup_zip_password">Password richiesta per l\'archivio ZIP</string>
+
+    <!-- Sharing & Transfer -->
+    <string name="err_backup_share_create">Errore durante la creazione del backup condivisibile</string>
+    <string name="err_backup_export_failed">Errore durante l\'esportazione del backup</string>
+    <string name="err_backup_temp_file_create">Errore durante la creazione del file temporaneo</string>
+
+    <!-- Photo Operations -->
+    <string name="err_backup_photo_archive">Errore durante l\'archiviazione delle foto</string>
+    <string name="err_backup_photo_extract">Errore durante l\'estrazione delle foto</string>
+    <string name="err_backup_photo_missing">Foto previste non trovate</string>
+    <string name="err_backup_photo_corrupt">File foto danneggiato</string>
+
+    <!-- Cleanup & Maintenance -->
+    <string name="err_backup_retention_policy">Errore durante l\'applicazione della politica di ritenzione</string>
+    <string name="err_backup_cleanup_failed">Errore durante la pulizia dei backup</string>
+    <string name="err_backup_disk_space">Spazio su disco insufficiente</string>
+
+    <!-- Specific Backup Scenarios -->
+    <string name="err_backup_path_generation">Errore durante la generazione del percorso backup</string>
+    <string name="err_backup_path_resolution">Errore durante la risoluzione del percorso backup</string>
+    <string name="err_backup_stats_calculation">Errore durante il calcolo delle statistiche backup</string>
+    <string name="err_backup_summary_generation">Errore durante la generazione del riepilogo backup</string>
+
+    <string name="err_share">Errore condivisione file</string>
+    <string name="err_share_create">Errore condivisione</string>
+
     <string name="err_unknown">Errore sconosciuto</string>
     <string name="err_load">Errore caricamento</string>
     <string name="err_reload">Errore ricaricamento</string>
@@ -9,7 +356,10 @@
     <string name="err_fields_required">Compilare i campi richiesti</string>
     <string name="err_refresh">Errore refresh</string>
     <string name="err_file_open">Errore apertura file</string>
-    <string name="err_file_share">Errore condivisione file</string>
+    <string name="err_file_not_exists">File non esistente</string>
+    <string name="err_file_get_size">Errore ottenimento dimensione file</string>
+    <string name="err_file_processing">Errore processing file</string>
+    <string name="err_file_list">Errore lista file</string>
 
     <string name="err_checkup_not_found">CheckUp non trovato</string>
     <string name="err_checkup_load_checkup">Errore caricamento CheckUp</string>
@@ -36,5 +386,8 @@
 
 
     <string name="err_network_request_timeout">Richiesta scaduta</string>
+    <string name="err_checkup_invalid_status_transition">Transazione di stato checkup non valida</string>
+    <string name="err_export_cannot_export_draft">S possono esportare solo check up completati</string>
+
 
 </resources>

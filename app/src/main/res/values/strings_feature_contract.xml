@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Filter -->
+    <string name="contract_filter_all">Tutti</string>
+    <string name="contract_filter_active">Attivi</string>
+    <string name="contract_filter_not_active">Non Attivi</string>
+
+    <!-- Sort Order -->
+    <string name="contract_sort_order_name">Per Nome</string>
+    <string name="contract_sort_order_expire_recent">A Breve Scadenza</string>
+    <string name="contract_sort_order_expire_oldest">A Scadenza Lontana</string>
+
+    <!-- Component ContractCard -->
+    <string name="contract_screen_delete_action_confirm">Sei sicuro di voler eliminare il contatto %1$s? Questa operazione non può essere annullata</string>
+
+
+    <!-- LIST SCREEN -->
+    <string name="contracts_screen_list_title">Contratti</string>
+    <string name="contracts_screen_list_empty_title">Nessun Contatto</string>
+    <string name="contracts_screen_list_empty_message">Non ci sono ancora Contratti per questo Cliente</string>
+    <string name="contracts_screen_list_empty_no_results_title">Nessun risultato</string>
+    <string name="contracts_screen_list_empty_no_result_message">Non ci sono Contatti che corrispondono al filtro %1$s</string>
+    <string name="contracts_screen_list_empty_error_title">Lista vuota</string>
+    <string name="contracts_screen_list_empty_error_message">Errore nel caricamento dati</string>
+    <string name="contracts_screen_list_empty_icon_content_desc">Contratto</string>
+    <string name="contracts_screen_list_search_contract_placeholder">Ricerca contratto</string>
+    <string name="contracts_screen_list_empty_icon_content_description">Nessun Contratto</string>
+    <string name="contracts_screen_list_empty_action_add">Nuovo Contratto</string>
+
+
+</resources>

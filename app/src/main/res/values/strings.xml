@@ -77,6 +77,15 @@
     <string name="action_retry">Riprova</string>
     <string name="action_back">Indietro</string>
 
+    <!-- Labels -->
+    <string name="label_assistchip_not_active">INATTIVO</string>
+    <string name="label_maintenance">Manutenzione</string>
+    <string name="label_assistance">Assistenza</string>
+    <string name="label_priority">Priorità</string>
+    <string name="label_ordering">Ordinamento</string>
+    <string name="label_filtering">Filtraggio</string>
+
+
     <!-- Forms -->
     <string name="field_title">Titolo</string>
     <string name="field_description">Descrizione</string>
@@ -179,4 +188,6 @@
     <string name="cd_navigation_checkups">Naviga ai check-up</string>
     <string name="cd_create_checkup">Crea nuovo check-up</string>
     <string name="cd_checkup_progress">Progresso check-up</string>
+
+
 </resources>

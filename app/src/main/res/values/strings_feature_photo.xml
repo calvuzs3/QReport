@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="photo_photo_quality_original_name">Originale</string>
+    <string name="photo_photo_quality_optimized_name">Ottimizzata</string>
+    <string name="photo_photo_quality_compressed_name">Compressa</string>
+
+</resources>

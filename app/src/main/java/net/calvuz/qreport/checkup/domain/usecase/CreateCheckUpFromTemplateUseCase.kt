@@ -1,0 +1,121 @@
+package net.calvuz.qreport.checkup.domain.usecase
+
+import kotlinx.datetime.Clock
+import net.calvuz.qreport.checkup.domain.model.CheckItem
+import net.calvuz.qreport.checkup.domain.model.CheckItemModules
+import net.calvuz.qreport.checkup.domain.model.CheckItemStatus
+import net.calvuz.qreport.checkup.domain.model.CheckUp
+import net.calvuz.qreport.checkup.domain.model.CheckUpHeader
+import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
+import net.calvuz.qreport.client.island.domain.model.IslandType
+import net.calvuz.qreport.checkup.domain.model.module.ModuleType
+import net.calvuz.qreport.checkup.domain.repository.CheckUpRepository
+import java.util.UUID
+import javax.inject.Inject
+
+/**
+ * Use Case per creare un check-up da template selezionati
+ *
+ * AGGIORNATO per:
+ * - Usare solo ModuleType definiti in ModuleType.kt
+ * - Supportare solo IslandType della famiglia POLY
+ * - Allinearsi con CheckItemModules esistente
+ */
+class CreateCheckUpFromTemplateUseCase @Inject constructor(
+    private val repository: CheckUpRepository
+) {
+    suspend operator fun invoke(
+        header: CheckUpHeader,
+        islandType: IslandType,
+        selectedTemplateIds: List<String>
+    ): Result<String> {
+        return try {
+            val checkUpId = UUID.randomUUID().toString()
+            val now = Clock.System.now()
+
+            val allTemplates = CheckItemModules.getAllTemplates()
+            val selectedTemplates = allTemplates.filter { it.id in selectedTemplateIds }
+
+            val checkItems = selectedTemplates.mapIndexed { index, template ->
+                CheckItem(
+                    id = UUID.randomUUID().toString(),
+                    checkUpId = checkUpId,
+                    moduleType = mapStringToModuleType(template.moduleType),
+                    itemCode = template.id,
+                    description = template.description,
+                    status = CheckItemStatus.PENDING,
+                    criticality = template.criticality,
+                    notes = "",
+                    photos = emptyList(),
+                    checkedAt = null,
+                    orderIndex = index
+                )
+            }
+
+            val checkUp = CheckUp(
+                id = checkUpId,
+                header = header,
+                islandType = islandType,
+                status = CheckUpStatus.DRAFT,
+                checkItems = checkItems,
+                spareParts = emptyList(),
+                createdAt = now,
+                updatedAt = now,
+                completedAt = null
+            )
+
+            val createdId = repository.createCheckUp(checkUp)
+            Result.success(createdId)
+
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    /**
+     * Mapping da String a ModuleType enum - CORRETTO
+     * Usa solo i ModuleType effettivamente definiti in ModuleType.kt
+     */
+    private fun mapStringToModuleType(moduleTypeString: String): ModuleType {
+        return when (moduleTypeString.lowercase()) {
+            // Moduli base comuni
+            "safety" -> ModuleType.SAFETY
+            "mechanical" -> ModuleType.MECHANICAL
+            "electrical" -> ModuleType.ELECTRICAL
+            "pneumatic" -> ModuleType.PNEUMATIC
+            "software" -> ModuleType.SOFTWARE
+
+            // Moduli specifici robot
+            "robot_tool" -> ModuleType.ROBOT_TOOL
+            "robot" -> ModuleType.ROBOT
+            "plant_systems" -> ModuleType.PLANT_SYSTEMS
+            "functional_tests" -> ModuleType.FUNCTIONAL_TESTS
+
+            // Moduli trasporto
+            "conveyor_systems" -> ModuleType.CONVEYOR_SYSTEMS
+
+            // Moduli visione
+            "vision_system" -> ModuleType.VISION_SYSTEM
+
+            // Moduli storage
+            "lance_storage" -> ModuleType.LANCE_STORAGE
+            "cartridge_systems" -> ModuleType.CARTRIDGE_SYSTEMS
+
+            // Moduli etichettatura
+            "labeling_machine" -> ModuleType.LABELING_MACHINE
+
+            // Moduli vibratori
+            "vibrators" -> ModuleType.VIBRATORS
+
+            // Moduli robot duali
+            "dual_robot" -> ModuleType.DUAL_ROBOT
+
+            // Default per tipi non riconosciuti
+            else -> {
+                // Log o warning per debug
+                println("ModuleType non riconosciuto: $moduleTypeString - usando MECHANICAL come default")
+                ModuleType.MECHANICAL
+            }
+        }
+    }
+}

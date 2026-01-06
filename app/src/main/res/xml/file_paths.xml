@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+
+    <!-- Internal app files directory -->
+    <files-path name="app_files" path="." />
+
+    <!-- Photos directory -->
+    <files-path name="photos" path="photos/." />
+
+    <!-- Exports directory -->
+    <files-path name="exports" path="exports/." />
+    <external-path name="downloads" path="Download/QReport/." />
+
+    <!-- Backups directory -->
+    <files-path name="backups" path="backups/." />
+
+    <!-- Share directory -->
+    <cache-path name="shares" path="shared/." />
+
+    <!-- Temporary files -->
+    <files-path name="temp" path="temp/." />
+
+    <!-- Cache directory -->
+    <cache-path name="cache" path="." />
+
+    <!-- External storage (if needed) -->
+    <external-files-path name="external_files" path="." />
+
+    <!-- Directory interna completa (se necessaria) -->
+    <files-path name="internal_files" path="." />
+
+    <!-- External Documents for user access -->
+    <external-path name="documents" path="Documents/QReport/." />
+
+</paths>
