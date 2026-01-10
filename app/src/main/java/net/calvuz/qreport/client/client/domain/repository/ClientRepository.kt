@@ -44,6 +44,7 @@ interface ClientRepository {
     suspend fun getAllIndustries(): Result<List<String>>
     suspend fun getFacilitiesCount(clientId: String): Result<Int>
     suspend fun getContactsCount(clientId: String): Result<Int>
+    suspend fun getContractsCount(clientId: String): Result<Int>
     suspend fun getIslandsCount(clientId: String): Result<Int>
 
     // ===== COMPLEX QUERIES =====

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ========================================== -->
+    <!-- Selection System Strings -->
+    <!-- ========================================== -->
+
+    <!-- Selection Summary -->
+    <string name="selection_summary">%1$d selezionati</string>
+    <string name="selection_summary_single">1 selezionato</string>
+    <string name="clear_selection">Cancella selezione</string>
+    <string name="select_all">Seleziona tutto</string>
+    <string name="deselect_all">Deseleziona tutto</string>
+
+    <!-- Batch Actions - Common -->
+    <string name="batch_action_select_all">Seleziona tutto</string>
+    <string name="batch_action_edit">Modifica</string>
+    <string name="batch_action_delete">Elimina</string>
+    <string name="batch_action_export">Esporta</string>
+
+    <!-- Batch Actions - Contract Specific -->
+    <string name="batch_action_renew_contracts">Rinnova contratti</string>
+    <string name="batch_action_bulk_edit_contracts">Modifica in blocco</string>
+
+    <!-- Batch Actions - Client Specific -->
+    <string name="batch_action_send_notification">Invia notifica</string>
+    <string name="batch_action_generate_report">Genera rapporto</string>
+
+    <!-- Batch Actions - CheckUp Specific -->
+    <string name="batch_action_bulk_export">Esportazione multipla</string>
+    <string name="batch_action_bulk_finalize">Finalizza multipli</string>
+
+    <!-- Batch Delete Dialog -->
+    <string name="batch_delete_dialog_title">Elimina elementi selezionati</string>
+    <string name="batch_delete_dialog_message_generic">Sei sicuro di voler eliminare %1$d elementi? Questa azione non può essere annullata.</string>
+    <string name="batch_delete_dialog_message_contracts">Sei sicuro di voler eliminare %1$d contratti? Questa azione non può essere annullata.</string>
+    <string name="batch_delete_dialog_message_clients">Sei sicuro di voler eliminare %1$d clienti? Verranno eliminati anche tutti i relativi stabilimenti e contratti.</string>
+    <string name="batch_delete_dialog_message_facilities">Sei sicuro di voler eliminare %1$d stabilimenti? Verranno eliminate anche tutte le isole associate.</string>
+    <string name="batch_delete_dialog_message_checkups">Sei sicuro di voler eliminare %1$d check-up? Verranno eliminate anche tutte le foto e note associate.</string>
+    <string name="batch_delete_confirm">Elimina tutto</string>
+    <string name="batch_delete_cancel">Annulla</string>
+
+    <!-- Selection Mode -->
+    <string name="enter_selection_mode">Tieni premuto per selezionare</string>
+    <string name="exit_selection_mode">Esci dalla modalità selezione</string>
+    <string name="selection_mode_active">Modalità selezione attiva</string>
+
+    <!-- Success Messages -->
+    <string name="batch_action_success_delete">%1$d elementi eliminati con successo</string>
+    <string name="batch_action_success_export">%1$d elementi esportati con successo</string>
+    <string name="batch_action_success_renew">%1$d contratti rinnovati con successo</string>
+    <string name="batch_action_success_edit">%1$d elementi modificati con successo</string>
+
+    <!-- Error Messages -->
+    <string name="batch_action_error_generic">Errore nell\'operazione multipla</string>
+    <string name="batch_action_error_delete">Errore durante l\'eliminazione di %1$d elementi</string>
+    <string name="batch_action_error_export">Errore durante l\'esportazione di %1$d elementi</string>
+    <string name="batch_action_error_renew">Errore durante il rinnovo di %1$d contratti</string>
+    <string name="batch_action_error_partial">Operazione completata parzialmente: %1$d successi, %2$d errori</string>
+
+    <!-- Action Availability Messages -->
+    <string name="batch_action_unavailable_mixed_selection">Azione non disponibile per la selezione corrente</string>
+    <string name="batch_action_unavailable_renew">Alcuni contratti selezionati non sono idonei al rinnovo</string>
+    <string name="batch_action_unavailable_finalize">Alcuni check-up selezionati non possono essere finalizzati</string>
+
+    <!-- Selection Hints -->
+    <string name="selection_hint_long_press">Tieni premuto un elemento per iniziare la selezione</string>
+    <string name="selection_hint_tap_to_select">Tocca per selezionare/deselezionare</string>
+    <string name="selection_hint_actions_bottom">Azioni disponibili in fondo alla schermata</string>
+
+    <!-- Accessibility -->
+    <string name="accessibility_selection_checkbox">Checkbox selezione</string>
+    <string name="accessibility_selected">Selezionato</string>
+    <string name="accessibility_not_selected">Non selezionato</string>
+    <string name="accessibility_selection_count">%1$d elementi selezionati</string>
+    <string name="accessibility_batch_action">Azione multipla %1$s</string>
+
+    <!-- Bottom Action Bar -->
+    <string name="bottom_action_bar_title">Azioni selezione</string>
+    <string name="bottom_action_bar_description">Barra delle azioni per elementi selezionati</string>
+
+    <!-- Empty Selection Messages -->
+    <string name="empty_selection_message">Nessun elemento selezionato</string>
+    <string name="empty_selection_action_required">Seleziona almeno un elemento per continuare</string>
+</resources>

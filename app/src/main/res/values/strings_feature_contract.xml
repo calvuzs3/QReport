@@ -28,5 +28,22 @@
     <string name="contracts_screen_list_empty_icon_content_description">Nessun Contratto</string>
     <string name="contracts_screen_list_empty_action_add">Nuovo Contratto</string>
 
+    <!-- FORM SCREEN -->
+    <string name="contracts_screen_form_title_new">Nuovo Contratto</string>
+    <string name="contracts_screen_form_title_edit">Modifica Contratto</string>
+    <string name="contracts_screen_form_section_contract">Dati contratto</string>
+    <string name="contracts_screen_form_field_name">Nome</string>
+    <string name="contracts_screen_form_field_name_placeholder">Nome del contratto3</string>
+    <string name="contracts_screen_form_field_description">Descrizione</string>
+    <string name="contracts_screen_form_field_description_placeholder">Descrizione del contratto</string>
+    <string name="contracts_screen_form_field_start_date">Data Inizio</string>
+    <string name="contracts_screen_form_field_end_date">Data Fine</string>
+    <string name="contracts_screen_form_section_options">Opzioni</string>
+    <string name="contracts_screen_form_field_priority">Priorità</string>
+    <string name="contracts_screen_form_field_remote_assistance">Assistenza remota</string>
+    <string name="contracts_screen_form_field_maintenance">Manutenzione</string>
+
+
+
 
 </resources>

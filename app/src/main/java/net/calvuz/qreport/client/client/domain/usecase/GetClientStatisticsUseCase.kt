@@ -15,6 +15,7 @@ import javax.inject.Inject
  * le statistiche aggregate per dashboard.
  */
 class GetClientStatisticsUseCase @Inject constructor(
+    //private val getCheckupCountUseCase: GetCheckUpCountUseCase,
     private val clientRepository: ClientRepository,
     private val checkUpRepository: CheckUpRepository? = null // Opzionale se non ancora disponibile
 ) {
@@ -42,6 +43,9 @@ class GetClientStatisticsUseCase @Inject constructor(
                 .getOrElse { return Result.failure(it) }
 
             val contactsCount = clientRepository.getContactsCount(clientId)
+                .getOrElse { return Result.failure(it) }
+
+            val contractsCount = clientRepository.getContractsCount(clientId)
                 .getOrElse { return Result.failure(it) }
 
             val islandsCount = clientRepository.getIslandsCount(clientId)
@@ -72,6 +76,7 @@ class GetClientStatisticsUseCase @Inject constructor(
                 facilitiesCount = facilitiesCount,
                 islandsCount = islandsCount,
                 contactsCount = contactsCount,
+                contractsCount = contractsCount,
                 totalCheckUps = totalCheckUps,
                 completedCheckUps = completedCheckUps,
                 lastCheckUpDate = lastCheckUpDate
@@ -102,6 +107,9 @@ class GetClientStatisticsUseCase @Inject constructor(
             val contactsCount = clientRepository.getContactsCount(clientId)
                 .getOrElse { return Result.failure(it) }
 
+            val contractsCount = clientRepository.getContractsCount(clientId)
+                .getOrElse { return Result.failure(it) }
+
             val islandsCount = clientRepository.getIslandsCount(clientId)
                 .getOrElse { return Result.failure(it) }
 
@@ -109,7 +117,8 @@ class GetClientStatisticsUseCase @Inject constructor(
                 facilitiesCount = facilitiesCount,
                 islandsCount = islandsCount,
                 contactsCount = contactsCount,
-                totalCheckUps = 0,      // Placeholder
+                contractsCount = contractsCount,     // Placeholder
+                totalCheckUps = 0,      // Placeholder getCheckupCountUseCase()
                 completedCheckUps = 0,  // Placeholder
                 lastCheckUpDate = null  // Placeholder
             )

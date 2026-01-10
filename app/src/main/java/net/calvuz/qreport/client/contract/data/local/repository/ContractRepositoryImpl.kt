@@ -29,6 +29,22 @@ class ContractRepositoryImpl @Inject constructor(
         QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
     }
 
+    override suspend fun setActiveContractById(id: String): QrResult<Int, QrError> = try {
+        val count = contractDao.setActiveContract(id)
+        QrResult.Success(count)
+    } catch (e: Exception) {
+        Timber.e(e, "Errore durante l'attivazione del contratto con ID: $id")
+        QrResult.Error(QrError.DatabaseError.UpdateFailed(e.localizedMessage))
+    }
+
+    override suspend fun setInactiveContractById(id: String): QrResult<Int, QrError> = try {
+        val count = contractDao.setInactiveContract(id)
+        QrResult.Success(count)
+    } catch (e: Exception) {
+        Timber.e(e, "Errore durante l'attivazione del contratto con ID: $id")
+        QrResult.Error(QrError.DatabaseError.UpdateFailed(e.localizedMessage))
+    }
+
     override suspend fun getActiveContracts(): QrResult<List<Contract>, QrError> {
         return try {
             val contracts = contractDao.getAllActiveContracts().map { it.toDomain() }
@@ -48,28 +64,28 @@ class ContractRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getContractById(id: String): QrResult<Contract?, QrError> = try {
-        val contract = contractDao.getContractById(id)?.toDomain()
+        val contract = contractDao.getContract(id)?.toDomain()
         QrResult.Success(contract)
     } catch (e: Exception) {
         Timber.e(e, "Errore durante il recupero del contratto con ID: $id")
         QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
     }
 
-    override suspend fun createContract(contract: Contract): QrResult<Unit, QrError> = try {
+    override suspend fun createContract(contract: Contract): QrResult<String, QrError> = try {
         val entity = contract.toEntity()
         contractDao.insertContract(entity)
         Timber.d("Contratto creato con ID: ${contract.id}")
-        QrResult.Success(Unit)
+        QrResult.Success(contract.id)
     } catch (e: Exception) {
         Timber.e(e, "Errore durante la creazione del contratto con ID: ${contract.id}")
         QrResult.Error(QrError.DatabaseError.InsertFailed(e.localizedMessage))
     }
 
-    override suspend fun updateContract(contract: Contract): QrResult<Unit, QrError> = try {
+    override suspend fun updateContract(contract: Contract): QrResult<String, QrError> = try {
         val entity = contract.toEntity()
 
         contractDao.updateContract(entity)
-        QrResult.Success(Unit)
+        QrResult.Success(contract.id)
 
     } catch (e: Exception) {
         Timber.e(e, "Errore durante l'aggiornamento del contratto con ID: ${contract.id}")
@@ -119,7 +135,7 @@ class ContractRepositoryImpl @Inject constructor(
         }
 
     override suspend fun isExpired(id: String): QrResult<Boolean, QrError> = try {
-        val contract = contractDao.getContractById(id)
+        val contract = contractDao.getContract(id)
         if (contract == null) {
             QrResult.Error(QrError.DatabaseError.NotFound("Contratto con ID $id non trovato"))
         } else {
@@ -146,7 +162,7 @@ class ContractRepositoryImpl @Inject constructor(
     }
 
     override fun getContractByIdFlow(id: String): Flow<Contract?> {
-        return contractDao.getContractByIdFlow(id)
+        return contractDao.getContractFlow(id)
             .map { entity -> entity?.toDomain() }
             .catch { e ->
                 Timber.e(e, "Errore nel flow del contratto con ID: $id")

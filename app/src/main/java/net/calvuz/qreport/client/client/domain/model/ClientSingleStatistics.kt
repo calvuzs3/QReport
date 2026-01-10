@@ -1,6 +1,7 @@
 package net.calvuz.qreport.client.client.domain.model
 
 import kotlinx.datetime.Instant
+import org.apache.poi.ss.formula.functions.Countif
 
 
 /**
@@ -10,6 +11,7 @@ data class ClientSingleStatistics(
     val facilitiesCount: Int,
     val islandsCount: Int,
     val contactsCount: Int,
+    val contractsCount: Int,
     val totalCheckUps: Int,
     val completedCheckUps: Int,
     val lastCheckUpDate: Instant?
@@ -35,7 +37,8 @@ data class ClientSingleStatistics(
         get() {
             var score = 0
             if (facilitiesCount > 0) score += 20
-            if (contactsCount > 0) score += 20
+            if (contactsCount > 0) score += 10
+            if (contractsCount > 0) score += 10
             if (islandsCount > 0) score += 20
             if (totalCheckUps > 0) score += 40
             return score

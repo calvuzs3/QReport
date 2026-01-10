@@ -16,36 +16,26 @@ interface ContractDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertContract(contract: ContractEntity): Long
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertContracts(contracts: List<ContractEntity>)
-
     @Update
     suspend fun updateContract(contract: ContractEntity)
 
     @Delete
     suspend fun deleteContract(contract: ContractEntity)
 
-    @Query("DELETE FROM contracts WHERE id = :id")
-    suspend fun deleteContractById(id: String)
-
     @Query("SELECT * FROM contracts WHERE id = :id LIMIT 1")
-    suspend fun getContractById(id: String): ContractEntity?
-
-    @Query("SELECT * FROM contracts WHERE id = :id")
-    fun getContractByIdFlow(id: String): Flow<ContractEntity?>
-
-    @Query("SELECT * FROM contracts ORDER BY name ASC")
-    suspend fun getAllContracts(): List<ContractEntity>
+    suspend fun getContract(id: String): ContractEntity?
 
     @Query("SELECT * FROM contracts WHERE end_date > CURRENT_TIMESTAMP ORDER BY end_date ASC, name ASC")
     suspend fun getAllActiveContracts(): List<ContractEntity>
 
-    @Query("SELECT * FROM contracts WHERE end_date > CURRENT_TIMESTAMP ORDER BY end_date ASC, name ASC")
-    fun getAllActiveContractsFlow(): Flow<List<ContractEntity>>
-
     @Query("SELECT * FROM contracts WHERE end_date < CURRENT_TIMESTAMP ORDER BY name ASC")
     suspend fun getAllExpiredContracts(): List<ContractEntity>
 
+    @Query ("UPDATE contracts SET is_active = 1 WHERE id = :id")
+    suspend fun setActiveContract(id: String): Int
+
+    @Query("UPDATE contracts SET is_active = 0 WHERE id = :id")
+    suspend fun setInactiveContract(id: String): Int
 
     @Query("SELECT * FROM contracts WHERE client_id = :clientId ORDER BY start_date DESC, name ASC")
     suspend fun getContractsByClientId(clientId: String): List<ContractEntity>
@@ -53,19 +43,36 @@ interface ContractDao {
     @Query("SELECT * FROM contracts WHERE client_id = :clientId AND end_date > CURRENT_TIMESTAMP ORDER BY end_date ASC, name ASC")
     suspend fun getAllActiveContractsByClientId(clientId: String): List<ContractEntity>
 
+
     @Query("SELECT * FROM contracts WHERE client_id = :clientId ORDER BY start_date DESC, name ASC")
     fun getContractsByClientIdFlow(clientId: String): Flow<List<ContractEntity>>
 
     @Query("SELECT * FROM contracts WHERE client_id = :clientId AND end_date > CURRENT_TIMESTAMP ORDER BY end_date ASC, name ASC")
     fun getAllActiveContractsByClientIdFlow(clientId: String): Flow<List<ContractEntity>>
 
+    // ===== FLOW OPERATIONS =====
+
+
+    @Query("SELECT * FROM contracts WHERE id = :id")
+    fun getContractFlow(id: String): Flow<ContractEntity?>
+
+    @Query("SELECT * FROM contracts WHERE end_date > CURRENT_TIMESTAMP ORDER BY end_date ASC, name ASC")
+    fun getAllActiveContractsFlow(): Flow<List<ContractEntity>>
 
 
     // ===== BULK OPERATIONS =====
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllContracts(contracts: List<ContractEntity>)
+
     @Query("DELETE FROM contracts WHERE client_id = :clientId")
     suspend fun deleteAllContractsForClient(clientId: String)
 
+    @Query("DELETE FROM contracts WHERE id IN (:ids)")
+    suspend fun deleteAllContractsByIds(ids: List<String>)
+
+    @Query("SELECT * FROM contracts ORDER BY name ASC")
+    suspend fun getAllContracts(): List<ContractEntity>
 
     // ===== BACKUP OPERATIONS =====
 

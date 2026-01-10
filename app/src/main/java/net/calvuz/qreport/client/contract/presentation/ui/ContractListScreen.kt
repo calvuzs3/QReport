@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package net.calvuz.qreport.client.contract.presentation.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,23 +52,31 @@ import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.contextmenu.CommonActionSets
+import net.calvuz.qreport.app.app.presentation.components.contextmenu.DeleteDialogConfig
+import net.calvuz.qreport.app.app.presentation.components.contextmenu.ListItemAction
+import net.calvuz.qreport.app.app.presentation.components.contextmenu.ListItemActionHandler
+import net.calvuz.qreport.app.app.presentation.components.contextmenu.ListItemWithContextMenu
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.util.DateTimeUtils.isPast
+import timber.log.Timber
+import kotlin.time.Duration.Companion.days
 
 @Composable
 fun ContractFilter.getDisplayName(): UiText {
     return when (this) {
-        ContractFilter.ALL -> (UiText.StrRes(R.string.contract_filter_all))
-        ContractFilter.ACTIVE -> (UiText.StrRes(R.string.contract_filter_active))
-        ContractFilter.INACTIVE -> (UiText.StrRes(R.string.contract_filter_not_active))
+        ContractFilter.ALL -> (UiText.StringResource(R.string.contract_filter_all))
+        ContractFilter.ACTIVE -> (UiText.StringResource(R.string.contract_filter_active))
+        ContractFilter.INACTIVE -> (UiText.StringResource(R.string.contract_filter_not_active))
     }
 }
 
 @Composable
 fun ContractSortOrder.getDisplayName(): UiText {
     return when (this) {
-        ContractSortOrder.NAME -> UiText.StrRes(R.string.contract_sort_order_name)
-        ContractSortOrder.EXPIRE_OLDEST -> UiText.StrRes(R.string.contract_sort_order_expire_oldest)
-        ContractSortOrder.EXPIRE_RECENT -> UiText.StrRes(R.string.contract_sort_order_expire_recent)
+        ContractSortOrder.NAME -> UiText.StringResource(R.string.contract_sort_order_name)
+        ContractSortOrder.EXPIRE_OLDEST -> UiText.StringResource(R.string.contract_sort_order_expire_oldest)
+        ContractSortOrder.EXPIRE_RECENT -> UiText.StringResource(R.string.contract_sort_order_expire_recent)
     }
 }
 
@@ -77,6 +89,7 @@ fun ContractListScreen(
     onNavigateToCreateContract: (String) -> Unit,
     onNavigateToEditContract: (String) -> Unit,
     onNavigateToContractDetail: (String) -> Unit,
+    onNavigateToRenewContract: (String) -> Unit= {},
     modifier: Modifier = Modifier,
     viewModel: ContractListViewModel = hiltViewModel()
 ) {
@@ -244,11 +257,13 @@ fun ContractListScreen(
                 }
 
                 else -> {
-                    ContractsListContent(
+                    ContractsListContentWithGenericMenu(
                         contractsWithStats = uiState.filteredContracts,
                         onClick = onNavigateToContractDetail,
                         onEdit = onNavigateToEditContract,
                         onDelete = viewModel::delete,
+                        onViewDetails = onNavigateToContractDetail,
+                        onRenewContract = onNavigateToRenewContract
                     )
                 }
             }
@@ -277,6 +292,95 @@ fun ContractListScreen(
     }
 }
 
+/**
+* Updated ContractsListContent using the generic context menu system
+* This replaces the previous specific implementation with the generic one
+*/
+@Composable
+private fun ContractsListContentWithGenericMenu(
+    contractsWithStats: List<ContractWithStats>,
+    onClick: (String) -> Unit,
+    onEdit: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    onViewDetails: (String) -> Unit,
+    onRenewContract: (String) -> Unit
+) {
+    Timber.d("ContractsListContentWithGenericMenu")
+
+    // Create action handler for contracts using the generic system
+    val actionHandler = remember {
+        object : ListItemActionHandler {
+            override fun onActionSelected(action: ListItemAction, itemId: String) {
+                when (action) {
+                    ListItemAction.Edit -> onEdit(itemId)
+                    ListItemAction.Delete -> onDelete(itemId)
+                    ListItemAction.ViewDetails -> onViewDetails(itemId)
+                    ListItemAction.ContractAction.ViewDetails -> onViewDetails(itemId)
+                    ListItemAction.ContractAction.Renew -> onRenewContract(itemId)
+                    else -> {
+                        // Log unsupported action if any
+                        println("Unsupported action for contract: $action")
+                    }
+                }
+            }
+
+            override fun getDeleteDialogConfig(itemId: String): DeleteDialogConfig {
+                val contract = contractsWithStats.find { it.contract.id == itemId }?.contract
+                return DeleteDialogConfig(
+                    titleResId = R.string.delete_dialog_contract_title,
+                    messageResId = R.string.delete_dialog_contract_message,
+                    itemNameProvider = { contract?.name }
+                )
+            }
+
+            override fun isActionAvailable(action: ListItemAction, itemId: String): Boolean {
+                val contract = contractsWithStats.find { it.contract.id == itemId }?.contract
+                return when (action) {
+                    ListItemAction.ContractAction.Renew -> {
+                        // Only show renew if contract is expiring soon or expired
+                        contract?.let { contractStats ->
+                            val stats = contractsWithStats.find { it.contract.id == itemId }?.stats
+                            stats?.isExpired == true ||
+                                    // Add logic for contracts expiring within 30 days
+                                    (contract.endDate + 30.days).isPast()  //.isBefore(kotlinx.datetime.Clock.System.now()))
+                        } == true
+                    }
+                    else -> true
+                }
+            }
+        }
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(
+            items = contractsWithStats,
+            key = { it.contract.id }
+        ) { contractWithStats ->
+            // Use the generic context menu system
+            ListItemWithContextMenu(
+                item = contractWithStats.contract,
+                itemId = contractWithStats.contract.id,
+                availableActions = CommonActionSets.contractActions,
+                actionHandler = actionHandler,
+                onClick = { onClick(it.id) }
+            ) { contract, onCardClick ->
+                // Use the existing ContractCard without any modifications!
+                Timber.d("ContractCard")
+                ContractCard(
+                    contract = contract,
+                    onClick = { /*onCardClick*/ },
+                    onEdit = null, // Handled by context menu
+                    onDelete = null, // Handled by context menu
+                    variant = QrListItemCardVariant.FULL
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun ContractsListContent(

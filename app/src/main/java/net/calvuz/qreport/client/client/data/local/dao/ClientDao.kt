@@ -100,6 +100,13 @@ interface ClientDao {
     suspend fun getContactsCount(clientId: String): Int
 
     @Query("""
+        SELECT COUNT(*) FROM contracts ctr
+        INNER JOIN clients c ON ctr.client_id = c.id
+        WHERE c.id = :clientId AND c.is_active = 1 AND ctr.is_active = 1
+    """)
+    suspend fun getContractsCount(clientId: String): Int
+
+    @Query("""
         SELECT COUNT(*) FROM facility_islands fi
         INNER JOIN facilities f ON fi.facility_id = f.id
         INNER JOIN clients c ON f.client_id = c.id

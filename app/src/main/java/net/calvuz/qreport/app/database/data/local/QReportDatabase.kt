@@ -87,7 +87,7 @@ abstract class QReportDatabase : RoomDatabase() {
 
     companion object {
         const val DATABASE_NAME = "qreport_database"
-        const val DATABASE_VERSION = 4
+        const val DATABASE_VERSION = 1
 
         /**
          * 3. Callback per inizializzazione database
@@ -108,11 +108,12 @@ abstract class QReportDatabase : RoomDatabase() {
         }
 
 
-        // 4. Migrations, if any
-//        val MIGRATION_2_3 = Migration(2, 3) { database ->
-//          // ← Tu scrivi SQL manualmente
-//          database.execSQL("CREATE TABLE ...")
-//        }
-        // e aggiungi .addMigrations() nel DtabaseModule
+        // Migrations, in DatabaseModule:
+        //        val MIGRATION_2_3 = Migration(2, 3) { database ->
+        //          // ← Write SQL manually
+        //          database.execSQL("CREATE TABLE ...")
+        //        }
+        // and add:
+        //        .addMigrations()
     }
 }

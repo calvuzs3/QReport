@@ -2,6 +2,7 @@ package net.calvuz.qreport.client.client.presentation.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -26,6 +27,7 @@ import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
 import net.calvuz.qreport.client.contact.presentation.ui.components.ContactsStatisticsSummary
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.client.client.domain.model.ClientWithDetails
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.model.ContractStatistics
@@ -33,8 +35,10 @@ import net.calvuz.qreport.client.contract.presentation.ui.components.ContractLis
 import net.calvuz.qreport.client.contract.presentation.ui.components.ContractsStatisticsSummary
 import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
 import net.calvuz.qreport.app.app.presentation.components.EmptyTabContent
+import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityStatisticsSummary
 import net.calvuz.qreport.app.util.callContact
+import timber.log.Timber
 
 /**
  * Screen per il dettaglio cliente con 4 tab - VERSIONE FINALE CON GESTIONE FACILITY
@@ -52,7 +56,6 @@ import net.calvuz.qreport.app.util.callContact
 fun ClientDetailScreen(
     modifier: Modifier = Modifier,
     clientId: String,
-    clientName: String,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (String) -> Unit,
     onDeleteClient: () -> Unit,
@@ -62,7 +65,7 @@ fun ClientDetailScreen(
     onNavigateToCreateFacility: (String) -> Unit, // Create new facility
     onNavigateToEditFacility: (String, String) -> Unit, // Edit facility (clientId, facilityId)
     onNavigateToFacilityDetail: (String, String) -> Unit = { _, _ -> }, // Facility detail
-    onNavigateToIslandDetail: (String, String) -> Unit = { _, _ -> }, // Island detail (future)
+    onNavigateToIslandDetail: (String, String) -> Unit = { _, _ -> }, // Island detail
 
     // Contacts navigation callbacks
     onNavigateToContactList: (String, String) -> Unit = { _, _ -> }, // (clientId, clientName)
@@ -75,6 +78,9 @@ fun ClientDetailScreen(
 
     // Contracts navigation callbacks
     onNavigateToContractList: (String, String) -> Unit = { _, _ -> },    //clientId
+    onNavigateToCreateContract: (String, String) -> Unit = { _, _ -> }, // (clientId, clientName)
+    onNavigateToEditContract: (String) -> Unit = { }, // (contractId)
+
 
     viewModel: ClientDetailViewModel = hiltViewModel()
 ) {
@@ -225,16 +231,27 @@ fun ClientDetailScreen(
                         onNavigateToContactList(clientId, uiState.companyName)
                     },
 
-                    // Check-up callbacks
-                    onCreateCheckUp = { onNavigateToCreateCheckUp(clientId) },
-
                     // Contracts callbacks
-                    onViewAllContracts = onNavigateToContractList
+                    onCreateContract = { onNavigateToCreateContract(clientId, clientName) },
+                    onEditContract = onNavigateToEditContract,
+                    onViewAllContracts = { onNavigateToContractList(clientId, clientName) },
+
+                    // Check-up callbacks
+                    onCreateCheckUp = { onNavigateToCreateCheckUp(clientId) }
                 )
             }
 
             else -> {
-                EmptyState()
+                EmptyState(
+                    textTitle = "Nessun cliente trovato",
+                    textMessage = "Aggiungi un cliente per iniziare",
+                    iconImageVector = Icons.Default.Person,
+                    iconContentDescription = "Nessun cliente trovato",
+//                    iconActionImageVector = Icons.Default.Add,
+//                    iconActionContentDescription = "Aggiungi un cliente per iniziare",
+//                    textAction = "Nuovo Cliente",
+//                    onAction = viewModel::createClient,
+                )
             }
         }
     }
@@ -271,8 +288,9 @@ private fun ClientDetailContent(
     onCreateCheckUp: () -> Unit,
 
     // Contracts
-    onCreateContract: (String, String) -> Unit= {_,_ ->},
-    onViewAllContracts: (String, String) -> Unit= {_, _ ->},
+    onCreateContract: () -> Unit,
+    onEditContract: (String) -> Unit,
+    onViewAllContracts: () -> Unit,
 ) {
     Column {
         // Header con badge status e industry
@@ -382,6 +400,7 @@ private fun ClientDetailContent(
         // Tab Content
         when (uiState.selectedTab) {
             ClientDetailTab.INFO -> {
+                Timber.w("INFO {${uiState.clientDetails}}")
                 InfoTabContent(
                     clientDetails = uiState.clientDetails!!,
                     modifier = Modifier.weight(1f)
@@ -418,9 +437,10 @@ private fun ClientDetailContent(
                 ContractsTabContent(
                     contracts = uiState.contracts,
                     contractStatistics = uiState.contractStatistics, // ← STATISTICHE AGGIUNTE
-                    onViewAllContracts = { onViewAllContracts(clientId, clientName) },
-                    onContractClick = { contractId -> onViewAllContracts(clientId, contractId) },
-                    onCreateContract = { onCreateContract },
+                    onViewAllContracts = onViewAllContracts,
+                    onContractClick = { },
+                    onCreateContract = onCreateContract,
+                    onEditContract = onEditContract
                 )
             }
         }
@@ -703,10 +723,10 @@ private fun ContractsTabContent(
     modifier: Modifier = Modifier,
     contracts: List<Contract>,
     contractStatistics: ContractStatistics? = null,
-    onViewAllContracts: () -> Unit= {},
-    onContractClick: (String) -> Unit = {},
-    onCreateContract: () -> Unit= {},
-    onEditContract: (String) -> Unit= {},
+    onViewAllContracts: () -> Unit,
+    onContractClick: (String) -> Unit,
+    onCreateContract: () -> Unit,
+    onEditContract: (String) -> Unit,
 ) {
     Column(modifier = modifier) {
         // ✅ Header con stesso stile di Facilities per consistency
@@ -1079,23 +1099,31 @@ private fun HeaderSection(
             .padding(16.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Status badge
-            if (statusBadge.isNotBlank()) {
-                AssistChip(
-                    onClick = { },
-                    label = { Text(statusBadge) },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = Color(statusColor)
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Top
+            ) {
+                if (statusBadge.isNotBlank()) {
+                    AssistChip(
+                        onClick = { },
+                        label = { Text(statusBadge) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = Color(statusColor)
+                        ),
                     )
-                )
+                }
             }
 
             // Industry + Statistics
             Column(
+                verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.End
             ) {
                 industry?.let {
@@ -1167,27 +1195,6 @@ private fun InfoItem(
     }
 }
 
-
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            CircularProgressIndicator()
-            Text(
-                text = "Caricamento dettagli cliente...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
 @Composable
 private fun ErrorState(
     error: String,
@@ -1235,19 +1242,6 @@ private fun ErrorState(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun EmptyState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "Cliente non trovato",
-            style = MaterialTheme.typography.bodyLarge
-        )
     }
 }
 

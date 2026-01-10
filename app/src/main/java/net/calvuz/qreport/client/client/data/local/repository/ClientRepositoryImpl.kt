@@ -195,6 +195,15 @@ class ClientRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getContractsCount(clientId: String): Result<Int> {
+        return try {
+            val count = clientDao.getContractsCount(clientId)
+            Result.success(count)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     override suspend fun getIslandsCount(clientId: String): Result<Int> {
         return try {
             val count = clientDao.getIslandsCount(clientId)

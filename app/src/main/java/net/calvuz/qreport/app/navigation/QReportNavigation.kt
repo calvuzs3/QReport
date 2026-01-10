@@ -46,6 +46,9 @@ import timber.log.Timber
 import java.net.URLDecoder
 import java.net.URLEncoder
 import androidx.core.net.toUri
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.client.contract.presentation.ui.ContractFormScreen
 import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen
 
 /**
@@ -69,34 +72,34 @@ import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen
  */
 sealed class QReportDestination(
     val route: String,
-    val title: String,
+    val title: UiText,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector
 ) {
     object Home : QReportDestination(
         route = QReportRoutes.HOME,
-        title = "Home",
+        title = UiText.StringResource(R.string.route_home_title),
         selectedIcon = Icons.Filled.Home,
         unselectedIcon = Icons.Outlined.Home
     )
 
     object Clients : QReportDestination(
         route = QReportRoutes.CLIENTS,
-        title = "Clienti",
+        title = UiText.StringResource(R.string.route_clients_title),  //"Clienti",
         selectedIcon = Icons.Filled.Archive,
         unselectedIcon = Icons.Outlined.Archive
     )
 
     object CheckUps : QReportDestination(
         route = QReportRoutes.CHECKUPS,
-        title = "Check-up",
+        title = UiText.StringResource(R.string.route_checkups_title), //"Check-up",
         selectedIcon = Icons.AutoMirrored.Filled.Assignment,
         unselectedIcon = Icons.AutoMirrored.Outlined.Assignment
     )
 
     object Settings : QReportDestination(
         route = QReportRoutes.SETTINGS,
-        title = "Impostazioni",
+        title = UiText.StringResource(R.string.route_settings_title), //"Impostazioni",
         selectedIcon = Icons.Filled.Settings,
         unselectedIcon = Icons.Outlined.Settings
     )
@@ -149,7 +152,10 @@ object QReportRoutes {
     const val BACKUP = "backup"
 
     // Contract routes
-    const val CONTRACTS = "contracts/{clientId}"
+    const val CONTRACT_LIST = "contracts/{clientId}/{clientName}"
+    //const val CONTRACT_DETAIL = "contract_detail/{clientId}/{clientName}/{contractId}"
+    const val CONTRACT_CREATE = "contract_form/{clientId}/{clientName}"
+    const val CONTRACT_EDIT = "contract_form/{clientId}/{clientName}/{contractId}"
 
 
     // Helper extension for URL encoding client names with spaces/special chars
@@ -158,6 +164,10 @@ object QReportRoutes {
     // Helper for Contracts
     fun contractListRoute(clientId: String, clientName: String) =
         "contracts/$clientId/${clientName.encodeUrl()}"
+    fun contractCreateRoute(clientId: String, clientName: String) =
+        "contract_form/$clientId/${clientName.encodeUrl()}"
+    fun contractEditRoute(clientId: String, clientName: String, contractId: String?) =
+        "contract_form/$clientId/${clientName.encodeUrl()}/$contractId"
 
     // Helper functions for CLIENTS
     fun clientDetail(clientId: String, clientName: String) =
@@ -304,29 +314,6 @@ fun QReportNavigation(
                         onNavigateToTechnicianSettings = {
                             navController.navigate(QReportRoutes.TECHNICIAN_SETTINGS)
                         }
-                    )
-                }
-
-                // ============================================================
-                // ✅ CONTRACT DESTINATIONS
-                // ============================================================
-
-                composable(
-                    route = QReportRoutes.CONTRACTS,
-                    arguments = listOf(
-                        navArgument("clientId") { type = NavType.StringType },
-                        navArgument("clientName") { type = NavType.StringType }
-                    )
-                ) {backStackEntry ->
-                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
-                    val clientName = backStackEntry.arguments?.getString("clientName") ?: ""
-                    ContractListScreen(
-                        onNavigateToCreateContract = { },
-                        clientId = clientId,
-                        clientName = clientName,
-                        onNavigateBack = { navController.popBackStack() },
-                        onNavigateToEditContract = {},
-                        onNavigateToContractDetail = {}
                     )
                 }
 
@@ -509,12 +496,8 @@ fun QReportNavigation(
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
                     val clientName = backStackEntry.arguments?.getString("clientName") ?: ""
 
-                    // LOGGING
-                    Timber.d("ClientDetailScreen: clientId=$clientId, clientName=$clientName")
-
                     ClientDetailScreen(
                         clientId = clientId,
-                        clientName = clientName,
                         onNavigateBack = {
                             navController.popBackStack()
                         },
@@ -549,6 +532,21 @@ fun QReportNavigation(
                                 QReportRoutes.contactDetailRoute(clientId, clientName, contactId)
                             )
                         },
+                        onNavigateToContractList = { clientId, clientName ->
+                            navController.navigate(
+                                QReportRoutes.contractListRoute(clientId, clientName)
+                            )
+                        },
+                        onNavigateToCreateContract = { clientId, clientName ->
+                            navController.navigate(
+                                QReportRoutes.contractCreateRoute(clientId, clientName)
+                            )
+                        },
+                        onNavigateToEditContract = { contractId ->
+                            navController.navigate(
+                                QReportRoutes.contractEditRoute(clientId, clientName, contractId)
+                            )
+                        },
                         onNavigateToFacilityList = { clientId ->
                             navController.navigate(QReportRoutes.facilityListRoute(clientId))
                         },
@@ -575,11 +573,6 @@ fun QReportNavigation(
                                 QReportRoutes.checkUpCreateRoute(clientId)
                             )
                         },
-                        onNavigateToContractList = { clientId, clientName ->
-                            navController.navigate(
-                                QReportRoutes.contractListRoute(clientId, clientName)
-                            )
-                        }
                     )
                 }
 
@@ -664,7 +657,7 @@ fun QReportNavigation(
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
                     val clientName = backStackEntry.arguments?.getString("clientName")?.let {
                         URLDecoder.decode(it, "UTF-8")
-                    } ?: "Cliente"
+                    } ?: "Customer"
 
                     ContactFormScreen(
                         clientId = clientId,
@@ -708,9 +701,7 @@ fun QReportNavigation(
                     val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
                     val clientName = backStackEntry.arguments?.getString("clientName")?.let {
                         URLDecoder.decode(it, "UTF-8")
-                    } ?: "Cliente" // Get clientName from route parameter
-
-                    Timber.d("Edit - clientId=$clientId, contactId=$contactId, clientName=$clientName")
+                    } ?: "Customer" // Get clientName from route parameter
 
                     ContactFormScreen(
                         clientId = clientId,
@@ -768,8 +759,6 @@ fun QReportNavigation(
                         URLDecoder.decode(it, "UTF-8")
                     } ?: "Cliente"
 
-                    Timber.d("List - clientId=$clientId, clientName=$clientName")
-
                     ContactListScreen(
                         clientId = clientId,
                         clientName = clientName,
@@ -792,6 +781,115 @@ fun QReportNavigation(
                                     clientId, clientName, contactId
                                 )
                             )
+                        }
+                    )
+                }
+
+                // ============================================================
+                // ✅ CONTRACT DESTINATIONS
+                // ============================================================
+
+                composable(
+                    route = QReportRoutes.CONTRACT_LIST,
+                    arguments = listOf(
+                        navArgument("clientId") { type = NavType.StringType },
+                        navArgument("clientName") { type = NavType.StringType }
+                    )
+                ) {backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    val clientName = backStackEntry.arguments?.getString("clientName") ?: ""
+                    ContractListScreen(
+                        onNavigateToCreateContract = { },
+                        clientId = clientId,
+                        clientName = clientName,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToEditContract = { contractId ->
+                            navController.navigate(
+                                QReportRoutes.contractEditRoute(clientId, clientName, contractId)
+                            )
+                        },
+                        onNavigateToContractDetail = {}
+                    )
+                }
+
+                // CREATE
+                composable(
+                    QReportRoutes.CONTRACT_CREATE,
+                    arguments = listOf(
+                        navArgument("clientId") { type = NavType.StringType },
+                        navArgument("clientName") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    val clientName = backStackEntry.arguments?.getString("clientName")?.let {
+                        URLDecoder.decode(it, "UTF-8")
+                    } ?: "Customer"
+
+                    ContractFormScreen(
+                        clientId = clientId,
+                        clientName = clientName,
+                        contractId = null,
+                        onNavigateBack = { navController.popBackStack() },
+                        onContractSaved = { newId ->
+                            if (newId.isNotBlank()) {
+                                navController.navigate(
+                                    QReportRoutes.contractListRoute(  // TODO: eval a detail screen
+                                        clientId,
+                                        clientName,
+                                        //newId
+                                    )
+                                ) {
+                                    popUpTo(QReportRoutes.CLIENTS) {
+                                        inclusive = false
+                                    }
+                                }
+                            } else {
+                                Timber.e("🔥 COMPOSABLE: ContractId is empty, cannot navigate!")
+                            }
+                        }
+                    )
+                }
+
+                // FORM SCREEN (Unified Create/Edit)
+                composable(
+                    route = QReportRoutes.CONTRACT_EDIT,
+                    arguments = listOf(
+                        navArgument("clientId") { type = NavType.StringType },
+                        navArgument("clientName") { type = NavType.StringType },
+                        navArgument("contractId") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        }
+                    )
+                ) { backStackEntry ->
+                    val contractId = backStackEntry.arguments?.getString("contractId") ?: ""
+                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
+                    val clientName = backStackEntry.arguments?.getString("clientName")?.let {
+                        URLDecoder.decode(it, "UTF-8")
+                    } ?: "Customer" // Get clientName from route parameter
+
+                    ContractFormScreen(
+                        clientId = clientId,
+                        clientName = clientName,
+                        contractId = contractId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onContractSaved = { newId ->
+                            if (newId.isNotBlank()) {
+                                navController.navigate(
+                                    QReportRoutes.contractListRoute(  // TODO: eval a detail screen
+                                        clientId,
+                                        clientName,
+                                        //newId
+                                    )
+                                ) {
+                                    popUpTo(QReportRoutes.CLIENTS) {
+                                        inclusive = false
+                                    }
+                                }
+                            } else {
+                                Timber.e("🔥 COMPOSABLE: ContractId is empty, cannot navigate!")
+                            }
                         }
                     )
                 }
@@ -1095,12 +1193,12 @@ fun QReportBottomNavigation(
                         } else {
                             destination.unselectedIcon
                         },
-                        contentDescription = destination.title
+                        contentDescription = destination.title.asString()
                     )
                 },
                 label = {
                     Text(
-                        text = destination.title,
+                        text = destination.title.asString(),
                         style = MaterialTheme.typography.labelSmall
                     )
                 },

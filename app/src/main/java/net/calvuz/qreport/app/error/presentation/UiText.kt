@@ -8,13 +8,13 @@ import androidx.compose.ui.res.stringResource
 sealed class UiText() {
 
     data class DynStr(val str: String): UiText()
-    data class StrRes(@StringRes val resId: Int): UiText()
+    data class StringResource(@StringRes val resId: Int): UiText()
 
     class StringResources(@StringRes val resId: Int, vararg val args: Any) : UiText()
 
     fun asString(context: Context): String {
         return when(this) {
-            is StrRes -> context.getString(resId)
+            is StringResource -> context.getString(resId)
             is StringResources -> context.getString(resId, args)
             is DynStr -> str
         }
@@ -22,7 +22,7 @@ sealed class UiText() {
     @Composable
     fun asString(): String {
         return when(this) {
-            is StrRes -> stringResource(resId)
+            is StringResource -> stringResource(resId)
             is StringResources -> stringResource(resId, args)
             is DynStr -> str
         }
@@ -31,7 +31,7 @@ sealed class UiText() {
     @Composable
     fun asStringArgs(): String {
         return when(this) {
-            is StrRes -> ""
+            is StringResource -> ""
             is StringResources -> ""
             is DynStr -> str
         }

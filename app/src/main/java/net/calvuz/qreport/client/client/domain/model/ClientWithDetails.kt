@@ -2,6 +2,7 @@ package net.calvuz.qreport.client.client.domain.model
 
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.contact.domain.model.Contact
+import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
@@ -13,6 +14,7 @@ data class ClientWithDetails(
     val client: Client,
     val facilities: List<FacilityWithIslands>,
     val contacts: List<Contact>,
+    val contracts: List<Contract>,
     val statistics: ClientSingleStatistics,
 
     // Convenience fields per UI
@@ -35,6 +37,12 @@ data class ClientWithDetails(
         get() = contacts.filter { it.isActive }
 
     /**
+     * Contracts
+     */
+    val activeContracts: List<Contract>
+        get() = contracts.filter { it.isActive }
+
+    /**
      * Islands attive totali
      */
     val activeIslands: List<Island>
@@ -49,6 +57,7 @@ data class ClientWithDetails(
         client.isActive &&
                 activeFacilities.isNotEmpty() &&
                 activeContacts.isNotEmpty() &&
+                activeContracts.isNotEmpty() &&
                 activeIslands.isNotEmpty()
 
     /**
@@ -58,8 +67,9 @@ data class ClientWithDetails(
         get() = when {
             !client.isActive -> "Cliente inattivo"
             activeFacilities.isEmpty() -> "Nessun stabilimento configurato"
-            activeContacts.isEmpty() -> "Nessun referente configurato"
-            activeIslands.isEmpty() -> "Nessuna isola robotizzata configurata"
-            else -> "Cliente completamente operativo"
+            activeContacts.isEmpty() -> "Nessun referente attivo"
+            activeContracts.isEmpty() -> "Nessun contratto attivo"
+            activeIslands.isEmpty() -> "Nessuna isola robotizzata cattivo"
+            else -> "Cliente operativo"
         }
 }

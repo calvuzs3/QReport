@@ -5,9 +5,18 @@ sealed interface QrError {
         YET
     }
 
+    sealed interface App: QrError {
+        data class UnknownError(val message: String? = null): App
+        data class SaveError(val message: QrError? = null): App
+        data class LoadError(val message: QrError? = null): App
+        data class DeleteError(val message: QrError? = null): App
+        data class NotImplemented(val message: QrError? = null): App
+    }
+
     sealed interface Contracts: QrError {
         data class ClientIdEmpty(val message: String?) : Contracts
         data class ClientNotFound(val message: String?) : Contracts
+        data class ContractIdEmpty(val message: String?): Contracts
         data class ContractNotFound(val message: String?) : Contracts
         data class DeleteError(val exception: Exception) : Contracts
     }

@@ -4,6 +4,34 @@
     <string name="app_name">QReport</string>
     <string name="app_description">Sistema digitalizzato per check-up isole robotizzate industriali</string>
 
+    <!-- Routes -->
+    <string name="route_home">home</string>
+    <string name="route_home_title">Home</string>
+    <string name="route_clients">clients</string>
+    <string name="route_clients_title">Clienti</string>
+    <string name="route_checkups">checkup</string>
+    <string name="route_checkups_title">Check-up</string>
+    <string name="route_settings">settings</string>
+    <string name="route_settings_title">Impostazioni</string>
+
+    <string name="route_photos">Foto</string>
+    <string name="route_spare_parts">Ricambi</string>
+    <string name="route_export">Export</string>
+    <string name="route_backup">Backup</string>
+    <string name="route_client_detail">Dettagli Cliente</string>
+    <string name="route_client_create">Crea Cliente</string>
+    <string name="route_client_edit">Modifica Cliente</string>
+    <string name="route_contacts">Contatti</string>
+    <string name="route_contact_detail">Dettagli Contatto</string>
+    <string name="route_contact_create">Crea Contatto</string>
+    <string name="route_contact_edit">Modifica Contatto</string>
+    <string name="route_facilities">Facilities</string>
+    <string name="route_facility_detail">Dettagli Facility</string>
+    <string name="route_facility_create">Crea Facility</string>
+    <string name="route_facility_edit">Modifica Facility</string>
+    <string name="route_islands">Isle</string>
+    <string name="route_island_detail">Dettagli Isola</string>
+
 
     <!-- CORE COMPONENTS -->
 
@@ -64,6 +92,7 @@
     <string name="action_edit">Modifica</string>
     <string name="action_delete">Elimina</string>
     <string name="action_save">Salva</string>
+    <string name="action_update">Aggiorna</string>
     <string name="action_cancel">Annulla</string>
     <string name="action_confirm">Conferma</string>
     <string name="action_export">Esporta</string>
@@ -78,12 +107,16 @@
     <string name="action_back">Indietro</string>
 
     <!-- Labels -->
+    <string name="label_saving">Salvataggio</string>
+    <string name="label_ordering">Ordinamento</string>
+    <string name="label_filtering">Filtraggio</string>
     <string name="label_assistchip_not_active">INATTIVO</string>
     <string name="label_maintenance">Manutenzione</string>
     <string name="label_assistance">Assistenza</string>
     <string name="label_priority">Priorità</string>
-    <string name="label_ordering">Ordinamento</string>
-    <string name="label_filtering">Filtraggio</string>
+    <string name="label_valid">Valido</string>
+    <string name="label_invalid">Non Valido</string>
+
 
 
     <!-- Forms -->

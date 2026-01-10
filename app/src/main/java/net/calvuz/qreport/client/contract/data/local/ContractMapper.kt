@@ -18,6 +18,8 @@ class ContractMapper @Inject constructor() {
             hasPriority = entity.hasPriority,
             hasRemoteAssistance = entity.hasRemoteAssistance,
             hasMaintenance = entity.hasMaintenance,
+            notes = entity.notes,
+            isActive = entity.isActive,
             createdAt = Instant.fromEpochMilliseconds(entity.createdAt),
             updatedAt = Instant.fromEpochMilliseconds(entity.updatedAt)
         )
@@ -33,6 +35,9 @@ class ContractMapper @Inject constructor() {
             endDate = domain.endDate.toEpochMilliseconds(),
             hasPriority = domain.hasPriority,
             hasRemoteAssistance = domain.hasRemoteAssistance,
+            hasMaintenance = domain.hasMaintenance,
+            notes = domain.notes,
+            isActive = domain.isActive,
             createdAt = domain.createdAt.toEpochMilliseconds(),
             updatedAt = domain.updatedAt.toEpochMilliseconds()
         )

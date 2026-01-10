@@ -14,10 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.app.app.presentation.components.QrDatePickerField
 import net.calvuz.qreport.client.island.domain.model.IslandType
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 
 /**
  * Screen per creazione/modifica isola robotizzata
@@ -310,7 +308,7 @@ private fun TechnicalInfoSection(
             )
 
             // Data Installazione
-            DatePickerField(
+            QrDatePickerField(
                 label = "Data Installazione",
                 value = uiState.installationDate,
                 onValueChange = { onFormEvent(FacilityIslandFormEvent.InstallationDateChanged(it)) },
@@ -318,7 +316,7 @@ private fun TechnicalInfoSection(
             )
 
             // Scadenza Garanzia
-            DatePickerField(
+            QrDatePickerField(
                 label = "Scadenza Garanzia",
                 value = uiState.warrantyExpiration,
                 onValueChange = { onFormEvent(FacilityIslandFormEvent.WarrantyExpirationChanged(it)) },
@@ -378,7 +376,7 @@ private fun MaintenanceInfoSection(
             )
 
             // Ultima Manutenzione
-            DatePickerField(
+            QrDatePickerField(
                 label = "Ultima Manutenzione",
                 value = uiState.lastMaintenanceDate,
                 onValueChange = { onFormEvent(FacilityIslandFormEvent.LastMaintenanceDateChanged(it)) },
@@ -386,7 +384,7 @@ private fun MaintenanceInfoSection(
             )
 
             // Prossima Manutenzione Programmata
-            DatePickerField(
+            QrDatePickerField(
                 label = "Prossima Manutenzione",
                 value = uiState.nextScheduledMaintenance,
                 onValueChange = { onFormEvent(FacilityIslandFormEvent.NextMaintenanceChanged(it)) },
@@ -466,84 +464,6 @@ private fun NotesSection(
                 modifier = Modifier.fillMaxWidth()
             )
         }
-    }
-}
-
-// Creazione di un semplice DatePickerField dato che non è fornito
-@Composable
-private fun DatePickerField(
-    label: String,
-    value: Instant?,
-    onValueChange: (Instant?) -> Unit,
-    error: String? = null,
-    modifier: Modifier = Modifier
-) {
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = value?.let {
-                it.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
-            } ?: "",
-            onValueChange = { },
-            label = { Text(label) },
-            placeholder = { Text("Seleziona data") },
-            readOnly = true,
-            isError = error != null,
-            supportingText = if (error != null) {
-                { Text(error) }
-            } else null,
-            trailingIcon = {
-                IconButton(onClick = { showDatePicker = true }) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Seleziona data"
-                    )
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (showDatePicker) {
-            DatePickerDialog(
-                onDateSelected = { selectedDate ->
-                    onValueChange(selectedDate)
-                    showDatePicker = false
-                },
-                onDismiss = { showDatePicker = false }
-            )
-        }
-    }
-}
-
-@Composable
-private fun DatePickerDialog(
-    onDateSelected: (Instant?) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val datePickerState = rememberDatePickerState()
-
-    DatePickerDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onDateSelected(datePickerState.selectedDateMillis?.let {
-                        Instant.fromEpochMilliseconds(it)
-                    })
-                }
-            ) {
-                Text("OK")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
-            }
-        }
-    ) {
-        DatePicker(state = datePickerState)
     }
 }
 

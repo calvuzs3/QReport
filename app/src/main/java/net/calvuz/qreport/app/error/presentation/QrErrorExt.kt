@@ -4,20 +4,25 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText.StringResources
 import net.calvuz.qreport.app.result.domain.QrResult
-//
-//fun QrError.NotImplemented.toUiText(): UiText {
-//    return when (this) {
-//        is QrError.NotImplemented -> StringResources(R.string.err_not_implemented)
-//
-//    }
-//}
+
+fun QrError.App.toUiText(): UiText {
+    return when (this) {
+        is QrError.NotImplemented -> StringResources(R.string.err_not_implemented)
+        is QrError.App.SaveError -> StringResources(R.string.err_save)
+        is QrError.App.UnknownError -> StringResources(R.string.err_unknown)
+        is QrError.App.LoadError -> StringResources(R.string.err_load)
+        is QrError.App.DeleteError -> StringResources(R.string.err_delete)
+        is QrError.App.NotImplemented -> StringResources(R.string.err_not_implemented)
+    }
+}
 
 fun QrError.Contracts.toUiText(): UiText {
     return when (this) {
         is QrError.Contracts.ClientIdEmpty -> StringResources(R.string.err_contracts_client_id_empty)
         is QrError.Contracts.ClientNotFound -> StringResources(R.string.err_contracts_client_not_found)
         is QrError.Contracts.ContractNotFound -> StringResources(R.string.err_contracts_contract_not_found)
-        is QrError.Contracts.DeleteError -> TODO()
+        is QrError.Contracts.DeleteError -> StringResources(R.string.err_delete)
+        is QrError.Contracts.ContractIdEmpty -> StringResources(R.string.err_contracts_contract_id_empty)
     }
 }
 
@@ -37,7 +42,7 @@ fun QrError.asUiText(): UiText {
 //        is QrError.NotImplemented -> this.toUiText()
         is QrError.Contracts -> this.toUiText()
         is QrError.DatabaseError -> this.toUiText()
-
+        is QrError.App -> this.toUiText()
 
         // Not implemented
         QrError.NotImplemented.YET -> StringResources(R.string.err_not_implemented)

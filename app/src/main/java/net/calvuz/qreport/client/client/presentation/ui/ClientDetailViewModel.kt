@@ -56,11 +56,11 @@ data class ClientDetailUiState(
     // Tab data
     val facilitiesWithIslands: List<FacilityWithIslands> = emptyList(),
     val activeContacts: List<Contact> = emptyList(),
+    val activeContracts: List<Contract> = emptyList(),
     val allIslands: List<Island> = emptyList(),
     val statistics: ClientSingleStatistics? = null,
 
     // Tab contracts
-    val contracts: List<Contract> = emptyList(),
     val contractStatistics: ContractStatistics? = null
 
 ) {
@@ -85,6 +85,12 @@ data class ClientDetailUiState(
 
     val contactsCount: Int
         get() = activeContacts.size
+
+    val contracts: List<Contract>
+        get() = activeContracts
+
+    val contractsCount: Int
+        get() = activeContracts.size
 
     val islandsCount: Int
         get() = allIslands.size
@@ -190,7 +196,7 @@ class ClientDetailViewModel @Inject constructor(
             },
             onFailure = { error ->
                 // Log error but don't fail the whole screen
-                Timber.e(error, "Failed to load contact statistics")
+                Timber.e(error, "Failed to load contract statistics")
             }
         )
     }
@@ -214,6 +220,7 @@ class ClientDetailViewModel @Inject constructor(
             // Tab data
             facilitiesWithIslands = clientDetails.facilities,
             activeContacts = clientDetails.activeContacts,
+            activeContracts = clientDetails.activeContracts,
             allIslands = clientDetails.activeIslands,
             statistics = clientDetails.statistics
         )

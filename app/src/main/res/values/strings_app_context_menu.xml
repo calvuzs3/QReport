@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ========================================== -->
+    <!-- Generic Context Menu Actions -->
+    <!-- ========================================== -->
+
+    <!-- Common Actions -->
+    <string name="context_menu_action_edit">Modifica</string>
+    <string name="context_menu_action_delete">Elimina</string>
+    <string name="context_menu_action_view_details">Visualizza dettagli</string>
+    <string name="context_menu_action_duplicate">Duplica</string>
+
+    <!-- Client Actions -->
+    <string name="context_menu_action_view_facilities">Visualizza stabilimenti</string>
+    <string name="context_menu_action_view_contracts">Visualizza contratti</string>
+
+    <!-- Facility Actions -->
+    <string name="context_menu_action_view_islands">Visualizza isole</string>
+    <string name="context_menu_action_view_checkups">Visualizza check-up</string>
+
+    <!-- CheckUp Actions -->
+    <string name="context_menu_action_export">Esporta</string>
+    <string name="context_menu_action_continue">Continua</string>
+    <string name="context_menu_action_finalize">Finalizza</string>
+
+    <!-- Contract Actions -->
+    <string name="context_menu_action_renew">Rinnova</string>
+    <string name="context_menu_action_view_contract_details">Dettagli contratto</string>
+
+    <!-- Island Actions -->
+    <string name="context_menu_action_view_maintenance">Visualizza manutenzione</string>
+    <string name="context_menu_action_schedule_checkup">Pianifica check-up</string>
+
+    <!-- Contact Actions -->
+    <string name="context_menu_action_call">Chiama</string>
+    <string name="context_menu_action_email">Invia email</string>
+
+    <!-- Spare Part Actions -->
+    <string name="context_menu_action_view_history">Visualizza storico</string>
+    <string name="context_menu_action_add_stock">Aggiungi scorta</string>
+
+    <!-- ========================================== -->
+    <!-- Generic Delete Confirmation Dialog -->
+    <!-- ========================================== -->
+
+    <!-- Dialog Actions -->
+    <string name="context_menu_delete_confirm">Elimina</string>
+    <string name="context_menu_delete_cancel">Annulla</string>
+
+    <!-- Generic Messages -->
+    <string name="delete_dialog_generic_title">Conferma eliminazione</string>
+    <string name="delete_dialog_generic_message">Sei sicuro di voler eliminare questo elemento? Questa azione non può essere annullata.</string>
+    <string name="delete_dialog_generic_message_with_name">Sei sicuro di voler eliminare \'%1$s\'? Questa azione non può essere annullata.</string>
+
+    <!-- ========================================== -->
+    <!-- Entity-Specific Delete Dialogs -->
+    <!-- ========================================== -->
+
+    <!-- Client -->
+    <string name="delete_dialog_client_title">Elimina Cliente</string>
+    <string name="delete_dialog_client_message">Sei sicuro di voler eliminare il cliente \'%1$s\'? Verranno eliminati anche tutti gli stabilimenti, i contratti e i check-up associati.</string>
+    <string name="delete_dialog_client_unnamed">questo cliente</string>
+
+    <!-- Facility -->
+    <string name="delete_dialog_facility_title">Elimina Stabilimento</string>
+    <string name="delete_dialog_facility_message">Sei sicuro di voler eliminare lo stabilimento \'%1$s\'? Verranno eliminate anche tutte le isole e i check-up associati.</string>
+    <string name="delete_dialog_facility_unnamed">questo stabilimento</string>
+
+    <!-- Island -->
+    <string name="delete_dialog_island_title">Elimina Isola Robotica</string>
+    <string name="delete_dialog_island_message">Sei sicuro di voler eliminare l\'isola \'%1$s\'? Verranno eliminati anche tutti i check-up e la cronologia di manutenzione associati.</string>
+    <string name="delete_dialog_island_unnamed">questa isola</string>
+
+    <!-- CheckUp -->
+    <string name="delete_dialog_checkup_title">Elimina Check-up</string>
+    <string name="delete_dialog_checkup_message">Sei sicuro di voler eliminare il check-up del %1$s? Verranno eliminate anche tutte le foto e le note associate.</string>
+    <string name="delete_dialog_checkup_unnamed">questo check-up</string>
+
+    <!-- Contract -->
+    <string name="delete_dialog_contract_title">Elimina Contratto</string>
+    <string name="delete_dialog_contract_message">Sei sicuro di voler eliminare il contratto \'%1$s\'? Questa azione non può essere annullata.</string>
+    <string name="delete_dialog_contract_unnamed">questo contratto</string>
+
+    <!-- Contact -->
+    <string name="delete_dialog_contact_title">Elimina Contatto</string>
+    <string name="delete_dialog_contact_message">Sei sicuro di voler eliminare il contatto \'%1$s\'? Le informazioni verranno rimosse definitivamente.</string>
+    <string name="delete_dialog_contact_unnamed">questo contatto</string>
+
+    <!-- Spare Part -->
+    <string name="delete_dialog_spare_part_title">Elimina Ricambio</string>
+    <string name="delete_dialog_spare_part_message">Sei sicuro di voler eliminare il ricambio \'%1$s\'? Verrà eliminato anche tutto lo storico delle movimentazioni.</string>
+    <string name="delete_dialog_spare_part_unnamed">questo ricambio</string>
+
+    <!-- ========================================== -->
+    <!-- Context Menu Accessibility -->
+    <!-- ========================================== -->
+
+    <!-- Content Descriptions -->
+    <string name="context_menu_content_description">Menu azioni per %1$s</string>
+    <string name="context_menu_long_press_hint">Tieni premuto per aprire il menu azioni</string>
+
+    <!-- Action Descriptions -->
+    <string name="action_edit_content_description">Modifica %1$s</string>
+    <string name="action_delete_content_description">Elimina %1$s</string>
+    <string name="action_view_details_content_description">Visualizza dettagli di %1$s</string>
+    <string name="action_duplicate_content_description">Duplica %1$s</string>
+
+    <!-- ========================================== -->
+    <!-- Success Messages -->
+    <!-- ========================================== -->
+
+    <!-- Generic Success -->
+    <string name="action_success_generic">Operazione completata con successo</string>
+    <string name="action_success_delete">Elemento eliminato con successo</string>
+    <string name="action_success_duplicate">Elemento duplicato con successo</string>
+
+    <!-- Entity-Specific Success -->
+    <string name="action_success_client_deleted">Cliente eliminato con successo</string>
+    <string name="action_success_facility_deleted">Stabilimento eliminato con successo</string>
+    <string name="action_success_island_deleted">Isola eliminata con successo</string>
+    <string name="action_success_checkup_deleted">Check-up eliminato con successo</string>
+    <string name="action_success_contract_deleted">Contratto eliminato con successo</string>
+    <string name="action_success_contact_deleted">Contatto eliminato con successo</string>
+    <string name="action_success_spare_part_deleted">Ricambio eliminato con successo</string>
+</resources>

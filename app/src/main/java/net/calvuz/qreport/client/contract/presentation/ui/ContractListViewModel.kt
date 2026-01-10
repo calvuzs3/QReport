@@ -18,6 +18,7 @@ import net.calvuz.qreport.client.contract.domain.usecase.GetContractsByClientUse
 import net.calvuz.qreport.app.result.domain.QrResult
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.days
 
 
 data class ContractListUiState(
@@ -35,9 +36,9 @@ data class ContractListUiState(
 
 
 enum class ContractFilter {
-    ALL,
     ACTIVE,
-    INACTIVE
+    INACTIVE,
+    ALL
 }
 
 enum class ContractSortOrder {
@@ -215,8 +216,7 @@ class ContractListViewModel @Inject constructor(
                 when (val result = deleteContractUseCase(contractId)) {
                     is QrResult.Success -> {
                         Timber.d("Contact deleted successfully: $contractId")
-                        // Ricarica la lista per mostrare i cambiamenti
-                        refresh()
+                        refresh() // Show changes
                     }
                     is QrResult.Error -> {
                         Timber.e( "Failed to delete contract $contractId")
@@ -237,6 +237,106 @@ class ContractListViewModel @Inject constructor(
             }
         }
     }
+//    fun delete(contractId: String) {
+//        viewModelScope.launch {
+//            _uiState.value = _uiState.value.copy(isDeleting = contractId)
+//
+//            try {
+//                when (val result = deleteContractUseCase(contractId)) {
+//                    is QrResult.Success -> {
+//                        Timber.d("Contact deleted successfully: $contractId")
+//                        // Ricarica la lista per mostrare i cambiamenti
+//                        refresh()
+//                    }
+//                    is QrResult.Error -> {
+//                        Timber.e( "Failed to delete contract $contractId")
+//                        _uiState.value = _uiState.value.copy(
+//                            isDeleting = null,
+//                            error = "Errore eliminazione Contratto: ${contractId}"
+//                        )
+//                    }
+//                }
+//            } catch (e: Exception) {
+//                Timber.e(e, "Exception deleting contract")
+//                _uiState.value = _uiState.value.copy(
+//                    isDeleting = null,
+//                    error = "Errore imprevisto: ${e.message}"
+//                )
+//            } finally {
+//                _uiState.value = _uiState.value.copy(isDeleting = null)
+//            }
+//        }
+//    }
+
+
+    /**
+     * Handle contract renewal - creates a new contract based on the existing one
+     * This could be expanded to navigate to a renewal screen or show a renewal dialog
+     */
+    fun renew(contractId: String) {
+        viewModelScope.launch {
+            try {
+                val contract = _uiState.value.contracts
+                    .find { it.contract.id == contractId }
+                    ?.contract
+
+                if (contract != null) {
+                    Timber.d("Renewing contract: $contractId")
+                    // TODO: Implement contract renewal logic
+                    // This could involve:
+                    // 1. Navigate to contract creation with pre-filled data
+                    // 2. Show a renewal dialog
+                    // 3. Create a new contract with extended dates
+
+                    // For now, log the action
+                    Timber.d("Contract renewal requested for: ${contract.name}")
+                } else {
+                    Timber.e("Contract not found for renewal: $contractId")
+                    _uiState.value = _uiState.value.copy(
+                        error = "Contratto non trovato per il rinnovo"
+                    )
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Exception renewing contract")
+                _uiState.value = _uiState.value.copy(
+                    error = "Errore rinnovo contratto: ${e.message}"
+                )
+            }
+        }
+    }
+
+    /**
+     * Get contract by ID - useful for action handlers
+     */
+    fun getContract(contractId: String): Contract? {
+        return _uiState.value.contracts
+            .find { it.contract.id == contractId }
+            ?.contract
+    }
+
+    /**
+     * Check if contract is eligible for renewal
+     */
+    fun isContractEligibleForRenewal(contractId: String): Boolean {
+        val contractWithStats = _uiState.value.contracts
+            .find { it.contract.id == contractId }
+
+        return contractWithStats?.let {
+            // Contract is eligible for renewal if:
+            // 1. It's expired OR
+            // 2. It expires within 30 days
+            val isExpired = it.stats.isExpired
+            val expiresWithin30Days = it.contract.endDate
+                .minus(30.days)
+                .let { thirtyDaysBeforeExpiry ->
+                    kotlinx.datetime.Clock.System.now() >= thirtyDaysBeforeExpiry
+                }
+
+            isExpired || expiresWithin30Days
+        } == true
+    }
+
+    // ===== Search and filter logic =====
 
     fun updateSearchQuery(query: String) {
         val currentState = _uiState.value
@@ -287,6 +387,8 @@ class ContractListViewModel @Inject constructor(
             filteredContracts = filteredAndSorted
         )
     }
+
+    // ===== Error handling =====
 
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
@@ -351,38 +453,7 @@ class ContractListViewModel @Inject constructor(
 
         return filtered
     }
-//
-//    private fun performSearch(query: String) {
-//        val currentState = _uiState.value
-//        val filtered = currentState.contracts.filter { contractWithStats ->
-//
-//            if (contractWithStats.contract.name != null)
-//                contractWithStats.contract.name.contains(query, ignoreCase = true)
-//            else false
-//
-//            if (contractWithStats.contract.description != null)
-//                contractWithStats.contract.description.contains(query, ignoreCase = true)
-//            else false
-//
-//            contractWithStats.contract.startDate.toString().contains(query, ignoreCase = true)
-//            contractWithStats.contract.endDate.toString().contains(query, ignoreCase = true)
-//
-//        }
-//
-//        val filteredAndSorted = applyFiltersAndSort(
-//            filtered,
-//            query,
-//            currentState.selectedFilter,
-//            currentState.sortOrder
-//        )
-//
-//        _uiState.value = currentState.copy(
-//            searchQuery = query,
-//            filteredContracts = filteredAndSorted
-//        )
-//    }
 }
-
 
 // ============================================================
 // DATA CLASSES

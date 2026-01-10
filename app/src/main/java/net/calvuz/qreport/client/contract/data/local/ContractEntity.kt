@@ -52,6 +52,12 @@ data class ContractEntity(
     @ColumnInfo(name = "has_maintenance")
     val hasMaintenance: Boolean = true,
 
+    @ColumnInfo(name = "notes")
+    val notes: String? = null,
+
+    @ColumnInfo(name = "is_active")
+    val isActive: Boolean = true,
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
 

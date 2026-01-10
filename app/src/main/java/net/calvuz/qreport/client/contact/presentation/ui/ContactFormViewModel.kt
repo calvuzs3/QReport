@@ -176,7 +176,7 @@ class ContactFormViewModel @Inject constructor(
             lastName = contact.lastName ?: "",
             title = contact.title ?: "",
             role = contact.role ?: "",
-            department = contact.department ?: "",
+                department = contact.department ?: "",
             email = contact.email ?: "",
             alternativeEmail = contact.alternativeEmail ?: "",
             phone = contact.phone ?: "",

@@ -452,6 +452,7 @@ class ClientListViewModel @Inject constructor(
         facilitiesCount = 0,
         islandsCount = 0,
         contactsCount = 0,
+        contractsCount = 0,
         totalCheckUps = 0,
         completedCheckUps = 0,
         lastCheckUpDate = null

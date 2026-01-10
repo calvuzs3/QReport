@@ -50,7 +50,7 @@ sealed interface QrListItemInterface<out D : QrItemInterface> {
 fun ContractCard(
     modifier: Modifier = Modifier,
     contract: Contract,
-    onClick: () -> Unit,
+    onClick: (() -> Unit)? = null,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
@@ -59,7 +59,7 @@ fun ContractCard(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        onClick = onClick,
+//        onClick = if (onClick != null) onClick else null ,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

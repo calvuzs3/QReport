@@ -4,12 +4,31 @@
     <!-- Not implemented Error Messages -->
     <string name="err_not_implemented">Not implemented yet</string>
 
+    <!-- Errori App -->
+    <string name="err_unknown">Errore sconosciuto</string>
+    <string name="err_save">Errore salvataggio</string>
+    <string name="err_load">Errore caricamento</string>
+    <string name="err_reload">Errore ricaricamento</string>
+    <string name="err_create">Errore creazione</string>
+    <string name="err_delete">Errore cancellazione</string>
+    <string name="err_fields_required">Compilare i campi richiesti</string>
+    <string name="err_refresh">Errore refresh</string>
+
+
 
     <!-- Errori contracts -->
     <string name="err_contracts_client_id_empty">Nessun ID Cliente specificato</string>
     <string name="err_contracts_client_not_found">Nessun Cliente trovato</string>
     <string name="err_contracts_contract_not_found">Nessun Contratto trovato</string>
-
+    <string name="err_contracts_contract_id_empty">Nessun ID Contratto specificato</string>
+    <string name="err_contracts_contract_name_min_char">Il nome deve essere di almeno %1$s caratteri</string>
+    <string name="err_contracts_contract_name_max_char">Il nome deve essere di al massimo %1$s caratteri</string>
+        <string name="err_contracts_contract_description_min_char">La descrizione deve essere di almeno %1$s caratteri</string>
+    <string name="err_contracts_contract_description_max_char">La descrizione deve essere di al massimo %1$s caratteri</string>
+    <string name="err_contracts_contract_start_date_empty">Nessuna data di inizio specificata</string>
+    <string name="err_contracts_contract_end_date_empty">Nessuna data di fine specificata</string>
+    <string name="err_contracts_contract_end_date_before_start_date">La data di inizio deve essere precedente alla data di fine</string>
+    <string name="err_contracts_contract_start_date_future">La data di inizio non può essere futura</string>
 
     <!-- Errori Database -->
     <string name="err_db_operation_failed">Si è verificato un errore durante l\'operazione sul database</string>
@@ -348,14 +367,7 @@
     <string name="err_share">Errore condivisione file</string>
     <string name="err_share_create">Errore condivisione</string>
 
-    <string name="err_unknown">Errore sconosciuto</string>
-    <string name="err_load">Errore caricamento</string>
-    <string name="err_reload">Errore ricaricamento</string>
-    <string name="err_create">Errore creazione</string>
-    <string name="err_delete">Errore cancellazione</string>
-    <string name="err_fields_required">Compilare i campi richiesti</string>
-    <string name="err_refresh">Errore refresh</string>
-    <string name="err_file_open">Errore apertura file</string>
+   <string name="err_file_open">Errore apertura file</string>
     <string name="err_file_not_exists">File non esistente</string>
     <string name="err_file_get_size">Errore ottenimento dimensione file</string>
     <string name="err_file_processing">Errore processing file</string>

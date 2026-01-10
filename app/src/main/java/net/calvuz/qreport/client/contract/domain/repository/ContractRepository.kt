@@ -10,11 +10,13 @@ interface ContractRepository {
     // ===== CRUD OPERATIONS =====
 
     suspend fun getAllContracts(): QrResult<List<Contract>, QrError>
+    suspend fun setActiveContractById(id: String): QrResult<Int, QrError>
+    suspend fun setInactiveContractById(id: String): QrResult<Int, QrError>
     suspend fun getActiveContracts(): QrResult<List<Contract>, QrError>
     suspend fun getExpiredContracts(): QrResult<List<Contract>, QrError>
     suspend fun getContractById(id: String): QrResult<Contract?, QrError>
-    suspend fun createContract(contract: Contract): QrResult<Unit, QrError>
-    suspend fun updateContract(contract: Contract): QrResult<Unit, QrError>
+    suspend fun createContract(contract: Contract): QrResult<String, QrError>
+    suspend fun updateContract(contract: Contract): QrResult<String, QrError>
     suspend fun deleteContractById(id: String): QrResult<Int, QrError>
 
     // ===== CLIENT RELATED =====
