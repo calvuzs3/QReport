@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import net.calvuz.qreport.app.error.presentation.UiText
 
 /**
  * Generic selection state for multi-select functionality
@@ -140,6 +141,10 @@ sealed interface BatchAction {
         }
     }
 
+    // Contact specific batch actions
+    sealed interface ContactBatchAction : BatchAction {
+    }
+
     sealed interface ClientBatchAction : BatchAction {
         data object SendNotification : ClientBatchAction {
             override val iconResId = android.R.drawable.ic_dialog_email
@@ -171,7 +176,7 @@ sealed interface BatchAction {
 interface BatchActionHandler<T> {
     fun onBatchAction(action: BatchAction, selectedItems: Set<T>)
     fun isBatchActionAvailable(action: BatchAction, selectedItems: Set<T>): Boolean = true
-    fun getBatchDeleteConfirmationMessage(selectedItems: Set<T>): String
+    fun getBatchDeleteConfirmationMessage(selectedItems: Set<T>): UiText
 }
 
 /**
@@ -190,6 +195,8 @@ object BatchActionSets {
         BatchAction.Export,
         BatchAction.Delete
     )
+
+    val contactActions = common
 
     val clientActions = listOf(
         BatchAction.SelectAll,

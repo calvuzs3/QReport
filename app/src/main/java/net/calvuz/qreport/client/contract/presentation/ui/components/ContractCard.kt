@@ -38,6 +38,7 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.client.contract.data.local.isValid
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.app.app.presentation.components.DeleteDialog
+import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard.QrListItemCardVariant
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 
 interface QrItemInterface
@@ -337,14 +338,4 @@ private fun ContractItem(
 //            )
 //        }
     }
-}
-
-
-/**
- * Varianti di visualizzazione per FacilityCard
- */
-enum class QrListItemCardVariant {
-    FULL,       // Full
-    COMPACT,    // Compact for dense lists
-    MINIMAL     // Minimal for dropdown selectors
 }

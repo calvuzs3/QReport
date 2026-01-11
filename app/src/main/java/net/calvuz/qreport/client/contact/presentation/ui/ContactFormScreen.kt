@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -25,12 +26,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
 import timber.log.Timber
+import net.calvuz.qreport.R
 
 /**
  * Screen per la creazione/modifica di un contatto
  *
  * Features:
- * - Form completo con tutti i campi del modello Contact
+ * - ValidationError completo con tutti i campi del modello Contact
  * - Validazioni in tempo reale
  * - Gestione metodi di contatto preferiti
  * - Toggle referente primario
@@ -78,7 +80,7 @@ fun ContactFormScreen(
             title = {
                 Column {
                     Text(
-                        text = if (uiState.isEditMode) "Modifica Contatto" else "Nuovo Contatto",
+                        text = if (uiState.isEditMode) stringResource(R.string.contact_form_title_edit) else stringResource(R.string.contact_form_title_new),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -95,7 +97,7 @@ fun ContactFormScreen(
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Indietro"
+                        contentDescription = stringResource(R.string.action_back)
                     )
                 }
             },
@@ -111,7 +113,7 @@ fun ContactFormScreen(
                             strokeWidth = 2.dp
                         )
                     } else {
-                        Text("Salva")
+                        Text(stringResource(R.string.action_save))
                     }
                 }
             }
@@ -194,7 +196,7 @@ private fun ContactFormContent(
                         tint = MaterialTheme.colorScheme.onErrorContainer
                     )
                     Text(
-                        text = error,
+                        text = error.asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier.weight(1f)
@@ -224,7 +226,7 @@ private fun ContactFormContent(
                         modifier = Modifier.size(20.dp)
                     )
                     Text(
-                        text = validationError,
+                        text = validationError.asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
@@ -233,14 +235,15 @@ private fun ContactFormContent(
         }
 
         // ===== DATI ANAGRAFICI =====
-        ContactFormSection(title = "Dati Anagrafici") {
+        ContactFormSection(title = stringResource(R.string.contact_form_section_data)) {
             // Nome (obbligatorio)
             OutlinedTextField(
                 value = uiState.firstName,
                 onValueChange = onFirstNameChange,
-                label = { Text("Nome *") },
+                label = { Text(stringResource(R.string.contact_form_field_name)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_name_placeholder))},
                 isError = uiState.firstNameError != null,
-                supportingText = uiState.firstNameError?.let { { Text(it) } },
+                supportingText = uiState.firstNameError?.let { { Text(it.asString()) } },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next
@@ -252,9 +255,9 @@ private fun ContactFormContent(
             OutlinedTextField(
                 value = uiState.lastName,
                 onValueChange = onLastNameChange,
-                label = { Text("Cognome") },
+                label = { Text(stringResource(R.string.contact_form_field_surname) )},
                 isError = uiState.lastNameError != null,
-                supportingText = uiState.lastNameError?.let { { Text(it) } },
+                supportingText = uiState.lastNameError?.let { { Text(it.asString()) } },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next
@@ -266,8 +269,8 @@ private fun ContactFormContent(
             OutlinedTextField(
                 value = uiState.title,
                 onValueChange = onTitleChange,
-                label = { Text("Titolo") },
-                placeholder = { Text("es. Ing., Dott., Dott.ssa") },
+                label = { Text(stringResource(R.string.contact_form_field_title)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_title_placeholder)) },
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next
@@ -277,13 +280,13 @@ private fun ContactFormContent(
         }
 
         // ===== RUOLO AZIENDALE =====
-        ContactFormSection(title = "Ruolo Aziendale") {
+        ContactFormSection(title = stringResource(R.string.contact_form_section_role)) {
             // Ruolo
             OutlinedTextField(
                 value = uiState.role,
                 onValueChange = onRoleChange,
-                label = { Text("Ruolo") },
-                placeholder = { Text("es. Responsabile Produzione, Technical Manager") },
+                label = { Text(stringResource(R.string.contact_form_field_role)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_role_placeholder) )},
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next
@@ -295,8 +298,8 @@ private fun ContactFormContent(
             OutlinedTextField(
                 value = uiState.department,
                 onValueChange = onDepartmentChange,
-                label = { Text("Dipartimento") },
-                placeholder = { Text("es. Produzione, Manutenzione, IT") },
+                label = { Text(stringResource(R.string.contact_form_field_department)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_department_placholder) )},
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Words,
                     imeAction = ImeAction.Next
@@ -306,15 +309,15 @@ private fun ContactFormContent(
         }
 
         // ===== CONTATTI =====
-        ContactFormSection(title = "Informazioni di Contatto *") {
+        ContactFormSection(title = stringResource(R.string.contact_form_section_contact_info)) {
             // Email
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = onEmailChange,
-                label = { Text("Email") },
-                placeholder = { Text("nome.cognome@azienda.it") },
+                label = { Text(stringResource(R.string.contact_form_field_email)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_email_placeholder)) },
                 isError = uiState.emailError != null,
-                supportingText = uiState.emailError?.let { { Text(it) } },
+                supportingText = uiState.emailError?.let { { Text(it.asString()) } },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
@@ -329,10 +332,10 @@ private fun ContactFormContent(
             OutlinedTextField(
                 value = uiState.alternativeEmail,
                 onValueChange = onAlternativeEmailChange,
-                label = { Text("Email alternativa") },
-                placeholder = { Text("email.personale@provider.com") },
+                label = { Text(stringResource(R.string.contact_form_field_alternative_email)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_email_placeholder) )},
                 isError = uiState.alternativeEmailError != null,
-                supportingText = uiState.alternativeEmailError?.let { { Text(it) } },
+                supportingText = uiState.alternativeEmailError?.let { { Text(it.asString()) } },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
@@ -344,10 +347,10 @@ private fun ContactFormContent(
             OutlinedTextField(
                 value = uiState.phone,
                 onValueChange = onPhoneChange,
-                label = { Text("Telefono") },
-                placeholder = { Text("es. 040 1234567") },
+                label = { Text(stringResource(R.string.contact_form_field_phone)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_phone_placeholder)) },
                 isError = uiState.phoneError != null,
-                supportingText = uiState.phoneError?.let { { Text(it) } },
+                supportingText = uiState.phoneError?.let { { Text(it.asString()) } },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Phone,
                     imeAction = ImeAction.Next
@@ -362,10 +365,10 @@ private fun ContactFormContent(
             OutlinedTextField(
                 value = uiState.mobilePhone,
                 onValueChange = onMobilePhoneChange,
-                label = { Text("Cellulare") },
-                placeholder = { Text("es. 347 1234567") },
+                label = { Text(stringResource(R.string.contact_form_field_mobile)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_phone_placeholder)) },
                 isError = uiState.mobilePhoneError != null,
-                supportingText = uiState.mobilePhoneError?.let { { Text(it) } },
+                supportingText = uiState.mobilePhoneError?.let { { Text(it.asString()) } },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Phone,
                     imeAction = ImeAction.Next
@@ -378,7 +381,7 @@ private fun ContactFormContent(
         }
 
         // ===== PREFERENZE =====
-        ContactFormSection(title = "Preferenze di Contatto") {
+        ContactFormSection(title = stringResource(R.string.contact_form_section_contact_pref)) {
             // Preferred Contact Method
             ContactMethodDropdown(
                 selectedMethod = uiState.preferredContactMethod,
@@ -415,12 +418,12 @@ private fun ContactFormContent(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Referente Primario",
+                            text = stringResource(R.string.contact_primary_contact),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "Il contatto principale per questo cliente",
+                            text = stringResource(R.string.contact_primary_contact_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -435,12 +438,12 @@ private fun ContactFormContent(
         }
 
         // ===== NOTE =====
-        ContactFormSection(title = "Note") {
+        ContactFormSection(title = stringResource(R.string.contact_form_section_note)) {
             OutlinedTextField(
                 value = uiState.notes,
                 onValueChange = onNotesChange,
-                label = { Text("Note aggiuntive") },
-                placeholder = { Text("Informazioni aggiuntive sul contatto...") },
+                label = { Text(stringResource(R.string.contact_form_field_notes)) },
+                placeholder = { Text(stringResource(R.string.contact_form_field_notes_placeholder)) },
                 minLines = 3,
                 maxLines = 6,
                 keyboardOptions = KeyboardOptions(
@@ -472,11 +475,11 @@ private fun ContactFormContent(
             }
             Text(
                 text = if (uiState.isSaving) {
-                    "Salvataggio..."
+                    stringResource(R.string.label_saving)
                 } else if (uiState.isEditMode) {
-                    "Aggiorna Contatto"
+                    stringResource(R.string.label_updating)
                 } else {
-                    "Crea Contatto"
+                    stringResource(R.string.label_creating)
                 }
             )
         }
@@ -525,8 +528,8 @@ private fun ContactMethodDropdown(
             value = selectedMethod?.displayName ?: "",
             onValueChange = { },
             readOnly = true,
-            label = { Text("Metodo di contatto preferito") },
-            placeholder = { Text("Seleziona metodo preferito") },
+            label = { Text(stringResource(R.string.contact_form_field_preferred_contact_method)) },
+            placeholder = { Text(stringResource(R.string.contact_form_field_preferred_contact_method_placholder)) },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
@@ -541,7 +544,7 @@ private fun ContactMethodDropdown(
         ) {
             // Opzione "Nessuna preferenza"
             DropdownMenuItem(
-                text = { Text("Nessuna preferenza") },
+                text = { Text(stringResource(R.string.contact_form_field_preferred_contact_method_empty)) },
                 onClick = {
                     onMethodSelected(null)
                     expanded = false

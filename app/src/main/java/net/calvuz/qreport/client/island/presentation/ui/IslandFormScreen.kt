@@ -21,7 +21,7 @@ import net.calvuz.qreport.client.island.domain.model.IslandType
  * Screen per creazione/modifica isola robotizzata
  *
  * Features:
- * - Form completo con validazioni
+ * - ValidationError completo con validazioni
  * - Gestione create/edit mode
  * - Selezione tipo isola con descrizioni
  * - Date picker per installazione, garanzia, manutenzione
@@ -83,7 +83,7 @@ fun IslandFormScreen(
             }
         )
 
-        // Form content
+        // ValidationError content
         Box(modifier = Modifier.fillMaxSize()) {
             if (uiState.isLoading && islandId != null) {
                 // Loading existing island

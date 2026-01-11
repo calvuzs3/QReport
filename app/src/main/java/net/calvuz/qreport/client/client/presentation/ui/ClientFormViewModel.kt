@@ -20,7 +20,7 @@ import javax.inject.Inject
  * ViewModel per la creazione/modifica di un cliente
  *
  * Gestisce:
- * - Form validation real-time
+ * - ValidationError validation real-time
  * - State management
  * - Client creation/update
  * - Error handling

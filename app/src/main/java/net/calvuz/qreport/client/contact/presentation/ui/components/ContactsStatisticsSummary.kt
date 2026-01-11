@@ -6,9 +6,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
 import net.calvuz.qreport.app.app.presentation.components.ListStatItem
+import net.calvuz.qreport.R
 
 /**
  * Componente per mostrare statistiche riassuntive dei contatti
@@ -34,14 +36,14 @@ fun ContactsStatisticsSummary(
             ListStatItem(
                 icon = Icons.Default.Person,
                 value = statistics.totalContacts.toString(),
-                label = "Contatti"
+                label = stringResource(R.string.contact_title)
             )
 
             // Contatti primari
             ListStatItem(
                 icon = Icons.Default.Star,
                 value = statistics.primaryContacts.toString(),
-                label = "Primari",
+                label = stringResource(R.string.contact_primary_title),
                 color = if (statistics.primaryContacts > 0)
                     MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant
@@ -51,7 +53,7 @@ fun ContactsStatisticsSummary(
             ListStatItem(
                 icon = Icons.Default.Phone,
                 value = (statistics.totalContacts - statistics.contactsWithoutContact).toString(),
-                label = "Raggiungibili",
+                label = stringResource(R.string.contact_reachable_title),
                 color = MaterialTheme.colorScheme.tertiary
             )
         }

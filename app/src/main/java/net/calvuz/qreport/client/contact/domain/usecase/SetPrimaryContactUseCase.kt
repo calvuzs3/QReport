@@ -1,8 +1,11 @@
 package net.calvuz.qreport.client.contact.domain.usecase
 
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.repository.ContactRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -18,6 +21,8 @@ import javax.inject.Inject
  * - Solo un contatto primary per cliente
  * - Il nuovo primary deve appartenere al cliente specificato
  * - Operazione atomica (rimuovi vecchio + imposta nuovo)
+ *
+ * Updated to use QrResult<T, QrError> pattern for all methods
  */
 class SetPrimaryContactUseCase @Inject constructor(
     private val contactRepository: ContactRepository,
@@ -28,29 +33,49 @@ class SetPrimaryContactUseCase @Inject constructor(
      * Imposta un contatto come primary per il suo cliente
      *
      * @param contactId ID del contatto da impostare come primary
-     * @return Result con Unit se successo, errore con dettagli se fallimento
+     * @return QrResult.Success se operazione completata, QrResult.Error per errori
      */
-    suspend operator fun invoke(contactId: String): Result<Unit> {
+    suspend operator fun invoke(contactId: String): QrResult<Unit, QrError> {
         return try {
             // 1. Validazione input
             if (contactId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID contatto non può essere vuoto"))
+                Timber.w("SetPrimaryContactUseCase: contactId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(contactId.toString()))
             }
 
+            Timber.d("SetPrimaryContactUseCase: Setting primary contact: $contactId")
+
             // 2. Verificare che il contatto esista ed è attivo
-            val contact = checkContactExists(contactId)
-                .getOrElse { return Result.failure(it) }
+            val contact = when (val contactResult = checkContactExists(contactId)) {
+                is QrResult.Success -> contactResult.data
+                is QrResult.Error -> {
+                    Timber.w("SetPrimaryContactUseCase: Contact existence check failed: ${contactResult.error}")
+                    return QrResult.Error(contactResult.error)
+                }
+            }
 
             // 3. Se è già primary, non serve fare nulla
             if (contact.isPrimary) {
-                return Result.success(Unit)
+                Timber.d("SetPrimaryContactUseCase: Contact is already primary: $contactId")
+                return QrResult.Success(Unit)
             }
 
             // 4. Impostare come primary (il repository gestisce la rimozione del precedente)
-            contactRepository.setPrimaryContact(contact.clientId, contactId)
+            when (val setPrimaryResult = contactRepository.setPrimaryContact(contact.clientId, contactId)) {
+                is QrResult.Success -> {
+                    Timber.d("SetPrimaryContactUseCase: Primary contact set successfully: $contactId")
+                    QrResult.Success(Unit)
+                }
+
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase: Repository error setting primary contact $contactId: ${setPrimaryResult.error}")
+                    QrResult.Error(setPrimaryResult.error)
+                }
+            }
 
         } catch (e: Exception) {
-            Result.failure(e)
+            Timber.e(e, "SetPrimaryContactUseCase: Exception setting primary contact: $contactId")
+            QrResult.Error(QrError.SystemError.Unknown())
         }
     }
 
@@ -59,39 +84,59 @@ class SetPrimaryContactUseCase @Inject constructor(
      *
      * @param clientId ID del cliente
      * @param contactId ID del contatto da impostare come primary
-     * @return Result con Unit se successo, errore se fallimento
+     * @return QrResult.Success se operazione completata, QrResult.Error per errori
      */
-    suspend fun setPrimaryContactForClient(clientId: String, contactId: String): Result<Unit> {
+    suspend fun setPrimaryContactForClient(clientId: String, contactId: String): QrResult<Unit, QrError> {
         return try {
             // 1. Validazione input
             if (clientId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
+                Timber.w("SetPrimaryContactUseCase.setPrimaryContactForClient: clientId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
             }
             if (contactId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID contatto non può essere vuoto"))
+                Timber.w("SetPrimaryContactUseCase.setPrimaryContactForClient: contactId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(contactId.toString()))
             }
 
+            Timber.d("SetPrimaryContactUseCase.setPrimaryContactForClient: Setting contact $contactId as primary for client $clientId")
+
             // 2. Verificare che il contatto esista ed è attivo
-            val contact = checkContactExists(contactId)
-                .getOrElse { return Result.failure(it) }
+            val contact = when (val contactResult = checkContactExists(contactId)) {
+                is QrResult.Success -> contactResult.data
+                is QrResult.Error -> {
+                    Timber.w("SetPrimaryContactUseCase.setPrimaryContactForClient: Contact existence check failed: ${contactResult.error}")
+                    return QrResult.Error(contactResult.error)
+                }
+            }
 
             // 3. Verificare che il contatto appartenga al cliente
             if (contact.clientId != clientId) {
-                return Result.failure(
-                    IllegalArgumentException("Il contatto '$contactId' non appartiene al cliente '$clientId'")
-                )
+                Timber.w("SetPrimaryContactUseCase.setPrimaryContactForClient: Contact $contactId does not belong to client $clientId")
+                return QrResult.Error(QrError.ValidationError.InvalidOperation())
             }
 
             // 4. Se è già primary, non serve fare nulla
             if (contact.isPrimary) {
-                return Result.success(Unit)
+                Timber.d("SetPrimaryContactUseCase.setPrimaryContactForClient: Contact is already primary: $contactId")
+                return QrResult.Success(Unit)
             }
 
             // 5. Impostare come primary
-            contactRepository.setPrimaryContact(clientId, contactId)
+            when (val setPrimaryResult = contactRepository.setPrimaryContact(clientId, contactId)) {
+                is QrResult.Success -> {
+                    Timber.d("SetPrimaryContactUseCase.setPrimaryContactForClient: Primary contact set successfully: $contactId for client $clientId")
+                    QrResult.Success(Unit)
+                }
+
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase.setPrimaryContactForClient: Repository error setting primary contact $contactId for client $clientId: ${setPrimaryResult.error}")
+                    QrResult.Error(setPrimaryResult.error)
+                }
+            }
 
         } catch (e: Exception) {
-            Result.failure(e)
+            Timber.e(e, "SetPrimaryContactUseCase.setPrimaryContactForClient: Exception setting primary contact $contactId for client $clientId")
+            QrResult.Error(QrError.SystemError.Unknown())
         }
     }
 
@@ -99,49 +144,71 @@ class SetPrimaryContactUseCase @Inject constructor(
      * Rimuove il flag primary da un contatto (se possibile)
      *
      * @param contactId ID del contatto da cui rimuovere il flag primary
-     * @return Result con Unit se successo, errore se fallimento
+     * @return QrResult.Success se operazione completata, QrResult.Error per errori
      */
-    suspend fun removePrimaryStatus(contactId: String): Result<Unit> {
+    suspend fun removePrimaryStatus(contactId: String): QrResult<Unit, QrError> {
         return try {
             // 1. Validazione input
             if (contactId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID contatto non può essere vuoto"))
+                Timber.w("SetPrimaryContactUseCase.removePrimaryStatus: contactId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(contactId.toString()))
             }
 
+            Timber.d("SetPrimaryContactUseCase.removePrimaryStatus: Removing primary status from contact: $contactId")
+
             // 2. Verificare che il contatto esista ed è primary
-            val contact = checkContactExists(contactId)
-                .getOrElse { return Result.failure(it) }
+            val contact = when (val contactResult = checkContactExists(contactId)) {
+                is QrResult.Success -> contactResult.data
+                is QrResult.Error -> {
+                    Timber.w("SetPrimaryContactUseCase.removePrimaryStatus: Contact existence check failed: ${contactResult.error}")
+                    return QrResult.Error(contactResult.error)
+                }
+            }
 
             if (!contact.isPrimary) {
-                return Result.failure(
-                    IllegalArgumentException("Il contatto '$contactId' non è primary")
-                )
+                Timber.w("SetPrimaryContactUseCase.removePrimaryStatus: Contact is not primary: $contactId")
+                return QrResult.Error(QrError.ValidationError.InvalidOperation())
             }
 
             // 3. Verificare che ci siano altri contatti per il cliente
-            val clientContacts = contactRepository.getContactsByClient(contact.clientId)
-                .getOrElse { return Result.failure(it) }
+            val clientContacts = when (val contactsResult = contactRepository.getContactsByClient(contact.clientId)) {
+                is QrResult.Success -> contactsResult.data
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase.removePrimaryStatus: Error getting client contacts: ${contactsResult.error}")
+                    return QrResult.Error(contactsResult.error)
+                }
+            }
 
             val otherActiveContacts = clientContacts.filter {
                 it.id != contact.id && it.isActive
             }
 
             if (otherActiveContacts.isEmpty()) {
-                return Result.failure(
-                    IllegalStateException("Impossibile rimuovere primary: è l'unico contatto attivo del cliente")
-                )
+                Timber.w("SetPrimaryContactUseCase.removePrimaryStatus: Cannot remove primary - is the only active contact: $contactId")
+                return QrResult.Error(QrError.ValidationError.InvalidOperation())
             }
 
             // 4. Aggiornare il contatto per rimuovere primary
             val updatedContact = contact.copy(
                 isPrimary = false,
-                updatedAt = Instant.fromEpochMilliseconds( System.currentTimeMillis())
+                updatedAt = Instant.fromEpochMilliseconds(System.currentTimeMillis())
             )
 
-            contactRepository.updateContact(updatedContact)
+            when (val updateResult = contactRepository.updateContact(updatedContact)) {
+                is QrResult.Success -> {
+                    Timber.d("SetPrimaryContactUseCase.removePrimaryStatus: Primary status removed successfully: $contactId")
+                    QrResult.Success(Unit)
+                }
+
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase.removePrimaryStatus: Repository error updating contact $contactId: ${updateResult.error}")
+                    QrResult.Error(updateResult.error)
+                }
+            }
 
         } catch (e: Exception) {
-            Result.failure(e)
+            Timber.e(e, "SetPrimaryContactUseCase.removePrimaryStatus: Exception removing primary status: $contactId")
+            QrResult.Error(QrError.SystemError.Unknown())
         }
     }
 
@@ -149,17 +216,36 @@ class SetPrimaryContactUseCase @Inject constructor(
      * Ottiene il contatto primary di un cliente
      *
      * @param clientId ID del cliente
-     * @return Result con contatto primary se esiste, null altrimenti
+     * @return QrResult.Success con contatto primary se esiste, null altrimenti
      */
-    suspend fun getCurrentPrimaryContact(clientId: String): Result<Contact?> {
+    suspend fun getCurrentPrimaryContact(clientId: String): QrResult<Contact?, QrError> {
         return try {
             if (clientId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
+                Timber.w("SetPrimaryContactUseCase.getCurrentPrimaryContact: clientId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
             }
 
-            contactRepository.getPrimaryContact(clientId)
+            Timber.d("SetPrimaryContactUseCase.getCurrentPrimaryContact: Getting primary contact for client: $clientId")
+
+            when (val result = contactRepository.getPrimaryContact(clientId)) {
+                is QrResult.Success -> {
+                    val contact = result.data
+                    if (contact != null) {
+                        Timber.d("SetPrimaryContactUseCase.getCurrentPrimaryContact: Primary contact found for client: $clientId")
+                    } else {
+                        Timber.d("SetPrimaryContactUseCase.getCurrentPrimaryContact: No primary contact found for client: $clientId")
+                    }
+                    QrResult.Success(contact)
+                }
+
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase.getCurrentPrimaryContact: Repository error for client $clientId: ${result.error}")
+                    QrResult.Error(result.error)
+                }
+            }
         } catch (e: Exception) {
-            Result.failure(e)
+            Timber.e(e, "SetPrimaryContactUseCase.getCurrentPrimaryContact: Exception getting primary contact for client: $clientId")
+            QrResult.Error(QrError.SystemError.Unknown())
         }
     }
 
@@ -167,17 +253,32 @@ class SetPrimaryContactUseCase @Inject constructor(
      * Verifica se un cliente ha un contatto primary
      *
      * @param clientId ID del cliente
-     * @return Result con Boolean - true se ha primary, false altrimenti
+     * @return QrResult.Success con Boolean - true se ha primary, false altrimenti
      */
-    suspend fun hasPrimaryContact(clientId: String): Result<Boolean> {
+    suspend fun hasPrimaryContact(clientId: String): QrResult<Boolean, QrError> {
         return try {
             if (clientId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
+                Timber.w("SetPrimaryContactUseCase.hasPrimaryContact: clientId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
             }
 
-            contactRepository.hasPrimaryContact(clientId)
+            Timber.d("SetPrimaryContactUseCase.hasPrimaryContact: Checking if client has primary contact: $clientId")
+
+            when (val result = contactRepository.hasPrimaryContact(clientId)) {
+                is QrResult.Success -> {
+                    val hasPrimary = result.data
+                    Timber.d("SetPrimaryContactUseCase.hasPrimaryContact: Client $clientId ${if (hasPrimary) "has" else "does not have"} primary contact")
+                    QrResult.Success(hasPrimary)
+                }
+
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase.hasPrimaryContact: Repository error for client $clientId: ${result.error}")
+                    QrResult.Error(result.error)
+                }
+            }
         } catch (e: Exception) {
-            Result.failure(e)
+            Timber.e(e, "SetPrimaryContactUseCase.hasPrimaryContact: Exception checking primary contact for client: $clientId")
+            QrResult.Error(QrError.SystemError.Unknown())
         }
     }
 
@@ -185,19 +286,28 @@ class SetPrimaryContactUseCase @Inject constructor(
      * Suggerisce il miglior candidato per diventare primary contact
      *
      * @param clientId ID del cliente
-     * @return Result con contatto suggerito, null se non ci sono contatti
+     * @return QrResult.Success con contatto suggerito, null se non ci sono contatti
      */
-    suspend fun suggestBestPrimaryCandidate(clientId: String): Result<Contact?> {
+    suspend fun suggestBestPrimaryCandidate(clientId: String): QrResult<Contact?, QrError> {
         return try {
             if (clientId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
+                Timber.w("SetPrimaryContactUseCase.suggestBestPrimaryCandidate: clientId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
             }
 
-            val contacts = contactRepository.getContactsByClient(clientId)
-                .getOrElse { return Result.failure(it) }
+            Timber.d("SetPrimaryContactUseCase.suggestBestPrimaryCandidate: Finding best primary candidate for client: $clientId")
+
+            val contacts = when (val contactsResult = contactRepository.getContactsByClient(clientId)) {
+                is QrResult.Success -> contactsResult.data
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase.suggestBestPrimaryCandidate: Error getting client contacts: ${contactsResult.error}")
+                    return QrResult.Error(contactsResult.error)
+                }
+            }
 
             if (contacts.isEmpty()) {
-                return Result.success(null)
+                Timber.d("SetPrimaryContactUseCase.suggestBestPrimaryCandidate: No contacts found for client: $clientId")
+                return QrResult.Success(null)
             }
 
             // Logica di selezione del miglior candidato:
@@ -222,10 +332,17 @@ class SetPrimaryContactUseCase @Inject constructor(
                 )
                 .firstOrNull()
 
-            Result.success(bestCandidate)
+            if (bestCandidate != null) {
+                Timber.d("SetPrimaryContactUseCase.suggestBestPrimaryCandidate: Best candidate found: ${bestCandidate.id} for client: $clientId")
+            } else {
+                Timber.d("SetPrimaryContactUseCase.suggestBestPrimaryCandidate: No suitable candidate found for client: $clientId")
+            }
+
+            QrResult.Success(bestCandidate)
 
         } catch (e: Exception) {
-            Result.failure(e)
+            Timber.e(e, "SetPrimaryContactUseCase.suggestBestPrimaryCandidate: Exception finding best candidate for client: $clientId")
+            QrResult.Error(QrError.SystemError.Unknown())
         }
     }
 
@@ -233,37 +350,69 @@ class SetPrimaryContactUseCase @Inject constructor(
      * Assegna automaticamente un primary contact se il cliente non ne ha uno
      *
      * @param clientId ID del cliente
-     * @return Result con contatto che è stato impostato come primary, null se non ce n'erano
+     * @return QrResult.Success con contatto che è stato impostato come primary, null se non ce n'erano
      */
-    suspend fun autoAssignPrimaryIfMissing(clientId: String): Result<Contact?> {
+    suspend fun autoAssignPrimaryIfMissing(clientId: String): QrResult<Contact?, QrError> {
         return try {
             if (clientId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
+                Timber.w("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: clientId is blank")
+                return QrResult.Error(QrError.ValidationError.InvalidOperation())
             }
 
+            Timber.d("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: Auto-assigning primary if missing for client: $clientId")
+
             // Controlla se ha già un primary
-            val hasPrimary = contactRepository.hasPrimaryContact(clientId)
-                .getOrElse { return Result.failure(it) }
+            val hasPrimary = when (val hasPrimaryResult = contactRepository.hasPrimaryContact(clientId)) {
+                is QrResult.Success -> hasPrimaryResult.data
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: Error checking primary contact: ${hasPrimaryResult.error}")
+                    return QrResult.Error(hasPrimaryResult.error)
+                }
+            }
 
             if (hasPrimary) {
                 // Ha già un primary, ritorna quello esistente
-                return contactRepository.getPrimaryContact(clientId)
+                Timber.d("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: Client already has primary, returning existing")
+                return when (val primaryResult = contactRepository.getPrimaryContact(clientId)) {
+                    is QrResult.Success -> QrResult.Success(primaryResult.data)
+                    is QrResult.Error -> QrResult.Error(primaryResult.error)
+                }
             }
 
             // Non ha primary, trova il miglior candidato
-            val bestCandidate = suggestBestPrimaryCandidate(clientId)
-                .getOrElse { return Result.failure(it) }
+            val bestCandidate = when (val candidateResult = suggestBestPrimaryCandidate(clientId)) {
+                is QrResult.Success -> candidateResult.data
+                is QrResult.Error -> {
+                    Timber.e("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: Error finding best candidate: ${candidateResult.error}")
+                    return QrResult.Error(candidateResult.error)
+                }
+            }
 
             bestCandidate?.let { candidate ->
-                contactRepository.setPrimaryContact(clientId, candidate.id)
-                    .onFailure { return Result.failure(it) }
+                when (val setPrimaryResult = contactRepository.setPrimaryContact(clientId, candidate.id)) {
+                    is QrResult.Success -> {
+                        Timber.d("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: Auto-assigned primary contact: ${candidate.id}")
 
-                // Ritorna il contatto aggiornato
-                contactRepository.getContactById(candidate.id)
-            } ?: Result.success(null)
+                        // Ritorna il contatto aggiornato
+                        when (val updatedContactResult = contactRepository.getContactById(candidate.id)) {
+                            is QrResult.Success -> QrResult.Success(updatedContactResult.data)
+                            is QrResult.Error -> QrResult.Error(updatedContactResult.error)
+                        }
+                    }
+
+                    is QrResult.Error -> {
+                        Timber.e("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: Error setting primary contact: ${setPrimaryResult.error}")
+                        QrResult.Error(setPrimaryResult.error)
+                    }
+                }
+            } ?: run {
+                Timber.d("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: No candidate found for auto-assignment")
+                QrResult.Success(null)
+            }
 
         } catch (e: Exception) {
-            Result.failure(e)
+            Timber.e(e, "SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: Exception auto-assigning primary for client: $clientId")
+            QrResult.Error(QrError.SystemError.Unknown())
         }
     }
 }

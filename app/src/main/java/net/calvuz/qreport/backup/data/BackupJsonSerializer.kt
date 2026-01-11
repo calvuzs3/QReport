@@ -160,7 +160,7 @@ class BackupJsonSerializer @Inject constructor() {
             jsonObject["database"]?.jsonObject?.let { database ->
                 val expectedTables = listOf(
                     "checkUps", "checkItems", "photos", "spareParts",
-                    "clients", "contacts", "facilities", "facilityIslands",
+                    "clients", "contacts", "contracts", "facilities", "facilityIslands",
                     "checkUpAssociations"
                 )
 

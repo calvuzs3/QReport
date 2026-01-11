@@ -1,5 +1,6 @@
 package net.calvuz.qreport.client.facility.presentation.ui
 
+import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -15,15 +16,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityCard
-import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityCardVariant
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard
+import net.calvuz.qreport.app.app.util.MapUtils
 
 /**
  * Screen per la lista stabilimenti di un cliente - seguendo pattern ClientListScreen
@@ -48,6 +51,7 @@ fun FacilityListScreen(
     viewModel: FacilityListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     // Initialize for specific client
     LaunchedEffect(clientId) {
@@ -179,6 +183,7 @@ fun FacilityListScreen(
 
                 else -> {
                     FacilityListContent(
+                        context = context,
                         facilities = uiState.filteredFacilities,
                         onFacilityClick = onNavigateToFacilityDetail,
                         onFacilityEdit = onEditFacility,
@@ -213,6 +218,7 @@ fun FacilityListScreen(
 
 @Composable
 private fun FacilityListContent(
+    context: Context,
     facilities: List<FacilityWithStats>,
     onFacilityClick: (String) -> Unit,
     onFacilityEdit: (String) -> Unit,
@@ -235,7 +241,10 @@ private fun FacilityListContent(
                 onDelete = if (onFacilityDelete != null) {
                     { onFacilityDelete(facilityWithStats.facility.id) }
                 } else null,
-                variant = FacilityCardVariant.FULL
+                onOpenMaps = if (facilityWithStats.facility.address.isComplete()) {
+                    { MapUtils.openMapsWithAddress(context, facilityWithStats.facility.address) }
+                } else null,
+                variant = QrListItemCard.QrListItemCardVariant.FULL,
             )
         }
     }

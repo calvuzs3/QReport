@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import net.calvuz.qreport.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
@@ -147,6 +148,7 @@ class CheckUpListViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
 
                 Timber.d("Refreshing check-ups list")
+                delay(500)
 
                 // Use .first() for one-shot operation instead of .collect
                 val checkUps = getCheckUpsUseCase().first()

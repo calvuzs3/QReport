@@ -15,6 +15,7 @@ import net.calvuz.qreport.backup.domain.model.backup.FacilityIslandBackup
 import net.calvuz.qreport.backup.domain.model.backup.PhotoBackup
 import net.calvuz.qreport.backup.domain.model.backup.SparePartBackup
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
+import net.calvuz.qreport.backup.domain.model.backup.ContractBackup
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -32,6 +33,8 @@ import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
+import net.calvuz.qreport.client.contract.data.local.ContractDao
+import net.calvuz.qreport.client.contract.data.local.ContractEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import timber.log.Timber
 import java.io.File
@@ -51,6 +54,7 @@ class DatabaseExporter @Inject constructor(
     private val photoDao: PhotoDao,
     private val sparePartDao: SparePartDao,
     private val clientDao: ClientDao,
+    private val contractDao: ContractDao,
     private val contactDao: ContactDao,
     private val facilityDao: FacilityDao,
     private val islandDao: IslandDao,
@@ -80,6 +84,9 @@ class DatabaseExporter @Inject constructor(
             val contacts = contactDao.getAllForBackup().map { it.toBackup() }
             Timber.v("Exported ${contacts.size} contacts")
 
+            val contracts = contractDao.getAllForBackup().map { it.toBackup() }
+            Timber.v("Exported ${contracts.size} contracts")
+
             val facilityIslands = islandDao.getAllForBackup().map { it.toBackup() }
             Timber.v("Exported ${facilityIslands.size} facility islands")
 
@@ -108,6 +115,7 @@ class DatabaseExporter @Inject constructor(
                 // Client entities
                 clients = clients,
                 contacts = contacts,
+                contracts = contracts,
                 facilities = facilities,
                 facilityIslands = facilityIslands,
 
@@ -126,6 +134,7 @@ class DatabaseExporter @Inject constructor(
                 append("Breakdown: CheckUps=${checkUps.size}, CheckItems=${checkItems.size}, ")
                 append("Photos=${photos.size}, SpareParts=${spareParts.size}, ")
                 append("Clients=${clients.size}, Contacts=${contacts.size}, ")
+                append("Contracts=${contracts.size}, ")
                 append("Facilities=${facilities.size}, Islands=${facilityIslands.size}, ")
                 append("Associations=${associations.size}")
             })
@@ -150,6 +159,7 @@ class DatabaseExporter @Inject constructor(
                 sparePartDao.count(),
                 clientDao.count(),
                 contactDao.count(),
+                contractDao.count(),
                 facilityDao.count(),
                 islandDao.count(),
                 checkUpAssociationDao.count()
@@ -359,6 +369,24 @@ fun ContactEntity.toBackup(): ContactBackup {
         isActive = isActive,
         preferredContactMethod = preferredContactMethod,
         notes = notes,
+        createdAt = Instant.fromEpochMilliseconds(createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt)
+    )
+}
+
+fun ContractEntity.toBackup(): ContractBackup {
+    return ContractBackup(
+        id = id,
+        clientId = clientId,
+        name = name,
+        description = description,
+        startDate = Instant.fromEpochMilliseconds(startDate),
+        endDate = Instant.fromEpochMilliseconds(endDate),
+        hasPriority = hasPriority,
+        hasRemoteAssistance = hasRemoteAssistance,
+        hasMaintenance = hasMaintenance,
+        notes = notes,
+        isActive = isActive,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         updatedAt = Instant.fromEpochMilliseconds(updatedAt)
     )

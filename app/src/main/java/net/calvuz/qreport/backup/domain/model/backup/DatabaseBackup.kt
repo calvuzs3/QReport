@@ -18,6 +18,7 @@ data class DatabaseBackup(
     // ===== CLIENT MANAGEMENT =====
     val clients: List<ClientBackup>,
     val contacts: List<ContactBackup>,
+    val contracts: List<ContractBackup>,
     val facilities: List<FacilityBackup>,
     val facilityIslands: List<FacilityIslandBackup>,
 
@@ -37,6 +38,7 @@ data class DatabaseBackup(
                 spareParts.size +
                 clients.size +
                 contacts.size +
+                contracts.size +
                 facilities.size +
                 facilityIslands.size +
                 checkUpAssociations.size
@@ -58,6 +60,7 @@ data class DatabaseBackup(
                 spareParts = emptyList(),
                 clients = emptyList(),
                 contacts = emptyList(),
+                contracts = emptyList(),
                 facilities = emptyList(),
                 facilityIslands = emptyList(),
                 checkUpAssociations = emptyList(),

@@ -22,8 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
 
@@ -41,7 +43,7 @@ fun ContactMethodsCard(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Contatti",
+                text = stringResource(R.string.contact_contact_methods),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -50,7 +52,7 @@ fun ContactMethodsCard(
             contact.phone?.let { phone ->
                 ContactMethodItem(
                     icon = Icons.Default.Phone,
-                    label = "Telefono",
+                    label = stringResource(R.string.contact_field_phone),
                     value = phone,
                     onClick = { onPhoneClick(phone) },
                     isPrimary = contact.preferredContactMethod == ContactMethod.PHONE
@@ -61,7 +63,7 @@ fun ContactMethodsCard(
             contact.mobilePhone?.let { mobile ->
                 ContactMethodItem(
                     icon = Icons.Default.PhoneAndroid,
-                    label = "Cellulare",
+                    label = stringResource(R.string.contact_field_mobile),
                     value = mobile,
                     onClick = { onPhoneClick(mobile) },
                     isPrimary = contact.preferredContactMethod == ContactMethod.MOBILE
@@ -72,7 +74,7 @@ fun ContactMethodsCard(
             contact.email?.let { email ->
                 ContactMethodItem(
                     icon = Icons.Default.Email,
-                    label = "Email",
+                    label = stringResource(R.string.contact_field_email),
                     value = email,
                     onClick = { onEmailClick(email) },
                     isPrimary = contact.preferredContactMethod == ContactMethod.EMAIL
@@ -83,7 +85,7 @@ fun ContactMethodsCard(
             contact.alternativeEmail?.let { altEmail ->
                 ContactMethodItem(
                     icon = Icons.Default.AlternateEmail,
-                    label = "Email alternativa",
+                    label = stringResource(R.string.contact_field_alternative_email),
                     value = altEmail,
                     onClick = { onEmailClick(altEmail) }
                 )
@@ -128,7 +130,7 @@ fun ContactMethodItem(
                 if (isPrimary) {
                     Icon(
                         imageVector = Icons.Default.Star,
-                        contentDescription = "Preferito",
+                        contentDescription = stringResource(R.string.label_preferred),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(12.dp)
                     )
@@ -145,7 +147,7 @@ fun ContactMethodItem(
         IconButton(onClick = onClick) {
             Icon(
                 imageVector = Icons.AutoMirrored.Default.Launch,
-                contentDescription = "Contatta",
+                contentDescription = stringResource(R.string.action_contact),
                 modifier = Modifier.size(18.dp)
             )
         }

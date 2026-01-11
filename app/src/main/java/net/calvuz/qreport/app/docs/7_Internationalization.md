@@ -834,7 +834,7 @@ fun QReportState.getDisplayName(context: Context): String {
     <string name="feature_dialog_form_title_create">Nuova Feature</string>
     <string name="feature_dialog_form_title_edit">Modifica Feature</string>
     
-    <!-- Form Fields -->
+    <!-- ValidationError Fields -->
     <string name="feature_dialog_form_name_label">Nome *</string>
     <string name="feature_dialog_form_name_placeholder">Inserisci nome feature</string>
     <string name="feature_dialog_form_description_label">Descrizione</string>
@@ -973,11 +973,11 @@ fun testErrorHandling() {
     <string name="client_dialog_form_title_create">Nuovo Cliente</string>
     <string name="client_dialog_form_title_edit">Modifica Cliente</string>
     
-    <!-- Form Sections -->
+    <!-- ValidationError Sections -->
     <string name="client_dialog_form_section_general">Informazioni Generali</string>
     <string name="client_dialog_form_section_contact">Contatti</string>
     
-    <!-- Form Fields -->
+    <!-- ValidationError Fields -->
     <string name="client_dialog_form_company_name_label">Nome Azienda *</string>
     <string name="client_dialog_form_company_name_placeholder">Inserisci nome azienda</string>
     <string name="client_dialog_form_vat_number_label">Partita IVA</string>

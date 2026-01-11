@@ -19,7 +19,7 @@ import net.calvuz.qreport.settings.domain.model.TechnicianInfo
 
 /**
  * Screen per gestire le impostazioni del tecnico
- * - Form completo per inserimento dati tecnico
+ * - ValidationError completo per inserimento dati tecnico
  * - Validazione real-time
  * - Preview dei dati salvati
  * - Reset con conferma
@@ -93,7 +93,7 @@ fun TechnicianSettingsScreen(
                 SuccessCard(message = uiState.message!!)
             }
 
-            // Main Form Card
+            // Main ValidationError Card
             TechnicianFormCard(
                 formState = formState,
                 onFieldUpdate = viewModel::updateFormField,

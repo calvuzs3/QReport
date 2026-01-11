@@ -1,6 +1,8 @@
 package net.calvuz.qreport.client.contact.domain.validator
 
 import android.util.Patterns
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import javax.inject.Inject
 
@@ -9,45 +11,45 @@ import javax.inject.Inject
  */
 class ContactDataValidator @Inject constructor() {
 
-    operator fun invoke(contact: Contact): Result<Unit> {
+    operator fun invoke(contact: Contact): QrResult<Unit, QrError> {
         return when {
             contact.clientId.isBlank() ->
-                Result.failure(IllegalArgumentException("ID cliente è obbligatorio"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             contact.firstName.isBlank() ->
-                Result.failure(IllegalArgumentException("Nome è obbligatorio"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             contact.firstName.length < 2 ->
-                Result.failure(IllegalArgumentException("Nome deve essere di almeno 2 caratteri"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             contact.firstName.length > 100 ->
-                Result.failure(IllegalArgumentException("Nome troppo lungo (max 100 caratteri)"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             contact.lastName?.let { it.length > 100 } == true ->
-                Result.failure(IllegalArgumentException("Cognome troppo lungo (max 100 caratteri)"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             contact.email?.isNotBlank() == true && !isValidEmail(contact.email) ->
-                Result.failure(IllegalArgumentException("Formato email non valido"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             contact.phone?.isNotBlank() == true && !isValidPhone(contact.phone) ->
-                Result.failure(IllegalArgumentException("Formato telefono non valido"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             contact.mobilePhone?.isNotBlank() == true && !isValidPhone(contact.mobilePhone) ->
-                Result.failure(IllegalArgumentException("Formato cellulare non valido"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             (contact.title?.length ?: 0) > 100 ->
-                Result.failure(IllegalArgumentException("Titolo troppo lungo (max 100 caratteri)"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             (contact.role?.length ?: 0) > 100 ->
-                Result.failure(IllegalArgumentException("Ruolo troppo lungo (max 100 caratteri)"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             (contact.department?.length ?: 0) > 100 ->
-                Result.failure(IllegalArgumentException("Dipartimento troppo lungo (max 100 caratteri)"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
             !hasAnyContactInfo(contact) ->
-                Result.failure(IllegalArgumentException("Deve essere fornito almeno un metodo di contatto (email, telefono o cellulare)"))
+                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
 
-            else -> Result.success(Unit)
+            else -> QrResult.Success(Unit)
         }
     }
 

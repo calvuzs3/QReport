@@ -1,8 +1,9 @@
 package net.calvuz.qreport.app.error.domain.model
 
 sealed interface QrError {
-    enum class NotImplemented : QrError {
-        YET
+
+    sealed class SystemError: QrError {
+        data class Unknown(val exception: Exception? = null): SystemError()
     }
 
     sealed interface App: QrError {
@@ -13,13 +14,31 @@ sealed interface QrError {
         data class NotImplemented(val message: QrError? = null): App
     }
 
+    sealed interface ValidationError: QrError {
+        data class EmptyField(val message: String? = null): ValidationError
+        data class IsNotActive(val message: String? = null): ValidationError
+        data class IsNotPrimary(val message: String? = null): ValidationError
+        data class DuplicateEntry(val message: String? = null): ValidationError
+        data class InvalidOperation(val message: String? = null): ValidationError
+
+    }
     sealed interface Contracts: QrError {
         data class ClientIdEmpty(val message: String?) : Contracts
         data class ClientNotFound(val message: String?) : Contracts
         data class ContractIdEmpty(val message: String?): Contracts
         data class ContractNotFound(val message: String?) : Contracts
         data class DeleteError(val exception: Exception) : Contracts
+
     }
+
+    sealed interface Contacts: QrError {
+        sealed interface ValidationError: Contacts {
+            data class IdClientMandatory(val message: String? = null): ValidationError
+            data class IdContractMandatory(val message: String? = null): ValidationError
+            data class IdMandatory(val message: String? = null): ValidationError
+        }
+    }
+
     /**
      * Errore relativo alle operazioni di database con Room.
      */
@@ -28,31 +47,31 @@ sealed interface QrError {
          * Errore generico durante un'operazione di database.
          * @param message Dettaglio dell'eccezione per il logging.
          */
-        data class OperationFailed(val message: String?) : DatabaseError
+        data class OperationFailed(val message: String? = null) : DatabaseError
 
         /**
          * Errore specifico durante un'operazione di inserimento.
          * @param message Dettaglio dell'eccezione per il logging.
          */
-        data class InsertFailed(val message: String?) : DatabaseError
+        data class InsertFailed(val message: String? = null) : DatabaseError
 
         /**
          * Errore specifico durante un'operazione di aggiornamento.
          * @param message Dettaglio dell'eccezione per il logging.
          */
-        data class UpdateFailed(val message: String?) : DatabaseError
+        data class UpdateFailed(val message: String? = null) : DatabaseError
 
         /**
          * Errore specifico durante un'operazione di eliminazione.
          * @param message Dettaglio dell'eccezione per il logging.
          */
-        data class DeleteFailed(val message: String?) : DatabaseError
+        data class DeleteFailed(val message: String? = null) : DatabaseError
 
         /**
          * L'entità cercata non è stata trovata nel database.
          * @param message Dettaglio dell'entità non trovata per il logging.
          */
-        data class NotFound(val message: String?) : DatabaseError
+        data class NotFound(val message: String? = null) : DatabaseError
     }
 
 

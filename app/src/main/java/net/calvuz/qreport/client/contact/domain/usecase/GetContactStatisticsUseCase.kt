@@ -1,8 +1,11 @@
 package net.calvuz.qreport.client.contact.domain.usecase
 
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -10,32 +13,59 @@ import javax.inject.Inject
  * Utilizzato dal ClientDetailScreen per la scheda Contacts
  *
  * Usa GetContactsByClientUseCase per seguire i principi Clean Architecture
+ *
+ * Updated to use QrResult<ContactStatistics, QrError> pattern
  */
 class GetContactStatisticsUseCase @Inject constructor(
     private val getContactsByClientUseCase: GetContactsByClientUseCase
 ) {
 
-    suspend operator fun invoke(clientId: String): Result<ContactStatistics> = try {
-
-        // Recupera tutti i contatti del cliente usando il use case specifico
-        getContactsByClientUseCase(clientId).fold(
-            onSuccess = { contacts ->
-                if (contacts.isEmpty()) {
-                    Result.success(ContactStatistics.empty())
-                } else {
-                    val statistics = calculateStatistics(contacts)
-                    Result.success(statistics)
-                }
-            },
-            onFailure = { error ->
-                Result.failure(error)
+    /**
+     * Calcola le statistiche dei contatti per un cliente
+     *
+     * @param clientId ID del cliente
+     * @return QrResult.Success con ContactStatistics, QrResult.Error per errori
+     */
+    suspend operator fun invoke(clientId: String): QrResult<ContactStatistics, QrError> {
+        return try {
+            // Validazione input
+            if (clientId.isBlank()) {
+                Timber.w("GetContactStatisticsUseCase: clientId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
             }
-        )
 
-    } catch (e: Exception) {
-        Result.failure(e)
+            Timber.d("GetContactStatisticsUseCase: Calculating statistics for client: $clientId")
+
+            // Recupera tutti i contatti del cliente usando il use case specifico
+            when (val contactsResult = getContactsByClientUseCase(clientId)) {
+                is QrResult.Success -> {
+                    val contacts = contactsResult.data
+
+                    val statistics = if (contacts.isEmpty()) {
+                        Timber.d("GetContactStatisticsUseCase: No contacts found for client $clientId, returning empty statistics")
+                        ContactStatistics.empty()
+                    } else {
+                        Timber.d("GetContactStatisticsUseCase: Calculating statistics for ${contacts.size} contacts")
+                        calculateStatistics(contacts)
+                    }
+
+                    QrResult.Success(statistics)
+                }
+
+                is QrResult.Error -> {
+                    Timber.e("GetContactStatisticsUseCase: Error getting contacts for client $clientId: ${contactsResult.error}")
+                    QrResult.Error(contactsResult.error)
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "GetContactStatisticsUseCase: Exception calculating statistics for client: $clientId")
+            QrResult.Error(QrError.SystemError.Unknown())
+        }
     }
 
+    /**
+     * Calcola statistiche dettagliate sui contatti
+     */
     private fun calculateStatistics(contacts: List<Contact>): ContactStatistics {
         val activeContacts = contacts.filter { it.isActive }
         val inactiveContacts = contacts.filter { !it.isActive }
@@ -85,6 +115,8 @@ class GetContactStatisticsUseCase @Inject constructor(
         }
 
         val incompleteProfiles = contacts.size - completeProfiles
+
+        Timber.d("GetContactStatisticsUseCase: Statistics calculated - Total: ${contacts.size}, Active: ${activeContacts.size}, Complete profiles: $completeProfiles")
 
         return ContactStatistics(
             totalContacts = contacts.size,

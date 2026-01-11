@@ -16,24 +16,10 @@ fun ConfirmDeleteDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = { onDismiss },
-        title = { Text("Elimina $objectName") },
-        text = { Text("Sei sicuro di voler eliminare $objectName: $objectDesc?\nL'operazione non può essere annullata.") },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text("Elimina")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
-            }
-        }
+    DeleteDialog(
+        title = "Elimina $objectName",
+        text = "Sei sicuro di voler eliminare $objectName: $objectDesc?\nL'operazione non può essere annullata.",
+        onConfirm = onConfirm,
+        onDismiss = onDismiss
     )
 }

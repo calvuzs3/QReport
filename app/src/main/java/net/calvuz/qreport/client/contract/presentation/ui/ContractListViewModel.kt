@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.contract.data.local.isValid
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.usecase.DeleteContractUseCase
@@ -19,8 +21,9 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.days
+import net.calvuz.qreport.R
 
-
+/** ContractListScreen UiState */
 data class ContractListUiState(
     val clientId: String = "",
     val contracts: List<ContractWithStats> = emptyList(),
@@ -28,30 +31,23 @@ data class ContractListUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val isDeleting: String? = null,
-    val error: String? = null,
+    val error: UiText? = null,
     val searchQuery: String = "",
     val selectedFilter: ContractFilter = ContractFilter.ACTIVE,
     val selectedSortOrder: ContractSortOrder = ContractSortOrder.EXPIRE_RECENT,
 )
 
+/** ContractListScreen Filter */
+enum class ContractFilter { ACTIVE, INACTIVE, ALL }
 
-enum class ContractFilter {
-    ACTIVE,
-    INACTIVE,
-    ALL
-}
-
-enum class ContractSortOrder {
-    EXPIRE_RECENT,
-    EXPIRE_OLDEST,
-    NAME
-}
+/** ContractListScreen SortOrder */
+enum class ContractSortOrder { EXPIRE_RECENT, EXPIRE_OLDEST, NAME }
 
 @HiltViewModel
 class ContractListViewModel @Inject constructor(
     private val getContractsByClientUseCase: GetContractsByClientUseCase,
     private val deleteContractUseCase: DeleteContractUseCase
-): ViewModel() {
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContractListUiState())
     val uiState: StateFlow<ContractListUiState> = _uiState.asStateFlow()
@@ -71,7 +67,7 @@ class ContractListViewModel @Inject constructor(
         if (clientId.isBlank()) {
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
-                error = "ID cliente non valido"
+                error = UiText.StringResource(R.string.err_contracts_list_invalid_client_id)
             )
             return
         }
@@ -94,7 +90,7 @@ class ContractListViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                error = "Errore caricamento Contatti: ${exception.message}"
+                                error = UiText.StringResources(R.string.err_contracts_list_load_contacts, exception.message ?: "")
                             )
                         }
                     }
@@ -124,16 +120,16 @@ class ContractListViewModel @Inject constructor(
                                 error = null
                             )
 
-                            Timber.d("Loaded ${contacts.size} contacts successfully")
+                            Timber.d("Loaded ${contacts.size} contracts successfully")
                         }
                     }
             } catch (_: CancellationException) {
                 Timber.d("Contacts loading cancelled")
             } catch (e: Exception) {
-                Timber.e(e, "Exception loading contacts")
+                Timber.e(e, "Exception loading contracts")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.StringResources(R.string.err_contracts_list_unexpected, e.message ?: "")
                 )
             }
         }
@@ -148,6 +144,7 @@ class ContractListViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
 
                 Timber.d("Refreshing contracts for client: $clientId")
+                delay(500)
 
                 when (val result = getContractsByClientUseCase(clientId)) {
 
@@ -180,12 +177,13 @@ class ContractListViewModel @Inject constructor(
                             Timber.d("Contracts refresh completed successfully")
                         }
                     }
+
                     is QrResult.Error -> {
                         if (currentCoroutineContext().isActive) {
-                            Timber.e( "Failed to refresh contracts")
+                            Timber.e("Failed to refresh contracts")
                             _uiState.value = _uiState.value.copy(
                                 isRefreshing = false,
-                                error = "Errore refresh: ${result.error}"
+                                error = UiText.StringResources(R.string.err_contracts_list_refresh_failed, result.error)
                             )
                         }
                         Timber.d("Error refreshing contracts: ${result.error}")
@@ -201,7 +199,7 @@ class ContractListViewModel @Inject constructor(
                     Timber.e(e, "Failed to refresh contracts")
                     _uiState.value = _uiState.value.copy(
                         isRefreshing = false,
-                        error = "Errore refresh: ${e.message}"
+                        error = UiText.StringResources(R.string.err_contracts_list_refresh_unexpected, e.message ?: "")
                     )
                 }
             }
@@ -213,16 +211,17 @@ class ContractListViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isDeleting = contractId)
 
             try {
-                when (val result = deleteContractUseCase(contractId)) {
+                when (deleteContractUseCase(contractId)) {
                     is QrResult.Success -> {
                         Timber.d("Contact deleted successfully: $contractId")
                         refresh() // Show changes
                     }
+
                     is QrResult.Error -> {
-                        Timber.e( "Failed to delete contract $contractId")
+                        Timber.e("Failed to delete contract $contractId")
                         _uiState.value = _uiState.value.copy(
                             isDeleting = null,
-                            error = "Errore eliminazione Contratto: ${contractId}"
+                            error = UiText.StringResources(R.string.err_contracts_list_delete_failed, contractId)
                         )
                     }
                 }
@@ -230,44 +229,13 @@ class ContractListViewModel @Inject constructor(
                 Timber.e(e, "Exception deleting contract")
                 _uiState.value = _uiState.value.copy(
                     isDeleting = null,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = UiText.StringResources(R.string.err_contracts_list_unexpected, e.message ?: "")
                 )
             } finally {
                 _uiState.value = _uiState.value.copy(isDeleting = null)
             }
         }
     }
-//    fun delete(contractId: String) {
-//        viewModelScope.launch {
-//            _uiState.value = _uiState.value.copy(isDeleting = contractId)
-//
-//            try {
-//                when (val result = deleteContractUseCase(contractId)) {
-//                    is QrResult.Success -> {
-//                        Timber.d("Contact deleted successfully: $contractId")
-//                        // Ricarica la lista per mostrare i cambiamenti
-//                        refresh()
-//                    }
-//                    is QrResult.Error -> {
-//                        Timber.e( "Failed to delete contract $contractId")
-//                        _uiState.value = _uiState.value.copy(
-//                            isDeleting = null,
-//                            error = "Errore eliminazione Contratto: ${contractId}"
-//                        )
-//                    }
-//                }
-//            } catch (e: Exception) {
-//                Timber.e(e, "Exception deleting contract")
-//                _uiState.value = _uiState.value.copy(
-//                    isDeleting = null,
-//                    error = "Errore imprevisto: ${e.message}"
-//                )
-//            } finally {
-//                _uiState.value = _uiState.value.copy(isDeleting = null)
-//            }
-//        }
-//    }
-
 
     /**
      * Handle contract renewal - creates a new contract based on the existing one
@@ -293,13 +261,13 @@ class ContractListViewModel @Inject constructor(
                 } else {
                     Timber.e("Contract not found for renewal: $contractId")
                     _uiState.value = _uiState.value.copy(
-                        error = "Contratto non trovato per il rinnovo"
+                        error = UiText.StringResource(R.string.err_contracts_list_contract_not_found_for_renewal)
                     )
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Exception renewing contract")
                 _uiState.value = _uiState.value.copy(
-                    error = "Errore rinnovo contratto: ${e.message}"
+                    error = UiText.StringResources(R.string.err_contracts_list_renewal_failed, e.message ?: "")
                 )
             }
         }
@@ -398,7 +366,7 @@ class ContractListViewModel @Inject constructor(
     // PRIVATE METHODS
     // ============================================================
 
-    suspend fun enrichWithStatistics(contracts: List<Contract>): List<ContractWithStats> {
+    private fun enrichWithStatistics(contracts: List<Contract>): List<ContractWithStats> {
         return contracts.map { contract ->
             val stats = try {
                 ContractsStatistics(
@@ -435,9 +403,12 @@ class ContractListViewModel @Inject constructor(
             filtered = filtered.filter { contractWithStats ->
                 val contract = contractWithStats.contract
                 val nameMatch = contract.name?.contains(searchQuery, ignoreCase = true) ?: false
-                val descriptionMatch = contract.description?.contains(searchQuery, ignoreCase = true) ?: false
-                val startDateMatch = contract.startDate.toString().contains(searchQuery, ignoreCase = true)
-                val endDateMatch = contract.endDate.toString().contains(searchQuery, ignoreCase = true)
+                val descriptionMatch =
+                    contract.description?.contains(searchQuery, ignoreCase = true) ?: false
+                val startDateMatch =
+                    contract.startDate.toString().contains(searchQuery, ignoreCase = true)
+                val endDateMatch =
+                    contract.endDate.toString().contains(searchQuery, ignoreCase = true)
 
                 // Il contratto passa il filtro se almeno una delle condizioni è vera
                 nameMatch || descriptionMatch || startDateMatch || endDateMatch

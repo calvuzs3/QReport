@@ -17,10 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.contact.domain.model.Contact
-
+import net.calvuz.qreport.R
 
 @Composable
 fun ContactRoleCard(
@@ -33,7 +34,7 @@ fun ContactRoleCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Ruolo Aziendale",
+                text = stringResource(R.string.contact_field_role_title ),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -41,7 +42,7 @@ fun ContactRoleCard(
             contact.role?.let { role ->
                 ContactRoleItem(
                     icon = Icons.Default.Work,
-                    label = "Posizione",
+                    label = stringResource(R.string.contact_field_role),
                     value = role
                 )
             }
@@ -49,7 +50,7 @@ fun ContactRoleCard(
             contact.department?.let { dept ->
                 ContactRoleItem(
                     icon = Icons.Default.Business,
-                    label = "Dipartimento",
+                    label = stringResource(R.string.contact_field_department),
                     value = dept
                 )
             }

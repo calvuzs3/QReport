@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.model.ClientSingleStatistics
 import net.calvuz.qreport.client.client.domain.model.ClientWithDetails
 import net.calvuz.qreport.client.contact.domain.model.Contact
@@ -174,17 +175,15 @@ class ClientDetailViewModel @Inject constructor(
     }
 
     private suspend fun loadContactStatistics(clientId: String) {
-        getContactStatisticsUseCase(clientId).fold(
-            onSuccess = { stats ->
-                _uiState.value = _uiState.value.copy(
-                    contactStatistics = stats
-                )
-            },
-            onFailure = { error ->
-                // Log error but don't fail the whole screen
-                Timber.e(error, "Failed to load contact statistics")
+        when (val result = getContactStatisticsUseCase(clientId)) {
+            is QrResult.Success -> {
+                _uiState.value = _uiState.value.copy( contactStatistics = result.data)
             }
-        )
+            is QrResult.Error -> {
+                // Log error but don't fail the whole screen
+                Timber.e( "Failed to load contact statistics")
+            }
+        }
     }
 
     private suspend fun loadContractStatistics(clientId: String) {

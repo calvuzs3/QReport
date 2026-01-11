@@ -471,7 +471,7 @@ data class FacilityIslandFormUiState(
     val error: String? = null
 ) {
     /**
-     * Form è valido per il salvataggio
+     * ValidationError è valido per il salvataggio
      */
     val isFormValid: Boolean
         get() = serialNumber.isNotBlank() &&

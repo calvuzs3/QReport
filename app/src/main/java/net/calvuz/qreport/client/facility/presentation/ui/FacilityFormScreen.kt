@@ -20,7 +20,7 @@ import net.calvuz.qreport.client.facility.domain.model.FacilityType
  * Screen per creazione/modifica stabilimento
  *
  * Features:
- * - Form completo con validazioni
+ * - ValidationError completo con validazioni
  * - Gestione create/edit mode
  * - Selezione tipo facility
  * - Input indirizzo strutturato
@@ -74,7 +74,7 @@ fun FacilityFormScreen(
             }
         )
 
-        // Form content
+        // ValidationError content
         Box(modifier = Modifier.fillMaxSize()) {
             if (uiState.isLoading && facilityId != null) {
                 // Loading existing facility

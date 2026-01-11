@@ -33,7 +33,7 @@ class TechnicianSettingsViewModel @Inject constructor(
             initialValue = false
         )
 
-    // Form state
+    // ValidationError state
     private val _formState = MutableStateFlow(TechnicianFormState())
     val formState: StateFlow<TechnicianFormState> = _formState.asStateFlow()
 
@@ -230,7 +230,7 @@ data class TechnicianSettingsUiState(
 )
 
 /**
- * Form state for technician data
+ * ValidationError state for technician data
  */
 data class TechnicianFormState(
     val name: String = "",
@@ -246,7 +246,7 @@ data class TechnicianFormState(
 }
 
 /**
- * Form fields enum for type-safe field updates
+ * ValidationError fields enum for type-safe field updates
  */
 enum class TechnicianField {
     NAME,

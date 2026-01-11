@@ -21,7 +21,7 @@ import timber.log.Timber
  *
  * Features:
  * - Dual mode: Create (clientId = null) / Edit (clientId != null)
- * - Form validation real-time
+ * - ValidationError validation real-time
  * - Sezioni organizzate: Dati Aziendali, Indirizzo, Note
  * - Loading states e error handling
  */

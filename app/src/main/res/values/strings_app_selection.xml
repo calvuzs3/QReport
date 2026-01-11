@@ -11,6 +11,20 @@
     <string name="select_all">Seleziona tutto</string>
     <string name="deselect_all">Deseleziona tutto</string>
 
+    <!-- Bottom Sheet -->
+    <string name="selection_actions_title">Azioni selezione</string>
+    <string name="close_selection_actions">Chiudi azioni selezione</string>
+    <string name="items_selected">Elementi selezionati</string>
+    <string name="tap_for_actions">Tocca per le azioni</string>
+    <string name="selection_actions">Azioni selezione</string>
+    <string name="action_not_available">Azione non disponibile</string>
+
+    <!-- Action Subtitles -->
+    <string name="action_subtitle_delete">Elimina definitivamente</string>
+    <string name="action_subtitle_renew">Estendi periodo di validità</string>
+    <string name="action_subtitle_export">Esporta in vari formati</string>
+    <string name="action_subtitle_select_all">Seleziona tutti gli elementi visibili</string>
+
     <!-- Batch Actions - Common -->
     <string name="batch_action_select_all">Seleziona tutto</string>
     <string name="batch_action_edit">Modifica</string>
@@ -20,6 +34,10 @@
     <!-- Batch Actions - Contract Specific -->
     <string name="batch_action_renew_contracts">Rinnova contratti</string>
     <string name="batch_action_bulk_edit_contracts">Modifica in blocco</string>
+
+    <!-- Batch Actions - Contact specific -->
+    <string name="batch_action_set_primary">Setta primario</string>
+    <string name="batch_action_bulk_edit_contacts">Modifica in blocco</string>
 
     <!-- Batch Actions - Client Specific -->
     <string name="batch_action_send_notification">Invia notifica</string>
@@ -81,4 +99,15 @@
     <!-- Empty Selection Messages -->
     <string name="empty_selection_message">Nessun elemento selezionato</string>
     <string name="empty_selection_action_required">Seleziona almeno un elemento per continuare</string>
+
+
+
+
+
+
+
+
+
+
+
 </resources>

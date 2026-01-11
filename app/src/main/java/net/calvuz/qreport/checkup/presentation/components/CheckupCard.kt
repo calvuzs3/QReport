@@ -119,24 +119,46 @@ private fun FullCheckupCard(
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+//            verticalAlignment = Alignment.CenterVertically
         ) {
             //
-            Text(
-                text = checkup.header.checkUpDate.toItalianDateTime(),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
+            Column (
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ){
+                // Name (date)
+                Text(
+                    text = checkup.header.checkUpDate.toItalianDateTime(),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+//                // Header row
+//                Row(
+//                    modifier = Modifier.weight(1f),
+//                    horizontalArrangement = Arrangement.SpaceBetween,
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+                    //
+                    Text(
+                        text = checkup.header.clientInfo.companyName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+//                }
+            }
 
             if (showActions) {
-                Row {
+                Column(
+                ) {
                     if (onEdit != null) {
                         IconButton(
                             onClick = onEdit,
                             modifier = Modifier.size(24.dp)
+
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -146,44 +168,13 @@ private fun FullCheckupCard(
                             )
                         }
                     }
-
-//                    if (onDelete != null) {
-//                        IconButton(
-//                            onClick = onDelete,
-//                            modifier = Modifier.size(24.dp)
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.Default.Delete,
-//                                contentDescription = "Elimina cliente",
-//                                tint = MaterialTheme.colorScheme.error,
-//                                modifier = Modifier.size(20.dp)
-//                            )
-//                        }
-//                    }
                 }
             }
         }
 
-        // Header row
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            //
-            Text(
-                text = checkup.header.clientInfo.companyName,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
         // Island info
         Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
@@ -242,8 +233,9 @@ private fun FullCheckupCard(
             // Stats row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+
                 ListStatItem(
                     icon = Icons.Default.CheckCircle,
                     value = "${stats.okItems}/${stats.totalItems}",
@@ -266,21 +258,13 @@ private fun FullCheckupCard(
                         label = stringResource(R.string.checkup_component_card_stat_photos)
                     )
                 }
-
-                Spacer(modifier = Modifier.weight(1f))
-
-                Text(
-                    text = checkup.header.checkUpDate.toItalianDateTime(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
         ) {
             // Left
             CheckupStatusChip(status = checkup.status)

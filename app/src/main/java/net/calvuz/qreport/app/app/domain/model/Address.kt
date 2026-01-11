@@ -55,4 +55,6 @@ data class Address(
      * Verifica se indirizzo è completo
      */
     fun isComplete(): Boolean = !street.isNullOrBlank() && !city.isNullOrBlank()
+
+    fun hasCoordinates(): Boolean = false
 }

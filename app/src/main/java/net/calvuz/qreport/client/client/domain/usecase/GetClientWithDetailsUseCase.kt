@@ -62,11 +62,13 @@ class GetClientWithDetailsUseCase @Inject constructor(
             Timber.v("Found ${facilities.size} facilities")
 
             // 4a. Recupero contacts associati
-            val contacts = getContactsByClientUseCase(clientId)
-                .getOrElse {
-                    Timber.w("Failed to load contacts for client $clientId: $it")
+            val contacts = when (val result = getContactsByClientUseCase(clientId)) {
+                is QrResult.Success -> result.data
+                is QrResult.Error -> {
+                    Timber.w("Failed to load contacts for client $clientId")
                     emptyList()
                 }
+            }
             Timber.v("Found ${contacts.size} contacts")
 
             // 4b. Recupero contracts * associati

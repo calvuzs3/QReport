@@ -36,14 +36,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
+import net.calvuz.qreport.R
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
 import net.calvuz.qreport.app.app.presentation.components.DeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.PrimaryBadge
+import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard.QrListItemCardVariant
 
 @Composable
 fun ContactCard(
@@ -54,9 +57,9 @@ fun ContactCard(
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onEmail: () -> Unit = { },
-    onSetPrimary: () -> Unit,
+    onSetPrimary: (() -> Unit)? = null,
     isSettingPrimary: Boolean,
-    variant: ContactCardVariant = ContactCardVariant.FULL
+    variant: QrListItemCardVariant = QrListItemCardVariant.FULL
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -67,7 +70,7 @@ fun ContactCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         when (variant) {
-            ContactCardVariant.FULL -> FullContactCard(
+            QrListItemCardVariant.FULL -> FullContactCard(
                 contact = contact,
                 showActions = showActions,
                 onDelete = onDelete,
@@ -76,19 +79,19 @@ fun ContactCard(
                 isSettingPrimary = isSettingPrimary,
             )
 
-            ContactCardVariant.COMPACT -> CompactContactCard(
+            QrListItemCardVariant.COMPACT -> CompactContactCard(
                 contact = contact,
             )
 
-            ContactCardVariant.MINIMAL -> MinimalContactCard(contact = contact)
+            QrListItemCardVariant.MINIMAL -> MinimalContactCard(contact = contact)
         }
     }
 
     // Delete confirmation dialog
     if (showDeleteDialog && onDelete != null) {
         DeleteDialog(
-            title = "Elimina Contatto",
-            text = "Sei sicuro di voler eliminare il contatto '${contact.fullName}'? Questa operazione non può essere annullata.",
+            title = stringResource(R.string.contact_delete_dialog_title),
+            text = stringResource(R.string.contact_delete_dialog_text, contact.fullName),
             onConfirm = {
                 onDelete()
                 showDeleteDialog = false
@@ -104,7 +107,7 @@ private fun FullContactCard(
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
-    onSetPrimary: () -> Unit,
+    onSetPrimary: (() -> Unit)? = null,
     isSettingPrimary: Boolean
 ) {
     val context = LocalContext.current
@@ -140,7 +143,7 @@ private fun FullContactCard(
             if (showActions) {
                 Row {
                     // STAR IT
-                    if (!contact.isPrimary && contact.isActive) {
+                    if (!contact.isPrimary && contact.isActive && onSetPrimary != null) {
                         IconButton(
                             modifier = Modifier.size(32.dp),
                             onClick = onSetPrimary,
@@ -154,7 +157,7 @@ private fun FullContactCard(
                             } else {
                                 Icon(
                                     imageVector = Icons.Outlined.Star,
-                                    contentDescription = "Imposta come primario",
+                                    contentDescription = stringResource(R.string.action_set_as_primary),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -169,7 +172,7 @@ private fun FullContactCard(
                         ) {
                             Icon(
                                 Icons.Default.Edit,
-                                contentDescription = "Modifica",
+                                contentDescription = stringResource(R.string.action_edit),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -184,7 +187,7 @@ private fun FullContactCard(
                         ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "Elimina",
+                                contentDescription = stringResource(R.string.action_delete),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -199,7 +202,7 @@ private fun FullContactCard(
                 AssistChip(
                     onClick = { },
                     label = {
-                        Text("Inattivo", style = MaterialTheme.typography.labelSmall)
+                        Text(stringResource(R.string.label_active), style = MaterialTheme.typography.labelSmall)
                     },
                     enabled = false
                 )
@@ -210,7 +213,7 @@ private fun FullContactCard(
         contact.role?.let { role ->
             ContactRoleItem(
                 icon = Icons.Default.Work,
-                label = "Posizione",
+                label = stringResource(R.string.contact_field_role),
                 value = role
             )
         }
@@ -219,7 +222,7 @@ private fun FullContactCard(
         contact.department?.let { dept ->
             ContactRoleItem(
                 icon = Icons.Default.Business,
-                label = "Dipartimento",
+                label = stringResource(R.string.contact_field_department),
                 value = dept
             )
         }
@@ -228,10 +231,10 @@ private fun FullContactCard(
         contact.email?.let { email ->
             ContactMethodItem(
                 icon = Icons.Default.Email,
-                label = "EMail",
+                label = stringResource(R.string.contact_field_email),
                 value = email,
                 onClick = {
-                    val intent = Intent(Intent.ACTION_SENDTO, "mailto:$email".toUri())
+                    val intent = Intent(Intent.ACTION_SENDTO, context.getString(R.string.intent_action_mailto, email).toUri())
                     context.startActivity(intent)
                 },
                 isPrimary = contact.preferredContactMethod == ContactMethod.PHONE
@@ -242,10 +245,10 @@ private fun FullContactCard(
         contact.phone?.let { phone ->
             ContactMethodItem(
                 icon = Icons.Default.Phone,
-                label = "Telefono",
+                label = stringResource(R.string.contact_field_phone),
                 value = phone,
                 onClick = {
-                    val intent = Intent(Intent.ACTION_DIAL, "tel:$phone".toUri())
+                    val intent = Intent(Intent.ACTION_DIAL, context.getString(R.string.intent_action_dial, phone).toUri())
                     context.startActivity(intent)
                 },
                 isPrimary = contact.preferredContactMethod == ContactMethod.PHONE
@@ -256,10 +259,10 @@ private fun FullContactCard(
         contact.mobilePhone?.let { mobile ->
             ContactMethodItem(
                 icon = Icons.Default.Phone,
-                label = "Telefono",
+                label = stringResource(R.string.contact_field_mobile),
                 value = mobile,
                 onClick = {
-                    val intent = Intent(Intent.ACTION_DIAL, "tel:$mobile".toUri())
+                    val intent = Intent(Intent.ACTION_DIAL, context.getString(R.string.intent_action_dial, mobile).toUri())
                     context.startActivity(intent)
                 },
                 isPrimary = contact.preferredContactMethod == ContactMethod.PHONE
@@ -297,7 +300,7 @@ private fun CompactContactCard(
                     Spacer(modifier = Modifier.height(4.dp))
                     Icon(
                         imageVector = Icons.Default.Star,
-                        contentDescription = "Stabilimento primario",
+                        contentDescription = stringResource(R.string.contact_primary_facility),
                         modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -326,7 +329,7 @@ private fun CompactContactCard(
                     ) {
                         Icon(
                             Icons.Default.Call,
-                            contentDescription = "Chiama",
+                            contentDescription = stringResource(R.string.action_call),
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
@@ -343,7 +346,7 @@ private fun CompactContactCard(
                     ) {
                         Icon(
                             Icons.Default.Email,
-                            contentDescription = "Invia email",
+                            contentDescription = stringResource(R.string.action_send_email),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -373,7 +376,7 @@ private fun MinimalContactCard(contact: Contact) {
                 if (contact.isPrimary) {
                     Icon(
                         imageVector = Icons.Default.Star,
-                        contentDescription = "Contatto primario",
+                        contentDescription = stringResource(R.string.contact_primary_contact),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(14.dp)
                     )
@@ -381,13 +384,4 @@ private fun MinimalContactCard(contact: Contact) {
             }
         }
     }
-}
-
-/**
- * Varianti di visualizzazione per FacilityCard
- */
-enum class ContactCardVariant {
-    FULL,       // Card completa con tutte le informazioni
-    COMPACT,    // Card compatta per liste dense
-    MINIMAL     // Card minimalista per selezioni
 }

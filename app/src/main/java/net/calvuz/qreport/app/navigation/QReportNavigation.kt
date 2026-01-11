@@ -31,7 +31,6 @@ import net.calvuz.qreport.settings.presentation.ui.SettingsScreen
 import net.calvuz.qreport.export.presentation.ui.ExportOptionsScreen
 import net.calvuz.qreport.client.client.presentation.ui.ClientListScreen
 import net.calvuz.qreport.client.client.presentation.ui.ClientFormScreen
-import net.calvuz.qreport.client.contact.presentation.ui.ContactDetailScreen
 import net.calvuz.qreport.client.contact.presentation.ui.ContactFormScreen
 import net.calvuz.qreport.client.contact.presentation.ui.ContactListScreen
 import net.calvuz.qreport.client.facility.presentation.ui.FacilityDetailScreen
@@ -132,44 +131,38 @@ object QReportRoutes {
 
     // Contact routes
     const val CONTACT_LIST = "contacts/{clientId}/{clientName}"
-    const val CONTACT_DETAIL = "contact_detail/{clientId}/{clientName}/{contactId}"
     const val CONTACT_CREATE = "contact_form/{clientId}/{clientName}"
     const val CONTACT_EDIT = "contact_form/{clientId}/{clientName}/{contactId}"
+
+    // Contract routes
+    const val CONTRACT_LIST = "contracts/{clientId}/{clientName}"
+    const val CONTRACT_CREATE = "contract_form/{clientId}/{clientName}"
+    const val CONTRACT_EDIT = "contract_form/{clientId}/{clientName}/{contractId}"
 
     // Facility routes
     const val FACILITY_LIST = "facilities/{clientId}"
     const val FACILITY_DETAIL = "facility_detail/{clientId}/{facilityId}"
     const val FACILITY_CREATE = "facility_form/{clientId}"
+
     const val FACILITY_EDIT = "facility_form/{clientId}/{facilityId}"
 
     // Island routes
     const val ISLAND_LIST = "islands/{facilityId}"
     const val ISLAND_DETAIL = "island_detail/{facilityId}/{islandId}"
     const val ISLAND_CREATE = "island_form/{facilityId}"
+
     const val ISLAND_EDIT = "island_form/{facilityId}/{islandId}"
 
     // Backup
     const val BACKUP = "backup"
 
-    // Contract routes
-    const val CONTRACT_LIST = "contracts/{clientId}/{clientName}"
-    //const val CONTRACT_DETAIL = "contract_detail/{clientId}/{clientName}/{contractId}"
-    const val CONTRACT_CREATE = "contract_form/{clientId}/{clientName}"
-    const val CONTRACT_EDIT = "contract_form/{clientId}/{clientName}/{contractId}"
-
 
     // Helper extension for URL encoding client names with spaces/special chars
     private fun String.encodeUrl(): String = URLEncoder.encode(this, "UTF-8")
 
-    // Helper for Contracts
-    fun contractListRoute(clientId: String, clientName: String) =
-        "contracts/$clientId/${clientName.encodeUrl()}"
-    fun contractCreateRoute(clientId: String, clientName: String) =
-        "contract_form/$clientId/${clientName.encodeUrl()}"
-    fun contractEditRoute(clientId: String, clientName: String, contractId: String?) =
-        "contract_form/$clientId/${clientName.encodeUrl()}/$contractId"
 
     // Helper functions for CLIENTS
+
     fun clientDetail(clientId: String, clientName: String) =
         "client_detail/$clientId/$clientName"
 
@@ -177,8 +170,6 @@ object QReportRoutes {
         "client_edit/$clientId"
 
     // Helper functions for CONTACT
-    fun contactDetailRoute(clientId: String, clientName: String, contactId: String) =
-        "contact_detail/$clientId/${clientName.encodeUrl()}/$contactId"
 
     fun contactCreateRoute(clientId: String, clientName: String) =
         "contact_form/$clientId/${clientName.encodeUrl()}"
@@ -189,7 +180,19 @@ object QReportRoutes {
     fun contactListRoute(clientId: String, clientName: String) =
         "contacts/$clientId/${clientName.encodeUrl()}"
 
+    // Helper for CONTRACTS
+
+    fun contractListRoute(clientId: String, clientName: String) =
+        "contracts/$clientId/${clientName.encodeUrl()}"
+
+    fun contractCreateRoute(clientId: String, clientName: String) =
+        "contract_form/$clientId/${clientName.encodeUrl()}"
+
+    fun contractEditRoute(clientId: String, clientName: String, contractId: String?) =
+        "contract_form/$clientId/${clientName.encodeUrl()}/$contractId"
+
     // Helper functions for FACILITY
+
     fun facilityListRoute(clientId: String) =
         "facilities/$clientId"
 
@@ -203,6 +206,7 @@ object QReportRoutes {
         "facility_form/$clientId"
 
     // Helper functions for FACILITY ISLAND
+
     fun islandListRoute(facilityId: String) = "islands/$facilityId"
     fun islandDetailRoute(facilityId: String, islandId: String) =
         "island_detail/$facilityId/$islandId"
@@ -211,6 +215,7 @@ object QReportRoutes {
     fun islandEditRoute(facilityId: String, islandId: String) = "island_form/$facilityId/$islandId"
 
     // Helper functions for CHECK-UPs
+
     fun checkUpCreateRoute(clientId: String? = null) = "checkup_create"
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
@@ -527,11 +532,7 @@ fun QReportNavigation(
                                 QReportRoutes.contactEditRoute(clientId, clientName, contactId)
                             )
                         },
-                        onNavigateToContactDetail = { contactId ->
-                            navController.navigate(
-                                QReportRoutes.contactDetailRoute(clientId, clientName, contactId)
-                            )
-                        },
+                        onNavigateToContactDetail = { },
                         onNavigateToContractList = { clientId, clientName ->
                             navController.navigate(
                                 QReportRoutes.contractListRoute(clientId, clientName)
@@ -667,10 +668,10 @@ fun QReportNavigation(
                         onContactSaved = { newContactId ->
                             if (newContactId.isNotBlank()) {
                                 navController.navigate(
-                                    QReportRoutes.contactDetailRoute(
+                                    QReportRoutes.contactListRoute(
                                         clientId,
                                         clientName,
-                                        newContactId
+                                        //newContactId
                                     )
                                 ) {
                                     popUpTo(QReportRoutes.CLIENTS) {
@@ -715,37 +716,6 @@ fun QReportNavigation(
                     )
                 }
 
-                // DETAIL
-                composable(
-                    QReportRoutes.CONTACT_DETAIL,
-                    arguments = listOf(
-                        navArgument("clientId") { type = NavType.StringType },
-                        navArgument("clientName") { type = NavType.StringType },
-                        navArgument("contactId") { type = NavType.StringType }
-                    )
-                ) { backStackEntry ->
-                    val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
-                    val contactId = backStackEntry.arguments?.getString("contactId") ?: ""
-                    val clientName = backStackEntry.arguments?.getString("clientName")?.let {
-                        URLDecoder.decode(it, "UTF-8")
-                    } ?: "Cliente"
-
-                    ContactDetailScreen(
-                        contactId = contactId,
-                        onNavigateBack = { navController.popBackStack() },
-                        onNavigateToEdit = { contactId ->
-                            navController.navigate(
-                                QReportRoutes.contactEditRoute(
-                                    clientId,
-                                    clientName,
-                                    contactId
-                                )
-                            )
-                        },
-                        onDeleteContact = { navController.popBackStack() }
-                    )
-                }
-
                 // LIST
                 composable(
                     route = QReportRoutes.CONTACT_LIST,
@@ -775,12 +745,7 @@ fun QReportNavigation(
                                 )
                             )
                         },
-                        onNavigateToContactDetail = { contactId ->
-                            navController.navigate(
-                                QReportRoutes.contactDetailRoute(
-                                    clientId, clientName, contactId
-                                )
-                            )
+                        onNavigateToContactDetail = {
                         }
                     )
                 }
@@ -795,11 +760,15 @@ fun QReportNavigation(
                         navArgument("clientId") { type = NavType.StringType },
                         navArgument("clientName") { type = NavType.StringType }
                     )
-                ) {backStackEntry ->
+                ) { backStackEntry ->
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
                     val clientName = backStackEntry.arguments?.getString("clientName") ?: ""
                     ContractListScreen(
-                        onNavigateToCreateContract = { },
+                        onNavigateToCreateContract = { contractId ->
+                            navController.navigate(
+                                QReportRoutes.contractCreateRoute(clientId, clientName)
+                            )
+                        },
                         clientId = clientId,
                         clientName = clientName,
                         onNavigateBack = { navController.popBackStack() },
@@ -833,7 +802,8 @@ fun QReportNavigation(
                         onContractSaved = { newId ->
                             if (newId.isNotBlank()) {
                                 navController.navigate(
-                                    QReportRoutes.contractListRoute(  // TODO: eval a detail screen
+                                    QReportRoutes.contractListRoute(
+                                        // TODO: eval a detail screen
                                         clientId,
                                         clientName,
                                         //newId
@@ -877,7 +847,7 @@ fun QReportNavigation(
                         onContractSaved = { newId ->
                             if (newId.isNotBlank()) {
                                 navController.navigate(
-                                    QReportRoutes.contractListRoute(  // TODO: eval a detail screen
+                                    QReportRoutes.contractListRoute(
                                         clientId,
                                         clientName,
                                         //newId

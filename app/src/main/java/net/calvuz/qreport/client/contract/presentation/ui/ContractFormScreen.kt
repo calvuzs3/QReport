@@ -196,7 +196,7 @@ private fun ContractFormContent(
             }
         }
 
-        // Form
+        // ValidationError
         ContractFormSection(title = stringResource(R.string.contracts_screen_form_section_contract)) {
             OutlinedTextField(
                 value = uiState.name,

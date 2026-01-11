@@ -5,14 +5,29 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText.StringResources
 import net.calvuz.qreport.app.result.domain.QrResult
 
+fun QrError.SystemError.toUiText(): UiText {
+    return when (this) {
+        is QrError.SystemError.Unknown -> StringResources(R.string.err_unknown)
+    }
+}
+
 fun QrError.App.toUiText(): UiText {
     return when (this) {
-        is QrError.NotImplemented -> StringResources(R.string.err_not_implemented)
-        is QrError.App.SaveError -> StringResources(R.string.err_save)
         is QrError.App.UnknownError -> StringResources(R.string.err_unknown)
+        is QrError.App.SaveError -> StringResources(R.string.err_save)
         is QrError.App.LoadError -> StringResources(R.string.err_load)
         is QrError.App.DeleteError -> StringResources(R.string.err_delete)
         is QrError.App.NotImplemented -> StringResources(R.string.err_not_implemented)
+    }
+}
+
+fun QrError.ValidationError.toUiText(): UiText{
+    return when (this) {
+        is QrError.ValidationError.EmptyField -> StringResources(R.string.err_validation_empty_field)
+        is QrError.ValidationError.DuplicateEntry -> StringResources(R.string.err_validation_duplicate_entry)
+        is QrError.ValidationError.InvalidOperation -> StringResources(R.string.err_validation_invalid_operation)
+        is QrError.ValidationError.IsNotActive -> StringResources(R.string.err_validation_is_not_active)
+        is QrError.ValidationError.IsNotPrimary -> StringResources(R.string.err_validation_is_not_primary)
     }
 }
 
@@ -23,6 +38,14 @@ fun QrError.Contracts.toUiText(): UiText {
         is QrError.Contracts.ContractNotFound -> StringResources(R.string.err_contracts_contract_not_found)
         is QrError.Contracts.DeleteError -> StringResources(R.string.err_delete)
         is QrError.Contracts.ContractIdEmpty -> StringResources(R.string.err_contracts_contract_id_empty)
+    }
+}
+
+fun QrError.Contacts.toUiText() :UiText {
+    return when (this) {
+        is QrError.Contacts.ValidationError.IdClientMandatory -> StringResources(R.string.err_contact_client_id_empty)
+        is QrError.Contacts.ValidationError.IdContractMandatory -> StringResources(R.string.err_contact_contact_id_empty)
+        is QrError.Contacts.ValidationError.IdMandatory -> StringResources(R.string.err_contact_contact_id_empty)
     }
 }
 
@@ -39,13 +62,12 @@ fun QrError.DatabaseError.toUiText(): UiText {
 fun QrError.asUiText(): UiText {
     return when (this) {
 
-//        is QrError.NotImplemented -> this.toUiText()
+        is QrError.SystemError -> this.toUiText()
+        is QrError.App -> this.toUiText()
+        is QrError.ValidationError -> this.toUiText()
+        is QrError.Contacts -> this.toUiText()
         is QrError.Contracts -> this.toUiText()
         is QrError.DatabaseError -> this.toUiText()
-        is QrError.App -> this.toUiText()
-
-        // Not implemented
-        QrError.NotImplemented.YET -> StringResources(R.string.err_not_implemented)
 
 
         // File Error Mappings - Core File Operations

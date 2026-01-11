@@ -1,5 +1,6 @@
 package net.calvuz.qreport.client.facility.presentation.ui.components
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,6 +20,8 @@ import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 import net.calvuz.qreport.client.facility.presentation.ui.FacilityStatistics
 import net.calvuz.qreport.app.app.presentation.components.PrimaryBadge
+import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard.QrListItemCardVariant
+import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 
 /**
  * FacilityCard riutilizzabile per QReport
@@ -32,11 +35,12 @@ fun FacilityCard(
     modifier: Modifier = Modifier,
     facility: Facility,
     stats: FacilityStatistics? = null,
-    onClick: () -> Unit,
     showActions: Boolean = true,
+    onClick: () -> Unit,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
-    variant: FacilityCardVariant = FacilityCardVariant.FULL
+    onOpenMaps: (() -> Unit)?= null,
+    variant: QrListItemCardVariant = QrListItemCardVariant.FULL
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -47,18 +51,20 @@ fun FacilityCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         when (variant) {
-            FacilityCardVariant.FULL -> FullFacilityCard(
+            QrListItemCardVariant.FULL -> FullFacilityCard(
                 facility = facility,
                 stats = stats,
                 showActions = showActions,
                 onDelete = if(onDelete != null){ {showDeleteDialog = true}} else null,
-                onEdit = onEdit
+                onEdit = onEdit,
+                onOpenMaps = onOpenMaps
             )
-            FacilityCardVariant.COMPACT -> CompactFacilityCard(
+            QrListItemCardVariant.COMPACT -> CompactFacilityCard(
                 facility = facility,
-                stats = stats
+                stats = stats,
+                onOpenMaps = onOpenMaps
             )
-            FacilityCardVariant.MINIMAL -> MinimalFacilityCard(facility = facility)
+            QrListItemCardVariant.MINIMAL -> MinimalFacilityCard(facility = facility)
         }
     }
 
@@ -81,7 +87,8 @@ private fun FullFacilityCard(
     stats: FacilityStatistics?,
     showActions: Boolean,
     onDelete: (() -> Unit)? = null,
-    onEdit: (() -> Unit)? = null
+    onEdit: (() -> Unit)? = null,
+    onOpenMaps: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier.padding(16.dp),
@@ -173,31 +180,61 @@ private fun FullFacilityCard(
             )
         }
 
-        // Address
+        // Address - clickable to open maps
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = if (onOpenMaps != null && facility.address.isComplete()) {
+                Modifier.clickable { onOpenMaps() }
+            } else {
+                Modifier
+            }
         ) {
             Icon(
                 imageVector = Icons.Default.LocationOn,
-                contentDescription = null,
+                contentDescription = if (onOpenMaps != null && facility.address.isComplete()) {
+                    "Apri in Mappe"
+                } else {
+                    null
+                },
                 modifier = Modifier.size(16.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = if (onOpenMaps != null && facility.address.isComplete()) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
             )
             Text(
                 text = facility.addressDisplay,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (onOpenMaps != null && facility.address.isComplete()) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+            if (onOpenMaps != null && facility.address.isComplete()) {
+                Icon(
+                    imageVector = Icons.Default.OpenInNew,
+                    contentDescription = "Apri",
+                    modifier = Modifier.size(12.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
         }
 
         // Statistics row
         if (stats != null) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = if (onOpenMaps != null && facility.address.isComplete()) {
+                    Modifier.clickable { onOpenMaps() }
+                        .fillMaxWidth()
+                } else {
+                    Modifier.fillMaxWidth()
+                }
             ) {
                 FacilityStatItem(
                     icon = Icons.Default.PrecisionManufacturing,
@@ -242,7 +279,7 @@ private fun FullFacilityCard(
 
             // Timestamp a destra
             Text(
-                text = formatLastModified(facility),
+                text = facility.updatedAt.toItalianLastModified(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -253,7 +290,8 @@ private fun FullFacilityCard(
 @Composable
 private fun CompactFacilityCard(
     facility: Facility,
-    stats: FacilityStatistics?
+    stats: FacilityStatistics?,
+    onOpenMaps: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier.padding(12.dp),
@@ -288,8 +326,17 @@ private fun CompactFacilityCard(
             Text(
                 text = "${facility.facilityType.displayName} • ${facility.address.city ?: ""}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
+                color = if (onOpenMaps != null && facility.address.isComplete()) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                maxLines = 1,
+                modifier = if (onOpenMaps != null && facility.address.isComplete()) {
+                    Modifier.clickable { onOpenMaps() }
+                } else {
+                    Modifier
+                }
             )
         }
 
@@ -483,13 +530,4 @@ private fun getFacilityTypeIcon(facilityType: FacilityType): ImageVector {
         FacilityType.R_AND_D -> Icons.Default.Biotech
         FacilityType.OTHER -> Icons.Default.Business
     }
-}
-
-/**
- * Varianti di visualizzazione per FacilityCard
- */
-enum class FacilityCardVariant {
-    FULL,       // Card completa con tutte le informazioni
-    COMPACT,    // Card compatta per liste dense
-    MINIMAL     // Card minimalista per selezioni
 }

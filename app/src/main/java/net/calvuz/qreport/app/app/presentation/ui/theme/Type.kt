@@ -196,7 +196,7 @@ object QReportTextStyles {
         letterSpacing = 0.4.sp,
     )
 
-    // Form label - per etichette nei form
+    // ValidationError label - per etichette nei form
     val FormLabel = TextStyle(
         fontFamily = FontFamily.Default,
         fontWeight = FontWeight.Medium,

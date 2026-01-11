@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Contact List - Bulk Operations -->
+    <string name="contacts_list_bulk_delete_confirmation">Sei sicuro di voler eliminare %d contatti?</string>
+    <string name="contacts_list_bulk_delete_progress">Eliminazione %d di %d contatti…</string>
+
+    <!-- Contact List - Bulk Delete Results -->
+    <string name="err_contact_list_bulk_delete_all_failed">Impossibile eliminare %d contatti</string>
+    <string name="err_contact_list_bulk_delete_partial_failed">%d contatti eliminati, %d falliti</string>
+    <string name="err_contact_list_bulk_delete_unexpected">Errore durante eliminazione multipla: %s</string>
+
+    <!-- Contact List - Empty States -->
+    <string name="contacts_list_empty_title">Nessun contatto</string>
+    <string name="contacts_list_empty_description">Aggiungi il primo contatto per questo cliente</string>
+    <string name="contacts_list_empty_action">Aggiungi contatto</string>
+    <string name="contacts_search_no_results">Nessun risultato</string>
+    <string name="contacts_search_no_results_description">Prova con parole chiave diverse</string>
+
+    <!-- Contact List - Loading and Actions -->
+    <string name="contacts_list_loading">Caricamento contatti…</string>
+    <string name="contacts_list_action_add">Aggiungi contatto</string>
+    <string name="contacts_search_hint">Cerca contatti…</string>
+
+    <!-- Contact List - Filters and Sort -->
+    <string name="contacts_list_filter_active">Attivi</string>
+    <string name="contacts_list_filter_inactive">Inattivi</string>
+    <string name="contacts_list_filter_primary_only">Solo primari</string>
+    <string name="contacts_list_filter_all">Tutti</string>
+
+    <string name="contacts_list_sort_name">Nome</string>
+    <string name="contacts_list_sort_created_recent">Recenti</string>
+    <string name="contacts_list_sort_created_oldest">Meno recenti</string>
+
+    <!-- Contact List - Error Messages -->
+    <string name="err_contact_list_invalid_client_id">ID cliente non valido</string>
+    <string name="err_contacts_list_load_contacts">Errore caricamento contatti: %s</string>
+    <string name="err_contact_list_unexpected">Errore imprevisto: %s</string>
+    <string name="err_contact_list_refresh_failed">Errore aggiornamento: %s</string>
+    <string name="err_contact_list_refresh_unexpected">Errore durante aggiornamento: %s</string>
+    <string name="err_contact_list_delete_failed">Impossibile eliminare contatto: %s</string>
+    <string name="err_contact_list_delete_unexpected">Errore eliminazione contatto: %s</string>
+    <string name="err_contact_list_set_primary_failed">Impossibile impostare contatto primario: %s</string>
+
+    <!-- Selection Common -->
+    <string name="contact_screen_list_title">Contatti</string>
+
+
+
+    <string name="contact_title">Contatti</string>
+
+    <string name="contact_field_role_title">Ruolo in azienda</string>
+    <string name="contact_field_role">Ruolo</string>
+    <string name="contact_field_department">Dipartimento</string>
+    <string name="contact_field_email">EMail</string>
+    <string name="contact_field_phone">Telefono</string>
+    <string name="contact_field_mobile">Mobile</string>
+    <string name="contact_field_alternative_email">EMail alternativa</string>
+    <string name="contact_primary_facility">Stabilimento primario</string>
+    <string name="contact_primary_contact">Contatto primario</string>
+    <string name="contact_primary_contact_desc">Il contatto primario per questo cliente</string>
+
+    <string name="contact_delete_dialog_title">Elimina contatto</string>
+    <string name="contact_delete_dialog_text">Sei sicuro di voler eliminare il contatto %1$s? Questa operazione non può essere annullata.</string>
+
+    <string name="contact_contact_methods">Contatti</string>
+
+    <string name="contact_primary_title">Primari</string>
+    <string name="contact_reachable_title">Raggiungibili</string>
+
+    <!-- Errors -->
+    <string name="err_contact_client_id_empty">Nessun ID Cliente specificato</string>
+    <string name="err_contact_client_not_found">Nessun Cliente trovato</string>
+    <string name="err_contact_contact_not_found">Nessun Contatto trovato</string>
+    <string name="err_contact_contact_id_empty">Nessun ID Contatto specificato</string>
+    <string name="err_contact_contact_start_date_empty">Nessuna data di inizio specificata</string>
+    <string name="err_contact_contact_end_date_empty">Nessuna data di fine specificata</string>
+
+    <string name="err_contact_list_load_contacts">Errore caricamento Contratti: %s</string>
+    <string name="err_contact_list_contract_not_found_for_renewal">Contatto non trovato per il rinnovo</string>
+
+    <string name="err_contact_form_name_required">Nome è richiesto</string>
+    <string name="err_contact_form_name_min_char">Nome deve avere almeno %d caratteri</string>
+    <string name="err_contact_form_name_max_char">Nome troppo lungo (max %d caratteri)</string>
+    <string name="err_contact_form_surname_max_char">Cognome troppo lungo (max %d caratteri)</string>
+    <string name="err_contact_form_email_invalid">Formato email non valido</string>
+    <string name="err_contact_form_email_max_char">Email troppo lunga (max %d caratteri)</string>
+    <string name="err_contact_form_phone_invalid">Formato telefono non valido</string>
+    <string name="err_contact_form_at_least_one_contact">Deve essere fornito almeno un contatto (email, telefono o cellulare)</string>
+    <string name="err_contact_form_action_save">Errore salvataggio: %s</string>
+
+
+    <!-- List -->
+    <string name="contact_screen_list_empty_title">Nessun Contatto</string>
+    <string name="contact_screen_list_empty_message">Non ci sono ancora Contatti per questo cliente</string>
+    <string name="contact_screen_list_empty_no_results_title">Nessun risultato</string>
+    <string name="contact_screen_list_empty_no_result_message">Non ci sono Contatti che corrispondono al filtro %1$s</string>
+    <string name="contact_screen_list_empty_error_title">Lista vuota</string>
+    <string name="contact_screen_list_empty_error_message">Errore nel caricamento dati </string>
+
+
+
+
+
+    <string name="contact_list_empty_title">Nessun Contatto</string>
+    <string name="contact_list_empty_message">Non ci sono ancora Contatti per questo Cliente</string>
+    <string name="contact_list_empty_search_title">Nessun risultato</string>
+    <string name="contact_list_empty_search_message">Non ci sono Contatti che corrispondono al filtro %1$s</string>
+    <string name="contact_list_empty_list_title">Lista vuota</string>
+    <string name="contact_list_empty_list_message">Errore nel caricamento dati</string>
+
+    <string name="contact_search_placeholder">Ricerca Contatti</string>
+    <string name="contact_action_new_contact">Nuovo contatto</string>
+
+    <!-- Contact ValidationError - Basic Fields -->
+    <string name="contact_form_title_new">Nuovo Contatto</string>
+    <string name="contact_form_title_edit">Modifica Contatto</string>
+    <string name="contact_form_section_data">Dati anagrafici</string>
+    <string name="contact_form_section_contact_info">Informazioni di contatto *</string>
+    <string name="contact_form_section_contact_pref">Preferenze metodo di contatto</string>
+    <string name="contact_form_section_role">Ruolo aziendale</string>
+    <string name="contact_form_section_note">Note</string>
+
+    <string name="contact_form_field_name">Nome contatto</string>
+    <string name="contact_form_field_name_placeholder">Inserisci nome contatto</string>
+    <string name="contact_form_field_surname">Cognome</string>
+    <string name="contact_form_field_title">Titolo</string>
+    <string name="contact_form_field_title_placeholder">Sig., Ing., Dott., Dott.ssa</string>
+
+    <string name="contact_form_field_role">Ruolo</string>
+    <string name="contact_form_field_role_placeholder">Manager, Responsabile, Addetto</string>
+
+    <string name="contact_form_field_department">Dipartimento</string>
+    <string name="contact_form_field_department_placholder">Produzione, Manutenzione, IT</string>
+
+    <string name="contact_form_field_email">EMail</string>
+    <string name="contact_form_field_email_placeholder">nome.cognome@dominio.com</string>
+    <string name="contact_form_field_alternative_email">EMail alternativa</string>
+    <string name="contact_form_field_phone">Telefono</string>
+    <string name="contact_form_field_phone_placeholder">+39..</string>
+    <string name="contact_form_field_mobile">Cellulare</string>
+    <string name="contact_form_field_notes">Note</string>
+    <string name="contact_form_field_notes_placeholder">informazioni aggiuntive sul contatto...</string>
+    <string name="contact_form_field_preferred_contact_method">Metodo di contatto preferito</string>
+    <string name="contact_form_field_preferred_contact_method_placholder">seleziona metodo preferito</string>
+    <string name="contact_form_field_preferred_contact_method_empty">Nessuna preferenza</string>"
+
+
+
+
+
+
+
+
+</resources>

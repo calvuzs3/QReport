@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.model.ClientSingleStatistics
@@ -148,6 +149,7 @@ class ClientListViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
 
                 Timber.d("Refreshing clients list with getActiveClients()")
+                delay(500)
 
                 // Use getActiveClients() for one-shot refresh operation
                 getAllActiveClientsUseCase()

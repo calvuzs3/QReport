@@ -118,20 +118,6 @@ private fun FullClientCard(
                             )
                         }
                     }
-
-//                    if (onDelete != null) {
-//                        IconButton(
-//                            onClick = onDelete,
-//                            modifier = Modifier.size(24.dp)
-//                        ) {
-//                            Icon(
-//                                imageVector = Icons.Default.Delete,
-//                                contentDescription = "Elimina cliente",
-//                                tint = MaterialTheme.colorScheme.error,
-//                                modifier = Modifier.size(20.dp)
-//                            )
-//                        }
-//                    }
                 }
             }
         }
@@ -183,12 +169,12 @@ private fun FullClientCard(
         if (stats != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 ListStatItem(
                     icon = Icons.Default.Business,
                     value = stats.facilitiesCount.toString(),
-                    label = "Stabilimenti"
+                    label = "Stabilim"
                 )
 
                 ListStatItem(
@@ -196,17 +182,31 @@ private fun FullClientCard(
                     value = stats.islandsCount.toString(),
                     label = "Isole"
                 )
-
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 ListStatItem(
-                    icon = Icons.Default.People,
-                    value = stats.contactsCount.toString(),
-                    label = "Contatti"
+                    icon = Icons.Default.AssignmentTurnedIn,
+                    value = stats.contractsCount.toString(),
+                    label = "Contratti"
                 )
 
                 ListStatItem(
                     icon = Icons.AutoMirrored.Default.Assignment,
                     value = stats.totalCheckUps.toString(),
                     label = "Check-up"
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                ListStatItem(
+                    icon = Icons.Default.People,
+                    value = stats.contactsCount.toString(),
+                    label = "Contatti"
                 )
             }
         }
@@ -307,9 +307,9 @@ private fun ClientStatusChip(
     modifier: Modifier = Modifier
 ) {
     val (text, containerColor) = if (isActive) {
-        "Attivo" to MaterialTheme.colorScheme.tertiaryContainer
+        "Attivo" to MaterialTheme.colorScheme.surfaceVariant
     } else {
-        "Inattivo" to MaterialTheme.colorScheme.outline
+        "Inattivo" to MaterialTheme.colorScheme.errorContainer
     }
 
     AssistChip(

@@ -1,15 +1,102 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Filter -->
-    <string name="contract_filter_all">Tutti</string>
-    <string name="contract_filter_active">Attivi</string>
-    <string name="contract_filter_not_active">Non Attivi</string>
+    <!-- Errori contracts -->
+    <string name="err_contracts_client_id_empty">Nessun ID Cliente specificato</string>
+    <string name="err_contracts_client_not_found">Nessun Cliente trovato</string>
+    <string name="err_contracts_contract_not_found">Nessun Contratto trovato</string>
+    <string name="err_contracts_contract_id_empty">Nessun ID Contratto specificato</string>
+    <string name="err_contracts_contract_start_date_empty">Nessuna data di inizio specificata</string>
+    <string name="err_contracts_contract_end_date_empty">Nessuna data di fine specificata</string>
 
-    <!-- Sort Order -->
-    <string name="contract_sort_order_name">Per Nome</string>
-    <string name="contract_sort_order_expire_recent">A Breve Scadenza</string>
-    <string name="contract_sort_order_expire_oldest">A Scadenza Lontana</string>
+    <!-- Contract List Errors -->
+    <string name="err_contracts_list_invalid_client_id">ID cliente non valido</string>
+    <string name="err_contracts_list_load_contacts">Errore caricamento Contratti: %s</string>
+    <string name="err_contracts_list_unexpected">Errore imprevisto: %s</string>
+    <string name="err_contracts_list_refresh_failed">Errore refresh: %s</string>
+    <string name="err_contracts_list_refresh_unexpected">Errore refresh: %s</string>
+    <string name="err_contracts_list_delete_failed">Errore eliminazione Contratto: %s</string>
+    <string name="err_contracts_list_delete_unexpected">Errore imprevisto: %s</string>
+    <string name="err_contracts_list_contract_not_found_for_renewal">Contratto non trovato per il rinnovo</string>
+    <string name="err_contracts_list_renewal_failed">Errore rinnovo contratto: %s</string>
+
+    <!-- Contract ValidationError Validation Errors -->
+    <string name="err_contracts_contract_name_required">Nome contratto richiesto</string>
+    <string name="err_contracts_contract_name_min_char">Nome deve avere almeno %d caratteri</string>
+    <string name="err_contracts_contract_name_max_char">Nome troppo lungo (max %d caratteri)</string>
+
+    <string name="err_contracts_contract_description_required">Descrizione richiesta</string>
+    <string name="err_contracts_contract_description_min_char">Descrizione deve avere almeno %d caratteri</string>
+    <string name="err_contracts_contract_description_max_char">Descrizione troppo lunga (max %d caratteri)</string>
+
+    <string name="err_contracts_contract_start_date_future">Data inizio non può essere nel futuro</string>
+    <string name="err_contracts_contract_end_date_before_start_date">La data fine non può essere antecedente alla data inizio</string>
+
+    <!-- Contract List Screen -->
+    <string name="contracts_list_title">Contratti</string>
+    <string name="contracts_list_empty_state">Nessun contratto trovato</string>
+    <string name="contracts_list_loading">Caricamento contratti…</string>
+
+    <!-- Contract List Actions -->
+    <string name="contracts_list_action_refresh">Aggiorna</string>
+    <string name="contracts_list_action_add">Aggiungi contratto</string>
+    <string name="contracts_list_action_delete">Elimina</string>
+    <string name="contracts_list_action_edit">Modifica</string>
+    <string name="contracts_list_action_renew">Rinnova</string>
+    <string name="contracts_list_action_search">Cerca</string>
+
+    <!-- Contract List Filters -->
+    <string name="contracts_list_filter_all">Tutti</string>
+    <string name="contracts_list_filter_active">Attivi</string>
+    <string name="contracts_list_filter_inactive">Scaduti</string>
+
+    <!-- Contract List Sort -->
+    <string name="contracts_list_sort_name">Nome</string>
+    <string name="contracts_list_sort_expire_recent">Scadenza (recenti)</string>
+    <string name="contracts_list_sort_expire_oldest">Scadenza (meno recenti)</string>
+
+    <!-- Contract Status -->
+    <string name="contracts_status_active">Attivo</string>
+    <string name="contracts_status_expired">Scaduto</string>
+    <string name="contracts_status_expiring_soon">In scadenza</string>
+
+    <!-- Contract ValidationError - Basic Fields -->
+    <string name="contracts_screen_form_title_new">Nuovo Contratto</string>
+    <string name="contracts_screen_form_title_edit">Modifica Contratto</string>
+    <string name="contracts_screen_form_section_contract">Dettagli Contratto</string>
+    <string name="contracts_screen_form_section_options">Opzioni Contratto</string>
+
+    <string name="contracts_screen_form_field_name">Nome contratto</string>
+    <string name="contracts_screen_form_field_name_placeholder">Inserisci nome contratto</string>
+    <string name="contracts_screen_form_field_description">Descrizione</string>
+    <string name="contracts_screen_form_field_description_placeholder">Inserisci descrizione contratto</string>
+    <string name="contracts_screen_form_field_start_date">Data inizio</string>
+    <string name="contracts_screen_form_field_end_date">Data fine</string>
+
+    <string name="contracts_screen_form_field_priority">Priorità</string>
+    <string name="contracts_screen_form_field_remote_assistance">Assistenza remota</string>
+    <string name="contracts_screen_form_field_maintenance">Manutenzione</string>
+
+    <!-- Contract Details -->
+    <string name="contracts_detail_priority_yes">Assistenza prioritaria inclusa</string>
+    <string name="contracts_detail_priority_no">Assistenza prioritaria non inclusa</string>
+    <string name="contracts_detail_remote_assistance_yes">Assistenza remota inclusa</string>
+    <string name="contracts_detail_remote_assistance_no">Assistenza remota non inclusa</string>
+    <string name="contracts_detail_maintenance_yes">Manutenzione inclusa</string>
+    <string name="contracts_detail_maintenance_no">Manutenzione non inclusa</string>
+
+    <!-- Contract Operations Messages -->
+    <string name="contracts_message_created_successfully">Contratto creato con successo</string>
+    <string name="contracts_message_updated_successfully">Contratto aggiornato con successo</string>
+    <string name="contracts_message_deleted_successfully">Contratto eliminato con successo</string>
+    <string name="contracts_message_renewed_successfully">Contratto rinnovato con successo</string>
+
+    <!-- Contract Search -->
+    <string name="contracts_search_hint">Cerca per nome o descrizione…</string>
+    <string name="contracts_search_no_results">Nessun risultato trovato</string>
+    <string name="contracts_search_results">%d contratti trovati</string>
+
+
 
     <!-- Component ContractCard -->
     <string name="contract_screen_delete_action_confirm">Sei sicuro di voler eliminare il contatto %1$s? Questa operazione non può essere annullata</string>
@@ -27,21 +114,12 @@
     <string name="contracts_screen_list_search_contract_placeholder">Ricerca contratto</string>
     <string name="contracts_screen_list_empty_icon_content_description">Nessun Contratto</string>
     <string name="contracts_screen_list_empty_action_add">Nuovo Contratto</string>
+    <string name="contracts_screen_list_bulk_delete_action_confirm">Sei sicuro di voler eliminare %d contratti? Questa azione non può essere annullata</string>
 
-    <!-- FORM SCREEN -->
-    <string name="contracts_screen_form_title_new">Nuovo Contratto</string>
-    <string name="contracts_screen_form_title_edit">Modifica Contratto</string>
-    <string name="contracts_screen_form_section_contract">Dati contratto</string>
-    <string name="contracts_screen_form_field_name">Nome</string>
-    <string name="contracts_screen_form_field_name_placeholder">Nome del contratto3</string>
-    <string name="contracts_screen_form_field_description">Descrizione</string>
-    <string name="contracts_screen_form_field_description_placeholder">Descrizione del contratto</string>
-    <string name="contracts_screen_form_field_start_date">Data Inizio</string>
-    <string name="contracts_screen_form_field_end_date">Data Fine</string>
-    <string name="contracts_screen_form_section_options">Opzioni</string>
-    <string name="contracts_screen_form_field_priority">Priorità</string>
-    <string name="contracts_screen_form_field_remote_assistance">Assistenza remota</string>
-    <string name="contracts_screen_form_field_maintenance">Manutenzione</string>
+
+
+
+
 
 
 

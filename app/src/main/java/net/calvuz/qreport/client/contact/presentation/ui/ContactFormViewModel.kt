@@ -7,12 +7,18 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.UiText.StringResource
+import net.calvuz.qreport.app.error.presentation.UiText.StringResources
+import net.calvuz.qreport.app.error.presentation.asUiText  // ✅ Using existing error system
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
 import net.calvuz.qreport.client.contact.domain.usecase.CreateContactUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.UpdateContactUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.GetContactsByClientUseCase
-import net.calvuz.qreport.client.contact.domain.usecase.GetContactByIdUseCase
+import net.calvuz.qreport.client.contact.domain.usecase.CheckContactExistsUseCase
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
@@ -26,16 +32,22 @@ import javax.inject.Inject
  * - Validazioni form in tempo reale
  * - Gestione stati loading/error/success
  * - Tutti i campi del modello Contact
+ *
+ * ✅ Uses QrResult<T, QrError> pattern with existing QrErrorExt.kt system
  */
 
 data class ContactFormUiState(
+    // states
+    val isDirty: Boolean = false,
+    val canSave: Boolean = false,
+    val isSaving: Boolean = false,
+    val saveCompleted: Boolean = false,
+    val savedContactId: String? = null,
     val isLoading: Boolean = false,
-    val error: String? = null,
     val isEditMode: Boolean = false,
     val originalContactId: String? = null,
     val clientId: String = "",
-
-    // ===== FORM FIELDS =====
+    // form fields
     val firstName: String = "",
     val lastName: String = "",
     val title: String = "",
@@ -48,22 +60,15 @@ data class ContactFormUiState(
     val preferredContactMethod: ContactMethod? = null,
     val notes: String = "",
     val isPrimary: Boolean = false,
-
-    // ===== VALIDATION STATES =====
-    val firstNameError: String? = null,
-    val lastNameError: String? = null,
-    val emailError: String? = null,
-    val alternativeEmailError: String? = null,
-    val phoneError: String? = null,
-    val mobilePhoneError: String? = null,
-    val generalValidationError: String? = null,
-
-    // ===== FORM STATES =====
-    val isDirty: Boolean = false,
-    val canSave: Boolean = false,
-    val isSaving: Boolean = false,
-    val saveCompleted: Boolean = false,
-    val savedContactId: String? = null
+    // error
+    val error: UiText? = null,
+    val firstNameError: UiText? = null,
+    val lastNameError: UiText? = null,
+    val emailError: UiText? = null,
+    val alternativeEmailError: UiText? = null,
+    val phoneError: UiText? = null,
+    val mobilePhoneError: UiText? = null,
+    val generalValidationError: UiText? = null,
 ) {
 
     /**
@@ -116,8 +121,14 @@ class ContactFormViewModel @Inject constructor(
     private val createContactUseCase: CreateContactUseCase,
     private val updateContactUseCase: UpdateContactUseCase,
     private val getContactsByClientUseCase: GetContactsByClientUseCase,
-    private val getContactByIdUseCase: GetContactByIdUseCase,
+    private val checkContactExistsUseCase: CheckContactExistsUseCase,
 ) : ViewModel() {
+    companion object {
+        private const val MIN_NAME_LENGTH = 2
+        private const val MAX_NAME_LENGTH = 100
+        private const val MAX_SURNAME_LENGTH = 100
+        private const val MAX_EMAIL_LENGTH = 100
+    }
 
     private val _uiState = MutableStateFlow(ContactFormUiState())
     val uiState: StateFlow<ContactFormUiState> = _uiState.asStateFlow()
@@ -131,6 +142,8 @@ class ContactFormViewModel @Inject constructor(
     // ============================================================
 
     fun initForCreate(clientId: String) {
+        Timber.d("ContactFormViewModel: Initializing for create mode, client: $clientId")
+
         _uiState.value = ContactFormUiState(
             isEditMode = false,
             clientId = clientId,
@@ -142,32 +155,40 @@ class ContactFormViewModel @Inject constructor(
     }
 
     fun initForEdit(contactId: String) {
+        Timber.d("ContactFormViewModel: Initializing for edit mode, contact: $contactId")
+
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                //contactRepository
-                getContactByIdUseCase(contactId).fold(
-                    onSuccess = { contact ->
+                when (val result = checkContactExistsUseCase(contactId)) {
+                    is QrResult.Success -> {
+                        val contact = result.data
+                        Timber.d("ContactFormViewModel: Contact loaded successfully: ${contact.id}")
                         populateFormFromContact(contact)
-                    },
-                    onFailure = { error ->
+                    }
+
+                    is QrResult.Error -> {
+                        Timber.e("ContactFormViewModel: Failed to load contact $contactId: ${result.error}")
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = "Contatto non trovato: ${error.message}"
+                            error = result.error.asUiText()  // ✅ Using existing error system
                         )
                     }
-                )
+                }
             } catch (e: Exception) {
+                Timber.e(e, "ContactFormViewModel: Exception loading contact $contactId")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = StringResource(R.string.err_load)  // ✅ Using standard error resource
                 )
             }
         }
     }
 
     private fun populateFormFromContact(contact: Contact) {
+        Timber.d("ContactFormViewModel: Populating form from contact: ${contact.fullName}")
+
         _uiState.value = ContactFormUiState(
             isEditMode = true,
             originalContactId = contact.id,
@@ -176,7 +197,7 @@ class ContactFormViewModel @Inject constructor(
             lastName = contact.lastName ?: "",
             title = contact.title ?: "",
             role = contact.role ?: "",
-                department = contact.department ?: "",
+            department = contact.department ?: "",
             email = contact.email ?: "",
             alternativeEmail = contact.alternativeEmail ?: "",
             phone = contact.phone ?: "",
@@ -191,13 +212,25 @@ class ContactFormViewModel @Inject constructor(
 
     private fun checkIfShouldBePrimary(clientId: String) {
         viewModelScope.launch {
-            getContactsByClientUseCase(clientId).fold(
-                onSuccess = { contacts ->
-                    val shouldBePrimary = contacts.isEmpty()
-                    _uiState.value = _uiState.value.copy(isPrimary = shouldBePrimary)
-                },
-                onFailure = { /* Ignora errore, mantieni default */ }
-            )
+            try {
+                when (val result = getContactsByClientUseCase(clientId)) {
+                    is QrResult.Success -> {
+                        val contacts = result.data
+                        val shouldBePrimary = contacts.isEmpty()
+
+                        Timber.d("ContactFormViewModel: Client has ${contacts.size} contacts, shouldBePrimary: $shouldBePrimary")
+                        _uiState.value = _uiState.value.copy(isPrimary = shouldBePrimary)
+                    }
+
+                    is QrResult.Error -> {
+                        // Ignora errore, mantieni default (isPrimary = false)
+                        Timber.w("ContactFormViewModel: Error checking client contacts: ${result.error}")
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignora errore, mantieni default
+                Timber.w(e, "ContactFormViewModel: Exception checking if should be primary")
+            }
         }
     }
 
@@ -311,35 +344,36 @@ class ContactFormViewModel @Inject constructor(
     // VALIDATIONS
     // ============================================================
 
-    private fun validateFirstName(value: String): String? {
+    private fun validateFirstName(value: String): UiText? {
         return when {
-            value.isBlank() -> "Nome è obbligatorio"
-            value.length < 2 -> "Nome deve essere di almeno 2 caratteri"
-            value.length > 100 -> "Nome troppo lungo (max 100 caratteri)"
+            value.isBlank() -> StringResource(R.string.err_validation_empty_field)  // ✅ Using standard validation error
+            value.length < MIN_NAME_LENGTH -> StringResources(R.string.err_contact_form_name_min_char, MIN_NAME_LENGTH)
+            value.length > MAX_NAME_LENGTH -> StringResources(R.string.err_contact_form_name_max_char, MAX_NAME_LENGTH)
             else -> null
         }
     }
 
-    private fun validateLastName(value: String): String? {
+    private fun validateLastName(value: String): UiText? {
         return when {
-            value.length > 100 -> "Cognome troppo lungo (max 100 caratteri)"
+            value.length > MAX_SURNAME_LENGTH -> StringResources(R.string.err_contact_form_surname_max_char, MAX_SURNAME_LENGTH)
             else -> null
         }
     }
 
-    private fun validateEmail(value: String): String? {
+    private fun validateEmail(value: String): UiText? {
         if (value.isBlank()) return null
 
         return when {
             !Patterns.EMAIL_ADDRESS.matcher(value).matches() ->
-                "Formato email non valido"
+                StringResource(R.string.err_contact_form_email_invalid)
 
-            value.length > 100 -> "Email troppo lunga (max 100 caratteri)"
+            value.length > MAX_EMAIL_LENGTH ->
+                StringResources(R.string.err_contact_form_email_max_char, MAX_EMAIL_LENGTH)
             else -> null
         }
     }
 
-    private fun validatePhone(value: String): String? {
+    private fun validatePhone(value: String): UiText? {
         if (value.isBlank()) return null
 
         val cleanPhone = value.replace("\\s+".toRegex(), "").replace("-", "")
@@ -350,8 +384,7 @@ class ContactFormViewModel @Inject constructor(
                     !cleanPhone.matches("\\+39\\d{9,10}".toRegex()) &&
                     !cleanPhone.matches("0\\d{8,10}".toRegex()) &&
                     !cleanPhone.matches("3\\d{8,9}".toRegex()) ->
-                "Formato telefono non valido"
-
+                StringResource(R.string.err_contact_form_phone_invalid)
             else -> null
         }
     }
@@ -364,29 +397,34 @@ class ContactFormViewModel @Inject constructor(
         )
     }
 
-    private fun validateGeneralForm(): String? {
+    private fun validateGeneralForm(): UiText? {
         val state = _uiState.value
 
         return when {
             !state.hasAtLeastOneContact ->
-                "Deve essere fornito almeno un contatto (email, telefono o cellulare)"
-
+                StringResource(R.string.err_contact_form_at_least_one_contact)
             else -> null
         }
     }
 
     // ============================================================
-    // SAVE OPERATIONS
+    // SAVE OPERATIONS - Clean QrResult Pattern
     // ============================================================
 
     fun saveContact() {
-        if (!_uiState.value.canSave) return
+        val currentState = _uiState.value
+
+        if (!currentState.canSave) {
+            Timber.w("ContactFormViewModel: Save attempted but canSave is false")
+            return
+        }
 
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, error = null)
 
             try {
                 val contact = _uiState.value.toContact()
+                Timber.d("ContactFormViewModel: Saving contact: ${contact.fullName} (${if (_uiState.value.isEditMode) "edit" else "create"})")
 
                 val result = if (_uiState.value.isEditMode) {
                     updateContactUseCase(contact)
@@ -394,36 +432,40 @@ class ContactFormViewModel @Inject constructor(
                     createContactUseCase(contact)
                 }
 
-                result.fold(
-                    onSuccess = {
-                        Timber.d("Contact saved successfully: ${contact.id} ${contact.fullName}")
+                when (result) {
+                    is QrResult.Success -> {
+                        val savedContact = result.data
+                        Timber.d("ContactFormViewModel: Contact saved successfully: ${savedContact.id} - ${savedContact.fullName}")
+
                         _uiState.value = _uiState.value.copy(
                             isSaving = false,
                             saveCompleted = true,
-                            savedContactId = contact.id,
-                            isDirty = false
-                        )
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to save contact")
-                        _uiState.value = _uiState.value.copy(
-                            isSaving = false,
-                            error = "Errore salvataggio: ${error.message}"
+                            savedContactId = savedContact.id,
+                            isDirty = false,
+                            error = null
                         )
                     }
-                )
+
+                    is QrResult.Error -> {
+                        Timber.e("ContactFormViewModel: Failed to save contact: ${result.error}")
+                        _uiState.value = _uiState.value.copy(
+                            isSaving = false,
+                            error = result.error.asUiText()  // ✅ Using existing error system - handles all QrError types automatically
+                        )
+                    }
+                }
             } catch (e: Exception) {
-                Timber.e(e, "Exception saving contact")
+                Timber.e(e, "ContactFormViewModel: Exception saving contact")
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
-                    error = "Errore imprevisto: ${e.message}"
+                    error = StringResource(R.string.err_save)  // ✅ Using standard save error
                 )
             }
         }
     }
 
     // ============================================================
-    // ERROR HANDLING
+    // ERROR HANDLING - Simplified with Existing System
     // ============================================================
 
     fun dismissError() {
@@ -435,7 +477,7 @@ class ContactFormViewModel @Inject constructor(
     }
 
     // ============================================================
-    // UTILITY
+    // UTILITY METHODS
     // ============================================================
 
     fun hasUnsavedChanges(): Boolean {
@@ -448,5 +490,39 @@ class ContactFormViewModel @Inject constructor(
 
     fun isNewContact(): Boolean {
         return !_uiState.value.isEditMode
+    }
+
+    fun getClientId(): String {
+        return _uiState.value.clientId
+    }
+
+    fun resetForm() {
+        Timber.d("ContactFormViewModel: Resetting form")
+        _uiState.value = ContactFormUiState()
+    }
+
+    fun hasValidationErrors(): Boolean {
+        val state = _uiState.value
+        return state.firstNameError != null ||
+                state.lastNameError != null ||
+                state.emailError != null ||
+                state.alternativeEmailError != null ||
+                state.phoneError != null ||
+                state.mobilePhoneError != null ||
+                state.generalValidationError != null
+    }
+
+    fun validateAllFields() {
+        val state = _uiState.value
+        _uiState.value = state.copy(
+            firstNameError = validateFirstName(state.firstName),
+            lastNameError = validateLastName(state.lastName),
+            emailError = validateEmail(state.email),
+            alternativeEmailError = validateEmail(state.alternativeEmail),
+            phoneError = validatePhone(state.phone),
+            mobilePhoneError = validatePhone(state.mobilePhone),
+            generalValidationError = validateGeneralForm()
+        )
+        updateCanSaveState()
     }
 }

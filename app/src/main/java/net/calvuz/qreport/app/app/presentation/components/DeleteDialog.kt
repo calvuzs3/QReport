@@ -7,6 +7,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import net.calvuz.qreport.R
 
 @Composable
 fun DeleteDialog(
@@ -26,12 +28,12 @@ fun DeleteDialog(
                     containerColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Elimina")
+                Text(stringResource(R.string.action_delete))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Annulla")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

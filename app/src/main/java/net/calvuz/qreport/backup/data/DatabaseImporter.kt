@@ -14,6 +14,7 @@ import net.calvuz.qreport.backup.domain.model.backup.PhotoBackup
 import net.calvuz.qreport.backup.domain.model.enum.RestoreStrategy
 import net.calvuz.qreport.backup.domain.model.backup.SparePartBackup
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
+import net.calvuz.qreport.backup.domain.model.backup.ContractBackup
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -30,6 +31,8 @@ import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
+import net.calvuz.qreport.client.contract.data.local.ContractDao
+import net.calvuz.qreport.client.contract.data.local.ContractEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import timber.log.Timber
@@ -53,6 +56,7 @@ class DatabaseImporter @Inject constructor(
     private val sparePartDao: SparePartDao,
     private val clientDao: ClientDao,
     private val contactDao: ContactDao,
+    private val contractDao: ContractDao,
     private val facilityDao: FacilityDao,
     private val islandDao: IslandDao,
     private val checkUpAssociationDao: CheckUpAssociationDao
@@ -140,6 +144,10 @@ class DatabaseImporter @Inject constructor(
             contactDao.deleteAll()
             Timber.v("Cleared contacts")
 
+            // 6.1 Contract (depends on Client)
+            contractDao.deleteAll()
+            Timber.v("Cleared contracts")
+
             // 7. Facility Islands (dipende da facilities)
             islandDao.deleteAll()
             Timber.v("Cleared facility_islands")
@@ -184,6 +192,12 @@ class DatabaseImporter @Inject constructor(
             if (backup.contacts.isNotEmpty()) {
                 contactDao.insertAllFromBackup(backup.contacts.map { it.toEntity() })
                 Timber.v("Imported ${backup.contacts.size} contacts")
+            }
+
+            // 3.1. Contracts (depends on Client)
+            if (backup.contracts.isNotEmpty()) {
+                contractDao.insertAllFromBackup(backup.contracts.map { it.toEntity() })
+                Timber.v("Imported ${backup.contracts.size} contracts")
             }
 
             // 4. Facility Islands (dipende da facilities)
@@ -245,6 +259,7 @@ class DatabaseImporter @Inject constructor(
                 "clients" to clientDao.count(),
                 "facilities" to facilityDao.count(),
                 "contacts" to contactDao.count(),
+                "contracts" to contractDao.count(),
                 "facilityIslands" to islandDao.count(),
                 "checkUps" to checkUpDao.count(),
                 "checkItems" to checkItemDao.count(),
@@ -257,6 +272,7 @@ class DatabaseImporter @Inject constructor(
                 "clients" to originalBackup.clients.size,
                 "facilities" to originalBackup.facilities.size,
                 "contacts" to originalBackup.contacts.size,
+                "contracts" to originalBackup.contracts.size,
                 "facilityIslands" to originalBackup.facilityIslands.size,
                 "checkUps" to originalBackup.checkUps.size,
                 "checkItems" to originalBackup.checkItems.size,
@@ -315,6 +331,7 @@ class DatabaseImporter @Inject constructor(
                 "Clients" to clientDao.count(),
                 "Facilities" to facilityDao.count(),
                 "Contacts" to contactDao.count(),
+                "Contracts" to contractDao.count(),
                 "Facility Islands" to islandDao.count(),
                 "CheckUps" to checkUpDao.count(),
                 "Check Items" to checkItemDao.count(),
@@ -482,6 +499,24 @@ fun ContactBackup.toEntity(): ContactEntity {
         isActive = isActive,
         preferredContactMethod = preferredContactMethod,
         notes = notes,
+        createdAt = createdAt.toEpochMilliseconds(),
+        updatedAt = updatedAt.toEpochMilliseconds()
+    )
+}
+
+fun ContractBackup.toEntity(): ContractEntity {
+    return ContractEntity(
+        id = id,
+        clientId = clientId,
+        name = name,
+        description = description,
+        startDate = startDate.toEpochMilliseconds(),
+        endDate = endDate.toEpochMilliseconds(),
+        hasPriority = hasPriority,
+        hasRemoteAssistance = hasRemoteAssistance,
+        hasMaintenance = hasMaintenance,
+        notes = notes,
+        isActive = isActive,
         createdAt = createdAt.toEpochMilliseconds(),
         updatedAt = updatedAt.toEpochMilliseconds()
     )

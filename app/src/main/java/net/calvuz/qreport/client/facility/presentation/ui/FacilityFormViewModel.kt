@@ -30,7 +30,7 @@ import javax.inject.Inject
  */
 
 data class FacilityFormUiState(
-    // Form fields
+    // ValidationError fields
     val name: String = "",
     val code: String = "",
     val facilityType: FacilityType = FacilityType.PRODUCTION,
@@ -187,7 +187,7 @@ class FacilityFormViewModel @Inject constructor(
     }
 
     // ============================================================
-    // PRIVATE METHODS - Form Updates
+    // PRIVATE METHODS - ValidationError Updates
     // ============================================================
 
     private fun updateName(name: String) {

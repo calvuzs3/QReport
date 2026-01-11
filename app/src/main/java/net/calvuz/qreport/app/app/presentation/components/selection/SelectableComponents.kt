@@ -38,7 +38,6 @@ fun <T> SelectableCard(
     modifier: Modifier = Modifier,
     content: @Composable (T) -> Unit
 ) {
-    val density = LocalDensity.current
 
     Box(
         modifier = modifier
@@ -369,7 +368,7 @@ fun <T> BatchDeleteConfirmationDialog(
             },
             text = {
                 Text(
-                    text = batchActionHandler.getBatchDeleteConfirmationMessage(selectedItems),
+                    text = batchActionHandler.getBatchDeleteConfirmationMessage(selectedItems).asString(),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
