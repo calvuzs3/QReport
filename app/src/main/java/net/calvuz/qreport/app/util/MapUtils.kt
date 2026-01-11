@@ -1,217 +1,207 @@
 package net.calvuz.qreport.app.app.util
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import net.calvuz.qreport.app.app.domain.model.Address
 import net.calvuz.qreport.app.app.domain.model.GeoCoordinates
-
+import timber.log.Timber
 
 /**
- * Utility class for opening map applications with addresses or coordinates
+ * Utility class for opening map applications - MINIMAL approach
+ *
+ * Strategy:
+ * 1. Google Maps app (if installed)
+ * 2. Generic geo intent (automatically handled by ANY map app)
+ * 3. Browser fallback
  */
 object MapUtils {
 
-    private const val TAG = "MapUtils"
-
     /**
      * Open maps app with facility address
-     * Uses GPS coordinates if available, otherwise falls back to text address
      */
     fun openMapsWithAddress(context: Context, address: Address) {
         try {
-            Log.d(TAG, "Opening maps with address: ${address.toDisplayString()}")
+            Timber.d("Opening maps with address: ${address.toDisplayString()}")
 
-            val success = when {
+            when {
                 address.hasCoordinates() -> {
-                    // Use GPS coordinates for better precision
                     val coords = address.coordinates!!
-                    Log.d(TAG, "Using coordinates: ${coords.latitude}, ${coords.longitude}")
-                    openWithCoordinates(context, coords.latitude, coords.longitude)
+                    openMapsWithCoordinates(context, coords)
                 }
                 address.isComplete() -> {
-                    // Use formatted text address
-                    val query = address.toDisplayString()
-                    Log.d(TAG, "Using address query: $query")
-                    openWithQuery(context, query)
+                    openMapsWithQuery(context, address.toDisplayString())
                 }
                 else -> {
-                    Log.w(TAG, "Incomplete address data")
                     showToast(context, "Indirizzo incompleto")
-                    false
                 }
             }
-
-            if (!success) {
-                showToast(context, "Nessuna app mappe disponibile")
-            }
-
         } catch (e: Exception) {
-            Log.e(TAG, "Error opening maps", e)
+            Timber.e(e, "Error opening maps")
             showToast(context, "Errore apertura mappe")
         }
     }
 
     /**
-     * Open maps with coordinates using multiple fallback strategies
+     * Open maps with coordinates - 3 strategies only
      */
-    private fun openWithCoordinates(context: Context, lat: Double, lng: Double): Boolean {
-        val strategies = listOf(
-            // Strategy 1: Google Maps direct
-            {
-                val uri = Uri.parse("https://maps.google.com/?q=$lat,$lng")
-                val intent = Intent(Intent.ACTION_VIEW, uri)
-                intent.setPackage("com.google.android.apps.maps")
-                intent
-            },
+    fun openMapsWithCoordinates(context: Context, coordinates: GeoCoordinates) {
+        val lat = coordinates.latitude
+        val lng = coordinates.longitude
 
-            // Strategy 2: Generic geo intent
-            {
-                val uri = Uri.parse("geo:$lat,$lng?q=$lat,$lng")
-                Intent(Intent.ACTION_VIEW, uri)
-            },
+        Timber.d("Opening maps with coordinates: $lat, $lng")
 
-            // Strategy 3: Google Maps web fallback
-            {
-                val uri = Uri.parse("https://maps.google.com/?q=$lat,$lng")
-                Intent(Intent.ACTION_VIEW, uri)
-            },
+        val attempts = listOf(
+            // 1. Google Maps app (if installed)
+            { openGoogleMapsApp(context, lat, lng) },
 
-            // Strategy 4: OpenStreetMap
-            {
-                val uri = Uri.parse("geo:$lat,$lng")
-                Intent(Intent.ACTION_VIEW, uri)
-            }
+            // 2. Generic geo intent (ANY map app: Waze, HERE, OSM, etc.)
+            { openGeoIntent(context, "geo:$lat,$lng?q=$lat,$lng") },
+
+            // 3. Browser fallback
+            { openInBrowser(context, "https://maps.google.com/?q=$lat,$lng") }
         )
 
-        return tryIntentStrategies(context, strategies)
+        executeAttempts(context, attempts, "coordinate")
     }
 
     /**
-     * Open maps with address query using multiple fallback strategies
+     * Open maps with address query - 3 strategies only
      */
-    private fun openWithQuery(context: Context, query: String): Boolean {
+    fun openMapsWithQuery(context: Context, query: String) {
+        Timber.d("Opening maps with query: $query")
+
         val encodedQuery = Uri.encode(query)
 
-        val strategies = listOf(
-            // Strategy 1: Google Maps search
-            {
-                val uri = Uri.parse("https://maps.google.com/?q=$encodedQuery")
-                val intent = Intent(Intent.ACTION_VIEW, uri)
-                intent.setPackage("com.google.android.apps.maps")
-                intent
-            },
+        val attempts = listOf(
+            // 1. Google Maps app (if installed)
+            { openGoogleMapsApp(context, query) },
 
-            // Strategy 2: Generic geo search
-            {
-                val uri = Uri.parse("geo:0,0?q=$encodedQuery")
-                Intent(Intent.ACTION_VIEW, uri)
-            },
+            // 2. Generic geo intent (ANY map app: Waze, HERE, OSM, etc.)
+            { openGeoIntent(context, "geo:0,0?q=$encodedQuery") },
 
-            // Strategy 3: Generic map search
-            {
-                val uri = Uri.parse("maps:q=$encodedQuery")
-                Intent(Intent.ACTION_VIEW, uri)
-            },
-
-            // Strategy 4: Google Maps web
-            {
-                val uri = Uri.parse("https://maps.google.com/?q=$encodedQuery")
-                Intent(Intent.ACTION_VIEW, uri)
-            },
-
-            // Strategy 5: Generic browser search
-            {
-                val uri = Uri.parse("https://www.google.com/maps/search/$encodedQuery")
-                Intent(Intent.ACTION_VIEW, uri)
-            }
+            // 3. Browser fallback
+            { openInBrowser(context, "https://maps.google.com/?q=$encodedQuery") }
         )
 
-        return tryIntentStrategies(context, strategies)
+        executeAttempts(context, attempts, "query")
     }
 
     /**
-     * Try multiple intent strategies until one works
+     * Execute attempts until one succeeds
      */
-    private fun tryIntentStrategies(context: Context, strategies: List<() -> Intent>): Boolean {
-        for ((index, strategy) in strategies.withIndex()) {
+    private fun executeAttempts(context: Context, attempts: List<() -> Boolean>, type: String) {
+        for ((index, attempt) in attempts.withIndex()) {
             try {
-                val intent = strategy()
-                Log.d(TAG, "Trying strategy ${index + 1}: ${intent.data}")
-
-                if (isIntentAvailable(context, intent)) {
-                    Log.d(TAG, "Strategy ${index + 1} successful")
-                    context.startActivity(intent)
-                    return true
-                } else {
-                    Log.d(TAG, "Strategy ${index + 1} not available")
+                Timber.d("Trying $type attempt ${index + 1}")
+                if (attempt()) {
+                    Timber.d("$type attempt ${index + 1} succeeded")
+                    return
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Strategy ${index + 1} failed: ${e.message}")
+                Timber.w(e, "$type attempt ${index + 1} failed")
             }
         }
 
-        Log.w(TAG, "All strategies failed")
-        return false
+        Timber.w("All $type attempts failed")
+        showToast(context, "Impossibile aprire le mappe")
     }
 
     /**
-     * Check if an intent can be resolved
+     * Strategy 1: Google Maps app (if installed)
      */
-    private fun isIntentAvailable(context: Context, intent: Intent): Boolean {
+    private fun openGoogleMapsApp(context: Context, lat: Double, lng: Double): Boolean {
         return try {
-            val activities = context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
-            activities.isNotEmpty()
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:$lat,$lng"))
+            intent.setPackage("com.google.android.apps.maps")
+            context.startActivity(intent)
+            true
         } catch (e: Exception) {
-            Log.w(TAG, "Error checking intent availability: ${e.message}")
+            Timber.d(e, "Google Maps app (coordinates) not available")
             false
         }
     }
 
     /**
-     * Show toast message to user
+     * Strategy 1b: Google Maps app with query
+     */
+    private fun openGoogleMapsApp(context: Context, query: String): Boolean {
+        return try {
+            val encodedQuery = Uri.encode(query)
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=$encodedQuery"))
+            intent.setPackage("com.google.android.apps.maps")
+            context.startActivity(intent)
+            true
+        } catch (e: Exception) {
+            Timber.d(e, "Google Maps app (query) not available")
+            false
+        }
+    }
+
+    /**
+     * Strategy 2: Generic geo intent (ANY map app automatically)
+     */
+    private fun openGeoIntent(context: Context, geoUri: String): Boolean {
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(geoUri))
+            context.startActivity(intent)
+            true
+        } catch (e: ActivityNotFoundException) {
+            Timber.d(e, "No app available for geo intent")
+            false
+        }
+    }
+
+    /**
+     * Strategy 3: Browser fallback (always works)
+     */
+    private fun openInBrowser(context: Context, url: String): Boolean {
+        return try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            context.startActivity(intent)
+            true
+        } catch (e: ActivityNotFoundException) {
+            Timber.w(e, "Even browser fallback failed")
+            false
+        }
+    }
+
+    /**
+     * Show toast message
      */
     private fun showToast(context: Context, message: String) {
         Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
     /**
-     * Open maps app with specific coordinates
+     * Check if Google Maps is installed
      */
-    fun openMapsWithCoordinates(context: Context, coordinates: GeoCoordinates) {
-        val success = openWithCoordinates(context, coordinates.latitude, coordinates.longitude)
-        if (!success) {
-            showToast(context, "Nessuna app mappe disponibile")
+    fun isGoogleMapsInstalled(context: Context): Boolean {
+        return try {
+            context.packageManager.getPackageInfo("com.google.android.apps.maps", 0)
+            true
+        } catch (e: Exception) {
+            false
         }
     }
 
     /**
-     * Open maps app with text query
+     * Debug function to test and show available options
      */
-    fun openMapsWithQuery(context: Context, query: String) {
-        val success = openWithQuery(context, query)
-        if (!success) {
-            showToast(context, "Nessuna app mappe disponibile")
-        }
-    }
+    fun debugMapCapabilities(context: Context) {
+        Timber.d("=== MAP CAPABILITIES DEBUG ===")
+        Timber.d("Google Maps installed: ${isGoogleMapsInstalled(context)}")
 
-    /**
-     * Debug: List available map applications
-     */
-    fun listAvailableMapApps(context: Context) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=test"))
-        val activities = context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        // Test basic geo intent availability
+        val geoIntent = Intent(Intent.ACTION_VIEW, Uri.parse("geo:0,0?q=test"))
+        val geoApps = context.packageManager.queryIntentActivities(geoIntent, 0)
+        Timber.d("Apps handling geo intents: ${geoApps.size}")
 
-        Log.d(TAG, "Available map applications:")
-        for (activity in activities) {
-            Log.d(TAG, "- ${activity.activityInfo.packageName}: ${activity.loadLabel(context.packageManager)}")
-        }
-
-        if (activities.isEmpty()) {
-            Log.d(TAG, "No map applications found")
-        }
+        // Test browser availability
+        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://maps.google.com"))
+        val browserAvailable = browserIntent.resolveActivity(context.packageManager) != null
+        Timber.d("Browser available: $browserAvailable")
     }
 }
