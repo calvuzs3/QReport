@@ -1,11 +1,17 @@
 package net.calvuz.qreport.app.database.data.local
 
+import android.R
+import android.content.Context
+import androidx.compose.ui.platform.LocalContext
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
+import dagger.hilt.android.qualifiers.ApplicationContext
+import net.calvuz.qreport.app.app.QReportApplication
 import net.calvuz.qreport.app.app.data.converter.AddressConverter
 import net.calvuz.qreport.app.app.data.converter.DatabaseConverters
+import net.calvuz.qreport.app.app.presentation.ui.QReportApp
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -26,6 +32,8 @@ import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.ContractDao
 import net.calvuz.qreport.client.contract.data.local.ContractEntity
+import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
+import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
 
 /**
  * QReport Room Database
@@ -56,7 +64,9 @@ import net.calvuz.qreport.client.contract.data.local.ContractEntity
         // checkup-client association
         CheckUpIslandAssociationEntity::class,
         // client-contract association
-        ContractEntity::class
+        ContractEntity::class,
+        // IRF
+        TechnicalInterventionEntity::class
     ],
     version = QReportDatabase.Companion.DATABASE_VERSION,
     exportSchema = true,
@@ -70,7 +80,7 @@ import net.calvuz.qreport.client.contract.data.local.ContractEntity
     DatabaseConverters::class,
     AddressConverter::class
 )
-abstract class QReportDatabase : RoomDatabase() {
+abstract class QReportDatabase() : RoomDatabase() {
 
     // DAO abstract methods
     abstract fun checkUpDao(): CheckUpDao
@@ -83,11 +93,11 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun facilityIslandDao(): IslandDao
     abstract fun checkUpAssociationDao(): CheckUpAssociationDao
     abstract fun contractDao(): ContractDao
-
+    abstract fun technicalInterventionDao(): TechnicalInterventionDao
 
     companion object {
-        const val DATABASE_NAME = "qreport_database"
-        const val DATABASE_VERSION = 1
+        const val DATABASE_NAME = QReportApplication.DATABASE_NAME
+        const val DATABASE_VERSION = QReportApplication.DATABASE_VERSION
 
         /**
          * 3. Callback per inizializzazione database

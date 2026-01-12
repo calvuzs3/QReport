@@ -11,6 +11,19 @@ fun QrError.SystemError.toUiText(): UiText {
     }
 }
 
+fun QrError.CreateInterventionError.toUiText(): UiText {
+    return when (this) {
+        is QrError.CreateInterventionError.MissingCustomerName -> StringResources(R.string.err_create_intervention_missing_customer_name)
+        is QrError.CreateInterventionError.MissingSerialNumber -> StringResources(R.string.err_create_intervention_missing_serial_number)
+        is QrError.CreateInterventionError.MissingTicketNumber -> StringResources(R.string.err_create_intervention_missing_ticket_number)
+        is QrError.CreateInterventionError.MissingOrderNumber -> StringResources(R.string.err_create_intervention_missing_order_number)
+        is QrError.CreateInterventionError.TooManyTechnicians -> StringResources(R.string.err_create_intervention_too_many_technicians)
+        is QrError.CreateInterventionError.CreationFailed -> StringResources(R.string.err_create_intervention_creation_failed)
+        is QrError.CreateInterventionError.ClientNotFound -> StringResources(R.string.err_create_intervention_client_not_found)
+        is QrError.CreateInterventionError.IslandNotFound -> StringResources(R.string.err_create_intervention_island_not_found)
+    }
+}
+
 fun QrError.App.toUiText(): UiText {
     return when (this) {
         is QrError.App.UnknownError -> StringResources(R.string.err_unknown)
@@ -21,7 +34,7 @@ fun QrError.App.toUiText(): UiText {
     }
 }
 
-fun QrError.ValidationError.toUiText(): UiText{
+fun QrError.ValidationError.toUiText(): UiText {
     return when (this) {
         is QrError.ValidationError.EmptyField -> StringResources(R.string.err_validation_empty_field)
         is QrError.ValidationError.DuplicateEntry -> StringResources(R.string.err_validation_duplicate_entry)
@@ -41,7 +54,7 @@ fun QrError.Contracts.toUiText(): UiText {
     }
 }
 
-fun QrError.Contacts.toUiText() :UiText {
+fun QrError.Contacts.toUiText(): UiText {
     return when (this) {
         is QrError.Contacts.ValidationError.IdClientMandatory -> StringResources(R.string.err_contact_client_id_empty)
         is QrError.Contacts.ValidationError.IdContractMandatory -> StringResources(R.string.err_contact_contact_id_empty)
@@ -760,7 +773,8 @@ fun QrError.asUiText(): UiText {
 
         QrError.Exporting.CANNOT_EXPORT_DRAFT -> StringResources(R.string.err_export_cannot_export_draft)
 
-    }
+        else -> {}
+    } as UiText
 }
 
 fun QrResult.Error<*, QrError>.asErrorUiText(): UiText {

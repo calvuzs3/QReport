@@ -8,6 +8,11 @@ import timber.log.Timber
 @HiltAndroidApp
 class QReportApplication : Application() {
 
+    companion object {
+        const val DATABASE_NAME = "qreport_database"
+        const val DATABASE_VERSION = 1
+    }
+
     override fun onCreate() {
         super.onCreate()
 

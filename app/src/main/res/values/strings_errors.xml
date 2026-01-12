@@ -14,6 +14,16 @@
     <string name="err_fields_required">Compilare i campi richiesti</string>
     <string name="err_refresh">Errore refresh</string>
 
+    <!-- CreateIntervention Errors -->
+    <string name="err_create_intervention_missing_customer_name">Nome cliente obbligatorio</string>
+    <string name="err_create_intervention_missing_serial_number">Serial number obbligatorio</string>
+    <string name="err_create_intervention_missing_ticket_number">Numero ticket obbligatorio</string>
+    <string name="err_create_intervention_missing_order_number">Numero ordine cliente obbligatorio</string>
+    <string name="err_create_intervention_too_many_technicians">Massimo 6 tecnici consentiti</string>
+    <string name="err_create_intervention_creation_failed">Errore durante la creazione</string>
+    <string name="err_create_intervention_client_not_found">Cliente non trovato</string>
+    <string name="err_create_intervention_island_not_found">Isola non trovata</string>
+
     <!-- Validation errors -->
     <string name="err_validation_empty_field">Campo obbligatorio mancante</string>
     <string name="err_validation_duplicate_entry">Duplicato trovato</string>

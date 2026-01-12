@@ -1,41 +1,54 @@
 package net.calvuz.qreport.app.error.domain.model
 
-sealed interface QrError {
+interface QrError {
 
-    sealed class SystemError: QrError {
-        data class Unknown(val exception: Exception? = null): SystemError()
+    sealed class SystemError : QrError {
+        data class Unknown(val exception: Exception? = null) : SystemError()
     }
 
-    sealed interface App: QrError {
-        data class UnknownError(val message: String? = null): App
-        data class SaveError(val message: QrError? = null): App
-        data class LoadError(val message: QrError? = null): App
-        data class DeleteError(val message: QrError? = null): App
-        data class NotImplemented(val message: QrError? = null): App
+    sealed interface CreateInterventionError : QrError {
+        data class MissingCustomerName(val message: String? = null) : CreateInterventionError
+        data class MissingSerialNumber(val message: String? = null) : CreateInterventionError
+        data class MissingTicketNumber(val message: String? = null) : CreateInterventionError
+        data class MissingOrderNumber(val message: String? = null) : CreateInterventionError
+        data class TooManyTechnicians(val message: String? = null) : CreateInterventionError
+        data class CreationFailed(val message: String? = null) : CreateInterventionError
+        data class ClientNotFound(val message: String? = null) : CreateInterventionError
+        data class IslandNotFound(val message: String? = null) : CreateInterventionError
     }
 
-    sealed interface ValidationError: QrError {
-        data class EmptyField(val message: String? = null): ValidationError
-        data class IsNotActive(val message: String? = null): ValidationError
-        data class IsNotPrimary(val message: String? = null): ValidationError
-        data class DuplicateEntry(val message: String? = null): ValidationError
-        data class InvalidOperation(val message: String? = null): ValidationError
+
+    sealed interface App : QrError {
+        data class UnknownError(val message: String? = null) : App
+        data class SaveError(val message: QrError? = null) : App
+        data class LoadError(val message: QrError? = null) : App
+        data class DeleteError(val message: QrError? = null) : App
+        data class NotImplemented(val message: QrError? = null) : App
+    }
+
+    sealed interface ValidationError : QrError {
+        data class EmptyField(val message: String? = null) : ValidationError
+        data class IsNotActive(val message: String? = null) : ValidationError
+        data class IsNotPrimary(val message: String? = null) : ValidationError
+        data class DuplicateEntry(val message: String? = null) : ValidationError
+        data class InvalidOperation(val message: String? = null) : ValidationError
 
     }
-    sealed interface Contracts: QrError {
+
+    sealed interface Contracts : QrError {
         data class ClientIdEmpty(val message: String?) : Contracts
         data class ClientNotFound(val message: String?) : Contracts
-        data class ContractIdEmpty(val message: String?): Contracts
+        data class ContractIdEmpty(val message: String?) : Contracts
         data class ContractNotFound(val message: String?) : Contracts
         data class DeleteError(val exception: Exception) : Contracts
 
     }
 
-    sealed interface Contacts: QrError {
-        sealed interface ValidationError: Contacts {
-            data class IdClientMandatory(val message: String? = null): ValidationError
-            data class IdContractMandatory(val message: String? = null): ValidationError
-            data class IdMandatory(val message: String? = null): ValidationError
+    sealed interface Contacts : QrError {
+        sealed interface ValidationError : Contacts {
+            data class IdClientMandatory(val message: String? = null) : ValidationError
+            data class IdContractMandatory(val message: String? = null) : ValidationError
+            data class IdMandatory(val message: String? = null) : ValidationError
         }
     }
 

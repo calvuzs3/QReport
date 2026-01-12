@@ -2,8 +2,6 @@ package net.calvuz.qreport.app.database.di
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -20,7 +18,7 @@ import net.calvuz.qreport.client.island.data.local.dao.IslandDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.client.contract.data.local.ContractDao
-import timber.log.Timber
+import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import javax.inject.Singleton
 
 /**
@@ -141,4 +139,10 @@ object DatabaseModule {
     fun provideContractsDao(
         database: QReportDatabase
     ): ContractDao = database.contractDao()
+
+    @Provides
+    fun provideTechnicianInterventionDao(
+        database: QReportDatabase
+    ): TechnicalInterventionDao = database.technicalInterventionDao()
+
 }

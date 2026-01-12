@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App name -->
-    <string name="app_name">QReport</string>
+    <string name="app_name" translatable="false">QReport</string>
+    <string name="app_version" translatable="false">1.0.0</string>
+    <string name="app_version_code" translatable="false">1</string>
+    <string name="app_database_name" translatable="false">qreport_database</string>
     <string name="app_description">Sistema digitalizzato per check-up isole robotizzate industriali</string>
 
     <!-- Routes -->
