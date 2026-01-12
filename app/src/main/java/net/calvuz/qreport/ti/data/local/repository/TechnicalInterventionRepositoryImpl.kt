@@ -1,12 +1,12 @@
-package net.calvuz.qreport.ti.data.repository
+package net.calvuz.qreport.ti.data.local.repository
 
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
-import net.calvuz.qreport.ti.domain.model.InterventionStatus
 import net.calvuz.qreport.ti.domain.repository.TechnicalInterventionRepository
 import net.calvuz.qreport.ti.data.local.dao.toEntity
 import net.calvuz.qreport.ti.data.local.dao.toDomain
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
+import net.calvuz.qreport.ti.domain.model.InterventionStatus
 import javax.inject.Inject
 import javax.inject.Singleton
 

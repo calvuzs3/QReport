@@ -2,10 +2,9 @@ package net.calvuz.qreport.ti.di
 
 import dagger.Binds
 import dagger.Module
-import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import net.calvuz.qreport.ti.data.repository.TechnicalInterventionRepositoryImpl
+import net.calvuz.qreport.ti.data.local.repository.TechnicalInterventionRepositoryImpl
 import net.calvuz.qreport.ti.domain.repository.TechnicalInterventionRepository
 
 /**
