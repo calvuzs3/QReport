@@ -15,11 +15,13 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 
 @Composable
-fun LoadingState(textMessage: String? = null) {
-    val message = textMessage ?: stringResource(R.string.core_component_loading_in_progress)
+fun LoadingState( modifier: Modifier? = Modifier, message: String? = null) {
+
+    val modifier =  modifier ?: Modifier
+    val message = message ?: stringResource(R.string.core_component_loading_in_progress)
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),  // in this case we can use .fillMaxSize
         contentAlignment = Alignment.Center
     ) {
         Column(

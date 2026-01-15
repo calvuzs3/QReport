@@ -168,6 +168,48 @@ sealed interface BatchAction {
             override val labelResId = net.calvuz.qreport.R.string.batch_action_bulk_finalize
         }
     }
+
+    sealed interface TechnicalInterventionBatchAction : BatchAction {
+        data object SetActive : TechnicalInterventionBatchAction {
+            override val iconResId = android.R.drawable.ic_menu_agenda
+            override val labelResId = net.calvuz.qreport.R.string.batch_action_set_active
+        }
+
+        data object SetInactive : TechnicalInterventionBatchAction {
+            override val iconResId = android.R.drawable.ic_menu_close_clear_cancel
+            override val labelResId = net.calvuz.qreport.R.string.batch_action_set_inactive
+        }
+
+        data object ChangeStatusToDraft : TechnicalInterventionBatchAction {
+            override val iconResId = android.R.drawable.ic_menu_edit
+            override val labelResId = net.calvuz.qreport.R.string.batch_action_set_draft
+        }
+
+        data object ChangeStatusToInProgress : TechnicalInterventionBatchAction {
+            override val iconResId = android.R.drawable.ic_menu_agenda
+            override val labelResId = net.calvuz.qreport.R.string.batch_action_set_in_progress
+        }
+
+        data object ChangeStatusToPendingReview : TechnicalInterventionBatchAction {
+            override val iconResId = android.R.drawable.ic_menu_view
+            override val labelResId = net.calvuz.qreport.R.string.batch_action_set_pending_review
+        }
+
+        data object ChangeStatusToCompleted : TechnicalInterventionBatchAction {
+            override val iconResId = android.R.drawable.ic_menu_save
+            override val labelResId = net.calvuz.qreport.R.string.batch_action_set_completed
+        }
+
+        data object ChangeStatusToArchived : TechnicalInterventionBatchAction {
+            override val iconResId = android.R.drawable.ic_menu_close_clear_cancel
+            override val labelResId = net.calvuz.qreport.R.string.batch_action_set_archived
+        }
+
+        data object Export : TechnicalInterventionBatchAction {
+            override val iconResId = android.R.drawable.stat_sys_download
+            override val labelResId = net.calvuz.qreport.R.string.batch_action_export_intervention
+        }
+    }
 }
 
 /**
@@ -217,6 +259,28 @@ object BatchActionSets {
         BatchAction.SelectAll,
         BatchAction.Edit,
         BatchAction.Export,
+        BatchAction.Delete
+    )
+
+
+
+    val technicalInterventionActions = listOf(
+        BatchAction.SelectAll,
+        BatchAction.Edit,
+        BatchAction.TechnicalInterventionBatchAction.SetActive,
+        BatchAction.TechnicalInterventionBatchAction.SetInactive,
+        BatchAction.TechnicalInterventionBatchAction.Export,
+        BatchAction.Delete
+    )
+    val technicalInterventionDebugActions = listOf(
+        BatchAction.SelectAll,
+        BatchAction.Edit,
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToDraft,
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToInProgress,
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToPendingReview,
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToCompleted,
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToArchived,
+        BatchAction.TechnicalInterventionBatchAction.Export,
         BatchAction.Delete
     )
 }

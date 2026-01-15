@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Technical Intervention List Screen -->
+    <string name="interventions_screen_title">Interventi Tecnici</string>
+    <string name="debug_mode_active">Modalità Debug</string>
+    <string name="debug_mode_toggle">Toggle Debug Mode</string>
+
+    <!-- Filters -->
+    <string name="interventions_filter_all">Tutti</string>
+    <string name="interventions_filter_active">Attivi</string>
+    <string name="interventions_filter_completed">Completati</string>
+    <string name="interventions_filter_draft">Bozze</string>
+    <string name="interventions_filter_in_progress">In Corso</string>
+    <string name="interventions_filter_pending_review">In Revisione</string>
+
+    <!-- Sorting -->
+    <string name="interventions_sort_updated_recent">Aggiornati di recente</string>
+    <string name="interventions_sort_updated_oldest">Meno aggiornati</string>
+    <string name="interventions_sort_created_recent">Creati di recente</string>
+    <string name="interventions_sort_created_oldest">Meno recenti</string>
+    <string name="interventions_sort_customer_name">Nome cliente</string>
+    <string name="interventions_sort_intervention_number">Numero intervento</string>
+
+    <!-- Search & Empty States -->
+    <string name="interventions_search_placeholder">Cerca interventi...</string>
+    <string name="interventions_loading">Caricamento interventi...</string>
+    <string name="interventions_empty_title">Nessun intervento</string>
+    <string name="interventions_empty_description">Non ci sono interventi tecnici. Creane uno per iniziare.</string>
+    <string name="interventions_create_first">Crea primo intervento</string>
+    <string name="interventions_create_new">Nuovo intervento</string>
+    <string name="interventions_search_empty_title">Nessun risultato</string>
+    <string name="interventions_search_empty_description">Nessun intervento trovato per "%1$s"</string>
+
+    <!-- Status Labels -->
+    <string name="status_draft">Bozza</string>
+    <string name="status_in_progress">In Corso</string>
+    <string name="status_pending_review">In Revisione</string>
+    <string name="status_completed">Completato</string>
+    <string name="status_archived">Archiviato</string>
+
+    <!-- Card Content -->
+    <string name="robot_serial_number">Numero Seriale</string>
+    <string name="operating_hours">Ore di Funzionamento</string>
+    <string name="updated_days_ago">Aggiornato %1$d giorni fa</string>
+    <string name="work_location_client_site">Sede cliente</string>
+    <string name="work_location_our_site">Nostra sede</string>
+    <string name="work_location_other">Altro</string>
+
+    <!-- Batch Actions -->
+    <string name="batch_action_set_active">Attiva</string>
+    <string name="batch_action_set_inactive">Disattiva</string>
+    <string name="batch_action_set_draft">Imposta Bozza</string>
+    <string name="batch_action_set_in_progress">Imposta In Corso</string>
+    <string name="batch_action_set_pending_review">Imposta In Revisione</string>
+    <string name="batch_action_set_completed">Imposta Completato</string>
+    <string name="batch_action_set_archived">Imposta Archiviato</string>
+    <string name="batch_action_export_intervention">Esporta Interventi</string>
+    <string name="interventions_batch_delete_confirm">Eliminare %1$d interventi?</string>
+
+    <!-- Success Messages -->
+    <string name="intervention_deleted_success">Intervento eliminato</string>
+    <string name="interventions_deleted_success">%1$d interventi eliminati</string>
+    <string name="interventions_status_updated_success">Stato aggiornato per %1$d interventi</string>
+    <string name="export_feature_coming_soon">Funzione esportazione in sviluppo</string>
+
+    <!-- Error Messages -->
+    <string name="err_intervention_delete_failed">Errore eliminazione intervento</string>
+    <string name="err_intervention_delete_unexpected">Errore imprevisto durante eliminazione</string>
+    <string name="err_interventions_delete_batch_failed">Errore eliminazione multipla</string>
+    <string name="err_interventions_delete_batch_unexpected">Errore imprevisto eliminazione multipla</string>
+    <string name="err_interventions_status_update_failed">Errore aggiornamento stato</string>
+    <string name="err_interventions_status_update_unexpected">Errore imprevisto aggiornamento stato</string>
+    <string name="err_interventions_filter_failed">Errore applicazione filtro</string>
+    <string name="err_interventions_filter_unexpected">Errore imprevisto filtro</string>
+    <string name="err_interventions_list_load_failed">Errore caricamento lista</string>
+    <string name="err_interventions_list_unexpected">Errore imprevisto caricamento lista</string>
+    <string name="err_interventions_list_refresh_failed">Errore refresh lista</string>
+    <string name="err_interventions_list_refresh_unexpected">Errore imprevisto refresh lista</string>
+
+</resources>

@@ -1,9 +1,27 @@
 package net.calvuz.qreport.app.error.domain.model
 
+import net.calvuz.qreport.ti.domain.model.InterventionStatus
+
 interface QrError {
 
     sealed class SystemError : QrError {
         data class Unknown(val exception: Exception? = null) : SystemError()
+    }
+
+    sealed interface InterventionError : QrError {
+        data class LOAD(val message: String? = null) : InterventionError
+        data class NOT_FOUND(val message: String? = null) : InterventionError
+        data class DELETE_FAILED(val message: String? = null) : InterventionError
+        data class BATCH_DELETE_FAILED(val message: String? = null) : InterventionError
+        data class INVALID_ID(val message: String? = null) : InterventionError
+        data class CANNOT_DELETE_COMPLETED(val message: String? = null) : InterventionError
+        data class CANNOT_DELETE_ARCHIVED(val message: String? = null) : InterventionError
+        data class DELETE_REQUIRES_CONFIRMATION(val message: String? = null) : InterventionError
+        data class CREATE_FAILED(val message: String? = null) : InterventionError
+        data class INVALID_STATUS_TRANSITION(val status: InterventionStatus? = null, val newStatus: InterventionStatus? = null) : InterventionError
+        data class UPDATE_FAILED(val message: String? = null) : InterventionError
+        data class BATCH_UPDATE_FAILED(val message: String? = null) : InterventionError
+        data class INVALID_STATUS(val message: String? = null) : InterventionError
     }
 
     sealed interface CreateInterventionError : QrError {
