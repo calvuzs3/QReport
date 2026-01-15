@@ -107,11 +107,6 @@ class DeleteTechnicalInterventionUseCase @Inject constructor(
                     failureCount++
                     errors.add("ID $interventionId: ${result.error}")
                 }
-                is QrResult.Loading -> {
-                    // Should not happen in suspend function
-                    failureCount++
-                    errors.add("ID $interventionId: Unexpected loading state")
-                }
             }
         }
 

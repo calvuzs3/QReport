@@ -1,5 +1,6 @@
 package net.calvuz.qreport.ti.presentation.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -20,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -334,23 +336,55 @@ fun TechnicalInterventionListScreen(
 
         // Batch actions bottom sheet
         if (showBottomSheet && selectionState.isInSelectionMode) {
-            BatchActionsBottomSheet(
-                selectedItems = selectionState.selectedItems,
-                availableActions = viewModel.getAvailableBatchActions(),
-                batchActionHandler = createInterventionBatchActionHandler(
-                    viewModel = viewModel,
-                    onNavigateToEdit = onNavigateToEditIntervention,
-                    onShowBatchDeleteDialog = { showBatchDeleteDialog = true },
-                    interventionsWithStats = uiState.filteredInterventions
-                ),
-                getBatchDeleteConfirmationMessage = { selectedItems ->
-                    UiText.StringResource(R.string.interventions_batch_delete_confirm, selectedItems.size)
-                },
-                onDismiss = {
-                    showBottomSheet = false
-                },
-                sheetState = bottomSheetState
+            // Create handler outside clickable context
+            val batchActionHandler = createInterventionBatchActionHandler(
+                viewModel = viewModel,
+                onNavigateToEdit = onNavigateToEditIntervention,
+                onShowBatchDeleteDialog = { showBatchDeleteDialog = true },
+                interventionsWithStats = uiState.filteredInterventions
             )
+
+            ModalBottomSheet(
+                onDismissRequest = { showBottomSheet = false },
+                sheetState = bottomSheetState
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.batch_actions_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+
+                    viewModel.getAvailableBatchActions().forEach { action ->
+                        ListItem(
+                            headlineContent = { Text(stringResource(action.labelResId)) },
+                            leadingContent = {
+                                Icon(
+                                    painter = painterResource(action.iconResId),
+                                    contentDescription = null,
+                                    tint = if (action.isDestructive) {
+                                        MaterialTheme.colorScheme.error
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
+                                )
+                            },
+                            modifier = Modifier.clickable {
+                                batchActionHandler.onBatchAction(action, selectionState.selectedItems)
+                                if (action != BatchAction.Delete) {
+                                    showBottomSheet = false
+                                }
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(32.dp))
+                }
+            }
         }
 
         // Batch delete confirmation dialog

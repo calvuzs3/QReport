@@ -79,7 +79,7 @@ fun AssociationManagementDialog(
 
                 // Content
                 if (isLoading) {
-                    LoadingState(stringResource(R.string.checkup_component_association_dialog_loading))
+                    LoadingState(message= stringResource(R.string.checkup_component_association_dialog_loading))
 
                 } else {
                     LazyColumn(

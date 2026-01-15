@@ -101,7 +101,8 @@
     <string name="empty_selection_action_required">Seleziona almeno un elemento per continuare</string>
 
 
-
+    <!-- Various -->
+    <string name="batch_actions_title">Azioni</string>
 
 
 

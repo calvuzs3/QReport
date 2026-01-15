@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <!-- Technical Intervention List Screen -->
     <string name="interventions_screen_title">Interventi Tecnici</string>
     <string name="debug_mode_active">Modalità Debug</string>
@@ -30,13 +31,6 @@
     <string name="interventions_create_new">Nuovo intervento</string>
     <string name="interventions_search_empty_title">Nessun risultato</string>
     <string name="interventions_search_empty_description">Nessun intervento trovato per "%1$s"</string>
-
-    <!-- Status Labels -->
-    <string name="status_draft">Bozza</string>
-    <string name="status_in_progress">In Corso</string>
-    <string name="status_pending_review">In Revisione</string>
-    <string name="status_completed">Completato</string>
-    <string name="status_archived">Archiviato</string>
 
     <!-- Card Content -->
     <string name="robot_serial_number">Numero Seriale</string>

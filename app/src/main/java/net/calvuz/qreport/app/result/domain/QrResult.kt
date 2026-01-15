@@ -13,6 +13,4 @@ sealed interface QrResult<out D, out E : QrError> {
     /** Error class */
     data class Error<out D, out E : QrError>(val error: E) : QrResult<D, E>
 
-    /** Loading State */
-    class Loading<out D, out E : QrError>(): QrResult<D, E>
 }

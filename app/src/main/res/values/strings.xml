@@ -49,11 +49,14 @@
     <string name="nav_export">Export</string>
     <string name="nav_settings">Impostazioni</string>
 
-    <!-- Check-up status -->
+    <!-- status -->
     <string name="status_draft">Bozza</string>
     <string name="status_in_progress">In Corso</string>
     <string name="status_completed">Completato</string>
     <string name="status_exported">Esportato</string>
+    <string name="status_pending_review">In Revisione</string>
+    <string name="status_archived">Archiviato</string>
+
 
     <!-- Check item status -->
     <string name="check_status_ok">OK</string>

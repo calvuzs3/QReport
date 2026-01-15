@@ -11,6 +11,7 @@ import net.calvuz.qreport.app.file.domain.repository.*
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.file.domain.model.DirectorySpec
+import net.calvuz.qreport.app.result.domain.QrResult.*
 import timber.log.Timber
 import java.io.File
 import java.io.IOException
@@ -90,12 +91,12 @@ class CoreFileRepositoryImpl @Inject constructor(
                         val created = subDir.mkdirs()
                         if (!created) {
                             Timber.e("Failed to create subdirectory: ${subDir.absolutePath}")
-                            return QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
+                            return Error(QrError.FileError.DIRECTORY_CREATE)
                         }
                     }
 
                     Timber.d("Subdirectory ready: ${subDir.absolutePath}")
-                    QrResult.Success(subDir.absolutePath)
+                    Success(subDir.absolutePath)
                 }
             }
 

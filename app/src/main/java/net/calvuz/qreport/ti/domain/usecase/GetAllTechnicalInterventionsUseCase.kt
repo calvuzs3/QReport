@@ -26,8 +26,6 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
      */
     operator fun invoke(): Flow<QrResult<List<TechnicalIntervention>, QrError>> = flow {
         try {
-            emit(QrResult.Loading())
-
             val result = interventionRepository.getAllInterventions()
 
             if (result.isSuccess) {
@@ -50,8 +48,6 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
      */
     fun getActiveInterventions(): Flow<QrResult<List<TechnicalIntervention>, QrError>> = flow {
         try {
-            emit(QrResult.Loading())
-
             // Get DRAFT interventions
             val draftResult = interventionRepository.getInterventionsByStatus(InterventionStatus.DRAFT)
             val inProgressResult = interventionRepository.getInterventionsByStatus(InterventionStatus.IN_PROGRESS)
@@ -82,8 +78,6 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
      */
     fun getInterventionsByStatus(status: InterventionStatus): Flow<QrResult<List<TechnicalIntervention>, QrError>> = flow {
         try {
-            emit(QrResult.Loading())
-
             val result = interventionRepository.getInterventionsByStatus(status)
 
             if (result.isSuccess) {
@@ -106,8 +100,6 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
      */
     fun getCompletedInterventions(): Flow<QrResult<List<TechnicalIntervention>, QrError>> = flow {
         try {
-            emit(QrResult.Loading())
-
             // Get COMPLETED and ARCHIVED interventions
             val completedResult = interventionRepository.getInterventionsByStatus(InterventionStatus.COMPLETED)
             val archivedResult = interventionRepository.getInterventionsByStatus(InterventionStatus.ARCHIVED)

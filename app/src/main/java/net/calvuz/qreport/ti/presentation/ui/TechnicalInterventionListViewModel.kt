@@ -148,9 +148,6 @@ class TechnicalInterventionListViewModel @Inject constructor(
                                     )
                                 }
                             }
-                            is QrResult.Loading -> {
-                                // Already handled isLoading above
-                            }
                         }
                     }
             } catch (_: CancellationException) {
@@ -227,10 +224,6 @@ class TechnicalInterventionListViewModel @Inject constructor(
                                 return@collect
                             }
                         }
-
-                        is QrResult.Loading -> {
-                            // Continue collecting
-                        }
                     }
                 }
             } catch (_: CancellationException) {
@@ -275,9 +268,6 @@ class TechnicalInterventionListViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(
                             error = UiText.StringResource(R.string.err_intervention_delete_failed)
                         )
-                    }
-                    is QrResult.Loading -> {
-                        // Already handled isDeleting above
                     }
                 }
             } catch (e: Exception) {
@@ -356,9 +346,6 @@ class TechnicalInterventionListViewModel @Inject constructor(
                             error = UiText.StringResource(R.string.err_interventions_delete_batch_failed)
                         )
                     }
-                    is QrResult.Loading -> {
-                        // Already handled isBatchOperating above
-                    }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Exception in batch delete")
@@ -399,9 +386,6 @@ class TechnicalInterventionListViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(
                             error = UiText.StringResource(R.string.err_interventions_status_update_failed)
                         )
-                    }
-                    is QrResult.Loading -> {
-                        // Already handled isBatchOperating above
                     }
                 }
             } catch (e: Exception) {
@@ -500,9 +484,6 @@ class TechnicalInterventionListViewModel @Inject constructor(
                                 error = UiText.StringResource(R.string.err_interventions_filter_failed)
                             )
                             return@collect
-                        }
-                        is QrResult.Loading -> {
-                            // Continue collecting
                         }
                     }
                 }

@@ -360,6 +360,14 @@ private fun getActionIcon(action: BatchAction): ImageVector {
         BatchAction.ClientBatchAction.GenerateReport -> Icons.Default.Assessment
         BatchAction.CheckUpBatchAction.BulkExport -> Icons.Default.Archive
         BatchAction.CheckUpBatchAction.BulkFinalize -> Icons.Default.Done
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToArchived -> Icons.Default.Save
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToCompleted -> Icons.Default.SyncAlt
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToDraft -> Icons.Default.EditRoad
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToInProgress -> Icons.Default.PlayArrow
+        BatchAction.TechnicalInterventionBatchAction.ChangeStatusToPendingReview -> Icons.Default.ViewStream
+        BatchAction.TechnicalInterventionBatchAction.Export -> Icons.Default.ImportExport
+        BatchAction.TechnicalInterventionBatchAction.SetActive -> Icons.Default.PlayArrow
+        BatchAction.TechnicalInterventionBatchAction.SetInactive -> Icons.Default.Pause
     }
 }
 
