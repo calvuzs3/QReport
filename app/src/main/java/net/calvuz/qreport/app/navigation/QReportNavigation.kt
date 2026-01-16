@@ -49,6 +49,8 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.contract.presentation.ui.ContractFormScreen
 import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen
+import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionFormScreen
+import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionListScreen
 
 /**
  * Sistema di navigazione QReport - COMPLETO
@@ -112,6 +114,11 @@ object QReportRoutes {
     const val CLIENTS = "clients"
     const val CHECKUPS = "checkups"
     const val SETTINGS = "settings"
+    const val TI = "tis"
+
+    // Intervention
+    const val TI_CREATE = "ti_form"
+    const val TI_EDIT = "ti_form/{interventionId}"
 
     // Settings
     const val TECHNICIAN_SETTINGS = "technician_settings"
@@ -160,6 +167,11 @@ object QReportRoutes {
     // Helper extension for URL encoding client names with spaces/special chars
     private fun String.encodeUrl(): String = URLEncoder.encode(this, "UTF-8")
 
+
+    // Helpers for TI
+    fun ti() = "tis"
+    fun tiCreateRoute() = "ti_form"
+    fun tiEditRoute(interventionId: String) = "ti_form/$interventionId"
 
     // Helper functions for CLIENTS
 
@@ -272,9 +284,12 @@ fun QReportNavigation(
                         onNavigateToNewCheckUp = {
                             navController.navigate(QReportRoutes.CHECKUP_CREATE)
                         },
+                        onNavigateToTechnicalInterventions = {
+                            navController.navigate(QReportRoutes.TI)
+                        },
                         onNavigateToCheckUpDetail = { checkUpId ->
                             navController.navigate(QReportRoutes.checkupDetail(checkUpId))
-                        }
+                        },
                     )
                 }
 
@@ -319,6 +334,58 @@ fun QReportNavigation(
                         onNavigateToTechnicianSettings = {
                             navController.navigate(QReportRoutes.TECHNICIAN_SETTINGS)
                         }
+                    )
+                }
+
+                composable(QReportRoutes.TI) {
+                    TechnicalInterventionListScreen(
+                        onNavigateToCreateIntervention = {
+                            navController.navigate(QReportRoutes.tiCreateRoute())
+                        },
+                        onNavigateToEditIntervention = {interventionId ->
+                            navController.navigate(QReportRoutes.tiEditRoute(interventionId))
+                        },
+                        onNavigateBack = {
+                            navController.navigate(QReportRoutes.HOME) {
+                                popUpTo(QReportRoutes.HOME) { inclusive = true }
+                            }
+                        }
+                    )
+                }
+
+                // ============================================================
+                // ✅ INTERVENTION DESTINATIONS
+                // ============================================================
+
+                composable(QReportRoutes.TI_CREATE) {
+                    TechnicalInterventionFormScreen(
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onInterventionSaved = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+
+                composable(
+                    route = QReportRoutes.TI_EDIT,
+                    arguments = listOf(
+                        navArgument("interventionId") {
+                            type = NavType.StringType
+                        }
+                    )
+                ) {
+                    val tiID = it.arguments?.getString("interventionId") ?: ""
+
+                    TechnicalInterventionFormScreen(
+                        interventionId = tiID,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onInterventionSaved = {
+                            navController.popBackStack()
+                        },
                     )
                 }
 

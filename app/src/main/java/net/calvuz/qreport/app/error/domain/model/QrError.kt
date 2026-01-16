@@ -22,6 +22,8 @@ interface QrError {
         data class UPDATE_FAILED(val message: String? = null) : InterventionError
         data class BATCH_UPDATE_FAILED(val message: String? = null) : InterventionError
         data class INVALID_STATUS(val message: String? = null) : InterventionError
+        data class IMMUTABLE_FIELD_CHANGED(val field: String): InterventionError
+        data class STATUS_UPDATE_NOT_ALLOWED(val message: String? = null) : InterventionError
     }
 
     sealed interface CreateInterventionError : QrError {

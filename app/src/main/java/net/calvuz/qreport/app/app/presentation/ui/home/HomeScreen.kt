@@ -34,6 +34,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onNavigateToClients: () -> Unit,
     onNavigateToCheckUps: () -> Unit,
+    onNavigateToTechnicalInterventions: () -> Unit,
     onNavigateToNewCheckUp: () -> Unit,
     onNavigateToCheckUpDetail: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
@@ -105,6 +106,7 @@ fun HomeScreen(
                     NavigationActionsSection(
                         onNavigateToClients = onNavigateToClients,
                         onNavigateToCheckUps = onNavigateToCheckUps,
+                        onNavigateToTechnicalInterventions = onNavigateToTechnicalInterventions
                     )
                 }
 
@@ -589,7 +591,8 @@ private fun EmptyStateCard(message: String) {
 @Composable
 private fun NavigationActionsSection(
     onNavigateToClients: () -> Unit,
-    onNavigateToCheckUps: () -> Unit
+    onNavigateToCheckUps: () -> Unit,
+    onNavigateToTechnicalInterventions: () -> Unit
 ) {
     Text(
         text = "Gestione",
@@ -620,6 +623,16 @@ private fun NavigationActionsSection(
             description = "Controlli attivi",
             icon = Icons.AutoMirrored.Filled.Assignment,
             onClick = onNavigateToCheckUps,
+            isHighlighted = false
+        )
+
+        // Tecnical Intervention Management
+        NavigationActionCard(
+            modifier = Modifier.weight(1f),
+            title = "Interventi",
+            description = "Interventi tecnici",
+            icon = Icons.Default.Workspaces,
+            onClick = onNavigateToTechnicalInterventions,
             isHighlighted = false
         )
     }

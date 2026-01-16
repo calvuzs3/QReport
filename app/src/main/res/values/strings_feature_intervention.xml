@@ -58,7 +58,6 @@
     <string name="export_feature_coming_soon">Funzione esportazione in sviluppo</string>
 
     <!-- Error Messages -->
-    <string name="err_intervention_delete_failed">Errore eliminazione intervento</string>
     <string name="err_intervention_delete_unexpected">Errore imprevisto durante eliminazione</string>
     <string name="err_interventions_delete_batch_failed">Errore eliminazione multipla</string>
     <string name="err_interventions_delete_batch_unexpected">Errore imprevisto eliminazione multipla</string>
@@ -70,5 +69,41 @@
     <string name="err_interventions_list_unexpected">Errore imprevisto caricamento lista</string>
     <string name="err_interventions_list_refresh_failed">Errore refresh lista</string>
     <string name="err_interventions_list_refresh_unexpected">Errore imprevisto refresh lista</string>
+
+    <!-- TechnicalIntervention Error Messages -->
+    <string name="err_intervention_load">Errore caricamento intervento</string>
+    <string name="err_intervention_load_with_message">Errore caricamento intervento: %1$s</string>
+    <string name="err_intervention_not_found">Intervento non trovato</string>
+    <string name="err_intervention_not_found_with_message">Intervento non trovato: %1$s</string>
+
+    <string name="err_intervention_delete_failed">Errore eliminazione intervento</string>
+    <string name="err_intervention_delete_failed_with_message">Errore eliminazione intervento: %1$s</string>
+    <string name="err_intervention_batch_delete_failed">Errore eliminazione multipla interventi</string>
+    <string name="err_intervention_batch_delete_failed_with_message">Errore eliminazione multipla: %1$s</string>
+
+    <string name="err_intervention_invalid_id">ID intervento non valido</string>
+    <string name="err_intervention_invalid_id_with_message">ID intervento non valido: %1$s</string>
+
+    <string name="err_intervention_cannot_delete_completed">Impossibile eliminare intervento completato</string>
+    <string name="err_intervention_cannot_delete_archived">Impossibile eliminare intervento archiviato</string>
+    <string name="err_intervention_delete_requires_confirmation">Eliminazione richiede conferma</string>
+
+    <string name="err_intervention_create_failed">Errore creazione intervento</string>
+    <string name="err_intervention_create_failed_with_message">Errore creazione intervento: %1$s</string>
+
+    <string name="err_intervention_invalid_status_transition">Transizione stato non valida</string>
+    <string name="err_intervention_invalid_status_transition_with_details">Impossibile passare da %1$s a %2$s</string>
+
+    <string name="err_intervention_update_failed">Errore aggiornamento intervento</string>
+    <string name="err_intervention_update_failed_with_message">Errore aggiornamento intervento: %1$s</string>
+    <string name="err_intervention_batch_update_failed">Errore aggiornamento multiplo interventi</string>
+    <string name="err_intervention_batch_update_failed_with_message">Errore aggiornamento multiplo: %1$s</string>
+
+    <string name="err_intervention_invalid_status">Stato intervento non valido</string>
+    <string name="err_intervention_invalid_status_with_message">Stato intervento non valido: %1$s</string>
+
+    <string name="err_intervention_immutable_field_changed">Campo non modificabile: %1$s</string>
+    <string name="err_intervention_status_update_not_allowed">Aggiornamento stato non consentito</string>
+    <string name="err_intervention_status_update_not_allowed_with_message">Aggiornamento stato non consentito: %1$s</string>
 
 </resources>

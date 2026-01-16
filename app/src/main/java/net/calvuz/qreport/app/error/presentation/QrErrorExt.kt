@@ -24,6 +24,26 @@ fun QrError.CreateInterventionError.toUiText(): UiText {
     }
 }
 
+fun QrError.InterventionError.toUiText(): UiText {
+    return when (this) {
+        is QrError.InterventionError.BATCH_DELETE_FAILED -> StringResources(R.string.err_intervention_batch_delete_failed)
+        is QrError.InterventionError.BATCH_UPDATE_FAILED -> StringResources(R.string.err_intervention_batch_update_failed)
+        is QrError.InterventionError.CANNOT_DELETE_ARCHIVED -> StringResources(R.string.err_intervention_cannot_delete_archived)
+        is QrError.InterventionError.CANNOT_DELETE_COMPLETED -> StringResources(R.string.err_intervention_cannot_delete_completed)
+        is QrError.InterventionError.CREATE_FAILED -> StringResources(R.string.err_intervention_create_failed)
+        is QrError.InterventionError.DELETE_FAILED -> StringResources(R.string.err_intervention_delete_failed)
+        is QrError.InterventionError.DELETE_REQUIRES_CONFIRMATION -> StringResources(R.string.err_intervention_delete_requires_confirmation)
+        is QrError.InterventionError.IMMUTABLE_FIELD_CHANGED -> StringResources(R.string.err_intervention_immutable_field_changed)
+        is QrError.InterventionError.INVALID_ID -> StringResources(R.string.err_intervention_invalid_id)
+        is QrError.InterventionError.INVALID_STATUS -> StringResources(R.string.err_intervention_invalid_status)
+        is QrError.InterventionError.INVALID_STATUS_TRANSITION -> StringResources(R.string.err_intervention_invalid_status_transition)
+        is QrError.InterventionError.LOAD -> StringResources(R.string.err_intervention_load)
+        is QrError.InterventionError.NOT_FOUND -> StringResources(R.string.err_intervention_not_found)
+        is QrError.InterventionError.STATUS_UPDATE_NOT_ALLOWED -> StringResources(R.string.err_intervention_status_update_not_allowed)
+        is QrError.InterventionError.UPDATE_FAILED -> StringResources(R.string.err_intervention_update_failed)
+    }
+}
+
 fun QrError.App.toUiText(): UiText {
     return when (this) {
         is QrError.App.UnknownError -> StringResources(R.string.err_unknown)
@@ -76,6 +96,8 @@ fun QrError.asUiText(): UiText {
     return when (this) {
 
         is QrError.SystemError -> this.toUiText()
+        is QrError.CreateInterventionError -> this.toUiText()
+        is QrError.InterventionError -> this.toUiText()
         is QrError.App -> this.toUiText()
         is QrError.ValidationError -> this.toUiText()
         is QrError.Contacts -> this.toUiText()
