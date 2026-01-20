@@ -74,6 +74,10 @@
     <string name="err_contact_contact_id_empty">Nessun ID Contatto specificato</string>
     <string name="err_contact_contact_start_date_empty">Nessuna data di inizio specificata</string>
     <string name="err_contact_contact_end_date_empty">Nessuna data di fine specificata</string>
+    <string name="err_contact_cannot_change_client_association">Non si puo cambiare l\'sassociazione cliente</string>
+    <string name="err_contact_cannot_remove_primary_flag">Non si puo rimuovere il flag primario - è l\'unico contatto</string>
+    <string name="err_contact_is_not_primary">Non è un contatto primario</string>
+    <string name="err_contact_contact_does_not_belong_to_client">Il contatto non appartiene al cliente</string>
 
     <string name="err_contact_list_load_contacts">Errore caricamento Contratti: %s</string>
     <string name="err_contact_list_contract_not_found_for_renewal">Contatto non trovato per il rinnovo</string>

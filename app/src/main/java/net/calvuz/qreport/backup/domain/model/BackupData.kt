@@ -12,7 +12,8 @@ data class BackupData(
     val metadata: BackupMetadata,
     val database: DatabaseBackup,
     val settings: SettingsBackup,
-    val photoManifest: PhotoManifest
+    val photoManifest: PhotoManifest,
+    val signatureManifest: SignatureManifest
 ) {
     /**
      * Calcola dimensione totale stimata in bytes
@@ -26,5 +27,12 @@ data class BackupData(
      */
     fun includesPhotos(): Boolean {
         return photoManifest.totalPhotos > 0
+    }
+
+    /**
+     * Check if backup includes signatures
+     */
+    fun includesSignatures(): Boolean {
+        return signatureManifest.totalSignatures > 0
     }
 }

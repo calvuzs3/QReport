@@ -166,6 +166,10 @@ class BackupFileRepositoryImpl @Inject constructor(
         return coreFileRepo.getOrCreateDirectory(DirectorySpec.Core.PHOTOS)
     }
 
+    override suspend fun getSignaturesDirectory(): QrResult<String, QrError> {
+        return coreFileRepo.getOrCreateDirectory(DirectorySpec.Core.SIGNATURES)
+    }
+
     /*override*/ suspend fun getBackupStats(backupPath: String): QrResult<BackupStats, QrError> {
         return try {
             val file = File(backupPath)

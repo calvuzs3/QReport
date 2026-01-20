@@ -99,6 +99,11 @@ fun QrError.Contacts.toUiText(): UiText {
         is QrError.Contacts.ValidationError.IdClientMandatory -> StringResources(R.string.err_contact_client_id_empty)
         is QrError.Contacts.ValidationError.IdContractMandatory -> StringResources(R.string.err_contact_contact_id_empty)
         is QrError.Contacts.ValidationError.IdMandatory -> StringResources(R.string.err_contact_contact_id_empty)
+        is QrError.Contacts.ValidationError.CannotChangeClientAssociation -> StringResources(R.string.err_contact_cannot_change_client_association)
+        is QrError.Contacts.ValidationError.CannotRemovePrimaryFlag -> StringResources(R.string.err_contact_cannot_remove_primary_flag)
+        is QrError.Contacts.ValidationError.IsNotPrimary -> StringResources(R.string.err_contact_is_not_primary)
+        is QrError.Contacts.ValidationError.ContactDoesntBelongToClient -> StringResources(R.string.err_contact_contact_does_not_belong_to_client)
+
     }
 }
 
@@ -109,6 +114,12 @@ fun QrError.DatabaseError.toUiText(): UiText {
         is QrError.DatabaseError.UpdateFailed -> StringResources(R.string.err_db_update_failed)
         is QrError.DatabaseError.DeleteFailed -> StringResources(R.string.err_db_delete_failed)
         is QrError.DatabaseError.NotFound -> StringResources(R.string.err_db_not_found)
+    }
+}
+
+fun QrError.Export.toUiText():UiText {
+    return when (this) {
+        is QrError.Export.Validation.CannotExportDraft -> StringResources(R.string.err_export_cannot_export_draft)
     }
 }
 
@@ -123,6 +134,7 @@ fun QrError.asUiText(): UiText {
         is QrError.Contacts -> this.toUiText()
         is QrError.Contracts -> this.toUiText()
         is QrError.DatabaseError -> this.toUiText()
+        is QrError.Export -> this.toUiText()
 
 
         // File Error Mappings - Core File Operations
@@ -765,9 +777,6 @@ fun QrError.asUiText(): UiText {
 
         // ===== NEW SHARE ERROR MAPPINGS =====
 
-        QrError.Share.SHARE -> StringResources(R.string.err_share)
-        QrError.Share.CREATE -> StringResources(R.string.err_share_create)
-
         QrError.File.OPEN -> StringResources(R.string.err_file_open)
         QrError.File.READ -> StringResources(R.string.err_file_read)
         QrError.File.COPY -> StringResources(R.string.err_file_copy)
@@ -811,10 +820,6 @@ fun QrError.asUiText(): UiText {
         QrError.Checkup.CLIENT_LOAD -> StringResources(R.string.err_client_load_client)
         QrError.Checkup.FACILITY_LOAD -> StringResources(R.string.err_facility_load_facility)
         QrError.Checkup.ISLAND_LOAD -> StringResources(R.string.err_island_load_island)
-
-        QrError.Network.REQUEST_TIMEOUT -> StringResources(R.string.err_network_request_timeout)
-
-        QrError.Exporting.CANNOT_EXPORT_DRAFT -> StringResources(R.string.err_export_cannot_export_draft)
 
         else -> {}
     } as UiText

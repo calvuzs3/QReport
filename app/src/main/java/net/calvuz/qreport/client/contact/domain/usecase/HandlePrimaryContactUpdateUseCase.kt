@@ -41,7 +41,7 @@ class HandlePrimaryContactUpdateUseCase @Inject constructor(
 
             if (originalContact.clientId != updatedContact.clientId) {
                 Timber.w("HandlePrimaryContactUpdateUseCase: Cannot change client association: ${originalContact.clientId} to ${updatedContact.clientId}")
-                return QrResult.Error(QrError.ValidationError.InvalidOperation("Cannot change client association"))
+                return QrResult.Error(QrError.ValidationError.InvalidOperation(QrError.Contacts.ValidationError.CannotChangeClientAssociation ) )
             }
 
             Timber.d("HandlePrimaryContactUpdateUseCase: Processing primary update for contact: ${updatedContact.id}")
@@ -71,7 +71,8 @@ class HandlePrimaryContactUpdateUseCase @Inject constructor(
 
                             if (clientContacts.size == 1) {
                                 Timber.w("HandlePrimaryContactUpdateUseCase: Cannot remove primary flag - is the only contact: ${updatedContact.id}")
-                                return QrResult.Error(QrError.ValidationError.InvalidOperation("Cannot remove primary flag - is the only contact"))
+                                return QrResult.Error(QrError.ValidationError.InvalidOperation(
+                                    QrError.Contacts.ValidationError.CannotRemovePrimaryFlag))
                             }
 
                             Timber.d("HandlePrimaryContactUpdateUseCase: Primary status removed successfully: ${updatedContact.id}")

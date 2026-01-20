@@ -128,4 +128,15 @@ interface SignatureFileRepository {
      * Get signature files organized by intervention ID
      */
     suspend fun getSignaturesByIntervention(): QrResult<Map<String, List<SignatureFileInfo>>, QrError.FileError>
+
+
+    /**
+     * Get the signatures directory path
+     * Used by backup system to know where to restore signatures
+     *
+     * @return Path to signatures directory
+     */
+ suspend fun getSignaturesDirectory(): QrResult<String, QrError.FileError>
+
+
 }

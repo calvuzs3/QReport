@@ -112,7 +112,7 @@ class SetPrimaryContactUseCase @Inject constructor(
             // 3. Verificare che il contatto appartenga al cliente
             if (contact.clientId != clientId) {
                 Timber.w("SetPrimaryContactUseCase.setPrimaryContactForClient: Contact $contactId does not belong to client $clientId")
-                return QrResult.Error(QrError.ValidationError.InvalidOperation())
+                return QrResult.Error(QrError.ValidationError.InvalidOperation(QrError.Contacts.ValidationError.ContactDoesntBelongToClient))
             }
 
             // 4. Se è già primary, non serve fare nulla
@@ -167,7 +167,7 @@ class SetPrimaryContactUseCase @Inject constructor(
 
             if (!contact.isPrimary) {
                 Timber.w("SetPrimaryContactUseCase.removePrimaryStatus: Contact is not primary: $contactId")
-                return QrResult.Error(QrError.ValidationError.InvalidOperation())
+                return QrResult.Error(QrError.ValidationError.InvalidOperation(QrError.ValidationError.IsNotPrimary()))
             }
 
             // 3. Verificare che ci siano altri contatti per il cliente
@@ -185,7 +185,7 @@ class SetPrimaryContactUseCase @Inject constructor(
 
             if (otherActiveContacts.isEmpty()) {
                 Timber.w("SetPrimaryContactUseCase.removePrimaryStatus: Cannot remove primary - is the only active contact: $contactId")
-                return QrResult.Error(QrError.ValidationError.InvalidOperation())
+                return QrResult.Error(QrError.ValidationError.InvalidOperation(QrError.Contacts.ValidationError.CannotRemovePrimaryFlag))
             }
 
             // 4. Aggiornare il contatto per rimuovere primary
@@ -356,7 +356,7 @@ class SetPrimaryContactUseCase @Inject constructor(
         return try {
             if (clientId.isBlank()) {
                 Timber.w("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: clientId is blank")
-                return QrResult.Error(QrError.ValidationError.InvalidOperation())
+                return QrResult.Error(QrError.ValidationError.InvalidOperation(QrError.Contacts.ValidationError.IdMandatory()))
             }
 
             Timber.d("SetPrimaryContactUseCase.autoAssignPrimaryIfMissing: Auto-assigning primary if missing for client: $clientId")

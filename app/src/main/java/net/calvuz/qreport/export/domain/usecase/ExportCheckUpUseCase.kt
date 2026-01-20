@@ -63,7 +63,7 @@ class ExportCheckUpUseCase @Inject constructor(
                 when (checkUp.status) {
                     CheckUpStatus.DRAFT, CheckUpStatus.IN_PROGRESS -> {
                         Timber.Forest.w("Cannot export checkup in status: ${checkUp.status}")
-                        return@flow emit(QrResult.Error(QrError.Exporting.CANNOT_EXPORT_DRAFT))
+                        return@flow emit(QrResult.Error(QrError.ValidationError.InvalidOperation( QrError.Export.Validation.CannotExportDraft )))
                     }
 
                     CheckUpStatus.COMPLETED -> {

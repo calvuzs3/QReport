@@ -1,12 +1,10 @@
 package net.calvuz.qreport.ti.data.local.repository
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
-import dagger.hilt.android.qualifiers.ApplicationContext
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.file.domain.model.CoreFileInfo
 import net.calvuz.qreport.app.file.domain.model.DirectorySpec
@@ -32,7 +30,6 @@ import kotlin.collections.iterator
  */
 @Singleton
 class SignatureFileRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context,
     private val coreFileRepository: CoreFileRepository
 ) : SignatureFileRepository {
 
@@ -141,7 +138,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
     /**
      * Helper to save bitmap to file with proper error handling
      */
-    private suspend fun saveBitmapToFile(bitmap: Bitmap, file: File): QrResult<Unit, QrError.FileError> {
+    private fun saveBitmapToFile(bitmap: Bitmap, file: File): QrResult<Unit, QrError.FileError> {
         return try {
             FileOutputStream(file).use { outputStream ->
                 val success = bitmap.compress(
@@ -441,7 +438,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
 
             val copyResult = coreFileRepository.copyFile(signaturePath, destinationPath)
             when (copyResult) {
-                is QrResult.Error -> copyResult
+                is QrResult.Error -> QrResult.Error(copyResult.error)
                 is QrResult.Success -> {
                     Timber.d("SignatureFileRepository: Signature copied for export: $destinationPath")
                     QrResult.Success(destinationPath)
@@ -450,7 +447,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error copying signature for export: $signaturePath")
             QrResult.Error(QrError.FileError.FILE_COPY)
-        } as QrResult<String, QrError.FileError>
+        }
     }
 
     override suspend fun createSignatureShareUri(signaturePath: String): QrResult<Uri, QrError.FileError> {
@@ -520,4 +517,8 @@ class SignatureFileRepositoryImpl @Inject constructor(
             QrResult.Error(QrError.FileError.IO_ERROR)
         }
     }
+
+     override suspend fun getSignaturesDirectory(): QrResult<String, QrError.FileError> {
+     return coreFileRepository.getOrCreateDirectory(signatureDirectorySpec)
+ }
 }

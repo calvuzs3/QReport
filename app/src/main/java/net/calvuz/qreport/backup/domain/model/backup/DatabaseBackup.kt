@@ -25,6 +25,9 @@ data class DatabaseBackup(
     // ===== ASSOCIATIONS =====
     val checkUpAssociations: List<CheckUpAssociationBackup>,
 
+    // ===== TECHNICAL INTERVENTIONS =====
+    val technicalInterventions: List<TechnicalInterventionBackup> = emptyList(),
+
     // ===== METADATA =====
     @Contextual val exportedAt: Instant
 ) {
@@ -41,7 +44,8 @@ data class DatabaseBackup(
                 contracts.size +
                 facilities.size +
                 facilityIslands.size +
-                checkUpAssociations.size
+                checkUpAssociations.size +
+                technicalInterventions.size
     }
 
     /**
@@ -64,6 +68,7 @@ data class DatabaseBackup(
                 facilities = emptyList(),
                 facilityIslands = emptyList(),
                 checkUpAssociations = emptyList(),
+                technicalInterventions = emptyList(),
                 exportedAt = Instant.fromEpochMilliseconds(0)
             )
         }

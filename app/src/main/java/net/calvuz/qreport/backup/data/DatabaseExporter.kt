@@ -36,6 +36,7 @@ import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.ContractDao
 import net.calvuz.qreport.client.contract.data.local.ContractEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
+import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -58,7 +59,9 @@ class DatabaseExporter @Inject constructor(
     private val contactDao: ContactDao,
     private val facilityDao: FacilityDao,
     private val islandDao: IslandDao,
-    private val checkUpAssociationDao: CheckUpAssociationDao
+    private val checkUpAssociationDao: CheckUpAssociationDao,
+    private val technicalInterventionDao: TechnicalInterventionDao
+
 ) {
 
     /**
@@ -105,6 +108,10 @@ class DatabaseExporter @Inject constructor(
             val associations = checkUpAssociationDao.getAllForBackup().map { it.toBackup() }
             Timber.v("Exported ${associations.size} checkup associations")
 
+            val technicalInterventions =
+                technicalInterventionDao.getAllForBackup().map { it.toBackup() }
+            Timber.v("Exported ${technicalInterventions.size} technical interventions")
+
             val databaseBackup = DatabaseBackup(
                 // Core entities
                 checkUps = checkUps,
@@ -122,6 +129,9 @@ class DatabaseExporter @Inject constructor(
                 // Associations
                 checkUpAssociations = associations,
 
+                // Technical Intervention
+                technicalInterventions = technicalInterventions,
+
                 // Metadata
                 exportedAt = Clock.System.now()
             )
@@ -137,6 +147,7 @@ class DatabaseExporter @Inject constructor(
                 append("Contracts=${contracts.size}, ")
                 append("Facilities=${facilities.size}, Islands=${facilityIslands.size}, ")
                 append("Associations=${associations.size}")
+                append("TechnicalInterventions=${technicalInterventions.size}, ")
             })
 
             databaseBackup
@@ -162,7 +173,8 @@ class DatabaseExporter @Inject constructor(
                 contractDao.count(),
                 facilityDao.count(),
                 islandDao.count(),
-                checkUpAssociationDao.count()
+                checkUpAssociationDao.count(),
+                technicalInterventionDao.count()
             )
 
             val total = counts.sum()
@@ -450,3 +462,108 @@ fun CheckUpIslandAssociationEntity.toBackup(): CheckUpAssociationBackup {
         updatedAt = Instant.fromEpochMilliseconds(updatedAt)
     )
 }
+
+
+/**
+ * =============================================================================
+ * ADDITIONS FOR DatabaseExporter.kt
+ * =============================================================================
+ *
+ * This file shows the changes needed to add TechnicalIntervention backup support
+ * to the existing DatabaseExporter class.
+ */
+
+// =============================================================================
+// 1. ADD IMPORT
+// =============================================================================
+// import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
+// import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
+
+// =============================================================================
+// 2. ADD DAO TO CONSTRUCTOR
+// =============================================================================
+// Add to the @Singleton class DatabaseExporter @Inject constructor:
+//
+// private val technicalInterventionDao: TechnicalInterventionDao
+//
+// Full constructor becomes:
+// @Singleton
+// class DatabaseExporter @Inject constructor(
+//     private val database: QReportDatabase,
+//     private val checkUpDao: CheckUpDao,
+//     private val checkItemDao: CheckItemDao,
+//     private val photoDao: PhotoDao,
+//     private val sparePartDao: SparePartDao,
+//     private val clientDao: ClientDao,
+//     private val contractDao: ContractDao,
+//     private val contactDao: ContactDao,
+//     private val facilityDao: FacilityDao,
+//     private val islandDao: IslandDao,
+//     private val checkUpAssociationDao: CheckUpAssociationDao,
+//     private val technicalInterventionDao: TechnicalInterventionDao  // <-- ADD THIS
+// )
+
+// =============================================================================
+// 3. ADD EXPORT IN exportAllTables()
+// =============================================================================
+// After line 105 (associations export), add:
+//
+// val technicalInterventions = technicalInterventionDao.getAllForBackup().map { it.toBackup() }
+// Timber.v("Exported ${technicalInterventions.size} technical interventions")
+
+// =============================================================================
+// 4. UPDATE DatabaseBackup CREATION
+// =============================================================================
+// In the DatabaseBackup constructor call (around line 108-127), add:
+//
+// technicalInterventions = technicalInterventions,
+//
+// Full creation becomes:
+// val databaseBackup = DatabaseBackup(
+//     // Core entities
+//     checkUps = checkUps,
+//     checkItems = checkItems,
+//     photos = photos,
+//     spareParts = spareParts,
+//
+//     // Client entities
+//     clients = clients,
+//     contacts = contacts,
+//     contracts = contracts,
+//     facilities = facilities,
+//     facilityIslands = facilityIslands,
+//
+//     // Associations
+//     checkUpAssociations = associations,
+//
+//     // Technical Interventions
+//     technicalInterventions = technicalInterventions,  // <-- ADD THIS
+//
+//     // Metadata
+//     exportedAt = Clock.System.now()
+// )
+
+// =============================================================================
+// 5. UPDATE getEstimatedRecordCount()
+// =============================================================================
+// Add to the counts list (around line 155-166):
+//
+// technicalInterventionDao.count()
+
+// =============================================================================
+// 6. UPDATE LOG MESSAGE
+// =============================================================================
+// Update the breakdown log (around line 133-140) to include:
+//
+// append("TechnicalInterventions=${technicalInterventions.size}, ")
+
+// =============================================================================
+// SUMMARY OF CHANGES:
+// =============================================================================
+// 1. Add import for TechnicalInterventionDao
+// 2. Add TechnicalInterventionDao to constructor
+// 3. Add export call in exportAllTables()
+// 4. Add field to DatabaseBackup creation
+// 5. Add count to getEstimatedRecordCount()
+// 6. Update log message
+// =============================================================================

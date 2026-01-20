@@ -87,7 +87,7 @@ interface QrError {
         data class IsNotActive(val message: String? = null) : ValidationError
         data class IsNotPrimary(val message: String? = null) : ValidationError
         data class DuplicateEntry(val message: String? = null) : ValidationError
-        data class InvalidOperation(val message: String? = null) : ValidationError
+        data class InvalidOperation(val e: QrError? = null) : ValidationError
 
     }
 
@@ -105,12 +105,13 @@ interface QrError {
             data class IdClientMandatory(val message: String? = null) : ValidationError
             data class IdContractMandatory(val message: String? = null) : ValidationError
             data class IdMandatory(val message: String? = null) : ValidationError
+            object CannotChangeClientAssociation : ValidationError
+            object CannotRemovePrimaryFlag : ValidationError
+            object IsNotPrimary : ValidationError
+            object ContactDoesntBelongToClient : ValidationError
         }
     }
 
-    /**
-     * Errore relativo alle operazioni di database con Room.
-     */
     sealed interface DatabaseError : QrError {
         data class OperationFailed(val message: String? = null) : DatabaseError
         data class InsertFailed(val message: String? = null) : DatabaseError
@@ -119,11 +120,12 @@ interface QrError {
         data class NotFound(val message: String? = null) : DatabaseError
     }
 
+    sealed interface Export: QrError{
+        sealed interface Validation : Export {
+            object CannotExportDraft : Validation
+        }
+    }
 
-    /**
-     * Generic file operation error types per operazioni file base
-     * Usato da CoreFileRepository e tutte le helper functions dei repository
-     */
     enum class FileError : QrError {
         // ===== DIRECTORY OPERATIONS =====
         DIRECTORY_CREATE,           // Errore creazione directory
@@ -223,6 +225,7 @@ interface QrError {
         ATTRIBUTES_ACCESS_FAILED,  // Accesso attributi fallito
         TIMESTAMP_UPDATE_FAILED    // Aggiornamento timestamp fallito
     }
+
 
     enum class ExportError : QrError {
         // ===== DIRECTORY OPERATIONS =====
@@ -440,11 +443,7 @@ interface QrError {
         SUMMARY_GENERATION         // Failed to generate backup summary
     }
 
-    enum class Share : QrError {
-        SHARE,
-        CREATE,
 
-    }
 
     enum class File : QrError {
         OPEN,
@@ -459,16 +458,6 @@ interface QrError {
         GET_FILE_SIZE,
         PROCESSING,
         IO_ERROR,
-    }
-
-    enum class Network : QrError {
-        REQUEST_TIMEOUT,
-
-    }
-
-    enum class Exporting : QrError {
-        CANNOT_EXPORT_DRAFT,
-
     }
 
     enum class Checkup : QrError {
@@ -502,7 +491,7 @@ interface QrError {
         // Client
         CLIENT_LOAD,
 
-        // FACility
+        // Facility
         FACILITY_LOAD,
 
         //Island

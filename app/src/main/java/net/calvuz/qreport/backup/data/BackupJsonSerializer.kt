@@ -161,7 +161,8 @@ class BackupJsonSerializer @Inject constructor() {
                 val expectedTables = listOf(
                     "checkUps", "checkItems", "photos", "spareParts",
                     "clients", "contacts", "contracts", "facilities", "facilityIslands",
-                    "checkUpAssociations"
+                    "checkUpAssociations",
+                         "technicalInterventions"
                 )
 
                 for (table in expectedTables) {

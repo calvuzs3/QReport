@@ -280,7 +280,7 @@ class SearchContactsUseCase @Inject constructor(
                 // Implementazione per tutti i contatti con quel metodo preferito
                 // Richiederebbe una query specifica nel repository
                 Timber.w("SearchContactsUseCase.filterByPreferredContactMethod: Filtering by method without clientId not implemented")
-                QrResult.Error(QrError.ValidationError.InvalidOperation("Filtering by method without clientId not implemented"))
+                QrResult.Error(QrError.ValidationError.InvalidOperation(QrError.App.NotImplemented())) //"Filtering by method without clientId not implemented"
             }
         } catch (e: Exception) {
             Timber.e(e, "SearchContactsUseCase.filterByPreferredContactMethod: Exception filtering by method: $contactMethod")
