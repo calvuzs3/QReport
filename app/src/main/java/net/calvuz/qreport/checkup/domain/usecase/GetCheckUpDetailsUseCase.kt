@@ -44,7 +44,7 @@ class GetCheckUpDetailsUseCase @Inject constructor(
             val checkUp = checkUpRepository.getCheckUpWithDetails(checkUpId)
                 ?: return QrResult.Error(QrError.Checkup.NOT_FOUND)
 
-            // 2. LOAD PHOTOS FOR EACH CHECK ITEM
+            // 2. LoadError PHOTOS FOR EACH CHECK ITEM
             val checkItemsWithPhotos = checkUp.checkItems.map { checkItem ->
                 try {
                     // Load photos for this check item

@@ -24,7 +24,7 @@ class GetTechnicalInterventionByIdUseCase @Inject constructor(
     suspend operator fun invoke(interventionId: String): QrResult<TechnicalIntervention, QrError> {
         // Validate input
         if (interventionId.isBlank()) {
-            return QrResult.Error(QrError.InterventionError.INVALID_ID())
+            return QrResult.Error(QrError.InterventionError.InvalidId())
         }
 
         return try {
@@ -35,11 +35,11 @@ class GetTechnicalInterventionByIdUseCase @Inject constructor(
                 QrResult.Success(intervention)
             } else {
                 result.exceptionOrNull()
-                QrResult.Error(QrError.InterventionError.NOT_FOUND())
+                QrResult.Error(QrError.InterventionError.NotFound())
             }
 
         } catch (e: Exception) {
-            QrResult.Error(QrError.InterventionError.LOAD(e.message))
+            QrResult.Error(QrError.InterventionError.LoadError(e.message))
         }
     }
 }

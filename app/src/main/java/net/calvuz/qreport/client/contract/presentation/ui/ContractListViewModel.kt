@@ -22,6 +22,8 @@ import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.days
 import net.calvuz.qreport.R
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
 
 /** ContractListScreen UiState */
 data class ContractListUiState(
@@ -31,6 +33,7 @@ data class ContractListUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val isDeleting: String? = null,
+    val successMessage: UiText? = null,
     val error: UiText? = null,
     val searchQuery: String = "",
     val selectedFilter: ContractFilter = ContractFilter.ACTIVE,
@@ -55,6 +58,12 @@ class ContractListViewModel @Inject constructor(
     // ============================================================
     // PUBLIC METHODS
     // ============================================================
+
+    fun init() {
+        Timber.d("Contact list view model initialized")
+        // The Screen call the initialize
+        //initializeForClient(_uiState.value.clientId)
+    }
 
     fun initializeForClient(clientId: String) {
         if (clientId == _uiState.value.clientId) return
@@ -304,6 +313,12 @@ class ContractListViewModel @Inject constructor(
         } == true
     }
 
+    fun setActive( contracts: Set<Contract>, active: Boolean) {
+        viewModelScope.launch {
+            // TODO: Implement active/inactive logic
+        }
+    }
+
     // ===== Search and filter logic =====
 
     fun updateSearchQuery(query: String) {
@@ -360,6 +375,10 @@ class ContractListViewModel @Inject constructor(
 
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun dismissSuccess() {
+        _uiState.value = _uiState.value.copy(successMessage = null)
     }
 
     // ============================================================
@@ -438,3 +457,75 @@ data class ContractWithStats(
 data class ContractsStatistics(
     val isExpired: Boolean
 )
+
+
+/**
+ * Technical Intervention specific action handler
+ */
+class ContractActionHandler(
+    private val onEdit: (Set<Contract>) -> Unit,
+    private val onDelete: (Set<Contract>) -> Unit,
+    private val onRenew: (Set<Contract>) -> Unit,
+    private val onSetActive: (Set<Contract>) -> Unit,
+    private val onSetInactive: (Set<Contract>) -> Unit,
+    private val onArchive: (Set<Contract>) -> Unit,
+//    private val onExport: (Set<Contract>) -> Unit,
+    private val onSelectAll: () -> Unit
+) : SimpleSelectionActionHandler<Contract> {
+
+    override fun onActionClick(action: SelectionAction, selectedItems: Set<Contract>) {
+        when (action) {
+            SelectionAction.Edit -> onEdit(selectedItems)
+            SelectionAction.Delete -> onDelete(selectedItems)
+            SelectionAction.Renew -> onRenew(selectedItems)
+            SelectionAction.SetActive -> onSetActive(selectedItems)
+            SelectionAction.SetInactive -> onSetInactive(selectedItems)
+            SelectionAction.Archive -> {onArchive(selectedItems)}
+//            SelectionAction.Export -> onExport(selectedItems)
+            SelectionAction.SelectAll -> onSelectAll()
+
+
+//            SelectionAction.MarkCompleted -> {
+//                // Handle mark completed - set status to COMPLETED
+//                // You would implement this in ViewModel
+//            }
+
+            is SelectionAction.Custom -> {
+                // Handle any custom actions
+                when (action.actionId) {
+                    "renew" -> { /* handle duplicate */
+                    }
+                }
+            }
+
+            else -> {}
+        }
+    }
+
+    override fun isActionEnabled(
+        action: SelectionAction,
+        selectedItems: Set<Contract>
+    ): Boolean {
+        return when (action) {
+            SelectionAction.Edit -> selectedItems.size == 1 // Edit only for single selection
+            SelectionAction.Delete -> selectedItems.isNotEmpty() && selectedItems.all {
+                // Can delete only ..
+                true
+            }
+
+            SelectionAction.SetActive -> selectedItems.isNotEmpty()
+            SelectionAction.SetInactive -> selectedItems.isNotEmpty()
+            SelectionAction.Archive -> selectedItems.isNotEmpty()
+            SelectionAction.SelectAll -> true
+            is SelectionAction.Custom -> true // Custom logic per action
+            else -> false
+        }
+    }
+
+    override fun getDeleteConfirmationMessage(selectedItems: Set<Contract>): String {
+        return when (selectedItems.size) {
+            1 -> "Delete contract ${selectedItems.first().startDate}-${selectedItems.first().endDate}?"
+            else -> "Delete ${selectedItems.size} contracts?"
+        }
+    }
+}

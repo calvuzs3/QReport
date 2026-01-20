@@ -7,6 +7,7 @@ import net.calvuz.qreport.ti.data.local.dao.toDomain
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.ti.domain.model.InterventionStatus
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -78,8 +79,12 @@ class TechnicalInterventionRepositoryImpl @Inject constructor(
             )
             val entity = updatedIntervention.toEntity()
             interventionDao.updateIntervention(entity)
+
+            Timber.d("Intervention updated: $updatedIntervention")
             Result.success(Unit)
         } catch (e: Exception) {
+
+            Timber.e("Error updating intervention: $e")
             Result.failure(e)
         }
     }

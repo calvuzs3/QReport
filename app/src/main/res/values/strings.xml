@@ -92,15 +92,18 @@
 
     <!-- Actions -->
     <string name="action_ok">OK</string>
+    <string name="action_more_vert">Altre azioni</string>
     <string name="action_create">Crea</string>
     <string name="action_open">Apri</string>
     <string name="action_close">Chiudi</string>
+    <string name="action_exit_selection">Chiudi selezione</string>
     <string name="action_edit">Modifica</string>
     <string name="action_delete">Elimina</string>
     <string name="action_save">Salva</string>
     <string name="action_update">Aggiorna</string>
     <string name="action_cancel">Annulla</string>
     <string name="action_confirm">Conferma</string>
+    <string name="action_confirm_delete">Elimina</string>
     <string name="action_export">Esporta</string>
     <string name="action_share">Condividi</string>
     <string name="action_take_photo">Scatta Foto</string>

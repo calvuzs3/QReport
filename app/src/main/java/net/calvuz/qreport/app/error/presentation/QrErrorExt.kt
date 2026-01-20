@@ -26,21 +26,41 @@ fun QrError.CreateInterventionError.toUiText(): UiText {
 
 fun QrError.InterventionError.toUiText(): UiText {
     return when (this) {
-        is QrError.InterventionError.BATCH_DELETE_FAILED -> StringResources(R.string.err_intervention_batch_delete_failed)
-        is QrError.InterventionError.BATCH_UPDATE_FAILED -> StringResources(R.string.err_intervention_batch_update_failed)
-        is QrError.InterventionError.CANNOT_DELETE_ARCHIVED -> StringResources(R.string.err_intervention_cannot_delete_archived)
-        is QrError.InterventionError.CANNOT_DELETE_COMPLETED -> StringResources(R.string.err_intervention_cannot_delete_completed)
-        is QrError.InterventionError.CREATE_FAILED -> StringResources(R.string.err_intervention_create_failed)
-        is QrError.InterventionError.DELETE_FAILED -> StringResources(R.string.err_intervention_delete_failed)
-        is QrError.InterventionError.DELETE_REQUIRES_CONFIRMATION -> StringResources(R.string.err_intervention_delete_requires_confirmation)
-        is QrError.InterventionError.IMMUTABLE_FIELD_CHANGED -> StringResources(R.string.err_intervention_immutable_field_changed)
-        is QrError.InterventionError.INVALID_ID -> StringResources(R.string.err_intervention_invalid_id)
-        is QrError.InterventionError.INVALID_STATUS -> StringResources(R.string.err_intervention_invalid_status)
-        is QrError.InterventionError.INVALID_STATUS_TRANSITION -> StringResources(R.string.err_intervention_invalid_status_transition)
-        is QrError.InterventionError.LOAD -> StringResources(R.string.err_intervention_load)
-        is QrError.InterventionError.NOT_FOUND -> StringResources(R.string.err_intervention_not_found)
-        is QrError.InterventionError.STATUS_UPDATE_NOT_ALLOWED -> StringResources(R.string.err_intervention_status_update_not_allowed)
-        is QrError.InterventionError.UPDATE_FAILED -> StringResources(R.string.err_intervention_update_failed)
+        is QrError.InterventionError.BatchDeleteError -> StringResources(R.string.err_intervention_batch_delete_failed)
+        is QrError.InterventionError.BatchUpdateError -> StringResources(R.string.err_intervention_batch_update_failed)
+        is QrError.InterventionError.CannotDeleteArchived -> StringResources(R.string.err_intervention_cannot_delete_archived)
+        is QrError.InterventionError.CannotDeleteCompleted -> StringResources(R.string.err_intervention_cannot_delete_completed)
+        is QrError.InterventionError.CreateError -> StringResources(R.string.err_intervention_create_failed)
+        is QrError.InterventionError.DeleteError -> StringResources(R.string.err_intervention_delete_failed)
+        is QrError.InterventionError.DeleteRequiresConfirmation -> StringResources(R.string.err_intervention_delete_requires_confirmation)
+        is QrError.InterventionError.ImmutableFieldChanged -> StringResources(R.string.err_intervention_immutable_field_changed)
+        is QrError.InterventionError.InvalidId -> StringResources(R.string.err_intervention_invalid_id)
+        is QrError.InterventionError.InvalidStatus -> StringResources(R.string.err_intervention_invalid_status)
+        is QrError.InterventionError.InvalidStatusTransition -> StringResources(R.string.err_intervention_invalid_status_transition)
+        is QrError.InterventionError.LoadError -> StringResources(R.string.err_intervention_load)
+        is QrError.InterventionError.NotFound -> StringResources(R.string.err_intervention_not_found)
+        is QrError.InterventionError.StatusUpdateNotAllowed -> StringResources(R.string.err_intervention_status_update_not_allowed)
+        is QrError.InterventionError.UpdateError -> StringResources(R.string.err_intervention_update_failed)
+        is QrError.InterventionError.NoInterventionLoaded -> StringResources(R.string.err_intervention_no_intervention_loaded)
+//        is QrError.InterventionError.SignatureError.NotReady -> StringResources(R.string.err_intervention_signature_not_ready)
+        is QrError.InterventionError.SignatureError.TechnicianNameRequired -> StringResources(R.string.err_intervention_signature_technician_name_required)
+        is QrError.InterventionError.SignatureError.ClientNameRequired -> StringResources(R.string.err_intervention_signature_client_name_required)
+        is QrError.InterventionError.SignatureError.TechnicianNameMinLength -> StringResources(R.string.err_intervention_signature_technician_name_min_length)
+        is QrError.InterventionError.SignatureError.ClientNameMinLength -> StringResources(R.string.err_intervention_signature_client_name_min_length)
+
+        is QrError.InterventionError.SignatureError.ValidationError -> StringResources(R.string.err_intervention_signature_validation_error)
+        is QrError.InterventionError.SignatureError.TechnicianSignatureFailed -> StringResources(R.string.err_intervention_signature_technician_failed)
+        is QrError.InterventionError.SignatureError.ClientSignatureFailed -> StringResources(R.string.err_intervention_signature_client_failed)
+        is QrError.InterventionError.SignatureError.CustomerSignatureFailed -> StringResources(R.string.err_intervention_signature_client_failed)
+
+        is QrError.InterventionError.DetailError.SaveError -> StringResources(R.string.err_intervention_detail_save_error)
+        is QrError.InterventionError.DetailError.UpdateError -> StringResources(R.string.err_intervention_detail_update_error)
+
+        is QrError.InterventionError.WorkDayError.SaveError -> StringResources(R.string.err_intervention_workday_save_error)
+        is QrError.InterventionError.WorkDayError.UpdateError -> StringResources(R.string.err_intervention_workday_update_error)
+
+        is QrError.InterventionError.GeneralError.SaveError -> StringResources(R.string.err_intervention_general_save_error)
+        is QrError.InterventionError.GeneralError.UpdateError -> StringResources(R.string.err_intervention_general_update_error)
     }
 }
 
@@ -759,6 +779,7 @@ fun QrError.asUiText(): UiText {
         QrError.File.FILE_NOT_EXISTS -> StringResources(R.string.err_file_not_exists)
         QrError.File.GET_FILE_SIZE -> StringResources(R.string.err_file_get_size)
         QrError.File.PROCESSING -> StringResources(R.string.err_file_processing)
+        QrError.File.IO_ERROR -> StringResources(R.string.err_file_io_error)
 
         QrError.Checkup.UNKNOWN -> StringResources(R.string.err_checkup_delete_unknown)
         QrError.Checkup.NOT_FOUND -> StringResources(R.string.err_checkup_not_found)

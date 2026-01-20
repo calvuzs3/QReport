@@ -2,11 +2,11 @@
 <resources>
     <!-- Contact List - Bulk Operations -->
     <string name="contacts_list_bulk_delete_confirmation">Sei sicuro di voler eliminare %d contatti?</string>
-    <string name="contacts_list_bulk_delete_progress">Eliminazione %d di %d contatti…</string>
+    <string name="contacts_list_bulk_delete_progress">Eliminazione %1$d di %2$d contatti…</string>
 
     <!-- Contact List - Bulk Delete Results -->
     <string name="err_contact_list_bulk_delete_all_failed">Impossibile eliminare %d contatti</string>
-    <string name="err_contact_list_bulk_delete_partial_failed">%d contatti eliminati, %d falliti</string>
+    <string name="err_contact_list_bulk_delete_partial_failed">%1$d contatti eliminati, %2$d falliti</string>
     <string name="err_contact_list_bulk_delete_unexpected">Errore durante eliminazione multipla: %s</string>
 
     <!-- Contact List - Empty States -->

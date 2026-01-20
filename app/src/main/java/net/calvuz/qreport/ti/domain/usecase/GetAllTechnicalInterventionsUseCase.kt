@@ -33,11 +33,11 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
                 emit(QrResult.Success(interventions))
             } else {
                 val exception = result.exceptionOrNull()
-                emit(QrResult.Error(QrError.InterventionError.LOAD(exception?.message)))
+                emit(QrResult.Error(QrError.InterventionError.LoadError(exception?.message)))
             }
 
         } catch (e: Exception) {
-            emit(QrResult.Error(QrError.InterventionError.LOAD(e.message)))
+            emit(QrResult.Error(QrError.InterventionError.LoadError(e.message)))
         }
     }
 
@@ -62,11 +62,11 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
                 emit(QrResult.Success(activeInterventions))
             } else {
                 val error = draftResult.exceptionOrNull() ?: inProgressResult.exceptionOrNull()
-                emit(QrResult.Error(QrError.InterventionError.LOAD(error?.message)))
+                emit(QrResult.Error(QrError.InterventionError.LoadError(error?.message)))
             }
 
         } catch (e: Exception) {
-            emit(QrResult.Error(QrError.InterventionError.LOAD(e.message)))
+            emit(QrResult.Error(QrError.InterventionError.LoadError(e.message)))
         }
     }
 
@@ -85,11 +85,11 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
                 emit(QrResult.Success(interventions))
             } else {
                 val exception = result.exceptionOrNull()
-                emit(QrResult.Error(QrError.InterventionError.LOAD(exception?.message)))
+                emit(QrResult.Error(QrError.InterventionError.LoadError(exception?.message)))
             }
 
         } catch (e: Exception) {
-            emit(QrResult.Error(QrError.InterventionError.LOAD(e.message)))
+            emit(QrResult.Error(QrError.InterventionError.LoadError(e.message)))
         }
     }
 
@@ -114,11 +114,11 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
                 emit(QrResult.Success(allCompleted))
             } else {
                 val error = completedResult.exceptionOrNull() ?: archivedResult.exceptionOrNull()
-                emit(QrResult.Error(QrError.InterventionError.LOAD(error?.message)))
+                emit(QrResult.Error(QrError.InterventionError.LoadError(error?.message)))
             }
 
         } catch (e: Exception) {
-            emit(QrResult.Error(QrError.InterventionError.LOAD(e.message)))
+            emit(QrResult.Error(QrError.InterventionError.LoadError(e.message)))
         }
     }
 }

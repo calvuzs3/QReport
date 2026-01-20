@@ -20,12 +20,12 @@ import net.calvuz.qreport.ti.domain.usecase.UpdateTechnicalInterventionStatusUse
 import net.calvuz.qreport.ti.domain.model.InterventionStatus
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 import net.calvuz.qreport.app.app.presentation.components.selection.SelectionManager
-import net.calvuz.qreport.app.app.presentation.components.selection.BatchAction
-import net.calvuz.qreport.app.app.presentation.components.selection.BatchActionSets
 import timber.log.Timber
 import javax.inject.Inject
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
 
 /** TechnicalInterventionListScreen UiState */
 data class TechnicalInterventionListUiState(
@@ -139,6 +139,7 @@ class TechnicalInterventionListViewModel @Inject constructor(
                                     Timber.d("Loaded ${interventions.size} interventions successfully")
                                 }
                             }
+
                             is QrResult.Error -> {
                                 if (currentCoroutineContext().isActive) {
                                     _uiState.value = _uiState.value.copy(
@@ -175,9 +176,18 @@ class TechnicalInterventionListViewModel @Inject constructor(
                 val useCase = when (currentFilter) {
                     InterventionFilter.ACTIVE -> getAllTechnicalInterventionsUseCase.getActiveInterventions()
                     InterventionFilter.COMPLETED -> getAllTechnicalInterventionsUseCase.getCompletedInterventions()
-                    InterventionFilter.DRAFT -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(InterventionStatus.DRAFT)
-                    InterventionFilter.IN_PROGRESS -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(InterventionStatus.IN_PROGRESS)
-                    InterventionFilter.PENDING_REVIEW -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(InterventionStatus.PENDING_REVIEW)
+                    InterventionFilter.DRAFT -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                        InterventionStatus.DRAFT
+                    )
+
+                    InterventionFilter.IN_PROGRESS -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                        InterventionStatus.IN_PROGRESS
+                    )
+
+                    InterventionFilter.PENDING_REVIEW -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                        InterventionStatus.PENDING_REVIEW
+                    )
+
                     InterventionFilter.ALL -> getAllTechnicalInterventionsUseCase()
                 }
 
@@ -264,6 +274,7 @@ class TechnicalInterventionListViewModel @Inject constructor(
                         // Refresh to remove deleted item
                         refresh()
                     }
+
                     is QrResult.Error -> {
                         _uiState.value = _uiState.value.copy(
                             error = UiText.StringResource(R.string.err_intervention_delete_failed)
@@ -283,82 +294,7 @@ class TechnicalInterventionListViewModel @Inject constructor(
 
     // ===== Batch Operations =====
 
-    fun handleBatchAction(action: BatchAction, selectedInterventions: Set<TechnicalIntervention>) {
-        when (action) {
-            is BatchAction.Delete -> {
-                deleteBatch(selectedInterventions)
-            }
-            is BatchAction.TechnicalInterventionBatchAction.SetActive -> {
-                updateStatusBatch(selectedInterventions, InterventionStatus.IN_PROGRESS)
-            }
-            is BatchAction.TechnicalInterventionBatchAction.SetInactive -> {
-                updateStatusBatch(selectedInterventions, InterventionStatus.ARCHIVED)
-            }
-            is BatchAction.TechnicalInterventionBatchAction.ChangeStatusToDraft -> {
-                updateStatusBatch(selectedInterventions, InterventionStatus.DRAFT)
-            }
-            is BatchAction.TechnicalInterventionBatchAction.ChangeStatusToInProgress -> {
-                updateStatusBatch(selectedInterventions, InterventionStatus.IN_PROGRESS)
-            }
-            is BatchAction.TechnicalInterventionBatchAction.ChangeStatusToPendingReview -> {
-                updateStatusBatch(selectedInterventions, InterventionStatus.PENDING_REVIEW)
-            }
-            is BatchAction.TechnicalInterventionBatchAction.ChangeStatusToCompleted -> {
-                updateStatusBatch(selectedInterventions, InterventionStatus.COMPLETED)
-            }
-            is BatchAction.TechnicalInterventionBatchAction.ChangeStatusToArchived -> {
-                updateStatusBatch(selectedInterventions, InterventionStatus.ARCHIVED)
-            }
-            is BatchAction.TechnicalInterventionBatchAction.Export -> {
-                exportBatch(selectedInterventions)
-            }
-            else -> {
-                Timber.w("Unhandled batch action: $action")
-            }
-        }
-    }
-
-    private fun deleteBatch(interventions: Set<TechnicalIntervention>) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(
-                    isBatchOperating = true,
-                    error = null
-                )
-
-                val interventionIds = interventions.map { it.id }
-                val result = deleteTechnicalInterventionUseCase.deleteMultiple(
-                    interventionIds = interventionIds,
-                    forceDelete = _uiState.value.debugMode
-                )
-
-                when (result) {
-                    is QrResult.Success -> {
-                        val summary = result.data
-                        _uiState.value = _uiState.value.copy(
-                            successMessage = UiText.StringResources(R.string.interventions_deleted_success, summary.successCount)
-                        )
-                        selectionManager.clearSelection()
-                        refresh()
-                    }
-                    is QrResult.Error -> {
-                        _uiState.value = _uiState.value.copy(
-                            error = UiText.StringResource(R.string.err_interventions_delete_batch_failed)
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Exception in batch delete")
-                _uiState.value = _uiState.value.copy(
-                    error = UiText.StringResource(R.string.err_interventions_delete_batch_unexpected)
-                )
-            } finally {
-                _uiState.value = _uiState.value.copy(isBatchOperating = false)
-            }
-        }
-    }
-
-    private fun updateStatusBatch(interventions: Set<TechnicalIntervention>, newStatus: InterventionStatus) {
+    private fun setStatus(interventions: Set<TechnicalIntervention>, status: InterventionStatus) {
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(
@@ -369,7 +305,7 @@ class TechnicalInterventionListViewModel @Inject constructor(
                 val interventionIds = interventions.map { it.id }
                 val result = updateTechnicalInterventionStatusUseCase.updateStatusBatch(
                     interventionIds = interventionIds,
-                    newStatus = newStatus,
+                    newStatus = status,
                     debugMode = _uiState.value.debugMode
                 )
 
@@ -377,11 +313,15 @@ class TechnicalInterventionListViewModel @Inject constructor(
                     is QrResult.Success -> {
                         val summary = result.data
                         _uiState.value = _uiState.value.copy(
-                            successMessage = UiText.StringResources(R.string.interventions_status_updated_success, summary.successCount)
+                            successMessage = UiText.StringResources(
+                                R.string.interventions_status_updated_success,
+                                summary.successCount
+                            )
                         )
                         selectionManager.clearSelection()
                         refresh()
                     }
+
                     is QrResult.Error -> {
                         _uiState.value = _uiState.value.copy(
                             error = UiText.StringResource(R.string.err_interventions_status_update_failed)
@@ -399,6 +339,22 @@ class TechnicalInterventionListViewModel @Inject constructor(
         }
     }
 
+    fun setActiveInterventions(interventions: Set<TechnicalIntervention>) {
+        return setStatus(interventions, InterventionStatus.IN_PROGRESS)
+    }
+
+    fun setArchivedInterventions(interventions: Set<TechnicalIntervention>) {
+        return setStatus(interventions, InterventionStatus.ARCHIVED)
+    }
+
+    fun exportInterventions(interventions: Set<TechnicalIntervention>) {
+        // TODO: Implement batch export functionality
+        Timber.d("Export batch requested for ${interventions.size} interventions")
+        _uiState.value = _uiState.value.copy(
+            successMessage = UiText.StringResource(R.string.export_feature_coming_soon)
+        )
+    }
+
     private fun exportBatch(interventions: Set<TechnicalIntervention>) {
         // TODO: Implement batch export functionality
         Timber.d("Export batch requested for ${interventions.size} interventions")
@@ -407,13 +363,6 @@ class TechnicalInterventionListViewModel @Inject constructor(
         )
     }
 
-    fun getAvailableBatchActions(): List<BatchAction> {
-        return if (_uiState.value.debugMode) {
-            BatchActionSets.technicalInterventionDebugActions
-        } else {
-            BatchActionSets.technicalInterventionActions
-        }
-    }
 
     // ===== Search and filter logic =====
 
@@ -450,9 +399,18 @@ class TechnicalInterventionListViewModel @Inject constructor(
                 val useCase = when (filter) {
                     InterventionFilter.ACTIVE -> getAllTechnicalInterventionsUseCase.getActiveInterventions()
                     InterventionFilter.COMPLETED -> getAllTechnicalInterventionsUseCase.getCompletedInterventions()
-                    InterventionFilter.DRAFT -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(InterventionStatus.DRAFT)
-                    InterventionFilter.IN_PROGRESS -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(InterventionStatus.IN_PROGRESS)
-                    InterventionFilter.PENDING_REVIEW -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(InterventionStatus.PENDING_REVIEW)
+                    InterventionFilter.DRAFT -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                        InterventionStatus.DRAFT
+                    )
+
+                    InterventionFilter.IN_PROGRESS -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                        InterventionStatus.IN_PROGRESS
+                    )
+
+                    InterventionFilter.PENDING_REVIEW -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                        InterventionStatus.PENDING_REVIEW
+                    )
+
                     InterventionFilter.ALL -> getAllTechnicalInterventionsUseCase()
                 }
 
@@ -478,6 +436,7 @@ class TechnicalInterventionListViewModel @Inject constructor(
                             )
                             return@collect // Exit after first success
                         }
+
                         is QrResult.Error -> {
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
@@ -590,11 +549,19 @@ class TechnicalInterventionListViewModel @Inject constructor(
         filtered = when (filter) {
             InterventionFilter.ALL -> filtered
             InterventionFilter.ACTIVE -> filtered.filter {
-                it.intervention.status in listOf(InterventionStatus.DRAFT, InterventionStatus.IN_PROGRESS)
+                it.intervention.status in listOf(
+                    InterventionStatus.DRAFT,
+                    InterventionStatus.IN_PROGRESS
+                )
             }
+
             InterventionFilter.COMPLETED -> filtered.filter {
-                it.intervention.status in listOf(InterventionStatus.COMPLETED, InterventionStatus.ARCHIVED)
+                it.intervention.status in listOf(
+                    InterventionStatus.COMPLETED,
+                    InterventionStatus.ARCHIVED
+                )
             }
+
             InterventionFilter.DRAFT -> filtered.filter { it.intervention.status == InterventionStatus.DRAFT }
             InterventionFilter.IN_PROGRESS -> filtered.filter { it.intervention.status == InterventionStatus.IN_PROGRESS }
             InterventionFilter.PENDING_REVIEW -> filtered.filter { it.intervention.status == InterventionStatus.PENDING_REVIEW }
@@ -628,3 +595,79 @@ data class InterventionStatistics(
     val daysSinceLastUpdate: Int,
     val canBeDeleted: Boolean
 )
+
+
+/**
+ * Technical Intervention specific action handler
+ */
+class TechnicalInterventionActionHandler(
+    private val onEdit: (Set<TechnicalIntervention>) -> Unit,
+    private val onDelete: (Set<TechnicalIntervention>) -> Unit,
+    private val onSetActive: (Set<TechnicalIntervention>) -> Unit,
+    private val onSetInactive: (Set<TechnicalIntervention>) -> Unit,
+    private val onArchive: (Set<TechnicalIntervention>) -> Unit,
+//    private val onExport: (Set<TechnicalIntervention>) -> Unit,
+    private val onSelectAll: () -> Unit
+) : SimpleSelectionActionHandler<TechnicalIntervention> {
+
+    override fun onActionClick(action: SelectionAction, selectedItems: Set<TechnicalIntervention>) {
+        when (action) {
+            SelectionAction.Edit -> onEdit(selectedItems)
+            SelectionAction.Delete -> onDelete(selectedItems)
+            SelectionAction.SetActive -> onSetActive(selectedItems)
+            SelectionAction.SetInactive -> onSetInactive(selectedItems)
+//            SelectionAction.Export -> onExport(selectedItems)
+            SelectionAction.SelectAll -> onSelectAll()
+            SelectionAction.Archive -> {onArchive(selectedItems)}
+
+
+//            SelectionAction.MarkCompleted -> {
+//                // Handle mark completed - set status to COMPLETED
+//                // You would implement this in ViewModel
+//            }
+
+            is SelectionAction.Custom -> {
+                // Handle any custom actions
+                when (action.actionId) {
+                    "duplicate" -> { /* handle duplicate */
+                    }
+
+                    "share" -> { /* handle share */
+                    }
+                    // etc.
+                }
+            }
+
+            else -> {}
+        }
+    }
+
+    override fun isActionEnabled(
+        action: SelectionAction,
+        selectedItems: Set<TechnicalIntervention>
+    ): Boolean {
+        return when (action) {
+            SelectionAction.Edit -> selectedItems.size == 1 // Edit only for single selection
+            SelectionAction.Delete -> selectedItems.isNotEmpty() && selectedItems.all {
+                // Can delete only DRAFT and IN_PROGRESS
+                it.status in listOf(InterventionStatus.DRAFT, InterventionStatus.IN_PROGRESS)
+            }
+
+            SelectionAction.SetActive -> selectedItems.isNotEmpty()
+            SelectionAction.SetInactive -> selectedItems.isNotEmpty()
+//            SelectionAction.Export -> selectedItems.isNotEmpty()
+            SelectionAction.Archive -> selectedItems.isNotEmpty()
+//            SelectionAction.MarkCompleted -> selectedItems.isNotEmpty()
+            SelectionAction.SelectAll -> true
+            is SelectionAction.Custom -> true // Custom logic per action
+            else -> false
+        }
+    }
+
+    override fun getDeleteConfirmationMessage(selectedItems: Set<TechnicalIntervention>): String {
+        return when (selectedItems.size) {
+            1 -> "Delete intervention ${selectedItems.first().interventionNumber}?"
+            else -> "Delete ${selectedItems.size} interventions?"
+        }
+    }
+}

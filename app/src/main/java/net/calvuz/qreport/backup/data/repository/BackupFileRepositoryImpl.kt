@@ -138,7 +138,7 @@ class BackupFileRepositoryImpl @Inject constructor(
                     val backup = listResult.data.find { it.id == backupId }
                     backup?.let {
                         coreFileRepo.deleteDirectory(it.dirPath)
-                    } ?: QrResult.Error(QrError.BackupError.DELETE) // NOT_FOUND
+                    } ?: QrResult.Error(QrError.BackupError.DELETE) // NotFound
                 }
             }
         } catch (e: Exception) {

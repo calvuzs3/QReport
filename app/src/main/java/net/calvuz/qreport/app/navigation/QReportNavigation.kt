@@ -49,6 +49,7 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.contract.presentation.ui.ContractFormScreen
 import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen
+import net.calvuz.qreport.ti.presentation.ui.EditInterventionScreen
 import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionFormScreen
 import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionListScreen
 
@@ -118,7 +119,7 @@ object QReportRoutes {
 
     // Intervention
     const val TI_CREATE = "ti_form"
-    const val TI_EDIT = "ti_form/{interventionId}"
+    const val TI_EDIT = "ti_edit_form/{interventionId}"
 
     // Settings
     const val TECHNICIAN_SETTINGS = "technician_settings"
@@ -171,7 +172,7 @@ object QReportRoutes {
     // Helpers for TI
     fun ti() = "tis"
     fun tiCreateRoute() = "ti_form"
-    fun tiEditRoute(interventionId: String) = "ti_form/$interventionId"
+    fun tiEditRoute(interventionId: String) = "ti_edit_form/$interventionId"
 
     // Helper functions for CLIENTS
 
@@ -378,12 +379,9 @@ fun QReportNavigation(
                 ) {
                     val tiID = it.arguments?.getString("interventionId") ?: ""
 
-                    TechnicalInterventionFormScreen(
+                    EditInterventionScreen(
                         interventionId = tiID,
                         onNavigateBack = {
-                            navController.popBackStack()
-                        },
-                        onInterventionSaved = {
                             navController.popBackStack()
                         },
                     )

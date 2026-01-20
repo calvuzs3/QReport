@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.annotation.StringRes
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import net.calvuz.qreport.R
 
 /**
@@ -45,7 +46,7 @@ sealed interface ListItemAction {
         }
 
         data object ViewContracts : ClientAction {
-            override val iconVector = Icons.Default.Assignment
+            override val iconVector = Icons.AutoMirrored.Default.Assignment
             override val labelResId = R.string.context_menu_action_view_contracts
         }
     }

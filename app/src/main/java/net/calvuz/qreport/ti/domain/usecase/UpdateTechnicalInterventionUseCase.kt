@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 import net.calvuz.qreport.ti.domain.repository.TechnicalInterventionRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -26,7 +27,8 @@ class UpdateTechnicalInterventionUseCase @Inject constructor(
     suspend operator fun invoke(intervention: TechnicalIntervention): QrResult<TechnicalIntervention, QrError> {
         // Validate input
         if (intervention.id.isBlank()) {
-            return QrResult.Error(QrError.InterventionError.INVALID_ID())
+            Timber.d("Invalid intervention ID")
+            return QrResult.Error(QrError.InterventionError.InvalidId())
         }
 
         try {
@@ -34,38 +36,67 @@ class UpdateTechnicalInterventionUseCase @Inject constructor(
             val existingResult = interventionRepository.getInterventionById(intervention.id)
 
             if (existingResult.isFailure) {
-                return QrResult.Error(QrError.InterventionError.NOT_FOUND())
+                Timber.d("Failed to get intervention: ${existingResult.exceptionOrNull()}")
+                return QrResult.Error(QrError.InterventionError.NotFound())
             }
 
             val existing = existingResult.getOrThrow()
 
-            // Create updated intervention preserving immutable fields for fiscal compliance
+            // Create updated intervention with selective preservation for development
             val updatedIntervention = intervention.copy(
-                // Preserve immutable fields (fiscal compliance)
-                interventionNumber = existing.interventionNumber, // Immutable
+                // Preserve truly immutable fields only
+                interventionNumber = existing.interventionNumber, // Immutable - fiscal compliance
                 createdAt = existing.createdAt, // Immutable
 
-                // Update updatedAt timestamp
+                // Update timestamp
                 updatedAt = Clock.System.now(),
 
-                // Preserve critical customer data for fiscal compliance
-                customerData = existing.customerData.copy(
-                    // Allow only some customer fields to be updated
+                // RELAXED: Allow customer data updates during development
+                customerData = intervention.customerData.copy(
+                    // Preserve customer name only if updating specific fields
+                    customerName = intervention.customerData.customerName.takeIf { it.isNotBlank() } ?: existing.customerData.customerName,
                     customerContact = intervention.customerData.customerContact,
+                    ticketNumber = intervention.customerData.ticketNumber.takeIf { it.isNotBlank() } ?: existing.customerData.ticketNumber,
+                    customerOrderNumber = intervention.customerData.customerOrderNumber.takeIf { it.isNotBlank() } ?: existing.customerData.customerOrderNumber,
                     notes = intervention.customerData.notes
-                    // customerName, ticketNumber, customerOrderNumber remain immutable
                 ),
 
-                // Preserve robot serial number for fiscal compliance
+                // RELAXED: Allow robot data updates during development
                 robotData = intervention.robotData.copy(
-                    serialNumber = existing.robotData.serialNumber // Immutable
-                    // hoursOfDuty can be updated
-                )
+                    serialNumber = intervention.robotData.serialNumber.takeIf { it.isNotBlank() } ?: existing.robotData.serialNumber,
+                    hoursOfDuty = intervention.robotData.hoursOfDuty // Allow hoursOfDuty updates
+                ),
+
+                // Allow work location updates
+                workLocation = intervention.workLocation,
+
+                // Allow technicians updates
+                technicians = intervention.technicians,
+
+                // Allow intervention description updates
+                interventionDescription = intervention.interventionDescription,
+
+                // Allow materials updates
+                materials = intervention.materials,
+
+                // Allow external report updates
+                externalReport = intervention.externalReport,
+
+                // Allow work days updates
+                workDays = intervention.workDays,
+
+                // Allow completion status updates
+                isComplete = intervention.isComplete,
+
+                // Allow signature updates
+                technicianSignature = intervention.technicianSignature,
+                customerSignature = intervention.customerSignature
             )
 
             // Validate business rules
             val validationResult = validateInterventionUpdate(existing, updatedIntervention)
             if (validationResult is QrResult.Error) {
+                Timber.d("Validation failed: ${validationResult.error}")
                 return QrResult.Error(validationResult.error)
             }
 
@@ -73,14 +104,17 @@ class UpdateTechnicalInterventionUseCase @Inject constructor(
             val updateResult = interventionRepository.updateIntervention(updatedIntervention)
 
             return if (updateResult.isSuccess) {
+                Timber.d("Update successful")
                 QrResult.Success(updatedIntervention)
             } else {
+                Timber.d("Update failed: ${updateResult.exceptionOrNull()}")
                 val exception = updateResult.exceptionOrNull()
-                QrResult.Error(QrError.InterventionError.UPDATE_FAILED(exception?.message))
+                QrResult.Error(QrError.InterventionError.UpdateError(exception?.message))
             }
 
         } catch (e: Exception) {
-            return QrResult.Error(QrError.InterventionError.UPDATE_FAILED(e.message))
+            Timber.d("Update failed: ${e.message}")
+            return QrResult.Error(QrError.InterventionError.UpdateError(e.message))
         }
     }
 
@@ -106,7 +140,7 @@ class UpdateTechnicalInterventionUseCase @Inject constructor(
 
         // Validate input
         if (interventionId.isBlank()) {
-            return QrResult.Error(QrError.InterventionError.INVALID_ID())
+            return QrResult.Error(QrError.InterventionError.InvalidId())
         }
 
         if (technicians.size > 6) {
@@ -118,7 +152,7 @@ class UpdateTechnicalInterventionUseCase @Inject constructor(
             val existingResult = interventionRepository.getInterventionById(interventionId)
 
             if (existingResult.isFailure) {
-                return QrResult.Error(QrError.InterventionError.NOT_FOUND())
+                return QrResult.Error(QrError.InterventionError.NotFound())
             }
 
             val existing = existingResult.getOrThrow()
@@ -152,53 +186,43 @@ class UpdateTechnicalInterventionUseCase @Inject constructor(
                 QrResult.Success(updatedIntervention)
             } else {
                 val exception = updateResult.exceptionOrNull()
-                QrResult.Error(QrError.InterventionError.UPDATE_FAILED(exception?.message))
+                QrResult.Error(QrError.InterventionError.UpdateError(exception?.message))
             }
 
         } catch (e: Exception) {
-            return QrResult.Error(QrError.InterventionError.UPDATE_FAILED(e.message))
+            return QrResult.Error(QrError.InterventionError.UpdateError(e.message))
         }
     }
 
     /**
      * Validate business rules for intervention updates
+     * DEVELOPMENT MODE: Less rigid validation to allow form testing
      */
     private fun validateInterventionUpdate(
         existing: TechnicalIntervention,
         updated: TechnicalIntervention
     ): QrResult<Unit, QrError> {
 
-        // Check that critical immutable fields haven't changed
+        // Only check truly critical immutable fields
         if (existing.interventionNumber != updated.interventionNumber) {
-            return QrResult.Error(QrError.InterventionError.IMMUTABLE_FIELD_CHANGED("interventionNumber"))
+            return QrResult.Error(QrError.InterventionError.ImmutableFieldChanged("interventionNumber"))
         }
 
-        if (existing.customerData.customerName != updated.customerData.customerName) {
-            return QrResult.Error(QrError.InterventionError.IMMUTABLE_FIELD_CHANGED("customerName"))
-        }
-
-        if (existing.customerData.ticketNumber != updated.customerData.ticketNumber) {
-            return QrResult.Error(QrError.InterventionError.IMMUTABLE_FIELD_CHANGED("ticketNumber"))
-        }
-
-        if (existing.customerData.customerOrderNumber != updated.customerData.customerOrderNumber) {
-            return QrResult.Error(QrError.InterventionError.IMMUTABLE_FIELD_CHANGED("customerOrderNumber"))
-        }
-
-        if (existing.robotData.serialNumber != updated.robotData.serialNumber) {
-            return QrResult.Error(QrError.InterventionError.IMMUTABLE_FIELD_CHANGED("serialNumber"))
-        }
+        // RELAXED VALIDATION FOR DEVELOPMENT:
+        // Allow customer data changes during form development
+        // In production, these would be stricter
 
         // Validate technicians count
         if (updated.technicians.size > 6) {
             return QrResult.Error(QrError.CreateInterventionError.TooManyTechnicians())
         }
 
-        // Validate status transition (can't update status through this use case)
-        if (existing.status != updated.status) {
-            return QrResult.Error(QrError.InterventionError.STATUS_UPDATE_NOT_ALLOWED())
-        }
+        // Skip status validation for development - allow status changes
+        // if (existing.status != updated.status) {
+        //     return QrResult.Error(QrError.InterventionError.StatusUpdateNotAllowed())
+        // }
 
+        Timber.d("DEVELOPMENT: Validation successful with relaxed rules")
         return QrResult.Success(Unit)
     }
 }

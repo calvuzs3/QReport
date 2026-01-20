@@ -4,26 +4,62 @@ import net.calvuz.qreport.ti.domain.model.InterventionStatus
 
 interface QrError {
 
-    sealed class SystemError : QrError {
-        data class Unknown(val exception: Exception? = null) : SystemError()
+    sealed interface SystemError : QrError {
+        data class Unknown(val exception: Exception? = null) : SystemError
     }
 
     sealed interface InterventionError : QrError {
-        data class LOAD(val message: String? = null) : InterventionError
-        data class NOT_FOUND(val message: String? = null) : InterventionError
-        data class DELETE_FAILED(val message: String? = null) : InterventionError
-        data class BATCH_DELETE_FAILED(val message: String? = null) : InterventionError
-        data class INVALID_ID(val message: String? = null) : InterventionError
-        data class CANNOT_DELETE_COMPLETED(val message: String? = null) : InterventionError
-        data class CANNOT_DELETE_ARCHIVED(val message: String? = null) : InterventionError
-        data class DELETE_REQUIRES_CONFIRMATION(val message: String? = null) : InterventionError
-        data class CREATE_FAILED(val message: String? = null) : InterventionError
-        data class INVALID_STATUS_TRANSITION(val status: InterventionStatus? = null, val newStatus: InterventionStatus? = null) : InterventionError
-        data class UPDATE_FAILED(val message: String? = null) : InterventionError
-        data class BATCH_UPDATE_FAILED(val message: String? = null) : InterventionError
-        data class INVALID_STATUS(val message: String? = null) : InterventionError
-        data class IMMUTABLE_FIELD_CHANGED(val field: String): InterventionError
-        data class STATUS_UPDATE_NOT_ALLOWED(val message: String? = null) : InterventionError
+        data class LoadError(val message: String? = null) : InterventionError
+        data class NotFound(val message: String? = null) : InterventionError
+        data class DeleteError(val message: String? = null) : InterventionError
+        data class BatchDeleteError(val message: String? = null) : InterventionError
+        data class InvalidId(val message: String? = null) : InterventionError
+        data class CannotDeleteCompleted(val message: String? = null) : InterventionError
+        data class CannotDeleteArchived(val message: String? = null) : InterventionError
+        data class DeleteRequiresConfirmation(val message: String? = null) : InterventionError
+        data class CreateError(val message: String? = null) : InterventionError
+        data class InvalidStatusTransition(
+            val status: InterventionStatus? = null,
+            val newStatus: InterventionStatus? = null
+        ) : InterventionError
+
+        data class UpdateError(val message: String? = null) : InterventionError
+        data class BatchUpdateError(val message: String? = null) : InterventionError
+        data class InvalidStatus(val message: String? = null) : InterventionError
+        data class ImmutableFieldChanged(val field: String) : InterventionError
+        data class StatusUpdateNotAllowed(val message: String? = null) : InterventionError
+        data class NoInterventionLoaded(val message: String? = null) : InterventionError
+
+        sealed interface GeneralError : InterventionError {
+            data class UpdateError(val error: QrError) : GeneralError
+            data class SaveError(val error: String? = null) : GeneralError
+        }
+
+        sealed interface WorkDayError : InterventionError {
+            data class UpdateError(val error: QrError) : WorkDayError
+            data class SaveError(val error: String? = null) : DetailError
+        }
+
+        sealed interface DetailError : InterventionError {
+            data class UpdateError(val error: QrError) : DetailError
+            data class SaveError(val error: String? = null) : DetailError
+        }
+
+        sealed interface SignatureError : InterventionError {
+            data class ValidationError(val errors: List<SignatureError> = emptyList<SignatureError>()) :
+                SignatureError
+
+            //            data class NotReady(val message: String? = null) : SignatureError
+            object TechnicianNameRequired : SignatureError
+            object ClientNameRequired : SignatureError
+            data class TechnicianNameMinLength(val chars: Int) : SignatureError
+            data class ClientNameMinLength(val chars: Int) : SignatureError
+            data class TechnicianSignatureFailed(val message: String? = null) : SignatureError
+            data class ClientSignatureFailed(val message: String? = null) : SignatureError
+            data class CustomerSignatureFailed(val message: String? = null) : SignatureError
+
+        }
+
     }
 
     sealed interface CreateInterventionError : QrError {
@@ -76,34 +112,10 @@ interface QrError {
      * Errore relativo alle operazioni di database con Room.
      */
     sealed interface DatabaseError : QrError {
-        /**
-         * Errore generico durante un'operazione di database.
-         * @param message Dettaglio dell'eccezione per il logging.
-         */
         data class OperationFailed(val message: String? = null) : DatabaseError
-
-        /**
-         * Errore specifico durante un'operazione di inserimento.
-         * @param message Dettaglio dell'eccezione per il logging.
-         */
         data class InsertFailed(val message: String? = null) : DatabaseError
-
-        /**
-         * Errore specifico durante un'operazione di aggiornamento.
-         * @param message Dettaglio dell'eccezione per il logging.
-         */
         data class UpdateFailed(val message: String? = null) : DatabaseError
-
-        /**
-         * Errore specifico durante un'operazione di eliminazione.
-         * @param message Dettaglio dell'eccezione per il logging.
-         */
         data class DeleteFailed(val message: String? = null) : DatabaseError
-
-        /**
-         * L'entità cercata non è stata trovata nel database.
-         * @param message Dettaglio dell'entità non trovata per il logging.
-         */
         data class NotFound(val message: String? = null) : DatabaseError
     }
 
@@ -446,6 +458,7 @@ interface QrError {
         FILE_NOT_EXISTS,
         GET_FILE_SIZE,
         PROCESSING,
+        IO_ERROR,
     }
 
     enum class Network : QrError {

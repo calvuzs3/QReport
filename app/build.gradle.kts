@@ -34,9 +34,7 @@ android {
     buildTypes {
         debug {
             isDebuggable = true
-            applicationIdSuffix = ".debug"
-            versionNameSuffix = "-DEBUG"
-            manifestPlaceholders["appName"] = "QReport Debug"
+            manifestPlaceholders["appName"] = "QReport"
         }
 
         release {

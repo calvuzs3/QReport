@@ -602,39 +602,49 @@ private fun NavigationActionsSection(
 
     Spacer(modifier = Modifier.height(12.dp))
 
-    Row(
+    LazyRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Client Management - Featured
-        NavigationActionCard(
-            modifier = Modifier.weight(1f),
+        item { NavigationActionCard(
+//            modifier = Modifier.weight(1f),
             title = "Clienti",
             description = "Gestisci aziende",
             icon = Icons.Default.Business,
             onClick = onNavigateToClients,
             isHighlighted = true
-        )
+        )}
 
         // Check-ups Management
-        NavigationActionCard(
-            modifier = Modifier.weight(1f),
+        item {NavigationActionCard(
+//            modifier = Modifier.weight(1f),
             title = "Check-up",
             description = "Controlli attivi",
             icon = Icons.AutoMirrored.Filled.Assignment,
             onClick = onNavigateToCheckUps,
             isHighlighted = false
-        )
+        )}
 
         // Tecnical Intervention Management
-        NavigationActionCard(
-            modifier = Modifier.weight(1f),
+        item{NavigationActionCard(
+//            modifier = Modifier.weight(1f),
             title = "Interventi",
             description = "Interventi tecnici",
             icon = Icons.Default.Workspaces,
             onClick = onNavigateToTechnicalInterventions,
             isHighlighted = false
-        )
+        )}
+
+        // Tecnical Intervention Management
+        item{NavigationActionCard(
+//            modifier = Modifier.weight(1f),
+            title = "Interventi",
+            description = "Interventi tecnici",
+            icon = Icons.Default.Workspaces,
+            onClick = onNavigateToTechnicalInterventions,
+            isHighlighted = false
+        )}
     }
 }
 

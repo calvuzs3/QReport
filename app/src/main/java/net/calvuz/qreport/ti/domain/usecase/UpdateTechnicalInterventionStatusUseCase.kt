@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.ti.domain.model.InterventionStatus
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 import net.calvuz.qreport.ti.domain.repository.TechnicalInterventionRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -33,7 +34,8 @@ class UpdateTechnicalInterventionStatusUseCase @Inject constructor(
 
         // Validate input
         if (interventionId.isBlank()) {
-            return QrResult.Error(QrError.InterventionError.INVALID_ID())
+            Timber.e("Invalid intervention ID")
+            return QrResult.Error(QrError.InterventionError.InvalidId())
         }
 
         try {
@@ -41,7 +43,8 @@ class UpdateTechnicalInterventionStatusUseCase @Inject constructor(
             val getResult = interventionRepository.getInterventionById(interventionId)
 
             if (getResult.isFailure) {
-                return QrResult.Error(QrError.InterventionError.NOT_FOUND())
+                Timber.e("Failed to get intervention: ${getResult.exceptionOrNull()}")
+                return QrResult.Error(QrError.InterventionError.NotFound())
             }
 
             val intervention = getResult.getOrThrow()
@@ -63,11 +66,11 @@ class UpdateTechnicalInterventionStatusUseCase @Inject constructor(
                 QrResult.Success(updatedIntervention)
             } else {
                 val exception = updateResult.exceptionOrNull()
-                QrResult.Error(QrError.InterventionError.UPDATE_FAILED(exception?.message))
+                QrResult.Error(QrError.InterventionError.UpdateError(exception?.message))
             }
 
         } catch (e: Exception) {
-            return QrResult.Error(QrError.InterventionError.UPDATE_FAILED(e.message))
+            return QrResult.Error(QrError.InterventionError.UpdateError(e.message))
         }
     }
 
@@ -112,7 +115,7 @@ class UpdateTechnicalInterventionStatusUseCase @Inject constructor(
             QrResult.Success(summary)
         } else {
             // Complete failure
-            QrResult.Error(QrError.InterventionError.BATCH_UPDATE_FAILED(errors.firstOrNull()))
+            QrResult.Error(QrError.InterventionError.BatchUpdateError(errors.firstOrNull()))
         }
     }
 
@@ -185,7 +188,7 @@ class UpdateTechnicalInterventionStatusUseCase @Inject constructor(
         return if (newStatus in validTransitions) {
             QrResult.Success(Unit)
         } else {
-            QrResult.Error(QrError.InterventionError.INVALID_STATUS_TRANSITION(currentStatus, newStatus))
+            QrResult.Error(QrError.InterventionError.InvalidStatusTransition(currentStatus, newStatus))
         }
     }
 }

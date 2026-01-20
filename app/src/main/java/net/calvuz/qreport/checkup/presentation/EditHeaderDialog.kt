@@ -70,7 +70,7 @@ fun EditHeaderDialog(
     // Notes
     var notes by remember { mutableStateOf(header.notes) }
 
-    // ===== AUTO-LOAD TECHNICIAN DATA =====
+    // ===== AUTO-LoadError TECHNICIAN DATA =====
     var isAutoLoaded by remember { mutableStateOf(false) }
 
     LaunchedEffect(technicianSettings) {
@@ -143,7 +143,7 @@ fun EditHeaderDialog(
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
 
-                    // ===== AUTO-LOAD SUCCESS MESSAGE =====
+                    // ===== AUTO-LoadError SUCCESS MESSAGE =====
                     if (isAutoLoaded) {
                         Card(
                             colors = CardDefaults.cardColors(

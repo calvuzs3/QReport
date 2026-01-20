@@ -377,7 +377,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "Failed to delete export for checkup: $checkupId")
-//            QrResult.Error(QrError.ExportError.DELETE_FAILED)
+//            QrResult.Error(QrError.ExportError.DeleteError)
 //        }
 //    }
 

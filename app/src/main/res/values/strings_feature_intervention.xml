@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Technical Intervention List Screen -->
+    <!-- Technical Intervention  -->
     <string name="interventions_screen_title">Interventi Tecnici</string>
     <string name="debug_mode_active">Modalità Debug</string>
     <string name="debug_mode_toggle">Toggle Debug Mode</string>
+    <string name="intervention_edit_title">Modifica intervento</string>
 
     <!-- Filters -->
     <string name="interventions_filter_all">Tutti</string>
@@ -23,8 +24,9 @@
     <string name="interventions_sort_intervention_number">Numero intervento</string>
 
     <!-- Search & Empty States -->
-    <string name="interventions_search_placeholder">Cerca interventi...</string>
-    <string name="interventions_loading">Caricamento interventi...</string>
+    <string name="interventions_search_placeholder">Cerca interventi…</string>
+    <string name="intervention_loading">Caricamento intervento</string>
+    <string name="interventions_loading">Caricamento interventi…</string>
     <string name="interventions_empty_title">Nessun intervento</string>
     <string name="interventions_empty_description">Non ci sono interventi tecnici. Creane uno per iniziare.</string>
     <string name="interventions_create_first">Crea primo intervento</string>
@@ -105,5 +107,45 @@
     <string name="err_intervention_immutable_field_changed">Campo non modificabile: %1$s</string>
     <string name="err_intervention_status_update_not_allowed">Aggiornamento stato non consentito</string>
     <string name="err_intervention_status_update_not_allowed_with_message">Aggiornamento stato non consentito: %1$s</string>
+
+    <string name="err_intervention_signature_not_ready">Firma non pronta"</string>
+    <string name="err_intervention_signature_not_ready_with_message">Firma non pronta: %1$s</string>
+    <string name="err_intervention_no_intervention_loaded">Nessun intervento caricato</string>
+
+    <string name="err_intervention_signature_technician_name_required">Nome tecnico obbligatorio per documenti pronti alla firma</string>
+    <string name="err_intervention_signature_client_name_required">Nome cliente obbligatorio per documenti pronti alla firma</string>
+    <string name="err_intervention_signature_technician_name_min_length">Il nome del tecnico deve avere almeno %1d caratteri</string>
+    <string name="err_intervention_signature_client_name_min_length">Il nome del cliente deve avere almeno %1d caratteri</string>
+
+    <string name="err_intervention_signature_validation_error">Errore di validazione tab firme</string>
+
+    <string name="err_intervention_detail_save_error">Errore salvataggio dettaglio</string>
+    <string name="err_intervention_detail_update_error">Errore aggiornamento dettaglio</string>
+
+    <string name="err_intervention_workday_save_error">Errore salvataggio turno lavorativo</string>
+    <string name="err_intervention_workday_update_error">Errore aggiornamento turno lavorativo</string>
+
+    <string name="err_intervention_general_save_error">Errore salvataggio dati generali</string>
+    <string name="err_intervention_general_update_error">Errore aggiornamento dati generali</string>
+
+    <string name="err_intervention_signature_technician_failed">Errore firma tecnica</string>
+    <string name="err_intervention_signature_client_failed">Errore firma cliente</string>
+
+
+    <!-- FORM -->
+    <string name="form_signature_not_ready">Non pronto (%s)</string>
+    <string name="form_signature_intervention_Incomplete">Intervento incompleto (%s)</string>
+    <string name="form_signature_missing_desc">Manca descrizione intervento (%s)</string>
+    <string name="form_signature_missing_names">Mancano nomi firmatari (%s)</string>
+    <string name="form_signature_not_marked_ready">Non contrassegnato come pronto(%s)</string>
+    <string name="form_signature_ready">Pronto per firma digitale (%s)</string>
+    <string name="form_signature_technician_signature_collected">Firma tecnica (%s)</string>
+    <string name="form_signature_technician_signature_failed">Firma tecnica (%s)</string>
+    <string name="form_signature_customer_signature_collected">Firma cliente (%s)</string>
+    <string name="form_signature_customer_signature_failed">Firma cliente (%s)</string>
+
+
+    <!-- Form Status -->
+    <string name="IntFormStatus_saved">Salvato con successo</string>
 
 </resources>

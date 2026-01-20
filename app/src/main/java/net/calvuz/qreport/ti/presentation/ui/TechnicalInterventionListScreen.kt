@@ -1,6 +1,5 @@
 package net.calvuz.qreport.ti.presentation.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -31,13 +29,17 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.list.CardVariant
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
-import net.calvuz.qreport.ti.domain.model.InterventionStatus
 // Selection system imports
-import net.calvuz.qreport.app.app.presentation.components.selection.*
-import net.calvuz.qreport.ti.domain.model.WorkLocationType
-import timber.log.Timber
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.DeleteConfirmationDialog
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectableItem
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionTopBar
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
+import net.calvuz.qreport.ti.presentation.ui.components.TechnicalInterventionCard
 
 @Composable
 fun InterventionFilter.getDisplayName(): UiText {
@@ -66,24 +68,69 @@ fun InterventionSortOrder.getDisplayName(): UiText {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TechnicalInterventionListScreen(
+    modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
     onNavigateToCreateIntervention: () -> Unit = {},
     onNavigateToEditIntervention: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
     viewModel: TechnicalInterventionListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
 
-    // Selection manager for multi-select functionality
-    val selectionState by viewModel.selectionManager.selectionState.collectAsState()
+    // Simple selection manager
+    val selectionManager = rememberSimpleSelectionManager<TechnicalIntervention>()
+    val selectionState by selectionManager.selectionState.collectAsState()
 
-    // Bottom sheet state
-    val bottomSheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
+    // Delete confirmation dialog
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Batch delete dialog state
-    var showBatchDeleteDialog by remember { mutableStateOf(false) }
+    // Action handler for Technical Interventions
+    val actionHandler = remember {
+        TechnicalInterventionActionHandler(
+            onEdit = { interventions ->
+                if (interventions.size == 1) {
+                    onNavigateToEditIntervention(interventions.first().id)
+                    selectionManager.clearSelection()
+                }
+            },
+            onDelete = {
+                showDeleteDialog = true
+            },
+            onSetActive = { interventions ->
+                viewModel.setActiveInterventions(interventions)
+                selectionManager.clearSelection()
+            },
+            onSetInactive = { interventions ->
+                viewModel.setArchivedInterventions(interventions)
+                selectionManager.clearSelection()
+            },
+            onArchive = { interventions ->
+                viewModel.setArchivedInterventions(interventions)
+                selectionManager.clearSelection()
+            },
+//            onExport = { interventions ->
+//                viewModel.exportInterventions(interventions)
+//                selectionManager.clearSelection()
+//            },
+            onSelectAll = {
+                selectionManager.selectAll(uiState.filteredInterventions.map { it.intervention })
+            }
+        )
+    }
+    // Define actions
+    val primaryActions = listOf(
+        SelectionAction.Edit,
+        SelectionAction.Delete
+    )
+
+    val secondaryActions = listOf(
+        SelectionAction.SelectAll,
+        SelectionAction.SetActive,
+//        SelectionAction.SetInactive,
+//        SelectionAction.Export,
+        SelectionAction.Archive,
+//        SelectionAction.MarkCompleted
+    )
 
     // Pull to refresh state
     val pullToRefreshState = rememberPullToRefreshState()
@@ -111,13 +158,6 @@ fun TechnicalInterventionListScreen(
         }
     }
 
-    // Close bottom sheet when selection is cleared
-    LaunchedEffect(selectionState.isInSelectionMode) {
-        if (!selectionState.isInSelectionMode) {
-            showBottomSheet = false
-        }
-    }
-
     // Show error messages
     LaunchedEffect(uiState.error) {
         uiState.error?.let { error ->
@@ -140,109 +180,122 @@ fun TechnicalInterventionListScreen(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier.fillMaxSize()
+    ) {
         Column {
-            // Top App Bar with selection-aware title and debug mode toggle
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = if (selectionState.isInSelectionMode) {
-                                stringResource(R.string.selection_summary, selectionState.selectedCount)
-                            } else {
-                                stringResource(R.string.interventions_screen_title)
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (!selectionState.isInSelectionMode && uiState.debugMode) {
-                            Text(
-                                text = stringResource(R.string.debug_mode_active),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            if (selectionState.isInSelectionMode) {
-                                viewModel.selectionManager.clearSelection()
-                            } else {
-                                onNavigateBack()
-                            }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (selectionState.isInSelectionMode) {
-                                Icons.Default.Close
-                            } else {
-                                Icons.Default.ArrowBackIosNew
-                            },
-                            contentDescription = if (selectionState.isInSelectionMode) {
-                                stringResource(R.string.clear_selection)
-                            } else {
-                                stringResource(R.string.action_back)
-                            }
-                        )
-                    }
-                },
-                actions = {
-                    if (!selectionState.isInSelectionMode) {
-                        // Debug mode toggle
-                        IconButton(
-                            onClick = { viewModel.toggleDebugMode() }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.BugReport,
-                                contentDescription = stringResource(R.string.debug_mode_toggle),
-                                tint = if (uiState.debugMode) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
+            SelectionTopBar(
+                normalTopBar = {
+                    // Top App Bar with selection-aware title and debug mode toggle
+                    TopAppBar(
+                        title = {
+                            Column {
+                                Text(
+                                    text = if (selectionState.isInSelectionMode) {
+                                        stringResource(
+                                            R.string.selection_summary,
+                                            selectionState.selectedCount
+                                        )
+                                    } else {
+                                        stringResource(R.string.interventions_screen_title)
+                                    },
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (!selectionState.isInSelectionMode && uiState.debugMode) {
+                                    Text(
+                                        text = stringResource(R.string.debug_mode_active),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        maxLines = 1
+                                    )
                                 }
-                            )
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(
+                                onClick = {
+                                    if (selectionState.isInSelectionMode) {
+                                        viewModel.selectionManager.clearSelection()
+                                    } else {
+                                        onNavigateBack()
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (selectionState.isInSelectionMode) {
+                                        Icons.Default.Close
+                                    } else {
+                                        Icons.Default.ArrowBackIosNew
+                                    },
+                                    contentDescription = if (selectionState.isInSelectionMode) {
+                                        stringResource(R.string.clear_selection)
+                                    } else {
+                                        stringResource(R.string.action_back)
+                                    }
+                                )
+                            }
+                        },
+                        actions = {
+                            if (!selectionState.isInSelectionMode) {
+                                // Debug mode toggle
+                                IconButton(
+                                    onClick = { viewModel.toggleDebugMode() }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.BugReport,
+                                        contentDescription = stringResource(R.string.debug_mode_toggle),
+                                        tint = if (uiState.debugMode) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
+                                    )
+                                }
+
+                                // Normal mode - show filter and sort
+                                var showFilterMenu by remember { mutableStateOf(false) }
+                                var showSortMenu by remember { mutableStateOf(false) }
+
+                                // Sort button
+                                IconButton(onClick = { showSortMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Default.Sort,
+                                        contentDescription = stringResource(R.string.label_ordering)
+                                    )
+                                }
+
+                                // Filter button
+                                IconButton(onClick = { showFilterMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.FilterList,
+                                        contentDescription = stringResource(R.string.label_filtering)
+                                    )
+                                }
+
+                                // Filter menu
+                                FilterMenu(
+                                    expanded = showFilterMenu,
+                                    selectedFilter = uiState.selectedFilter,
+                                    onFilterSelected = viewModel::updateFilter,
+                                    onDismiss = { showFilterMenu = false }
+                                )
+
+                                // Sort menu
+                                SortMenu(
+                                    expanded = showSortMenu,
+                                    selectedSort = uiState.selectedSortOrder,
+                                    onSortSelected = viewModel::updateSortOrder,
+                                    onDismiss = { showSortMenu = false }
+                                )
+                            }
                         }
-
-                        // Normal mode - show filter and sort
-                        var showFilterMenu by remember { mutableStateOf(false) }
-                        var showSortMenu by remember { mutableStateOf(false) }
-
-                        // Sort button
-                        IconButton(onClick = { showSortMenu = true }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Default.Sort,
-                                contentDescription = stringResource(R.string.label_ordering)
-                            )
-                        }
-
-                        // Filter button
-                        IconButton(onClick = { showFilterMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = stringResource(R.string.label_filtering)
-                            )
-                        }
-
-                        // Filter menu
-                        FilterMenu(
-                            expanded = showFilterMenu,
-                            selectedFilter = uiState.selectedFilter,
-                            onFilterSelected = viewModel::updateFilter,
-                            onDismiss = { showFilterMenu = false }
-                        )
-
-                        // Sort menu
-                        SortMenu(
-                            expanded = showSortMenu,
-                            selectedSort = uiState.selectedSortOrder,
-                            onSortSelected = viewModel::updateSortOrder,
-                            onDismiss = { showSortMenu = false }
-                        )
-                    }
-                }
+                    )
+                },
+                selectionManager = selectionManager,
+                primaryActions = primaryActions,
+                secondaryActions = secondaryActions,
+                actionHandler = actionHandler
             )
 
             if (!selectionState.isInSelectionMode) {
@@ -297,23 +350,23 @@ fun TechnicalInterventionListScreen(
                     else -> {
                         InterventionsListWithSelection(
                             interventionsWithStats = uiState.filteredInterventions,
-                            selectionManager = viewModel.selectionManager,
-                            onNavigateToEdit = onNavigateToEditIntervention,
-                            isDeleting = uiState.isDeleting,
+                            selectionManager = selectionManager,
+                            onNavigateToEditIntervention = onNavigateToEditIntervention,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
-
-                // Pull to refresh indicator
-                PullToRefreshContainer(
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    state = pullToRefreshState,
-                )
             }
         }
 
-        // Floating Action Button for creating new intervention
+        // Pull to refresh indicator
+        if (pullToRefreshState.isRefreshing || uiState.isLoading) {
+            PullToRefreshContainer(
+                state = pullToRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter)
+            )
+        }
+
         if (!selectionState.isInSelectionMode) {
             FloatingActionButton(
                 onClick = onNavigateToCreateIntervention,
@@ -328,91 +381,25 @@ fun TechnicalInterventionListScreen(
             }
         }
 
+        // Delete confirmation dialog
+        DeleteConfirmationDialog(
+            isVisible = showDeleteDialog,
+            selectedItems = selectionState.selectedItems,
+            actionHandler = actionHandler,
+            onConfirm = {
+                actionHandler.onActionClick(SelectionAction.Delete, selectionState.selectedItems)
+                selectionManager.clearSelection()
+            },
+            onDismiss = {
+                showDeleteDialog = false
+            }
+        )
+
         // Snackbar host
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.BottomCenter)
         )
-
-        // Batch actions bottom sheet
-        if (showBottomSheet && selectionState.isInSelectionMode) {
-            // Create handler outside clickable context
-            val batchActionHandler = createInterventionBatchActionHandler(
-                viewModel = viewModel,
-                onNavigateToEdit = onNavigateToEditIntervention,
-                onShowBatchDeleteDialog = { showBatchDeleteDialog = true },
-                interventionsWithStats = uiState.filteredInterventions
-            )
-
-            ModalBottomSheet(
-                onDismissRequest = { showBottomSheet = false },
-                sheetState = bottomSheetState
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = stringResource(R.string.batch_actions_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-
-                    viewModel.getAvailableBatchActions().forEach { action ->
-                        ListItem(
-                            headlineContent = { Text(stringResource(action.labelResId)) },
-                            leadingContent = {
-                                Icon(
-                                    painter = painterResource(action.iconResId),
-                                    contentDescription = null,
-                                    tint = if (action.isDestructive) {
-                                        MaterialTheme.colorScheme.error
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    }
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                batchActionHandler.onBatchAction(action, selectionState.selectedItems)
-                                if (action != BatchAction.Delete) {
-                                    showBottomSheet = false
-                                }
-                            }
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(32.dp))
-                }
-            }
-        }
-
-        // Batch delete confirmation dialog
-        BatchDeleteConfirmationDialog(
-            isVisible = showBatchDeleteDialog,
-            selectedItems = selectionState.selectedItems,
-            batchActionHandler = createInterventionBatchActionHandler(
-                viewModel = viewModel,
-                onNavigateToEdit = onNavigateToEditIntervention,
-                onShowBatchDeleteDialog = { showBatchDeleteDialog = true },
-                interventionsWithStats = uiState.filteredInterventions
-            ),
-            onConfirm = {
-                // Perform batch delete through ViewModel
-                val selectedInterventions = selectionState.selectedItems
-                viewModel.handleBatchAction(BatchAction.Delete, selectedInterventions)
-                showBatchDeleteDialog = false
-                showBottomSheet = false
-            },
-            onDismiss = { showBatchDeleteDialog = false }
-        )
-    }
-
-    // Handle selection-triggered bottom sheet
-    LaunchedEffect(selectionState.isInSelectionMode, selectionState.selectedCount) {
-        if (selectionState.isInSelectionMode && selectionState.selectedCount > 0) {
-            showBottomSheet = true
-        }
     }
 }
 
@@ -422,13 +409,12 @@ fun TechnicalInterventionListScreen(
 @Composable
 private fun InterventionsListWithSelection(
     interventionsWithStats: List<TechnicalInterventionWithStats>,
-    selectionManager: SelectionManager<TechnicalIntervention>,
-    onNavigateToEdit: (String) -> Unit,
-    isDeleting: String?,
+    selectionManager: SimpleSelectionManager<TechnicalIntervention>,
+    onNavigateToEditIntervention: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier= modifier,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -436,268 +422,21 @@ private fun InterventionsListWithSelection(
             items = interventionsWithStats,
             key = { it.intervention.id }
         ) { interventionWithStats ->
-            SelectableListItem(
+            SelectableItem(
                 item = interventionWithStats.intervention,
                 selectionManager = selectionManager,
-                onNavigateToItem = { intervention ->
-                    // Edit only if single selection, no navigation for normal click
-                    if (selectionManager.currentState.selectedItems.size == 1) {
-                        onNavigateToEdit(intervention.id)
-                    }
+                onNormalClick = { intervention ->
+                    onNavigateToEditIntervention(intervention.id)
                 }
-            ) { intervention ->
+            ) { isSelected ->
+                // Your existing TechnicalInterventionCard
                 TechnicalInterventionCard(
-                    intervention = intervention,
+                    modifier = Modifier.fillMaxWidth(),
+                    intervention = interventionWithStats.intervention,
                     stats = interventionWithStats.stats,
-                    onClick = {}, // Handled by SelectableListItem
-                    onEdit = if (selectionManager.currentState.selectedItems.size == 1) {
-                        { onNavigateToEdit(intervention.id) }
-                    } else null,
-                    onDelete = null, // Handled by batch operations
-                    isDeleting = isDeleting == intervention.id
+                    isSelected = isSelected,
+                    variant = CardVariant.FULL
                 )
-            }
-        }
-    }
-}
-
-/**
- * Technical Intervention Card Component
- */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TechnicalInterventionCard(
-    intervention: TechnicalIntervention,
-    stats: InterventionStatistics,
-    onClick: () -> Unit,
-    onEdit: (() -> Unit)?,
-    onDelete: (() -> Unit)?,
-    isDeleting: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 2.dp
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // Header row: Intervention number + Status
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = intervention.interventionNumber,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
-
-                InterventionStatusChip(status = intervention.status)
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Customer information
-            Text(
-                text = intervention.customerData.customerName,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-
-            if (intervention.customerData.customerContact.isNotBlank()) {
-                Text(
-                    text = intervention.customerData.customerContact,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Robot information
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.robot_serial_number),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = intervention.robotData.serialNumber,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Text(
-                        text = stringResource(R.string.operating_hours),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "${intervention.robotData.hoursOfDuty} h",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Footer: Updated date + Work location
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(
-                        R.string.updated_days_ago,
-                        stats.daysSinceLastUpdate
-                    ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                Text(
-                    text = when (intervention.workLocation.type) {
-                        WorkLocationType.CLIENT_SITE ->
-                            stringResource(R.string.work_location_client_site)
-                        WorkLocationType.OUR_SITE ->
-                            stringResource(R.string.work_location_our_site)
-                        WorkLocationType.OTHER ->
-                            intervention.workLocation.customLocation.ifBlank {
-                                stringResource(R.string.work_location_other)
-                            }
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            // Loading indicator for deletion
-            if (isDeleting) {
-                Spacer(modifier = Modifier.height(8.dp))
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-    }
-}
-
-/**
- * Status chip component
- */
-@Composable
-private fun InterventionStatusChip(
-    status: InterventionStatus,
-    modifier: Modifier = Modifier
-) {
-    val (text, containerColor, contentColor) = when (status) {
-        InterventionStatus.DRAFT -> Triple(
-            stringResource(R.string.status_draft),
-            MaterialTheme.colorScheme.surfaceVariant,
-            MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        InterventionStatus.IN_PROGRESS -> Triple(
-            stringResource(R.string.status_in_progress),
-            MaterialTheme.colorScheme.primary,
-            MaterialTheme.colorScheme.onPrimary
-        )
-        InterventionStatus.PENDING_REVIEW -> Triple(
-            stringResource(R.string.status_pending_review),
-            MaterialTheme.colorScheme.tertiary,
-            MaterialTheme.colorScheme.onTertiary
-        )
-        InterventionStatus.COMPLETED -> Triple(
-            stringResource(R.string.status_completed),
-            MaterialTheme.colorScheme.secondary,
-            MaterialTheme.colorScheme.onSecondary
-        )
-        InterventionStatus.ARCHIVED -> Triple(
-            stringResource(R.string.status_archived),
-            MaterialTheme.colorScheme.outline,
-            MaterialTheme.colorScheme.onSurface
-        )
-    }
-
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.small,
-        color = containerColor
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
-    }
-}
-
-/**
- * Creates batch action handler for technical interventions
- */
-@Composable
-private fun createInterventionBatchActionHandler(
-    viewModel: TechnicalInterventionListViewModel,
-    onNavigateToEdit: (String) -> Unit,
-    onShowBatchDeleteDialog: () -> Unit,
-    interventionsWithStats: List<TechnicalInterventionWithStats>
-): BatchActionHandler<TechnicalIntervention> {
-    return remember {
-        object : BatchActionHandler<TechnicalIntervention> {
-            override fun onBatchAction(action: BatchAction, selectedItems: Set<TechnicalIntervention>) {
-                Timber.d("🔥 Batch action: $action for ${selectedItems.size} interventions")
-
-                when (action) {
-                    BatchAction.SelectAll -> {
-                        val allInterventions = interventionsWithStats.map { it.intervention }
-                        viewModel.selectionManager.selectAll(allInterventions)
-                    }
-                    BatchAction.Edit -> {
-                        if (selectedItems.size == 1) {
-                            onNavigateToEdit(selectedItems.first().id)
-                        }
-                    }
-                    BatchAction.Delete -> {
-                        onShowBatchDeleteDialog()
-                    }
-                    else -> {
-                        // Delegate other actions to ViewModel
-                        viewModel.handleBatchAction(action, selectedItems)
-                    }
-                }
-            }
-
-            override fun isBatchActionAvailable(action: BatchAction, selectedItems: Set<TechnicalIntervention>): Boolean {
-                return when (action) {
-                    BatchAction.Edit -> {
-                        // Edit only available for single selection
-                        selectedItems.size == 1
-                    }
-                    BatchAction.SelectAll -> {
-                        // Available if not all items are selected
-                        selectedItems.size < interventionsWithStats.size
-                    }
-                    else -> selectedItems.isNotEmpty()
-                }
-            }
-
-            override fun getBatchDeleteConfirmationMessage(selectedItems: Set<TechnicalIntervention>): UiText {
-                return UiText.StringResources(R.string.interventions_batch_delete_confirm, selectedItems.size)
             }
         }
     }

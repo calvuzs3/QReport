@@ -64,7 +64,7 @@ fun ContactCard(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        onClick = onClick,
+//        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

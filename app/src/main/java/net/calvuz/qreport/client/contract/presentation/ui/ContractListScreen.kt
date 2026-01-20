@@ -18,23 +18,29 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
-import net.calvuz.qreport.client.contract.presentation.ui.components.ContractCard
 import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
-import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard.QrListItemCardVariant
+import net.calvuz.qreport.app.app.presentation.components.list.CardVariant
 import net.calvuz.qreport.app.error.presentation.UiText
 // Selection system imports
-import net.calvuz.qreport.app.app.presentation.components.selection.*
-import timber.log.Timber
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.DeleteConfirmationDialog
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectableItem
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionTopBar
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
+import net.calvuz.qreport.client.contract.domain.model.Contract
+import net.calvuz.qreport.client.contract.presentation.ui.components.ContractCard
 
 @Composable
 fun ContractFilter.getDisplayName(): UiText {
@@ -57,6 +63,7 @@ fun ContractSortOrder.getDisplayName(): UiText {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContractListScreen(
+    modifier: Modifier = Modifier,
     clientId: String,
     clientName: String,
     onNavigateBack: () -> Unit,
@@ -65,25 +72,91 @@ fun ContractListScreen(
     onNavigateToContractDetail: (String) -> Unit,
     onNavigateToRenewContract: (String) -> Unit = {},
     onNavigateToBulkEdit: (List<String>) -> Unit = {},
-    modifier: Modifier = Modifier,
     viewModel: ContractListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
-    // Selection manager for multi-select functionality
-    val selectionManager = rememberSelectionManager<String>()
+    // Simple selection manager
+    val selectionManager = rememberSimpleSelectionManager<Contract>()
     val selectionState by selectionManager.selectionState.collectAsState()
 
-    // Bottom sheet state
-    val bottomSheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
+    // Delete confirmation dialog
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Batch delete dialog state
-    var showBatchDeleteDialog by remember { mutableStateOf(false) }
+    // Action handler for Technical Interventions
+    val actionHandler = remember {
+        ContractActionHandler(
+            onEdit = { contracts ->
+                if (contracts.size == 1) {
+                    onNavigateToEditContract(contracts.first().id)
+                    selectionManager.clearSelection()
+                }
+            },
+            onDelete = {
+                showDeleteDialog = true
+            },
+            onRenew = { contracts ->
+                if (contracts.size == 1) {
+                    viewModel.renew(contracts.first().id)
+                    selectionManager.clearSelection()
+                }
+            },
+            onSetActive = { contracts ->
+                viewModel.setActive(contracts, true)
+                selectionManager.clearSelection()
+            },
+            onSetInactive = { contracts ->
+                viewModel.setActive(contracts, false)
+                selectionManager.clearSelection()
+            },
+            onArchive = { contracts ->
+                viewModel.setActive(contracts, false)
+                selectionManager.clearSelection()
+            },
+//            onExport = { contracts ->
+//                viewModel.exportInterventions(contracts)
+//                selectionManager.clearSelection()
+//            },
+            onSelectAll = {
+                selectionManager.selectAll(uiState.filteredContracts.map { it.contract })
+            }
+        )
+    }
+    // Define actions
+    val primaryActions = listOf(
+        SelectionAction.Edit,
+        SelectionAction.Delete
+    )
 
-    // Load contracts when screen opens
-    LaunchedEffect(clientId) {
-        viewModel.initializeForClient(clientId)
+    val secondaryActions = listOf(
+        SelectionAction.SelectAll,
+        SelectionAction.Renew,
+        SelectionAction.SetActive,
+        SelectionAction.SetInactive,
+        SelectionAction.Archive,
+//        SelectionAction.Export,
+//        SelectionAction.MarkCompleted
+    )
+
+    // Content with Pull to Refresh
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    // Snackbar host state
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Reset refresh state when not refreshing
+    LaunchedEffect(uiState.isRefreshing) {
+        if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
+            pullToRefreshState.endRefresh()
+        }
+    }
+
+    // Handle pull to refresh
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) {
+            viewModel.refresh()
+        }
     }
 
     // Clear selection when navigating away or data changes significantly
@@ -93,102 +166,135 @@ fun ContractListScreen(
         }
     }
 
-    // Close bottom sheet when selection is cleared
-    LaunchedEffect(selectionState.isInSelectionMode) {
-        if (!selectionState.isInSelectionMode) {
-            showBottomSheet = false
+
+    // Show error messages
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { errorMessage ->
+            snackbarHostState.showSnackbar(
+                message = errorMessage.asString(context),
+                duration = SnackbarDuration.Long
+            )
+            viewModel.dismissError()
         }
     }
 
+    // Show success messages
+    LaunchedEffect(uiState.successMessage) {
+        uiState.successMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message.asString(context),
+                duration = SnackbarDuration.Short
+            )
+            viewModel.dismissSuccess()
+        }
+    }
+
+    // Load contracts when screen opens
+    LaunchedEffect(clientId) {
+        viewModel.initializeForClient(clientId)
+    }
+
+
     Box(modifier = modifier.fillMaxSize()) {
         Column {
-            // Top App Bar with selection-aware title
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = if (selectionState.isInSelectionMode) {
-                                stringResource(R.string.selection_summary, selectionState.selectedCount)
-                            } else {
-                                stringResource(R.string.contracts_screen_list_title)
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (!selectionState.isInSelectionMode) {
-                            Text(
-                                text = clientName,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            if (selectionState.isInSelectionMode) {
-                                selectionManager.clearSelection()
-                            } else {
-                                onNavigateBack()
+            SelectionTopBar(
+                normalTopBar = {
+                    // Top App Bar with selection-aware title and debug mode toggle
+                    TopAppBar(
+                        title = {
+                            Column {
+                                Text(
+                                    text = if (selectionState.isInSelectionMode) {
+                                        stringResource(
+                                            R.string.selection_summary,
+                                            selectionState.selectedCount
+                                        )
+                                    } else {
+                                        stringResource(R.string.contracts_screen_list_title)
+                                    },
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (!selectionState.isInSelectionMode) {
+                                    Text(
+                                        text = clientName,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        },
+                        navigationIcon = {
+                            IconButton(
+                                onClick = {
+                                    if (selectionState.isInSelectionMode) {
+                                        selectionManager.clearSelection()
+                                    } else {
+                                        onNavigateBack()
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (selectionState.isInSelectionMode) {
+                                        Icons.Default.Close
+                                    } else {
+                                        Icons.Default.ArrowBackIosNew
+                                    },
+                                    contentDescription = if (selectionState.isInSelectionMode) {
+                                        stringResource(R.string.clear_selection)
+                                    } else {
+                                        stringResource(R.string.action_back)
+                                    }
+                                )
+                            }
+                        },
+                        actions = {
+                            if (!selectionState.isInSelectionMode) {
+                                // Normal mode - show filter and sort
+                                var showFilterMenu by remember { mutableStateOf(false) }
+                                var showSortMenu by remember { mutableStateOf(false) }
+
+                                // Sort button
+                                IconButton(onClick = { showSortMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Default.Sort,
+                                        contentDescription = stringResource(R.string.label_ordering)
+                                    )
+                                }
+
+                                // Filter button
+                                IconButton(onClick = { showFilterMenu = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.FilterList,
+                                        contentDescription = stringResource(R.string.label_filtering)
+                                    )
+                                }
+
+                                // Filter menu
+                                FilterMenu(
+                                    expanded = showFilterMenu,
+                                    selectedFilter = uiState.selectedFilter,
+                                    onFilterSelected = viewModel::updateFilter,
+                                    onDismiss = { showFilterMenu = false }
+                                )
+
+                                // Sort menu
+                                SortMenu(
+                                    expanded = showSortMenu,
+                                    selectedSort = uiState.selectedSortOrder,
+                                    onSortSelected = viewModel::updateSortOrder,
+                                    onDismiss = { showSortMenu = false }
+                                )
                             }
                         }
-                    ) {
-                        Icon(
-                            imageVector = if (selectionState.isInSelectionMode) {
-                                Icons.Default.Close
-                            } else {
-                                Icons.Default.ArrowBackIosNew
-                            },
-                            contentDescription = if (selectionState.isInSelectionMode) {
-                                stringResource(R.string.clear_selection)
-                            } else {
-                                stringResource(R.string.action_back)
-                            }
-                        )
-                    }
+                    )
                 },
-                actions = {
-                    if (!selectionState.isInSelectionMode) {
-                        // Normal mode - show filter and sort
-                        var showFilterMenu by remember { mutableStateOf(false) }
-                        var showSortMenu by remember { mutableStateOf(false) }
-
-                        // Sort button
-                        IconButton(onClick = { showSortMenu = true }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Default.Sort,
-                                contentDescription = stringResource(R.string.label_ordering)
-                            )
-                        }
-
-                        // Filter button
-                        IconButton(onClick = { showFilterMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = stringResource(R.string.label_filtering)
-                            )
-                        }
-
-                        // Filter menu
-                        FilterMenu(
-                            expanded = showFilterMenu,
-                            selectedFilter = uiState.selectedFilter,
-                            onFilterSelected = viewModel::updateFilter,
-                            onDismiss = { showFilterMenu = false }
-                        )
-
-                        // Sort menu
-                        SortMenu(
-                            expanded = showSortMenu,
-                            selectedSort = uiState.selectedSortOrder,
-                            onSortSelected = viewModel::updateSortOrder,
-                            onDismiss = { showSortMenu = false }
-                        )
-                    }
-                }
+                selectionManager = selectionManager,
+                actionHandler = actionHandler,
+                primaryActions = primaryActions,
+                secondaryActions = secondaryActions
             )
 
             if (!selectionState.isInSelectionMode) {
@@ -214,23 +320,7 @@ fun ContractListScreen(
                 }
             }
 
-            // Content with Pull to Refresh
-            val pullToRefreshState = rememberPullToRefreshState()
-
-            // Reset refresh state when not refreshing
-            LaunchedEffect(uiState.isRefreshing) {
-                if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
-                    pullToRefreshState.endRefresh()
-                }
-            }
-
-            // Handle pull to refresh
-            LaunchedEffect(pullToRefreshState.isRefreshing) {
-                if (pullToRefreshState.isRefreshing) {
-                    viewModel.refresh()
-                }
-            }
-
+            // Content area with pull-to-refresh
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -285,90 +375,54 @@ fun ContractListScreen(
                         ContractsListWithSelection(
                             contractsWithStats = uiState.filteredContracts,
                             selectionManager = selectionManager,
-                            onNavigateToDetail = onNavigateToContractDetail
-                        )
-                    }
-                }
-
-                // Pull to refresh indicator
-                if (pullToRefreshState.isRefreshing || uiState.isLoading) {
-                    PullToRefreshContainer(
-                        state = pullToRefreshState,
-                        modifier = Modifier.align(Alignment.TopCenter)
-                    )
-                }
-
-                // FAB for new contract (hidden in selection mode)
-                if (!selectionState.isInSelectionMode) {
-                    FloatingActionButton(
-                        onClick = { onNavigateToCreateContract(clientId) },
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.contracts_screen_list_empty_action_add)
+                            onNavigateToEdit = onNavigateToEditContract
                         )
                     }
                 }
             }
         }
 
-        // Floating selection indicator (appears above the list, doesn't cover it)
-        FloatingSelectionIndicator(
-            selectionState = selectionState,
-            onOpenBottomSheet = {
-                showBottomSheet = true
-            },
-            onClearSelection = {
-                selectionManager.clearSelection()
-            },
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
-
-        // Selection Bottom Sheet (opens on demand)
-        if (showBottomSheet) {
-            SelectionBottomSheet(
-                selectionState = selectionState,
-                availableActions = BatchActionSets.contractActions,
-                batchActionHandler = createContractBatchActionHandler(
-                    viewModel = viewModel,
-                    onBulkEdit = onNavigateToBulkEdit,
-                    onRenewContract = onNavigateToRenewContract,
-                    onShowBatchDeleteDialog = { showBatchDeleteDialog = true },
-                    contractsWithStats = uiState.filteredContracts,
-                    selectionManager = selectionManager
-                ),
-                onDismiss = {
-                    showBottomSheet = false
-                },
-                sheetState = bottomSheetState
+        // Pull to refresh indicator
+        if (pullToRefreshState.isRefreshing || uiState.isLoading) {
+            PullToRefreshContainer(
+                state = pullToRefreshState,
+                modifier = Modifier.align(Alignment.TopCenter)
             )
         }
 
-        // Batch delete confirmation dialog (same as before)
-        BatchDeleteConfirmationDialog(
-            isVisible = showBatchDeleteDialog,
+        // FAB for new contract (hidden in selection mode)
+        if (!selectionState.isInSelectionMode) {
+            FloatingActionButton(
+                onClick = { onNavigateToCreateContract(clientId) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.contracts_screen_list_empty_action_add)
+                )
+            }
+        }
+
+        // Delete confirmation dialog
+        DeleteConfirmationDialog(
+            isVisible = showDeleteDialog,
             selectedItems = selectionState.selectedItems,
-            batchActionHandler = createContractBatchActionHandler(
-                viewModel = viewModel,
-                onBulkEdit = onNavigateToBulkEdit,
-                onRenewContract = onNavigateToRenewContract,
-                onShowBatchDeleteDialog = { showBatchDeleteDialog = true },
-                contractsWithStats = uiState.filteredContracts,
-                selectionManager = selectionManager
-            ),
+            actionHandler = actionHandler,
             onConfirm = {
-                // Perform batch delete
-                val selectedContracts = selectionState.selectedItems
-                selectedContracts.forEach { contractId ->
-                    viewModel.delete(contractId)
-                }
+                actionHandler.onActionClick(SelectionAction.Delete, selectionState.selectedItems)
                 selectionManager.clearSelection()
-                showBottomSheet = false
             },
-            onDismiss = { showBatchDeleteDialog = false }
+            onDismiss = {
+                showDeleteDialog = false
+            }
+        )
+
+        // Snackbar host
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
 }
@@ -379,8 +433,8 @@ fun ContractListScreen(
 @Composable
 private fun ContractsListWithSelection(
     contractsWithStats: List<ContractWithStats>,
-    selectionManager: SelectionManager<String>,
-    onNavigateToDetail: (String) -> Unit,
+    selectionManager: SimpleSelectionManager<Contract>,
+    onNavigateToEdit: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -392,98 +446,26 @@ private fun ContractsListWithSelection(
             items = contractsWithStats,
             key = { it.contract.id }
         ) { contractWithStats ->
-            SelectableListItem(
-                item = contractWithStats.contract.id,
+            SelectableItem(
+                item = contractWithStats.contract,
                 selectionManager = selectionManager,
-                onNavigateToItem = { onNavigateToDetail(it) }
-            ) { contractId ->
-                // Find the contract data
-                val contract = contractsWithStats.find { it.contract.id == contractId }?.contract
-                if (contract != null) {
-                    ContractCard(
-                        contract = contract,
-                        onClick = {}, // Handled by SelectableListItem
-                        onEdit = null,
-                        onDelete = null,
-                        variant = QrListItemCardVariant.FULL
-                    )
-                }
+                onNormalClick = { contract ->
+                    onNavigateToEdit(contract.id)
+                },
+            ) { isSelected ->
+
+                ContractCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    contract = contractWithStats.contract,
+                    stats = contractWithStats.stats,
+                    isSelected = isSelected,
+                    variant = CardVariant.FULL
+                )
             }
         }
     }
 }
 
-/**
- * Creates batch action handler for contracts (same as before)
- */
-@Composable
-private fun createContractBatchActionHandler(
-    viewModel: ContractListViewModel,
-    onBulkEdit: (List<String>) -> Unit,
-    onRenewContract: (String) -> Unit,
-    onShowBatchDeleteDialog: () -> Unit,
-    contractsWithStats: List<ContractWithStats>,
-    selectionManager: SelectionManager<String>
-): BatchActionHandler<String> {
-    return remember {
-        object : BatchActionHandler<String> {
-            override fun onBatchAction(action: BatchAction, selectedItems: Set<String>) {
-                Timber.d("🔥 Batch action: $action for ${selectedItems.size} contracts")
-
-                when (action) {
-                    BatchAction.SelectAll -> {
-                        val allContractIds = contractsWithStats.map { it.contract.id }
-                        selectionManager.selectAll(allContractIds)
-                    }
-                    BatchAction.Edit -> {
-                        onBulkEdit(selectedItems.toList())
-                    }
-                    BatchAction.Delete -> {
-                        onShowBatchDeleteDialog()
-                    }
-                    BatchAction.ContractBatchAction.Renew -> {
-                        // Renew all selected contracts
-                        selectedItems.forEach { contractId ->
-                            onRenewContract(contractId)
-                        }
-                        selectionManager.clearSelection()
-                    }
-                    BatchAction.ContractBatchAction.BulkEdit -> {
-                        onBulkEdit(selectedItems.toList())
-                    }
-                    BatchAction.Export -> {
-                        // TODO: Implement batch export
-                        Timber.d("Batch export for ${selectedItems.size} contracts")
-                        selectionManager.clearSelection()
-                    }
-                    else -> {
-                        Timber.w("Unsupported batch action: $action")
-                    }
-                }
-            }
-
-            override fun isBatchActionAvailable(action: BatchAction, selectedItems: Set<String>): Boolean {
-                return when (action) {
-                    BatchAction.ContractBatchAction.Renew -> {
-                        // Only available if all selected contracts are eligible for renewal
-                        selectedItems.all { contractId ->
-                            viewModel.isContractEligibleForRenewal(contractId)
-                        }
-                    }
-                    BatchAction.SelectAll -> {
-                        // Available if not all items are selected
-                        selectedItems.size < contractsWithStats.size
-                    }
-                    else -> selectedItems.isNotEmpty()
-                }
-            }
-
-            override fun getBatchDeleteConfirmationMessage(selectedItems: Set<String>): UiText {
-                return UiText.StringResources(R.string.contracts_screen_list_bulk_delete_action_confirm, selectedItems.size)
-            }
-        }
-    }
-}
 
 // Keep existing filter and sort menus unchanged
 @Composable

@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -217,7 +218,7 @@ private fun FullFacilityCard(
             )
             if (onOpenMaps != null && facility.address.isComplete()) {
                 Icon(
-                    imageVector = Icons.Default.OpenInNew,
+                    imageVector = Icons.AutoMirrored.Default.OpenInNew,
                     contentDescription = "Apri",
                     modifier = Modifier.size(12.dp),
                     tint = MaterialTheme.colorScheme.primary

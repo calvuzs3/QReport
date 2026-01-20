@@ -15,7 +15,7 @@ sealed class UiText() {
     fun asString(context: Context): String {
         return when(this) {
             is StringResource -> context.getString(resId)
-            is StringResources -> context.getString(resId, args)
+            is StringResources -> context.getString(resId, *args)
             is DynStr -> str
         }
     }
@@ -23,7 +23,7 @@ sealed class UiText() {
     fun asString(): String {
         return when(this) {
             is StringResource -> stringResource(resId)
-            is StringResources -> stringResource(resId, args)
+            is StringResources -> stringResource(resId, *args)
             is DynStr -> str
         }
     }

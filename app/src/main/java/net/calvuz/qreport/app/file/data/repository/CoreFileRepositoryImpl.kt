@@ -268,7 +268,7 @@ class CoreFileRepositoryImpl @Inject constructor(
                     }
 
                 } catch (e: Exception) {
-                    Timber.w(e, "${QrError.File.PROCESSING}: ${file.name}")
+                    Timber.w(e, "${QrError.File.IO_ERROR}: ${file.name}")
                     null
                 }
             } ?: emptyList()

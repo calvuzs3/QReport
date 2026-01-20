@@ -14,10 +14,23 @@ value class DirectorySpec(val name: String) {
         val PHOTOS = DirectorySpec("photos")
         val TEMP = DirectorySpec("temp")
         val CACHE = DirectorySpec("cache")
+        val SIGNATURES = DirectorySpec("signatures")
     }
 
     override fun toString(): String = name
 }
+
+/**
+ * Signature-specific directories using the extensible pattern
+ */
+object SignatureDirectories {
+    val SIGNATURES = DirectorySpec("signatures")
+    val TECHNICIAN = DirectorySpec("signatures/technician")
+    val CUSTOMER = DirectorySpec("signatures/customer")
+    val TEMP = DirectorySpec("signatures/temp")
+    val ARCHIVE = DirectorySpec("signatures/archive")
+}
+
 
 /**
  * Example usage for feature-specific directories:

@@ -33,7 +33,7 @@ class DeleteTechnicalInterventionUseCase @Inject constructor(
 
         // Validate input
         if (interventionId.isBlank()) {
-            return QrResult.Error(QrError.InterventionError.INVALID_ID())
+            return QrResult.Error(QrError.InterventionError.InvalidId())
         }
 
         try {
@@ -41,7 +41,7 @@ class DeleteTechnicalInterventionUseCase @Inject constructor(
             val getResult = interventionRepository.getInterventionById(interventionId)
 
             if (getResult.isFailure) {
-                return QrResult.Error(QrError.InterventionError.NOT_FOUND())
+                return QrResult.Error(QrError.InterventionError.NotFound())
             }
 
             val intervention = getResult.getOrThrow()
@@ -50,13 +50,13 @@ class DeleteTechnicalInterventionUseCase @Inject constructor(
             if (!forceDelete) {
                 when (intervention.status) {
                     InterventionStatus.COMPLETED -> {
-                        return QrResult.Error(QrError.InterventionError.CANNOT_DELETE_COMPLETED())
+                        return QrResult.Error(QrError.InterventionError.CannotDeleteCompleted())
                     }
                     InterventionStatus.ARCHIVED -> {
-                        return QrResult.Error(QrError.InterventionError.CANNOT_DELETE_ARCHIVED())
+                        return QrResult.Error(QrError.InterventionError.CannotDeleteArchived())
                     }
                     InterventionStatus.PENDING_REVIEW -> {
-                        return QrResult.Error(QrError.InterventionError.DELETE_REQUIRES_CONFIRMATION())
+                        return QrResult.Error(QrError.InterventionError.DeleteRequiresConfirmation())
                     }
                     InterventionStatus.DRAFT,
                     InterventionStatus.IN_PROGRESS -> {
@@ -72,11 +72,11 @@ class DeleteTechnicalInterventionUseCase @Inject constructor(
                 QrResult.Success(Unit)
             } else {
                 val exception = deleteResult.exceptionOrNull()
-                QrResult.Error(QrError.InterventionError.DELETE_FAILED(exception?.message))
+                QrResult.Error(QrError.InterventionError.DeleteError(exception?.message))
             }
 
         } catch (e: Exception) {
-            return QrResult.Error(QrError.InterventionError.DELETE_FAILED(e.message))
+            return QrResult.Error(QrError.InterventionError.DeleteError(e.message))
         }
     }
 
@@ -119,7 +119,7 @@ class DeleteTechnicalInterventionUseCase @Inject constructor(
             QrResult.Success(summary)
         } else {
             // Complete failure
-            QrResult.Error(QrError.InterventionError.BATCH_DELETE_FAILED(errors.firstOrNull()))
+            QrResult.Error(QrError.InterventionError.BatchDeleteError(errors.firstOrNull()))
         }
     }
 }
