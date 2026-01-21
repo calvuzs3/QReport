@@ -127,33 +127,20 @@ interface TechnicalInterventionDao {
     @Query("SELECT intervention_number FROM technical_interventions ORDER BY intervention_number DESC LIMIT 1")
     suspend fun getLastInterventionNumber(): String?
 
-    /**
-     * Get all interventions for backup export
-     * Returns all records without filtering for complete backup
-     */
+    // ===== BACKUP SUPPORT =====
+
     @Query("SELECT * FROM technical_interventions ORDER BY created_at ASC")
     suspend fun getAllForBackup(): List<TechnicalInterventionEntity>
 
-    /**
-     * Count total interventions for backup estimation
-     */
     @Query("SELECT COUNT(*) FROM technical_interventions")
     suspend fun count(): Int
 
+    // ===== RESTORE SUPPORT =====
 
-// =============================================================================
-// FULL METHOD SIGNATURES TO ADD:
-// =============================================================================
-//
-// Inside the @Dao interface TechnicalInterventionDao, add:
-//
-//     // ===== BACKUP SUPPORT =====
-//     @Query("SELECT * FROM technical_interventions ORDER BY created_at ASC")
-//     suspend fun getAllForBackup(): List<TechnicalInterventionEntity>
-//
-//     @Query("SELECT COUNT(*) FROM technical_interventions")
-//     suspend fun count(): Int
-//
-// =============================================================================
+    @Query("DELETE FROM technical_interventions")
+    suspend fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(interventions: List<TechnicalInterventionEntity>)
 
 }

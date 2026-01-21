@@ -224,8 +224,6 @@ class BackupRepositoryImpl @Inject constructor(
                     }
 
 
-
-
                     // 6. Assemblaggio backup finale
                     //
                     emit(BackupProgress.InProgress("Finalizing backup", 0.9f))
@@ -392,44 +390,66 @@ class BackupRepositoryImpl @Inject constructor(
                                 }
                             }
 
- // 5b. Restore signatures
- if (backupData.includesSignatures()) {
-     emit(RestoreProgress.InProgress("Restoring signatures", 0.88f))
+                            // 5b. Restore signatures
+                            //
+                            var signatureError: String? = null
 
-     val signatureArchivePath = "${dirPath}/signatures.zip"
-     val signaturesDir = when (val result = backupFileRepo.getSignaturesDirectory()) {
-         is QrResult.Success -> result.data
-         is QrResult.Error -> {
-             Timber.w("Failed to get signatures directory, skipping")
-             null
-         }
-     }
+                            if (backupData.includesSignatures()) {
+                                emit(RestoreProgress.InProgress("Ripristino firme...", 0.88f))
 
-     if (signaturesDir != null && File(signatureArchivePath).exists()) {
-         signatureArchiveRepository.extractSignatureArchive(
-             archivePath = signatureArchivePath,
-             outputDir = signaturesDir
-         ).collect { progress ->
-             when (progress) {
-                 is ExtractionProgress.InProgress -> {
-                     emit(RestoreProgress.InProgress(
-                         "Restoring signatures: ${progress.extractedFiles}/${progress.totalFiles}",
-                         0.88f + (progress.progress * 0.05f),
-                         currentTable = "Signatures",
-                         processedRecords = progress.extractedFiles,
-                         totalRecords = progress.totalFiles
-                     ))
-                 }
-                 is ExtractionProgress.Error -> {
-                     Timber.w("Signature restoration failed: ${progress.message}")
-                 }
-                 is ExtractionProgress.Completed -> {
-                     Timber.d("Signatures restored: ${progress.extractedFiles} files")
-                 }
-             }
-         }
-     }
- }
+                                val signatureArchivePath = "${dirPath}/signatures.zip"
+                                val signatureArchiveFile = File(signatureArchivePath)
+
+                                if (signatureArchiveFile.exists()) {
+                                    // Get signatures directory
+                                    val signaturesDir = when (val result =
+                                        backupFileRepo.getSignaturesDirectory()) {
+                                        is QrResult.Success -> result.data
+                                        is QrResult.Error -> {
+                                            Timber.w("Failed to get signatures directory, skipping signature restore")
+                                            null
+                                        }
+                                    }
+
+                                    if (signaturesDir != null) {
+                                        signatureArchiveRepository.extractSignatureArchive(
+                                            archivePath = signatureArchivePath,
+                                            outputDir = signaturesDir
+                                        ).collect { progress ->
+                                            when (progress) {
+                                                is ExtractionProgress.InProgress -> {
+                                                    emit(
+                                                        RestoreProgress.InProgress(
+                                                            "Ripristino firme: ${progress.extractedFiles}/${progress.totalFiles}",
+                                                            0.88f + (progress.progress * 0.05f),
+                                                            currentTable = "Signatures",
+                                                            processedRecords = progress.extractedFiles,
+                                                            totalRecords = progress.totalFiles
+                                                        )
+                                                    )
+                                                }
+
+                                                is ExtractionProgress.Error -> {
+                                                    signatureError = progress.message
+                                                    Timber.w("Signature restoration failed: ${progress.message}")
+                                                }
+
+                                                is ExtractionProgress.Completed -> {
+                                                    Timber.d("Signatures restored: ${progress.extractedFiles} files to $signaturesDir")
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Timber.d("No signatures.zip found in backup, skipping signature restore")
+                                }
+                            }
+
+                            // Note: signatureError is non-blocking - we continue even if signature restore fails
+                            // because the database data is more critical
+                            if (signatureError != null) {
+                                Timber.w("Signature restore had errors but continuing: $signatureError")
+                            }
 
                             // Check for photos errors
                             if (photoError != null) {

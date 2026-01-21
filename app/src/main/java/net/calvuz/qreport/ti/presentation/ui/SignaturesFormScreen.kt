@@ -19,6 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.ti.presentation.ui.components.TechnicianSignatureDialog
 import net.calvuz.qreport.ti.presentation.ui.components.CustomerSignatureDialog
+import net.calvuz.qreport.ti.presentation.ui.components.SignaturePreview
 import timber.log.Timber
 
 /**
@@ -124,6 +125,7 @@ fun SignaturesFormScreen(
                 viewModel.updateTechnicianName(name)
             },
             hasDigitalSignature = state.hasTechnicianDigitalSignature,
+            signaturePath = state.technicianSignaturePath,
             onCollectSignature = viewModel::showTechnicianSignatureDialog,
             isProcessing = state.isProcessingSignature,
             modifier = Modifier.fillMaxWidth()
@@ -139,6 +141,7 @@ fun SignaturesFormScreen(
                 viewModel.updateCustomerName(name)
             },
             hasDigitalSignature = state.hasCustomerDigitalSignature,
+            signaturePath = state.customerSignaturePath,
             onCollectSignature = viewModel::showCustomerSignatureDialog,
             isProcessing = state.isProcessingSignature,
             modifier = Modifier.fillMaxWidth()
@@ -199,6 +202,7 @@ private fun TechnicianSignatureSection(
     technicianName: String,
     onTechnicianNameChange: (String) -> Unit,
     hasDigitalSignature: Boolean,
+    signaturePath: String,
     onCollectSignature: () -> Unit,
     isProcessing: Boolean,
     modifier: Modifier = Modifier
@@ -244,6 +248,25 @@ private fun TechnicianSignatureSection(
                 modifier = Modifier.fillMaxWidth()
             )
 
+            // ===== ADD SIGNATURE PREVIEW HERE =====
+            if (hasDigitalSignature && signaturePath.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Firma acquisita:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    SignaturePreview(
+                        signaturePath = signaturePath,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentDescription = "Firma tecnico"
+                    )
+                }
+            }
+            // ===== END SIGNATURE PREVIEW =====
+
             // Digital signature collection
             SignatureCollectionCard(
                 title = "Firma Digitale Tecnico",
@@ -262,6 +285,7 @@ private fun CustomerSignatureSection(
     customerName: String,
     onCustomerNameChange: (String) -> Unit,
     hasDigitalSignature: Boolean,
+    signaturePath: String,
     onCollectSignature: () -> Unit,
     isProcessing: Boolean,
     modifier: Modifier = Modifier
@@ -306,6 +330,25 @@ private fun CustomerSignatureSection(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // ===== ADD SIGNATURE PREVIEW HERE =====
+            if (hasDigitalSignature && signaturePath.isNotEmpty()) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Firma acquisita:",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    SignaturePreview(
+                        signaturePath = signaturePath,
+                        modifier = Modifier.fillMaxWidth(),
+                        contentDescription = "Firma cliente"
+                    )
+                }
+            }
+            // ===== END SIGNATURE PREVIEW =====
 
             // Digital signature collection
             SignatureCollectionCard(

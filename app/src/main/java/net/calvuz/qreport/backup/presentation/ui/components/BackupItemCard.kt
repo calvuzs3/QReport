@@ -12,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AppSettingsAlt
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Photo
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Share
@@ -20,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -48,6 +50,8 @@ fun BackupItemCard(
     onRestore: () -> Unit,
     onDelete: () -> Unit,
     onShare: () -> Unit,
+    onDownload: () -> Unit,
+    isExporting: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -163,6 +167,25 @@ fun BackupItemCard(
                         text = "Ripristina",
                         style = MaterialTheme.typography.bodyMedium
                     )
+                }
+
+                // Download button
+                IconButton(
+                    onClick = onDownload,
+                    enabled = !isExporting
+                ) {
+                    if (isExporting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = "Scarica backup",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
 
                 IconButton(

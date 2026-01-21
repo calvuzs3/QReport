@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +33,15 @@ import net.calvuz.qreport.backup.presentation.ui.components.RestoreBackupConfirm
 import net.calvuz.qreport.backup.presentation.ui.components.RestoreBackupProgressDialog
 import net.calvuz.qreport.share.presentation.ui.ShareBackupDialog
 import net.calvuz.qreport.share.presentation.ui.ShareBackupViewModel
+
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.FileUpload
+import net.calvuz.qreport.backup.domain.usecase.ExportProgress
+import net.calvuz.qreport.backup.domain.usecase.ImportProgress
 
 /**
  * BACKUP SCREEN - FASE 5.4
@@ -75,16 +83,23 @@ fun BackupScreen(
     // SnackBar
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Export/Import funcionalities
+    val exportProgress by backupViewModel.exportProgress.collectAsStateWithLifecycle()
+    val importProgress by backupViewModel.importProgress.collectAsStateWithLifecycle()
+
+
     LaunchedEffect(restoreProgress) {
         when (restoreProgress) {
             is RestoreProgress.InProgress -> {
                 // Dialog già aperto, non fare nulla
             }
+
             is RestoreProgress.Completed,
             is RestoreProgress.Error -> {
                 // Mantieni dialog aperto per permettere all'utente di vedere il risultato
                 // Il dialog si chiuderà solo con onDismiss
             }
+
             is RestoreProgress.Idle -> {
                 showRestoreProgressDialog = false
             }
@@ -99,17 +114,46 @@ fun BackupScreen(
                     showBackupProgressDialog = true  // open dialog when backup starts
                 }
             }
+
             is BackupProgress.Completed,
             is BackupProgress.Error -> {
                 // Keep dialog opened
                 // onDismiss will close it
             }
+
             is BackupProgress.Idle -> {
                 showBackupProgressDialog = false
             }
         }
     }
 
+    // ===== SAF LAUNCHER FOR EXPORT (Create Document) =====
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        uri?.let { destinationUri ->
+            backupViewModel.executeExport(destinationUri)
+        } ?: run {
+            backupViewModel.cancelExportRequest()
+        }
+    }
+
+    // ===== SAF LAUNCHER FOR IMPORT (Open Document) =====
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { sourceUri ->
+            backupViewModel.executeImport(sourceUri)
+        }
+    }
+
+    // ===== TRIGGER EXPORT LAUNCHER WHEN BACKUP ID IS SET =====
+    LaunchedEffect(backupUiState.pendingExportBackupId) {
+        backupUiState.pendingExportBackupId?.let { backupId ->
+            val fileName = backupViewModel.getExportFileName(backupId)
+            exportLauncher.launch(fileName)
+        }
+    }
 
     // ===== MAIN LAYOUT =====
 
@@ -118,11 +162,14 @@ fun BackupScreen(
             BackupTopBar(
                 onNavigateBack = onNavigateBack,
                 onRefresh = backupViewModel::refreshData,
-                isRefreshing = backupUiState.isLoading
+                onImport = { importLauncher.launch(arrayOf("application/zip")) },
+                isRefreshing = backupUiState.isLoading,
+                isImporting = backupUiState.isImporting
             )
+
         },
         snackbarHost = {
-            SnackbarHost(hostState = snackbarHostState )
+            SnackbarHost(hostState = snackbarHostState)
         },
         modifier = modifier
     ) { paddingValues ->
@@ -222,6 +269,12 @@ fun BackupScreen(
                             onShare = {
                                 backupViewModel.showShareDialog(backup.id)
                             },
+                            onDownload = {                                     // <-- ADD
+                                backupViewModel.requestExportBackup(backup.id)
+                            },
+                            isExporting = backupUiState.isExporting &&        // <-- ADD
+                                    backupUiState.pendingExportBackupId == backup.id,
+
                             isRestoreInProgress = restoreProgress is RestoreProgress.InProgress
                         )
                     }
@@ -366,6 +419,66 @@ fun BackupScreen(
         )
     }
 
+
+    // ===== PROGRESS DIALOGS FOR EXPORT/IMPORT =====
+
+    // Export progress dialog
+    if (backupUiState.isExporting) {
+        AlertDialog(
+            onDismissRequest = { /* Cannot dismiss while exporting */ },
+            title = { Text("Esportazione in corso") },
+            text = {
+                Column {
+                    when (val progress = exportProgress) {
+                        is ExportProgress.InProgress -> {
+                            Text(progress.message)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = { progress.progress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        else -> {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+            },
+            confirmButton = { }
+        )
+    }
+
+    // Import progress dialog
+    if (backupUiState.isImporting) {
+        AlertDialog(
+            onDismissRequest = { /* Cannot dismiss while importing */ },
+            title = { Text("Importazione in corso") },
+            text = {
+                Column {
+                    when (val progress = importProgress) {
+                        is ImportProgress.InProgress -> {
+                            Text(progress.message)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            LinearProgressIndicator(
+                                progress = { progress.progress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        else -> {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+            },
+            confirmButton = { }
+        )
+    }
+
+    // ===== UI MESSAGES =====
+
+
     // ✅ CORRECTED: Handle sharing errors from ShareViewModel
     LaunchedEffect(shareUiState.error) {
         shareUiState.error?.let { error ->
@@ -374,7 +487,6 @@ fun BackupScreen(
         }
     }
 
-    // ===== UI MESSAGES =====
 
     // Handle UI messages (success, error, info)
     LaunchedEffect(backupUiState.successMessage) {
@@ -400,6 +512,40 @@ fun BackupScreen(
             backupViewModel.dismissMessage()
         }
     }
+
+    // Handle export progress messages
+    LaunchedEffect(exportProgress) {
+        when (exportProgress) {
+            is ExportProgress.Completed -> {
+                // Success already handled in ViewModel
+            }
+
+            is ExportProgress.Error -> {
+                // Error already handled in ViewModel
+            }
+
+            else -> { /* In progress */
+            }
+        }
+    }
+
+    // Handle import progress messages
+    LaunchedEffect(importProgress) {
+        when (importProgress) {
+            is ImportProgress.Completed -> {
+                // Success already handled in ViewModel
+            }
+
+            is ImportProgress.Error -> {
+                // Error already handled in ViewModel
+            }
+
+            else -> { /* In progress */
+            }
+        }
+    }
+
+
 }
 
 // ===== TOP BAR =====
@@ -409,7 +555,9 @@ fun BackupScreen(
 private fun BackupTopBar(
     onNavigateBack: () -> Unit,
     onRefresh: () -> Unit,
+    onImport: () -> Unit,
     isRefreshing: Boolean,
+    isImporting: Boolean,
     modifier: Modifier = Modifier
 ) {
     TopAppBar(
@@ -430,9 +578,27 @@ private fun BackupTopBar(
             }
         },
         actions = {
+            // Import button
+            IconButton(
+                onClick = onImport,
+                enabled = !isImporting && !isRefreshing
+            ) {
+                if (isImporting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.FileUpload,
+                        contentDescription = "Importa backup"
+                    )
+                }
+            }
+
             IconButton(
                 onClick = onRefresh,
-                enabled = !isRefreshing
+                enabled = !isRefreshing && !isImporting
             ) {
                 if (isRefreshing) {
                     CircularProgressIndicator(
@@ -453,15 +619,4 @@ private fun BackupTopBar(
             navigationIconContentColor = MaterialTheme.colorScheme.onSurface
         )
     )
-}
-
-// ===== PREVIEW =====
-
-@Preview(showBackground = true)
-@Composable
-private fun BackupScreenPreview() {
-    MaterialTheme {
-        // Preview with mock data - would need to be implemented
-         BackupScreen(onNavigateBack = {})
-    }
 }

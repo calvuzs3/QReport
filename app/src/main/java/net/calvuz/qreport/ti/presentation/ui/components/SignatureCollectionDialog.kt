@@ -10,7 +10,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -21,6 +20,10 @@ import timber.log.Timber
 
 /**
  * Dialog for collecting digital signature with full-screen signature pad
+ *
+ * FIXED VERSION:
+ * - Uses key() to properly reset SignaturePad on clear
+ * - Uses captureSignatureBitmap() for proper coordinate scaling
  */
 @Composable
 fun SignatureCollectionDialog(
@@ -42,8 +45,9 @@ fun SignatureCollectionDialog(
                 usePlatformDefaultWidth = false
             )
         ) {
+            // Use key to force SignaturePad recreation on clear
+            var clearKey by remember { mutableStateOf(0) }
             var hasSignature by remember { mutableStateOf(false) }
-            var signaturePaths by remember { mutableStateOf<List<Path>>(emptyList()) }
             var isProcessing by remember { mutableStateOf(false) }
 
             Surface(
@@ -72,7 +76,7 @@ fun SignatureCollectionDialog(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .weight(1f) // Take available space
+                            .weight(1f)
                             .heightIn(min = 300.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -81,13 +85,16 @@ fun SignatureCollectionDialog(
                     ) {
                         Box(modifier = Modifier.fillMaxSize()) {
                             if (!isProcessing) {
-                                SignaturePad(
-                                    modifier = Modifier.fillMaxSize(),
-                                    onSignatureChanged = { hasSignature = it },
-                                    onPathsChanged = { signaturePaths = it },
-                                    strokeColor = MaterialTheme.colorScheme.primary,
-                                    strokeWidth = 3.0f
-                                )
+                                // Key forces recreation when clearKey changes
+                                key(clearKey) {
+                                    SignaturePad(
+                                        modifier = Modifier.fillMaxSize(),
+                                        onSignatureChanged = { hasSignature = it },
+                                        strokeColor = MaterialTheme.colorScheme.primary,
+                                        strokeWidth = 4.0f,
+                                        backgroundColor = Color.White
+                                    )
+                                }
                             } else {
                                 ProcessingIndicator()
                             }
@@ -104,26 +111,32 @@ fun SignatureCollectionDialog(
                         hasSignature = hasSignature,
                         isProcessing = isProcessing,
                         onClear = {
-                            signaturePaths = emptyList()
+                            // Increment key to force SignaturePad recreation
+                            clearKey++
                             hasSignature = false
+                            Timber.d("SignatureDialog: Cleared signature, new key: $clearKey")
                         },
                         onCancel = onDismiss,
                         onConfirm = {
-                            if (hasSignature && signaturePaths.isNotEmpty()) {
+                            if (hasSignature) {
                                 isProcessing = true
 
                                 try {
-                                    // Convert paths to bitmap
-                                    val bitmap = pathsToBitmap(
-                                        paths = signaturePaths,
-                                        width = 400,
-                                        height = 200,
+                                    // Use new captureSignatureBitmap with proper scaling
+                                    val bitmap = captureSignatureBitmap(
+                                        width = 600,
+                                        height = 300,
                                         strokeColor = Color.Black,
-                                        strokeWidth = 3.0f
+                                        strokeWidth = 4.0f
                                     )
 
-                                    Timber.d("SignatureDialog: Signature bitmap created: ${bitmap.width}x${bitmap.height}")
-                                    onSignatureConfirm(bitmap)
+                                    if (bitmap != null) {
+                                        Timber.d("SignatureDialog: Signature bitmap created: ${bitmap.width}x${bitmap.height}")
+                                        onSignatureConfirm(bitmap)
+                                    } else {
+                                        Timber.e("SignatureDialog: Failed to capture signature bitmap")
+                                        isProcessing = false
+                                    }
 
                                 } catch (e: Exception) {
                                     Timber.e(e, "SignatureDialog: Error processing signature")

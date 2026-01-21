@@ -1,5 +1,6 @@
 package net.calvuz.qreport.backup.presentation.ui
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,6 +23,10 @@ import net.calvuz.qreport.backup.domain.usecase.RestoreBackupUseCase
 import net.calvuz.qreport.backup.domain.usecase.ValidateBackupUseCase
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDateTime
 import net.calvuz.qreport.app.util.SizeUtils.getFormattedSize
+import net.calvuz.qreport.backup.domain.usecase.ExportBackupUseCase
+import net.calvuz.qreport.backup.domain.usecase.ExportProgress
+import net.calvuz.qreport.backup.domain.usecase.ImportBackupUseCase
+import net.calvuz.qreport.backup.domain.usecase.ImportProgress
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -53,7 +58,13 @@ data class BackupUiState(
     // Share
     val showShareDialog: Boolean = false,
     val shareBackupPath: String? = null,
-    val shareBackupName: String? = null
+    val shareBackupName: String? = null,
+
+    // Export/Import
+    val pendingExportBackupId: String? = null,  // Backup waiting for SAF result
+    val isExporting: Boolean = false,
+    val isImporting: Boolean = false
+
 )
 
 /**
@@ -71,7 +82,10 @@ class BackupViewModel @Inject constructor(
     private val getAvailableBackupsUseCase: GetAvailableBackupsUseCase,
     private val deleteBackupUseCase: DeleteBackupUseCase,
     private val getBackupSizeUseCase: GetBackupSizeUseCase,
-    private val validateBackupUseCase: ValidateBackupUseCase
+    private val validateBackupUseCase: ValidateBackupUseCase,
+    private val exportBackupUseCase: ExportBackupUseCase,
+    private val importBackupUseCase: ImportBackupUseCase
+
 ) : ViewModel() {
 
     // ===== UI STATE =====
@@ -84,6 +98,12 @@ class BackupViewModel @Inject constructor(
 
     private val _restoreProgress = MutableStateFlow<RestoreProgress>(RestoreProgress.Idle)
     val restoreProgress: StateFlow<RestoreProgress> = _restoreProgress.asStateFlow()
+
+    private val _exportProgress = MutableStateFlow<ExportProgress>(ExportProgress.Idle)
+    val exportProgress: StateFlow<ExportProgress> = _exportProgress.asStateFlow()
+
+    private val _importProgress = MutableStateFlow<ImportProgress>(ImportProgress.Idle)
+    val importProgress: StateFlow<ImportProgress> = _importProgress.asStateFlow()
 
     // ===== INITIALIZATION =====
 
@@ -229,10 +249,12 @@ class BackupViewModel @Inject constructor(
                             loadAvailableBackups() // Refresh lista
                             showSuccessMessage("Backup creato con successo")
                         }
+
                         is BackupProgress.Error -> {
                             Timber.e("Backup failed: ${progress.message}")
                             showErrorMessage("Errore durante backup: ${progress.message}")
                         }
+
                         else -> {
                             // Progress in corso
                         }
@@ -288,7 +310,11 @@ class BackupViewModel @Inject constructor(
                 }
 
                 // Procedi con restore
-                restoreBackupUseCase(backup.dirPath, backup.filePath, strategy).collect { progress ->
+                restoreBackupUseCase(
+                    backup.dirPath,
+                    backup.filePath,
+                    strategy
+                ).collect { progress ->
                     _restoreProgress.value = progress
 
                     when (progress) {
@@ -296,10 +322,12 @@ class BackupViewModel @Inject constructor(
                             Timber.d("Restore completed successfully")
                             showSuccessMessage("Ripristino completato con successo")
                         }
+
                         is RestoreProgress.Error -> {
                             Timber.e("Restore failed: ${progress.message}")
                             showErrorMessage("Errore durante ripristino: ${progress.message}")
                         }
+
                         else -> {
                             // Progress in corso
                         }
@@ -463,4 +491,135 @@ class BackupViewModel @Inject constructor(
         Timber.d("Refreshing backup data")
         loadInitialData()
     }
+
+    // ===== EXPORT METHODS =====
+
+    /**
+     * Request export for a backup - triggers SAF file picker
+     * Call this when user taps "Download" button on a backup card
+     */
+ fun requestExportBackup(backupId: String) {
+     _uiState.update { it.copy(pendingExportBackupId = backupId) }
+     Timber.d("Export requested for backup: $backupId")
+     // UI will observe pendingExportBackupId and launch SAF picker
+ }
+
+    /**
+     * Execute export after user selects destination via SAF
+     * Call this from Activity/Fragment after receiving SAF result
+     */
+ fun executeExport(destinationUri: Uri) {
+     val backupId = uiState.value.pendingExportBackupId
+     if (backupId == null) {
+         Timber.w("No pending export backup")
+         return
+     }
+
+     _uiState.update {
+         it.copy(
+             pendingExportBackupId = null,
+             isExporting = true
+         )
+     }
+
+     viewModelScope.launch {
+         try {
+             exportBackupUseCase(backupId, destinationUri).collect { progress ->
+                 _exportProgress.value = progress
+
+                 when (progress) {
+                     is ExportProgress.Completed -> {
+                         _uiState.update { it.copy(isExporting = false) }
+                         showSuccessMessage("Backup esportato con successo")
+                         Timber.d("Export completed: ${progress.exportedPath}")
+                     }
+                     is ExportProgress.Error -> {
+                         _uiState.update { it.copy(isExporting = false) }
+                         showErrorMessage(progress.message)
+                         Timber.e("Export failed: ${progress.message}")
+                     }
+                     else -> { /* Progress updates */ }
+                 }
+             }
+         } catch (e: Exception) {
+             Timber.e(e, "Export failed unexpectedly")
+             _uiState.update { it.copy(isExporting = false) }
+             _exportProgress.value = ExportProgress.Error("Errore imprevisto: ${e.message}")
+             showErrorMessage("Errore durante l'export")
+         }
+     }
+ }
+
+    /**
+     * Cancel pending export request
+     */
+ fun cancelExportRequest() {
+     _uiState.update { it.copy(pendingExportBackupId = null) }
+     Timber.d("Export request cancelled")
+ }
+
+
+    // ===== ADD IMPORT METHODS =====
+
+    /**
+     * Request import - triggers SAF file picker for ZIP selection
+     * Call this when user taps "Import" button in top bar
+     */
+ fun requestImportBackup() {
+     Timber.d("Import requested - UI should launch SAF picker")
+     // UI will observe this event and launch SAF picker
+     // For simplicity, we'll use a flag or just rely on UI to call executeImport
+ }
+
+    /**
+     * Execute import after user selects ZIP file via SAF
+     * Call this from Activity/Fragment after receiving SAF result
+     */
+ fun executeImport(sourceUri: Uri) {
+     if (uiState.value.isImporting) {
+         Timber.w("Import already in progress")
+         return
+     }
+
+     _uiState.update { it.copy(isImporting = true) }
+
+     viewModelScope.launch {
+         try {
+             importBackupUseCase(sourceUri).collect { progress ->
+                 _importProgress.value = progress
+
+                 when (progress) {
+                     is ImportProgress.Completed -> {
+                         _uiState.update { it.copy(isImporting = false) }
+                         loadAvailableBackups() // Refresh list to show imported backup
+                         showSuccessMessage("Backup importato con successo (${progress.filesImported} file)")
+                         Timber.d("Import completed: ${progress.backupId}")
+                     }
+                     is ImportProgress.Error -> {
+                         _uiState.update { it.copy(isImporting = false) }
+                         showErrorMessage(progress.message)
+                         Timber.e("Import failed: ${progress.message}")
+                     }
+                     else -> { /* Progress updates */ }
+                 }
+             }
+         } catch (e: Exception) {
+             Timber.e(e, "Import failed unexpectedly")
+             _uiState.update { it.copy(isImporting = false) }
+             _importProgress.value = ImportProgress.Error("Errore imprevisto: ${e.message}")
+             showErrorMessage("Errore durante l'import")
+         }
+     }
+ }
+
+    /**
+     * Generate suggested filename for export
+     */
+ fun getExportFileName(backupId: String): String {
+     val backup = uiState.value.availableBackups.find { it.id == backupId }
+     val timestamp = backup?.createdAt?.toItalianDateTime()?.replace(" ", "_")?.replace(":", "-")
+         ?: System.currentTimeMillis().toString()
+     return "QReport_Backup_$timestamp.zip"
+ }
+
 }

@@ -9,6 +9,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PrecisionManufacturing
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -23,6 +25,8 @@ import net.calvuz.qreport.ti.domain.model.WorkLocationType
 /**
  * Screen for creating or editing TechnicalIntervention
  * Handles both modes: Create (interventionId = null) and Edit (interventionId != null)
+ *
+ * UPDATED: Unified card styling matching WorkDayFormScreen and SignaturesFormScreen
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,17 +38,13 @@ fun GeneralFormScreen(
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
 
-    // Note: ViewModel is initialized by parent EditInterventionScreen to avoid double loading
-    // LaunchedEffect(interventionId) { viewModel.loadInterventionDetails(interventionId) }
-
-
     // Form content
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(scrollState)
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
         // Dirty state indicator
@@ -77,6 +77,8 @@ fun GeneralFormScreen(
             }
         }
 
+        // Edit mode indicator
+        if (state.isEditMode) {
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -89,7 +91,7 @@ fun GeneralFormScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Business,
+                        imageVector = Icons.Default.Edit,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -101,7 +103,7 @@ fun GeneralFormScreen(
                     )
                 }
             }
-
+        }
 
         // ===== CUSTOMER SECTION =====
         CustomerDataSection(
@@ -118,8 +120,6 @@ fun GeneralFormScreen(
             isEditMode = state.isEditMode
         )
 
-        HorizontalDivider()
-
         // ===== ROBOT DATA SECTION =====
         RobotDataSection(
             serialNumber = state.serialNumber,
@@ -129,8 +129,6 @@ fun GeneralFormScreen(
             isEditMode = state.isEditMode
         )
 
-        HorizontalDivider()
-
         // ===== WORK LOCATION SECTION =====
         WorkLocationSection(
             workLocation = state.workLocation,
@@ -138,8 +136,6 @@ fun GeneralFormScreen(
             customLocation = state.customLocation,
             onCustomLocationChange = viewModel::updateCustomLocation
         )
-
-        HorizontalDivider()
 
         // ===== TECHNICIANS SECTION =====
         TechniciansSection(
@@ -167,92 +163,93 @@ private fun CustomerDataSection(
     isEditMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Card(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        // Section header
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Business,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "Dati Cliente",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            if (isEditMode) {
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "(Immutabili in modifica)",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            // Section header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Business,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
                 )
+                Text(
+                    text = "Dati Cliente",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (isEditMode) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "(Immutabili in modifica)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
+
+            // Customer name (required)
+            OutlinedTextField(
+                value = customerName,
+                onValueChange = onCustomerNameChange,
+                label = { Text("Nome Cliente *") },
+                isError = customerName.isBlank(),
+                supportingText = if (customerName.isBlank()) {
+                    { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                } else null,
+                enabled = !isEditMode,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Customer contact (optional)
+            OutlinedTextField(
+                value = customerContact,
+                onValueChange = onCustomerContactChange,
+                label = { Text("Persona di Riferimento") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Ticket number (required)
+            OutlinedTextField(
+                value = ticketNumber,
+                onValueChange = onTicketNumberChange,
+                label = { Text("Numero Commessa/Ticket *") },
+                isError = ticketNumber.isBlank(),
+                supportingText = if (ticketNumber.isBlank()) {
+                    { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                } else null,
+                enabled = !isEditMode,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Customer order number (optional)
+            OutlinedTextField(
+                value = customerOrderNumber,
+                onValueChange = onCustomerOrderNumberChange,
+                label = { Text("Numero Ordine Cliente") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Notes (optional)
+            OutlinedTextField(
+                value = notes,
+                onValueChange = onNotesChange,
+                label = { Text("Note") },
+                placeholder = { Text("Note aggiuntive...") },
+                minLines = 2,
+                maxLines = 4,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-
-        // Customer name (required)
-        OutlinedTextField(
-            value = customerName,
-            onValueChange = onCustomerNameChange,
-            label = { Text("Nome Cliente *") },
-            isError = customerName.isBlank(),
-            supportingText = if (customerName.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
-            } else null,
-            enabled = !isEditMode, // Read-only in edit mode for fiscal compliance
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Customer contact (optional)
-        OutlinedTextField(
-            value = customerContact,
-            onValueChange = onCustomerContactChange,
-            label = { Text("Persona di Riferimento") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Ticket number (required)
-        OutlinedTextField(
-            value = ticketNumber,
-            onValueChange = onTicketNumberChange,
-            label = { Text("Numero Commessa/Ticket *") },
-            isError = ticketNumber.isBlank(),
-            supportingText = if (ticketNumber.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
-            } else null,
-            enabled = !isEditMode, // Read-only in edit mode for fiscal compliance
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Customer order number (required)
-        OutlinedTextField(
-            value = customerOrderNumber,
-            onValueChange = onCustomerOrderNumberChange,
-            label = { Text("Numero Ordine Cliente *") },
-            isError = customerOrderNumber.isBlank(),
-            supportingText = if (customerOrderNumber.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
-            } else null,
-            enabled = !isEditMode, // Read-only in edit mode for fiscal compliance
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Notes (always editable)
-        OutlinedTextField(
-            value = notes,
-            onValueChange = onNotesChange,
-            label = { Text("Note") },
-            minLines = 3,
-            maxLines = 5,
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
@@ -265,65 +262,70 @@ private fun RobotDataSection(
     isEditMode: Boolean = false,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Card(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        // Section header
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.PrecisionManufacturing,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "Dati Robot",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            if (isEditMode) {
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "(Immutabili in modifica)",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            // Section header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.PrecisionManufacturing,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
                 )
+                Text(
+                    text = "Dati Robot",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                if (isEditMode) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "(Immutabili in modifica)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
+
+            // Serial number (required)
+            OutlinedTextField(
+                value = serialNumber,
+                onValueChange = onSerialNumberChange,
+                label = { Text("Serial Number *") },
+                isError = serialNumber.isBlank(),
+                supportingText = if (serialNumber.isBlank()) {
+                    { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                } else null,
+                enabled = !isEditMode,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            // Hours of duty (editable in both modes - can be updated)
+            OutlinedTextField(
+                value = hoursOfDuty,
+                onValueChange = onHoursOfDutyChange,
+                label = { Text("Ore di Servizio *") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                isError = hoursOfDuty.isBlank() || hoursOfDuty.toIntOrNull() == null,
+                supportingText = if (hoursOfDuty.isBlank()) {
+                    { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                } else if (hoursOfDuty.toIntOrNull() == null) {
+                    { Text("Inserire un numero valido", color = MaterialTheme.colorScheme.error) }
+                } else {
+                    null
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-
-        // Serial number (required)
-        OutlinedTextField(
-            value = serialNumber,
-            onValueChange = onSerialNumberChange,
-            label = { Text("Serial Number *") },
-            isError = serialNumber.isBlank(),
-            supportingText = if (serialNumber.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
-            } else null,
-            enabled = !isEditMode, // Read-only in edit mode for fiscal compliance
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Hours of duty (editable in both modes - can be updated)
-        OutlinedTextField(
-            value = hoursOfDuty,
-            onValueChange = onHoursOfDutyChange,
-            label = { Text("Ore di Servizio *") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            isError = hoursOfDuty.isBlank() || hoursOfDuty.toIntOrNull() == null,
-            supportingText = if (hoursOfDuty.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
-            } else if (hoursOfDuty.toIntOrNull() == null) {
-                { Text("Inserire un numero valido", color = MaterialTheme.colorScheme.error) }
-            } else {
-                null
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
     }
 }
 
@@ -335,62 +337,79 @@ private fun WorkLocationSection(
     onCustomLocationChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Card(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Text(
-            text = "Lavoro svolto presso",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        // Work location dropdown
-        var expanded by remember { mutableStateOf(false) }
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded },
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            OutlinedTextField(
-                value = workLocation.displayName,
-                onValueChange = { },
-                readOnly = true,
-                label = { Text("Sede di Lavoro") },
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                },
-                modifier = Modifier
-                    .menuAnchor()
-                    .fillMaxWidth()
-            )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+            // Section header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                WorkLocationType.values().forEach { locationType ->
-                    DropdownMenuItem(
-                        text = { Text(locationType.displayName) },
-                        onClick = {
-                            onWorkLocationChange(locationType)
-                            expanded = false
-                        }
-                    )
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Lavoro svolto presso",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // Work location dropdown
+            var expanded by remember { mutableStateOf(false) }
+
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = workLocation.displayName,
+                    onValueChange = { },
+                    readOnly = true,
+                    label = { Text("Sede di Lavoro") },
+                    trailingIcon = {
+                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
+                )
+
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    WorkLocationType.values().forEach { locationType ->
+                        DropdownMenuItem(
+                            text = { Text(locationType.displayName) },
+                            onClick = {
+                                onWorkLocationChange(locationType)
+                                expanded = false
+                            }
+                        )
+                    }
                 }
             }
-        }
 
-        // Custom location field (only when OTHER is selected)
-        if (workLocation == WorkLocationType.OTHER) {
-            OutlinedTextField(
-                value = customLocation,
-                onValueChange = onCustomLocationChange,
-                label = { Text("Specifica Sede") },
-                placeholder = { Text("Inserisci sede personalizzata") },
-                modifier = Modifier.fillMaxWidth()
-            )
+            // Custom location field (only when OTHER is selected)
+            if (workLocation == WorkLocationType.OTHER) {
+                OutlinedTextField(
+                    value = customLocation,
+                    onValueChange = onCustomLocationChange,
+                    label = { Text("Specifica Sede") },
+                    placeholder = { Text("Inserisci sede personalizzata") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
@@ -401,24 +420,41 @@ private fun TechniciansSection(
     onTechniciansChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Card(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Text(
-            text = "Tecnici (max 6)",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Section header
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.People,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Tecnici (max 6)",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
-        OutlinedTextField(
-            value = technicians,
-            onValueChange = onTechniciansChange,
-            label = { Text("Nomi Tecnici") },
-            placeholder = { Text("Inserisci nomi separati da virgola") },
-            supportingText = { Text("Massimo 6 tecnici, separati da virgola") },
-            modifier = Modifier.fillMaxWidth()
-        )
+            OutlinedTextField(
+                value = technicians,
+                onValueChange = onTechniciansChange,
+                label = { Text("Nomi Tecnici") },
+                placeholder = { Text("Inserisci nomi separati da virgola") },
+                supportingText = { Text("Massimo 6 tecnici, separati da virgola") },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 }
 

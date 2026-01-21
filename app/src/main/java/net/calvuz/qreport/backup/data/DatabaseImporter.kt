@@ -35,6 +35,8 @@ import net.calvuz.qreport.client.contract.data.local.ContractDao
 import net.calvuz.qreport.client.contract.data.local.ContractEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
+import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
+import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -59,7 +61,8 @@ class DatabaseImporter @Inject constructor(
     private val contractDao: ContractDao,
     private val facilityDao: FacilityDao,
     private val islandDao: IslandDao,
-    private val checkUpAssociationDao: CheckUpAssociationDao
+    private val checkUpAssociationDao: CheckUpAssociationDao,
+    private val technicalInterventionDao: TechnicalInterventionDao
 ) {
 
     /**
@@ -82,10 +85,12 @@ class DatabaseImporter @Inject constructor(
                     clearAllTablesInOrder()
                     importAllTablesInOrder(databaseBackup)
                 }
+
                 RestoreStrategy.MERGE -> {
                     // TODO: Implementazione merge (future)
                     throw UnsupportedOperationException("Merge strategy not implemented yet")
                 }
+
                 RestoreStrategy.SELECTIVE -> {
                     // TODO: Implementazione selettiva (future)
                     throw UnsupportedOperationException("Selective strategy not implemented yet")
@@ -123,6 +128,10 @@ class DatabaseImporter @Inject constructor(
             // 1. Associazioni (dipende da checkups + facility_islands)
             checkUpAssociationDao.deleteAll()
             Timber.v("Cleared checkup_island_associations")
+
+            // 1b. Technical Interventions (no FK dependencies)
+            technicalInterventionDao.deleteAll()
+            Timber.v("Cleared technical_interventions")
 
             // 2. Foto (dipende da check_items)
             photoDao.deleteAll()
@@ -206,7 +215,7 @@ class DatabaseImporter @Inject constructor(
                 Timber.v("Imported ${backup.facilityIslands.size} facility islands")
             }
 
-            // 5. CheckUps (dipende da facility_islands tramite associations)
+            // 5. Checkups (dipende da facility_islands tramite associations)
             if (backup.checkUps.isNotEmpty()) {
                 checkUpDao.insertAllFromBackup(backup.checkUps.map { it.toEntity() })
                 Timber.v("Imported ${backup.checkUps.size} checkups")
@@ -234,6 +243,14 @@ class DatabaseImporter @Inject constructor(
             if (backup.checkUpAssociations.isNotEmpty()) {
                 checkUpAssociationDao.insertAllFromBackup(backup.checkUpAssociations.map { it.toEntity() })
                 Timber.v("Imported ${backup.checkUpAssociations.size} checkup associations")
+            }
+
+            // 10. Technical Interventions (no FK dependencies)
+            if (backup.technicalInterventions.isNotEmpty()) {
+                technicalInterventionDao.insertAllFromBackup(
+                    backup.technicalInterventions.map { it.toEntity() }
+                )
+                Timber.v("Imported ${backup.technicalInterventions.size} technical interventions")
             }
 
             Timber.v("Database import completed")
@@ -265,7 +282,8 @@ class DatabaseImporter @Inject constructor(
                 "checkItems" to checkItemDao.count(),
                 "photos" to photoDao.count(),
                 "spareParts" to sparePartDao.count(),
-                "associations" to checkUpAssociationDao.count()
+                "associations" to checkUpAssociationDao.count(),
+                "technicalInterventions" to technicalInterventionDao.count()
             )
 
             val expectedCounts = mapOf(
@@ -278,7 +296,8 @@ class DatabaseImporter @Inject constructor(
                 "checkItems" to originalBackup.checkItems.size,
                 "photos" to originalBackup.photos.size,
                 "spareParts" to originalBackup.spareParts.size,
-                "associations" to originalBackup.checkUpAssociations.size
+                "associations" to originalBackup.checkUpAssociations.size,
+                "technicalInterventions" to originalBackup.technicalInterventions.size
             )
 
             for ((table, expectedCount) in expectedCounts) {
@@ -333,16 +352,17 @@ class DatabaseImporter @Inject constructor(
                 "Contacts" to contactDao.count(),
                 "Contracts" to contractDao.count(),
                 "Facility Islands" to islandDao.count(),
-                "CheckUps" to checkUpDao.count(),
+                "Checkups" to checkUpDao.count(),
                 "Check Items" to checkItemDao.count(),
                 "Photos" to photoDao.count(),
                 "Spare Parts" to sparePartDao.count(),
-                "Associations" to checkUpAssociationDao.count()
+                "Associations" to checkUpAssociationDao.count(),
+                "Technical Interventions" to technicalInterventionDao.count()
             )
 
             val total = stats.values.sum()
-            Timber.v("DATABASE IMPORT COMPLETED")
-            Timber.v("- imported records: $total")
+            Timber.d("DATABASE IMPORT COMPLETED")
+            Timber.d("- imported records: $total")
 
             for ((name, count) in stats) {
                 if (count > 0) {
