@@ -16,8 +16,9 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * ViewModel for WorkDayFormScreen
- * Manages single WorkDay data with travel, work hours and expenses
+ * ViewModel for WorkDayFormScreen.
+ * Manages single WorkDay data with travel, work hours and expenses.
+ * Supports both editing existing work days and creating new ones.
  */
 @HiltViewModel
 class WorkDayFormViewModel @Inject constructor(
@@ -30,15 +31,24 @@ class WorkDayFormViewModel @Inject constructor(
 
     private var currentInterventionId: String? = null
     private var currentIntervention: TechnicalIntervention? = null
+    private var currentWorkDayIndex: Int? = null // null = new work day
     private var originalData: WorkDayOriginalData? = null
 
     /**
-     * Load work day data from intervention
+     * Load work day data from intervention.
+     * @param interventionId The intervention ID
+     * @param workDayIndex Index of work day to edit (null = create new)
      */
-    fun loadWorkDayData(interventionId: String) {
-        if (currentInterventionId == interventionId) return // Already loaded
-
-        currentInterventionId = interventionId
+    fun loadWorkDayData(interventionId: String, workDayIndex: Int? = null) {
+        // Reset if loading different intervention or different work day
+        if (currentInterventionId != interventionId || currentWorkDayIndex != workDayIndex) {
+            currentInterventionId = interventionId
+            currentWorkDayIndex = workDayIndex
+            originalData = null
+        } else if (originalData != null) {
+            // Already loaded same data
+            return
+        }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true, errorMessage = null) }
@@ -47,7 +57,7 @@ class WorkDayFormViewModel @Inject constructor(
                 is QrResult.Success -> {
                     if (result.data != null) {
                         currentIntervention = result.data
-                        populateFormFromIntervention(result.data)
+                        populateFormFromIntervention(result.data, workDayIndex)
                     } else {
                         _state.update {
                             it.copy(
@@ -70,11 +80,19 @@ class WorkDayFormViewModel @Inject constructor(
     }
 
     /**
-     * Populate form fields from intervention work days
-     * For now, use first work day or create default
+     * Populate form fields from intervention work days.
+     * @param intervention The intervention data
+     * @param workDayIndex Index to edit (null = create new with defaults)
      */
-    private fun populateFormFromIntervention(intervention: TechnicalIntervention) {
-        val workDay = intervention.workDays.firstOrNull() ?: createDefaultWorkDay()
+    private fun populateFormFromIntervention(
+        intervention: TechnicalIntervention,
+        workDayIndex: Int?
+    ) {
+        val workDay = if (workDayIndex != null && workDayIndex < intervention.workDays.size) {
+            intervention.workDays[workDayIndex]
+        } else {
+            createDefaultWorkDay()
+        }
 
         // Store original data for dirty checking
         originalData = WorkDayOriginalData(
@@ -102,6 +120,8 @@ class WorkDayFormViewModel @Inject constructor(
         _state.update {
             it.copy(
                 isLoading = false,
+                isNewWorkDay = workDayIndex == null,
+
                 // Basic info
                 date = formatDateForDisplay(workDay.date),
                 remoteAssistance = workDay.remoteAssistance,
@@ -129,7 +149,7 @@ class WorkDayFormViewModel @Inject constructor(
                 transferToAirport = workDay.transferToAirport,
                 lodging = workDay.lodging,
 
-                isDirty = false, // Reset dirty flag after loading
+                isDirty = false,
                 errorMessage = null
             )
         }
@@ -329,9 +349,9 @@ class WorkDayFormViewModel @Inject constructor(
      * Check if current state differs from original data
      */
     private fun checkIfDirty(currentState: WorkDayFormState): Boolean {
-        val original = originalData ?: return false
+        val original = originalData ?: return currentState.isNewWorkDay
 
-        val isDirty = currentState.date != original.date ||
+        return currentState.date != original.date ||
                 currentState.remoteAssistance != original.remoteAssistance ||
                 currentState.technicianCount != original.technicianCount ||
                 currentState.technicianInitials != original.technicianInitials ||
@@ -350,13 +370,61 @@ class WorkDayFormViewModel @Inject constructor(
                 currentState.rentCar != original.rentCar ||
                 currentState.transferToAirport != original.transferToAirport ||
                 currentState.lodging != original.lodging
-
-        return isDirty
     }
 
     /**
-     * Auto-save when leaving tab (called by parent EditInterventionScreen)
-     * Returns success/failure for tab change decision
+     * Save and navigate back to list.
+     * Called when user presses back button in detail view.
+     */
+    fun saveAndNavigateBack(onComplete: () -> Unit) {
+        val currentState = _state.value
+        val intervention = currentIntervention
+
+        if (!currentState.isDirty) {
+            onComplete()
+            return
+        }
+
+        if (intervention == null) {
+            _state.update { it.copy(errorMessage = "Intervento non caricato") }
+            onComplete()
+            return
+        }
+
+        viewModelScope.launch {
+            _state.update { it.copy(isSaving = true, errorMessage = null) }
+
+            val result = saveCurrentStateInternal(currentState, intervention)
+
+            when (result) {
+                is QrResult.Success -> {
+                    _state.update {
+                        it.copy(
+                            isSaving = false,
+                            isDirty = false,
+                            isAutoSaved = true
+                        )
+                    }
+                    resetFormState()
+                    onComplete()
+                }
+                is QrResult.Error -> {
+                    _state.update {
+                        it.copy(
+                            isSaving = false,
+                            errorMessage = "Errore nel salvataggio: ${result.error}"
+                        )
+                    }
+                    // Still navigate back even on error
+                    onComplete()
+                }
+            }
+        }
+    }
+
+    /**
+     * Auto-save when leaving tab (called by parent EditInterventionScreen).
+     * Returns success/failure for tab change decision.
      */
     suspend fun autoSaveOnTabChange(): QrResult<Unit, QrError> {
         val currentState = _state.value
@@ -384,41 +452,16 @@ class WorkDayFormViewModel @Inject constructor(
             when (result) {
                 is QrResult.Success -> {
                     Timber.d("autoSaveOnTabChange: Save successful")
-
-                    // Update original data to current values
-                    originalData = WorkDayOriginalData(
-                        date = currentState.date,
-                        remoteAssistance = currentState.remoteAssistance,
-                        technicianCount = currentState.technicianCount,
-                        technicianInitials = currentState.technicianInitials,
-                        outboundTravelStart = currentState.outboundTravelStart,
-                        outboundTravelEnd = currentState.outboundTravelEnd,
-                        returnTravelStart = currentState.returnTravelStart,
-                        returnTravelEnd = currentState.returnTravelEnd,
-                        morningStart = currentState.morningStart,
-                        morningEnd = currentState.morningEnd,
-                        afternoonStart = currentState.afternoonStart,
-                        afternoonEnd = currentState.afternoonEnd,
-                        morningPocketMoney = currentState.morningPocketMoney,
-                        afternoonPocketMoney = currentState.afternoonPocketMoney,
-                        totalKilometers = currentState.totalKilometers,
-                        flight = currentState.flight,
-                        rentCar = currentState.rentCar,
-                        transferToAirport = currentState.transferToAirport,
-                        lodging = currentState.lodging
-                    )
-
+                    updateOriginalData(currentState)
                     _state.update {
                         it.copy(
                             isSaving = false,
-                            isDirty = false, // Clear dirty flag after successful save
+                            isDirty = false,
                             isAutoSaved = true
                         )
                     }
-
                     QrResult.Success(Unit)
                 }
-
                 is QrResult.Error -> {
                     Timber.e("autoSaveOnTabChange: Save failed - ${result.error}")
                     _state.update {
@@ -444,6 +487,33 @@ class WorkDayFormViewModel @Inject constructor(
     }
 
     /**
+     * Update original data after successful save
+     */
+    private fun updateOriginalData(currentState: WorkDayFormState) {
+        originalData = WorkDayOriginalData(
+            date = currentState.date,
+            remoteAssistance = currentState.remoteAssistance,
+            technicianCount = currentState.technicianCount,
+            technicianInitials = currentState.technicianInitials,
+            outboundTravelStart = currentState.outboundTravelStart,
+            outboundTravelEnd = currentState.outboundTravelEnd,
+            returnTravelStart = currentState.returnTravelStart,
+            returnTravelEnd = currentState.returnTravelEnd,
+            morningStart = currentState.morningStart,
+            morningEnd = currentState.morningEnd,
+            afternoonStart = currentState.afternoonStart,
+            afternoonEnd = currentState.afternoonEnd,
+            morningPocketMoney = currentState.morningPocketMoney,
+            afternoonPocketMoney = currentState.afternoonPocketMoney,
+            totalKilometers = currentState.totalKilometers,
+            flight = currentState.flight,
+            rentCar = currentState.rentCar,
+            transferToAirport = currentState.transferToAirport,
+            lodging = currentState.lodging
+        )
+    }
+
+    /**
      * Check if this tab has unsaved changes
      */
     fun hasUnsavedChanges(): Boolean {
@@ -451,41 +521,7 @@ class WorkDayFormViewModel @Inject constructor(
     }
 
     /**
-     * Save current form state to domain model
-     */
-    private fun saveCurrentState() {
-        val currentState = _state.value
-        val intervention = currentIntervention ?: return
-
-        viewModelScope.launch {
-            _state.update { it.copy(isSaving = true) }
-
-            val result = saveCurrentStateInternal(currentState, intervention)
-
-            when (result) {
-                is QrResult.Success -> {
-                    _state.update {
-                        it.copy(
-                            isSaving = false,
-                            isAutoSaved = true
-                        )
-                    }
-                }
-
-                is QrResult.Error -> {
-                    _state.update {
-                        it.copy(
-                            isSaving = false,
-                            errorMessage = "Errore nel salvataggio: ${result.error}"
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    /**
-     * Internal save method that can be called synchronously
+     * Internal save method that handles both new and existing work days.
      */
     private suspend fun saveCurrentStateInternal(
         currentState: WorkDayFormState,
@@ -521,12 +557,19 @@ class WorkDayFormViewModel @Inject constructor(
                 lodging = currentState.lodging
             )
 
-            // Update intervention with new work day (replace first or add new)
+            // Update intervention with new/updated work day
             val updatedWorkDays = intervention.workDays.toMutableList()
-            if (updatedWorkDays.isEmpty()) {
-                updatedWorkDays.add(workDay)
+
+            if (currentWorkDayIndex != null && currentWorkDayIndex!! < updatedWorkDays.size) {
+                // Update existing work day at index
+                updatedWorkDays[currentWorkDayIndex!!] = workDay
+                Timber.d("Updated existing work day at index $currentWorkDayIndex")
             } else {
-                updatedWorkDays[0] = workDay // Replace first work day
+                // Add new work day
+                updatedWorkDays.add(workDay)
+                // Update index to reflect the new position
+                currentWorkDayIndex = updatedWorkDays.size - 1
+                Timber.d("Added new work day at index $currentWorkDayIndex")
             }
 
             val updatedIntervention = intervention.copy(
@@ -538,7 +581,6 @@ class WorkDayFormViewModel @Inject constructor(
                     currentIntervention = updatedIntervention
                     QrResult.Success(updatedIntervention)
                 }
-
                 is QrResult.Error -> {
                     QrResult.Error(QrError.InterventionError.WorkDayError.UpdateError(result.error))
                 }
@@ -547,6 +589,14 @@ class WorkDayFormViewModel @Inject constructor(
             Timber.e(e, "Error saving work day state")
             QrResult.Error(QrError.InterventionError.WorkDayError.SaveError())
         }
+    }
+
+    /**
+     * Reset form state when leaving detail view
+     */
+    private fun resetFormState() {
+        currentWorkDayIndex = null
+        originalData = null
     }
 
     /**
@@ -574,10 +624,10 @@ class WorkDayFormViewModel @Inject constructor(
      */
     private fun formatDateForDisplay(instant: Instant): String {
         return try {
-            val localDate = instant.toString().substring(0, 10) // Extract date part
+            val localDate = instant.toString().substring(0, 10)
             val parts = localDate.split("-")
             if (parts.size == 3) {
-                "${parts[2]}/${parts[1]}/${parts[0]}" // dd/MM/yyyy
+                "${parts[2]}/${parts[1]}/${parts[0]}"
             } else {
                 ""
             }
@@ -600,7 +650,6 @@ class WorkDayFormViewModel @Inject constructor(
             val month = parts[1].toIntOrNull() ?: return null
             val year = parts[2].toIntOrNull() ?: return null
 
-            // Create ISO date string and parse
             val isoDate = String.format("%04d-%02d-%02d", year, month, day)
             Instant.parse("${isoDate}T00:00:00Z")
         } catch (e: Exception) {
@@ -617,6 +666,7 @@ data class WorkDayFormState(
     val isSaving: Boolean = false,
     val isAutoSaved: Boolean = false,
     val isDirty: Boolean = false,
+    val isNewWorkDay: Boolean = false,
 
     // Basic info
     val date: String = "",

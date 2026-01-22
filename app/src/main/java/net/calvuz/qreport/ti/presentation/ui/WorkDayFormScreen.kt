@@ -24,18 +24,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * - Travel hours (if not remote)
  * - Work hours (morning/afternoon)
  * - Expenses tracking
+ *
+ * @param interventionId The intervention ID
+ * @param workDayIndex Index of work day to edit (null = create new)
+ * @param viewModel The form ViewModel (injected or provided by parent)
  */
 @Composable
 fun WorkDayFormScreen(
     interventionId: String,
+    workDayIndex: Int? = null,
     modifier: Modifier = Modifier,
     viewModel: WorkDayFormViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
-
-    // Note: ViewModel is initialized by parent EditInterventionScreen to avoid double loading
-    // LaunchedEffect(interventionId) { viewModel.loadWorkDayData(interventionId) }
 
     Column(
         modifier = modifier
@@ -48,7 +50,7 @@ fun WorkDayFormScreen(
         // Dirty state indicator
         if (state.isDirty) {
             DirtyStateIndicator(
-                message = "Modifiche non salvate",
+                message = if (state.isNewWorkDay) "Nuova giornata - non salvata" else "Modifiche non salvate",
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -132,7 +134,7 @@ fun WorkDayFormScreen(
             onTransferToAirportChange = viewModel::updateTransferToAirport,
             lodging = state.lodging,
             onLodgingChange = viewModel::updateLodging,
-            remoteAssistance = state.remoteAssistance, // For conditional rendering
+            remoteAssistance = state.remoteAssistance,
             modifier = Modifier.fillMaxWidth()
         )
 

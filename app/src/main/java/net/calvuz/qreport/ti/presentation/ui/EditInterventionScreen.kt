@@ -22,7 +22,7 @@ import timber.log.Timber
 
 /**
  * Edit screen for TechnicalIntervention with tabbed interface
- * Tabs: General, Details, WorkDays, Signatures (future)
+ * Tabs: General, Details, WorkDays, Signatures
  */
 @Composable
 fun EditInterventionScreen(
@@ -36,19 +36,19 @@ fun EditInterventionScreen(
     // ViewModels for each tab (for auto-save coordination)
     val generalViewModel: GeneralFormViewModel = hiltViewModel()
     val detailsViewModel: DetailsFormViewModel = hiltViewModel()
-    val workDayViewModel: WorkDayFormViewModel = hiltViewModel()
+    val workDaysTabViewModel: WorkDaysTabViewModel = hiltViewModel()
     val signaturesViewModel: SignaturesFormViewModel = hiltViewModel()
 
     // Collect states from all ViewModels
     val generalState by generalViewModel.state.collectAsStateWithLifecycle()
     val detailsState by detailsViewModel.state.collectAsStateWithLifecycle()
-    val workDayState by workDayViewModel.state.collectAsStateWithLifecycle()
+    val workDaysTabState by workDaysTabViewModel.state.collectAsStateWithLifecycle()
     val signaturesState by signaturesViewModel.state.collectAsStateWithLifecycle()
 
     // Track dirty states from ViewModel states (not manual variables)
     val generalTabDirty = generalState.isDirty
     val detailsTabDirty = detailsState.isDirty
-    val workDayTabDirty = workDayState.isDirty
+    val workDayTabDirty = workDaysTabState.viewMode is WorkDaysViewMode.Detail
     val signaturesTabDirty = signaturesState.isDirty
 
     // Calculate overall dirty state
@@ -56,7 +56,7 @@ fun EditInterventionScreen(
 
     // Track if any tab is currently saving
     val isAnyTabSaving =
-        generalState.isSaving || detailsState.isSaving || workDayState.isSaving || signaturesState.isSaving
+        generalState.isSaving || detailsState.isSaving || workDaysTabState.isSaving || signaturesState.isSaving
 
     // Show exit confirmation dialog
     var showExitDialog by remember { mutableStateOf(false) }
@@ -76,7 +76,7 @@ fun EditInterventionScreen(
         // Initialize form ViewModels
         generalViewModel.loadInterventionGeneral(interventionId)
         detailsViewModel.loadInterventionDetails(interventionId)
-        workDayViewModel.loadWorkDayData(interventionId)
+        workDaysTabViewModel.loadWorkDays(interventionId)
         signaturesViewModel.loadSignaturesData(interventionId)
     }
 
@@ -114,7 +114,7 @@ fun EditInterventionScreen(
             isExitSaving = true
 
             try {
-                Timber.d("EditInterventionScreen: Saving current tab before exit")
+                Timber.d("Saving current tab before exit")
 
                 // Determine which tab is currently selected and save it
                 val saveResult = when (EditInterventionTab.entries[state.selectedTabIndex]) {
@@ -131,7 +131,7 @@ fun EditInterventionScreen(
                     }
 
                     EditInterventionTab.WORK_DAYS -> {
-                        if (workDayTabDirty) workDayViewModel.autoSaveOnTabChange() else QrResult.Success(
+                        if (workDayTabDirty) workDaysTabViewModel.autoSaveOnTabChange() else QrResult.Success(
                             Unit
                         )
                     }
@@ -145,12 +145,12 @@ fun EditInterventionScreen(
 
                 when (saveResult) {
                     is QrResult.Success -> {
-                        Timber.d("EditInterventionScreen: Current tab saved successfully, navigating back")
+                        Timber.d("Current tab saved successfully, navigating back")
                         onNavigateBack()
                     }
 
                     is QrResult.Error -> {
-                        Timber.e("EditInterventionScreen: Save failed before exit: ${saveResult.error}")
+                        Timber.e("Save failed before exit: ${saveResult.error}")
                         // Show error but allow exit anyway (user can choose)
                         onNavigateBack()
                     }
@@ -164,7 +164,7 @@ fun EditInterventionScreen(
 
     val handleBackPress = {
         if (isAnyTabDirty) {
-            showExitDialog = true  // Dialog "Salva ed esci" / "Esci senza salvare"
+            showExitDialog = true
         } else {
             onNavigateBack()
         }
@@ -254,7 +254,8 @@ fun EditInterventionScreen(
                                     newTabIndex = index,
                                     currentTabIndex = state.selectedTabIndex,
                                     detailsViewModel = detailsViewModel,
-                                    workDayViewModel = workDayViewModel,
+//                                    workDayViewModel = workDayViewModel,
+                                    workDaysTabViewModel = workDaysTabViewModel,
                                     signaturesViewModel = signaturesViewModel,
                                     parentViewModel = viewModel,
                                     coroutineScope = coroutineScope,
@@ -316,8 +317,9 @@ fun EditInterventionScreen(
                         }
 
                         EditInterventionTab.WORK_DAYS -> {
-                            WorkDayFormScreen(
+                            WorkDaysTabContent(
                                 interventionId = interventionId,
+                                tabViewModel = workDaysTabViewModel,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
@@ -387,7 +389,8 @@ private fun handleCoordinatedTabSwitch(
     newTabIndex: Int,
     currentTabIndex: Int,
     detailsViewModel: DetailsFormViewModel,
-    workDayViewModel: WorkDayFormViewModel,
+//    workDayViewModel: WorkDayFormViewModel,
+    workDaysTabViewModel: WorkDaysTabViewModel,
     signaturesViewModel: SignaturesFormViewModel,
     parentViewModel: EditInterventionViewModel,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
@@ -418,9 +421,14 @@ private fun handleCoordinatedTabSwitch(
                     detailsViewModel.autoSaveOnTabChange()
                 }
 
+//                EditInterventionTab.WORK_DAYS -> {
+//                    Timber.d("handleCoordinatedTabSwitch: Auto-saving WorkDays tab")
+//                    workDayViewModel.autoSaveOnTabChange()
+//                }
+
                 EditInterventionTab.WORK_DAYS -> {
                     Timber.d("handleCoordinatedTabSwitch: Auto-saving WorkDays tab")
-                    workDayViewModel.autoSaveOnTabChange()
+                    workDaysTabViewModel.autoSaveOnTabChange()
                 }
 
                 EditInterventionTab.SIGNATURES -> {

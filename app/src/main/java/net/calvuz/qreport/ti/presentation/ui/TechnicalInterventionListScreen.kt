@@ -108,15 +108,16 @@ fun TechnicalInterventionListScreen(
                 viewModel.setArchivedInterventions(interventions)
                 selectionManager.clearSelection()
             },
-//            onExport = { interventions ->
-//                viewModel.exportInterventions(interventions)
-//                selectionManager.clearSelection()
-//            },
             onSelectAll = {
                 selectionManager.selectAll(uiState.filteredInterventions.map { it.intervention })
+            },
+            onPerformDelete = { interventions ->
+                viewModel.deleteInterventions(interventions)
+                selectionManager.clearSelection()
             }
         )
     }
+
     // Define actions
     val primaryActions = listOf(
         SelectionAction.Edit,
@@ -126,10 +127,7 @@ fun TechnicalInterventionListScreen(
     val secondaryActions = listOf(
         SelectionAction.SelectAll,
         SelectionAction.SetActive,
-//        SelectionAction.SetInactive,
-//        SelectionAction.Export,
         SelectionAction.Archive,
-//        SelectionAction.MarkCompleted
     )
 
     // Pull to refresh state
@@ -202,21 +200,13 @@ fun TechnicalInterventionListScreen(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                                if (!selectionState.isInSelectionMode && uiState.debugMode) {
-                                    Text(
-                                        text = stringResource(R.string.debug_mode_active),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        maxLines = 1
-                                    )
-                                }
                             }
                         },
                         navigationIcon = {
                             IconButton(
                                 onClick = {
                                     if (selectionState.isInSelectionMode) {
-                                        viewModel.selectionManager.clearSelection()
+                                        selectionManager.clearSelection()
                                     } else {
                                         onNavigateBack()
                                     }
@@ -229,7 +219,7 @@ fun TechnicalInterventionListScreen(
                                         Icons.Default.ArrowBackIosNew
                                     },
                                     contentDescription = if (selectionState.isInSelectionMode) {
-                                        stringResource(R.string.clear_selection)
+                                        stringResource(R.string.action_exit_selection)
                                     } else {
                                         stringResource(R.string.action_back)
                                     }
@@ -238,13 +228,14 @@ fun TechnicalInterventionListScreen(
                         },
                         actions = {
                             if (!selectionState.isInSelectionMode) {
+                                var showFilterMenu by remember { mutableStateOf(false) }
+                                var showSortMenu by remember { mutableStateOf(false) }
+
                                 // Debug mode toggle
-                                IconButton(
-                                    onClick = { viewModel.toggleDebugMode() }
-                                ) {
+                                IconButton(onClick = { viewModel.toggleDebugMode() }) {
                                     Icon(
                                         imageVector = Icons.Default.BugReport,
-                                        contentDescription = stringResource(R.string.debug_mode_toggle),
+                                        contentDescription = "Toggle debug mode",
                                         tint = if (uiState.debugMode) {
                                             MaterialTheme.colorScheme.primary
                                         } else {
@@ -252,10 +243,6 @@ fun TechnicalInterventionListScreen(
                                         }
                                     )
                                 }
-
-                                // Normal mode - show filter and sort
-                                var showFilterMenu by remember { mutableStateOf(false) }
-                                var showSortMenu by remember { mutableStateOf(false) }
 
                                 // Sort button
                                 IconButton(onClick = { showSortMenu = true }) {
@@ -273,20 +260,20 @@ fun TechnicalInterventionListScreen(
                                     )
                                 }
 
-                                // Filter menu
-                                FilterMenu(
-                                    expanded = showFilterMenu,
-                                    selectedFilter = uiState.selectedFilter,
-                                    onFilterSelected = viewModel::updateFilter,
-                                    onDismiss = { showFilterMenu = false }
-                                )
-
                                 // Sort menu
                                 SortMenu(
                                     expanded = showSortMenu,
                                     selectedSort = uiState.selectedSortOrder,
                                     onSortSelected = viewModel::updateSortOrder,
                                     onDismiss = { showSortMenu = false }
+                                )
+
+                                // Filter menu
+                                FilterMenu(
+                                    expanded = showFilterMenu,
+                                    selectedFilter = uiState.selectedFilter,
+                                    onFilterSelected = viewModel::updateFilter,
+                                    onDismiss = { showFilterMenu = false }
                                 )
                             }
                         }
@@ -387,8 +374,7 @@ fun TechnicalInterventionListScreen(
             selectedItems = selectionState.selectedItems,
             actionHandler = actionHandler,
             onConfirm = {
-                actionHandler.onActionClick(SelectionAction.Delete, selectionState.selectedItems)
-                selectionManager.clearSelection()
+                actionHandler.performDelete(selectionState.selectedItems)
             },
             onDismiss = {
                 showDeleteDialog = false

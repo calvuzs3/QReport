@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,7 +14,6 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.AssignmentTurnedIn
 import androidx.compose.material3.DropdownMenu
@@ -27,7 +27,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,19 +48,21 @@ import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard.QrListItemCardVariant
-import net.calvuz.qreport.app.app.presentation.components.selection.BatchAction
-import net.calvuz.qreport.app.app.presentation.components.selection.BatchActionHandler
-import net.calvuz.qreport.app.app.presentation.components.selection.BatchActionSets
-import net.calvuz.qreport.app.app.presentation.components.selection.BatchDeleteConfirmationDialog
-import net.calvuz.qreport.app.app.presentation.components.selection.FloatingSelectionIndicator
-import net.calvuz.qreport.app.app.presentation.components.selection.SelectableListItem
-import net.calvuz.qreport.app.app.presentation.components.selection.SelectionBottomSheet
-import net.calvuz.qreport.app.app.presentation.components.selection.SelectionManager
-import net.calvuz.qreport.app.app.presentation.components.selection.rememberSelectionManager
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.DeleteConfirmationDialog
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectableItem
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionTopBar
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.presentation.ui.components.ContactCard
+import androidx.compose.material.icons.filled.Star
 import timber.log.Timber
 
+// Contact-specific custom action ID
+private const val ACTION_SET_PRIMARY = "set_primary"
 
 @Composable
 fun ContactFilter.getDisplayName(): UiText {
@@ -83,18 +84,17 @@ fun ContactSortOrder.getDisplayName(): UiText {
 }
 
 /**
- * Screen per la lista contatti di un cliente
+ * Screen for client contact list
  *
  * Features:
- * - Lista contatti con informazioni principali
- * - Search per nome, ruolo, email, telefono
- * - Operazioni: aggiungi, modifica, elimina, imposta primario
- * - Multi-selection e bulk delete
+ * - Contact list with main info
+ * - Search by name, role, email, phone
+ * - Operations: add, edit, delete, set primary
+ * - Multi-selection with Gmail-style TopBar
  * - Pull to refresh
- * - Stati loading/error/empty
- * - Indicazione referente primario
+ * - Loading/error/empty states
+ * - Primary contact indicator
  */
-@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactListScreen(
@@ -109,140 +109,163 @@ fun ContactListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Selection manager for multi-select functionality
-    val selectionManager = rememberSelectionManager<String>()
+    // Simple selection manager
+    val selectionManager = rememberSimpleSelectionManager<Contact>()
     val selectionState by selectionManager.selectionState.collectAsState()
 
-    // Bottom sheet state
-    val bottomSheetState = rememberModalBottomSheetState()
-    var showBottomSheet by remember { mutableStateOf(false) }
-
-    // Batch delete dialog state
-    var showBatchDeleteDialog by remember { mutableStateOf(false) }
+    // Delete confirmation dialog state
+    var showDeleteDialog by remember { mutableStateOf(false) }
 
     // Load contacts when screen opens
     LaunchedEffect(clientId) {
         viewModel.initializeForClient(clientId)
     }
 
-    // Clear selection when navigating away or data changes significantly
+    // Clear selection when loading
     LaunchedEffect(uiState.isLoading) {
         if (uiState.isLoading) {
             selectionManager.clearSelection()
         }
     }
 
-    // Close bottom sheet when selection is cleared
-    LaunchedEffect(selectionState.isInSelectionMode) {
-        if (!selectionState.isInSelectionMode) {
-            showBottomSheet = false
+    // Action handler for contacts
+    val actionHandler = remember(uiState.filteredContacts) {
+        ContactActionHandler(
+            onEdit = { contacts ->
+                if (contacts.size == 1) {
+                    onNavigateToEditContact(contacts.first().id)
+                    selectionManager.clearSelection()
+                }
+            },
+            onDelete = {
+                showDeleteDialog = true
+            },
+            onSetPrimary = { contacts ->
+                if (contacts.size == 1) {
+                    viewModel.setPrimaryContact(contacts.first().id)
+                    selectionManager.clearSelection()
+                }
+            },
+            onSelectAll = {
+                selectionManager.selectAll(uiState.filteredContacts.map { it.contact })
+            },
+            onPerformDelete = { contacts ->
+                viewModel.bulkDeleteContacts(contacts.map { it.id })
+                selectionManager.clearSelection()
+            }
+        )
+    }
+
+    // Define actions
+    val setPrimaryAction = SelectionAction.Custom(
+        icon = Icons.Default.Star,
+        label = stringResource(R.string.action_set_as_primary),
+        isDestructive = false,
+        actionId = ACTION_SET_PRIMARY
+    )
+
+    val primaryActions = listOf(
+        SelectionAction.Edit,
+        setPrimaryAction,
+        SelectionAction.Delete
+    )
+
+    val secondaryActions = listOf(
+        SelectionAction.SelectAll
+    )
+
+    // Pull to refresh state
+    val pullToRefreshState = rememberPullToRefreshState()
+
+    // Handle pull to refresh
+    LaunchedEffect(pullToRefreshState.isRefreshing) {
+        if (pullToRefreshState.isRefreshing) {
+            viewModel.refresh()
         }
     }
 
-    // ✅ CREATE BATCH ACTION HANDLER
-    val batchActionHandler = createContactBatchActionHandler(
-        viewModel = viewModel,
-        onNavigateToEditContact = onNavigateToEditContact,
-        onShowBatchDeleteDialog = { showBatchDeleteDialog = true },
-        contactsWithStats = uiState.filteredContacts,
-        selectionManager = selectionManager
-    )
+    LaunchedEffect(uiState.isRefreshing) {
+        if (!uiState.isRefreshing) {
+            pullToRefreshState.endRefresh()
+        }
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
-        Column(
-            modifier = modifier.fillMaxSize()
-        ) {
-            // Top App Bar
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = if (selectionState.isInSelectionMode) {
-                                stringResource(
-                                    R.string.selection_summary,
-                                    selectionState.selectedCount
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            // Selection-aware TopBar
+            SelectionTopBar(
+                normalTopBar = {
+                    TopAppBar(
+                        title = {
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.contact_screen_list_title),
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
-                            } else {
-                                stringResource(R.string.contact_screen_list_title)
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (!selectionState.isInSelectionMode) {
-                            Text(
-                                text = clientName,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    IconButton(
-                        onClick = {
-                            if (selectionState.isInSelectionMode) {
-                                selectionManager.clearSelection()
-                            } else {
-                                onNavigateBack()
+                                Text(
+                                    text = clientName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (selectionState.isInSelectionMode) {
-                                Icons.Default.Close
-                            } else {
-                                Icons.Default.ArrowBackIosNew
-                            },
-                            contentDescription = if (selectionState.isInSelectionMode) {
-                                stringResource(R.string.clear_selection)
-                            } else {
-                                stringResource(R.string.action_back)
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = onNavigateBack) {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowBackIosNew,
+                                    contentDescription = stringResource(R.string.action_back)
+                                )
                             }
-                        )
-                    }
+                        },
+                        actions = {
+                            var showFilterMenu by remember { mutableStateOf(false) }
+                            var showSortMenu by remember { mutableStateOf(false) }
+
+                            // Sort button
+                            IconButton(onClick = { showSortMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Default.Sort,
+                                    contentDescription = stringResource(R.string.label_ordering)
+                                )
+                            }
+
+                            // Filter button
+                            IconButton(onClick = { showFilterMenu = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.FilterList,
+                                    contentDescription = stringResource(R.string.label_filtering)
+                                )
+                            }
+
+                            // Sort menu
+                            ContactSortMenu(
+                                expanded = showSortMenu,
+                                selectedSort = uiState.selectedSortOrder,
+                                onSortSelected = viewModel::updateSortOrder,
+                                onDismiss = { showSortMenu = false }
+                            )
+
+                            // Filter menu
+                            ContactFilterMenu(
+                                expanded = showFilterMenu,
+                                selectedFilter = uiState.selectedFilter,
+                                onFilterSelected = viewModel::updateFilter,
+                                onDismiss = { showFilterMenu = false }
+                            )
+                        }
+                    )
                 },
-                actions = {
-                    if (!selectionState.isInSelectionMode) {
-                        var showFilterMenu by remember { mutableStateOf(false) }
-                        var showSortMenu by remember { mutableStateOf(false) }
-
-                        // Sort button
-                        IconButton(onClick = { showSortMenu = true }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Default.Sort,
-                                contentDescription = stringResource(R.string.label_ordering)
-                            )
-                        }
-
-                        // Filter button
-                        IconButton(onClick = { showFilterMenu = true }) {
-                            Icon(
-                                imageVector = Icons.Default.FilterList,
-                                contentDescription = stringResource(R.string.label_filtering)
-                            )
-                        }
-
-                        // Sort menu
-                        ContactSortMenu(
-                            expanded = showSortMenu,
-                            selectedSort = uiState.selectedSortOrder,
-                            onSortSelected = viewModel::updateSortOrder,
-                            onDismiss = { showSortMenu = false }
-                        )
-
-                        // Filter menu
-                        ContactFilterMenu(
-                            expanded = showFilterMenu,
-                            selectedFilter = uiState.selectedFilter,
-                            onFilterSelected = viewModel::updateFilter,
-                            onDismiss = { showFilterMenu = false }
-                        )
-                    }
-                }
+                selectionManager = selectionManager,
+                primaryActions = primaryActions,
+                secondaryActions = secondaryActions,
+                actionHandler = actionHandler
             )
 
+            // Search bar and filters (hidden in selection mode)
             if (!selectionState.isInSelectionMode) {
                 // Search bar
                 QReportSearchBar(
@@ -264,29 +287,11 @@ fun ContactListScreen(
             }
 
             // Content with Pull to Refresh
-            val pullToRefreshState = rememberPullToRefreshState()
-
-            // Reset refresh state when not refreshing
-            LaunchedEffect(uiState.isRefreshing) {
-                if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
-                    pullToRefreshState.endRefresh()
-                }
-            }
-
-            // Handle pull to refresh
-            LaunchedEffect(pullToRefreshState.isRefreshing) {
-                if (pullToRefreshState.isRefreshing) {
-                    viewModel.refresh()
-                }
-            }
-
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .nestedScroll(pullToRefreshState.nestedScrollConnection)
             ) {
-                val currentError = uiState.error
-
                 // Content based on state
                 when {
                     uiState.isLoading -> {
@@ -316,14 +321,13 @@ fun ContactListScreen(
                             iconImageVector = Icons.Outlined.AssignmentTurnedIn,
                             iconContentDescription = title,
                             iconActionImageVector = Icons.Default.Add,
-                            iconActionContentDescription = stringResource(R.string.contacts_list_action_add),  //contact_screen_list_empty_action_add),
-                            textAction = stringResource(R.string.contacts_list_action_add), //contact_screen_list_empty_action_add),
+                            iconActionContentDescription = stringResource(R.string.contacts_list_action_add),
+                            textAction = stringResource(R.string.contacts_list_action_add),
                             onAction = { onNavigateToCreateContact(clientId) }
                         )
                     }
 
                     else -> {
-                        // ✅ CONTACTS LIST WITH SELECTION
                         ContactListWithSelection(
                             contactsWithStats = uiState.filteredContacts,
                             selectionManager = selectionManager,
@@ -332,7 +336,7 @@ fun ContactListScreen(
                             onDeleteContact = viewModel::deleteContact,
                             onSetPrimaryContact = viewModel::setPrimaryContact,
                             isSettingPrimary = uiState.isSettingPrimary,
-                            isDeletingContact = uiState.isDeletingContact,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
@@ -345,7 +349,7 @@ fun ContactListScreen(
                     )
                 }
 
-                // Add contact button (only when not in selection mode)
+                // FAB (hidden in selection mode)
                 if (!selectionState.isInSelectionMode && !uiState.isLoading && uiState.error == null) {
                     FloatingActionButton(
                         onClick = { onNavigateToCreateContact(clientId) },
@@ -362,61 +366,39 @@ fun ContactListScreen(
             }
         }
 
-        // Floating selection indicator (appears above the list, doesn't cover it)
-        FloatingSelectionIndicator(
-            selectionState = selectionState,
-            onOpenBottomSheet = {
-                showBottomSheet = true
-            },
-            onClearSelection = {
-                selectionManager.clearSelection()
-            },
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
-
-
-        // ✅ BOTTOM SHEET FOR BATCH ACTIONS
-        if (showBottomSheet) {
-            SelectionBottomSheet(
-                selectionState = selectionState,
-                availableActions = BatchActionSets.contactActions,
-                batchActionHandler = batchActionHandler,
-                onDismiss = { showBottomSheet = false },
-                sheetState = bottomSheetState,
-            )
-        }
-
-        // ✅ BATCH DELETE CONFIRMATION DIALOG
-        BatchDeleteConfirmationDialog(
-            isVisible = showBatchDeleteDialog,
+        // Delete confirmation dialog
+        DeleteConfirmationDialog(
+            isVisible = showDeleteDialog,
             selectedItems = selectionState.selectedItems,
-            batchActionHandler = batchActionHandler,
+            actionHandler = actionHandler,
             onConfirm = {
-                viewModel.bulkDeleteContacts(selectionState.selectedItems.toList())
-                selectionManager.clearSelection()
-                showBatchDeleteDialog = false
+                actionHandler.performDelete(selectionState.selectedItems)
             },
-            onDismiss = { showBatchDeleteDialog = false }
+            onDismiss = {
+                showDeleteDialog = false
+            }
         )
     }
 }
 
+/**
+ * Contact list with selection support
+ */
 @Composable
 private fun ContactListWithSelection(
     contactsWithStats: List<ContactWithStats>,
-    selectionManager: SelectionManager<String>,
+    selectionManager: SimpleSelectionManager<Contact>,
     onNavigateToDetail: (String) -> Unit,
     onNavigateToEdit: (String) -> Unit,
     onDeleteContact: (String) -> Unit,
     onSetPrimaryContact: (String) -> Unit,
     isSettingPrimary: String?,
-    isDeletingContact: String?,
     modifier: Modifier = Modifier
 ) {
     val selectionState by selectionManager.selectionState.collectAsState()
 
     LazyColumn(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -424,38 +406,29 @@ private fun ContactListWithSelection(
             items = contactsWithStats,
             key = { it.contact.id }
         ) { contactWithStats ->
-            if (selectionState.isInSelectionMode) {
-                // ✅ SELECTION MODE: Use SelectableListItem
-                SelectableListItem(
-                    item = contactWithStats.contact.id,
-                    selectionManager = selectionManager,
-                    onNavigateToItem = { onNavigateToDetail(it) }
-                ) { contactId ->
-                    // Find the contact data
-                    val contact =
-                        contactsWithStats.find { it.contact.id == contactId }?.contact
-                    if (contact != null) {
-                        ContactCard(
-                            contact = contact,
-                            onClick = {}, // Handled by SelectableListItem
-                            onSetPrimary = null,  // Disabled in selection mode
-                            onEdit = null,        // Disabled in selection mode
-                            onDelete = null,      // Disabled in selection mode
-                            variant = QrListItemCardVariant.FULL,
-                            isSettingPrimary = false  // ✅ FIXED: No TODO, disabled in selection mode
-                        )
-                    }
+            SelectableItem(
+                item = contactWithStats.contact,
+                selectionManager = selectionManager,
+                onNormalClick = { contact ->
+                    onNavigateToDetail(contact.id)
                 }
-            } else {
-                // ✅ NORMAL MODE: Full functionality
+            ) { isSelected ->
                 ContactCard(
+                    modifier = Modifier.fillMaxWidth(),
                     contact = contactWithStats.contact,
-                    onClick = { onNavigateToDetail(contactWithStats.contact.id) },
-                    onEdit = { onNavigateToEdit(contactWithStats.contact.id) },
-                    onDelete = { onDeleteContact(contactWithStats.contact.id) },
-                    onSetPrimary = { onSetPrimaryContact(contactWithStats.contact.id) },
+                    onClick = { },
+                    showActions = !selectionState.isInSelectionMode,
+                    onEdit = if (!selectionState.isInSelectionMode) {
+                        { onNavigateToEdit(contactWithStats.contact.id) }
+                    } else null,
+                    onDelete = if (!selectionState.isInSelectionMode) {
+                        { onDeleteContact(contactWithStats.contact.id) }
+                    } else null,
+                    onSetPrimary = if (!selectionState.isInSelectionMode) {
+                        { onSetPrimaryContact(contactWithStats.contact.id) }
+                    } else null,
                     isSettingPrimary = isSettingPrimary == contactWithStats.contact.id,
-//                    isDeletingContact = isDeletingContact == contactWithStats.contact.id,
+                    isSelected = isSelected,
                     variant = QrListItemCardVariant.FULL
                 )
             }
@@ -463,138 +436,69 @@ private fun ContactListWithSelection(
     }
 }
 
-//        // ✅ BULK DELETE PROGRESS INDICATOR
-//        if (uiState.isBulkDeleting) {
-//            Card(
-//                modifier = Modifier
-//                    .align(Alignment.Center)
-//                    .padding(32.dp),
-//                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-//            ) {
-//                Column(
-//                    modifier = Modifier.padding(24.dp),
-//                    horizontalAlignment = Alignment.CenterHorizontally
-//                ) {
-//                    CircularProgressIndicator()
-//                    Spacer(modifier = Modifier.height(16.dp))
-//                    Text(
-//                        text = stringResource(
-//                            R.string.contacts_list_bulk_delete_progress,
-//                            uiState.bulkDeleteProgress,
-//                            uiState.bulkDeleteTotal
-//                        ),
-//                        style = MaterialTheme.typography.bodyMedium
-//                    )
-//                }
-//            }
-//        }
-
-
-
 /**
- * ✅ CORRECTED: Creates batch action handler for CONTACTS (not contracts)
+ * Contact specific action handler
  */
-@Composable
-private fun createContactBatchActionHandler(
-    viewModel: ContactListViewModel,
-    onNavigateToEditContact: (String) -> Unit,
-    onShowBatchDeleteDialog: () -> Unit,
-    contactsWithStats: List<ContactWithStats>,
-    selectionManager: SelectionManager<String>
-): BatchActionHandler<String> {
-    return remember {
-        object : BatchActionHandler<String> {
-            override fun onBatchAction(action: BatchAction, selectedItems: Set<String>) {
-                Timber.d("🔥 Batch action: $action for ${selectedItems.size} contacts")  // ✅ Fixed comment
+class ContactActionHandler(
+    private val onEdit: (Set<Contact>) -> Unit,
+    private val onDelete: () -> Unit,
+    private val onSetPrimary: (Set<Contact>) -> Unit,
+    private val onSelectAll: () -> Unit,
+    private val onPerformDelete: (Set<Contact>) -> Unit
+) : SimpleSelectionActionHandler<Contact> {
 
-                when (action) {
-                    BatchAction.SelectAll -> {
-                        val allContactIds =
-                            contactsWithStats.map { it.contact.id }  // ✅ Fixed comment
-                        selectionManager.selectAll(allContactIds)
-                    }
-
-                    BatchAction.Edit -> {
-                        // ✅ ONLY SINGLE EDIT ALLOWED
-                        if (selectedItems.size == 1) {
-                            onNavigateToEditContact(selectedItems.first())
-                            selectionManager.clearSelection()
-                        } else {
-                            Timber.w("Edit action requires exactly one contact, got ${selectedItems.size}")
-                        }
-                    }
-
-                    BatchAction.Delete -> {
-                        onShowBatchDeleteDialog()
-                    }
-
-//                    BatchAction.ContactBatchAction.SetPrimary -> {
-//                        // ✅ ONLY SINGLE SET PRIMARY ALLOWED
-//                        if (selectedItems.size == 1) {
-//                            viewModel.setPrimaryContact(selectedItems.first())
-//                            selectionManager.clearSelection()
-//                        } else {
-//                            Timber.w("Set primary action requires exactly one contact, got ${selectedItems.size}")
-//                        }
-//                    }
-
-                    BatchAction.Export -> {
-                        // TODO: Implement contact export
-                        Timber.d("Batch export for ${selectedItems.size} contacts")  // ✅ Fixed comment
-                        selectionManager.clearSelection()
-                    }
-
-                    else -> {
-                        Timber.w("Unsupported batch action: $action")
-                    }
+    override fun onActionClick(action: SelectionAction, selectedItems: Set<Contact>) {
+        when (action) {
+            SelectionAction.Edit -> onEdit(selectedItems)
+            SelectionAction.Delete -> onDelete()
+            SelectionAction.SelectAll -> onSelectAll()
+            is SelectionAction.Custom -> {
+                when (action.actionId) {
+                    ACTION_SET_PRIMARY -> onSetPrimary(selectedItems)
+                    else -> Timber.d("Custom action: ${action.actionId}")
                 }
             }
-
-            override fun isBatchActionAvailable(
-                action: BatchAction,
-                selectedItems: Set<String>
-            ): Boolean {
-                return when (action) {
-//                    // ✅ SET PRIMARY: Only available for single selection and non-primary contacts
-//                    BatchAction.ContactBatchAction.SetPrimary -> {
-//                        selectedItems.size == 1 && selectedItems.all { contactId ->
-//                            val contact =
-//                                contactsWithStats.find { it.contact.id == contactId }?.contact
-//                            contact != null && !contact.isPrimary  // Only non-primary contacts can be set as primary
-//                        }
-//                    }
-
-                    // ✅ EDIT: Only available for single selection
-                    BatchAction.Edit -> {
-                        selectedItems.size == 1
-                    }
-
-                    // ✅ SELECT ALL: Available if not all items are selected
-                    BatchAction.SelectAll -> {
-                        selectedItems.size < contactsWithStats.size
-                    }
-
-                    // ✅ DELETE: Available for any selection
-                    BatchAction.Delete -> {
-                        selectedItems.isNotEmpty()
-                    }
-
-                    // ✅ EXPORT: Available for any selection
-                    BatchAction.Export -> {
-                        selectedItems.isNotEmpty()
-                    }
-
-                    else -> false
-                }
-            }
-
-            override fun getBatchDeleteConfirmationMessage(selectedItems: Set<String>): UiText {
-                return UiText.StringResources(  // ✅ Fixed: contacts instead of contracts
-                    R.string.contacts_list_bulk_delete_confirmation,
-                    selectedItems.size
-                )
+            else -> {
+                Timber.w("Unhandled action: $action")
             }
         }
+    }
+
+    override fun isActionEnabled(action: SelectionAction, selectedItems: Set<Contact>): Boolean {
+        return when (action) {
+            // Edit: only single selection
+            SelectionAction.Edit -> selectedItems.size == 1
+
+            // Delete: any selection
+            SelectionAction.Delete -> selectedItems.isNotEmpty()
+
+            // SelectAll: always available
+            SelectionAction.SelectAll -> true
+
+            // Custom actions
+            is SelectionAction.Custom -> {
+                when (action.actionId) {
+                    // SetPrimary: only single selection and contact must not be primary
+                    ACTION_SET_PRIMARY -> {
+                        selectedItems.size == 1 && selectedItems.all { !it.isPrimary && it.isActive }
+                    }
+                    else -> true
+                }
+            }
+
+            else -> false
+        }
+    }
+
+    override fun getDeleteConfirmationMessage(selectedItems: Set<Contact>): String {
+        return when (selectedItems.size) {
+            1 -> "Eliminare il contatto ${selectedItems.first().fullName}?"
+            else -> "Eliminare ${selectedItems.size} contatti?"
+        }
+    }
+
+    fun performDelete(selectedItems: Set<Contact>) {
+        onPerformDelete(selectedItems)
     }
 }
 

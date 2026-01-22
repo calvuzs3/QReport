@@ -635,16 +635,6 @@ private fun NavigationActionsSection(
             onClick = onNavigateToTechnicalInterventions,
             isHighlighted = false
         )}
-
-        // Tecnical Intervention Management
-        item{NavigationActionCard(
-//            modifier = Modifier.weight(1f),
-            title = "Interventi",
-            description = "Interventi tecnici",
-            icon = Icons.Default.Workspaces,
-            onClick = onNavigateToTechnicalInterventions,
-            isHighlighted = false
-        )}
     }
 }
 

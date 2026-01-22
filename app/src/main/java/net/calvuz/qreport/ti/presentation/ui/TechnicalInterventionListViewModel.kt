@@ -19,13 +19,13 @@ import net.calvuz.qreport.ti.domain.usecase.GetAllTechnicalInterventionsUseCase
 import net.calvuz.qreport.ti.domain.usecase.UpdateTechnicalInterventionStatusUseCase
 import net.calvuz.qreport.ti.domain.model.InterventionStatus
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
-import net.calvuz.qreport.app.app.presentation.components.selection.SelectionManager
 import timber.log.Timber
 import javax.inject.Inject
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
 
 /** TechnicalInterventionListScreen UiState */
 data class TechnicalInterventionListUiState(
@@ -73,7 +73,7 @@ class TechnicalInterventionListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TechnicalInterventionListUiState())
     val uiState: StateFlow<TechnicalInterventionListUiState> = _uiState.asStateFlow()
 
-    val selectionManager = SelectionManager<TechnicalIntervention>()
+    val selectionManager = SimpleSelectionManager<TechnicalIntervention>()
 
     // ============================================================
     // PUBLIC METHODS
@@ -179,28 +179,30 @@ class TechnicalInterventionListViewModel @Inject constructor(
                     InterventionFilter.DRAFT -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
                         InterventionStatus.DRAFT
                     )
-
                     InterventionFilter.IN_PROGRESS -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
                         InterventionStatus.IN_PROGRESS
                     )
-
                     InterventionFilter.PENDING_REVIEW -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
                         InterventionStatus.PENDING_REVIEW
                     )
-
                     InterventionFilter.ALL -> getAllTechnicalInterventionsUseCase()
                 }
 
-                useCase.collect { result ->
+                useCase.catch { exception ->
+                    if (exception is CancellationException) throw exception
+                    Timber.e(exception, "Error refreshing interventions")
+                    if (currentCoroutineContext().isActive) {
+                        _uiState.value = _uiState.value.copy(
+                            isRefreshing = false,
+                            error = UiText.StringResource(R.string.err_interventions_list_refresh_failed)
+                        )
+                    }
+                }.collect { result ->
+                    if (!currentCoroutineContext().isActive) return@collect
+
                     when (result) {
                         is QrResult.Success -> {
                             val interventions = result.data
-
-                            if (!currentCoroutineContext().isActive) {
-                                Timber.d("Skipping refresh processing - job cancelled")
-                                return@collect
-                            }
-
                             val interventionsWithStats = enrichWithStatistics(interventions)
 
                             if (currentCoroutineContext().isActive) {
@@ -219,152 +221,31 @@ class TechnicalInterventionListViewModel @Inject constructor(
                                     error = null
                                 )
 
-                                Timber.d("Interventions refresh completed successfully")
-                                return@collect // Exit after first success
+                                Timber.d("Refresh completed: ${interventions.size} interventions")
                             }
                         }
 
                         is QrResult.Error -> {
                             if (currentCoroutineContext().isActive) {
-                                Timber.e("Failed to refresh interventions: ${result.error}")
                                 _uiState.value = _uiState.value.copy(
                                     isRefreshing = false,
                                     error = UiText.StringResource(R.string.err_interventions_list_refresh_failed)
                                 )
-                                return@collect
                             }
                         }
                     }
                 }
             } catch (_: CancellationException) {
                 Timber.d("Refresh cancelled")
-                if (currentCoroutineContext().isActive) {
-                    _uiState.value = _uiState.value.copy(isRefreshing = false)
-                }
             } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to refresh interventions")
-                    _uiState.value = _uiState.value.copy(
-                        isRefreshing = false,
-                        error = UiText.StringResource(R.string.err_interventions_list_refresh_unexpected)
-                    )
-                }
+                Timber.e(e, "Exception during refresh")
+                _uiState.value = _uiState.value.copy(
+                    isRefreshing = false,
+                    error = UiText.StringResource(R.string.err_interventions_list_unexpected)
+                )
             }
         }
     }
-
-    fun deleteIntervention(interventionId: String) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(
-                    isDeleting = interventionId,
-                    error = null
-                )
-
-                val result = deleteTechnicalInterventionUseCase(
-                    interventionId = interventionId,
-                    forceDelete = _uiState.value.debugMode
-                )
-
-                when (result) {
-                    is QrResult.Success -> {
-                        _uiState.value = _uiState.value.copy(
-                            successMessage = UiText.StringResource(R.string.intervention_deleted_success)
-                        )
-                        // Refresh to remove deleted item
-                        refresh()
-                    }
-
-                    is QrResult.Error -> {
-                        _uiState.value = _uiState.value.copy(
-                            error = UiText.StringResource(R.string.err_intervention_delete_failed)
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Exception deleting intervention")
-                _uiState.value = _uiState.value.copy(
-                    error = UiText.StringResource(R.string.err_intervention_delete_unexpected)
-                )
-            } finally {
-                _uiState.value = _uiState.value.copy(isDeleting = null)
-            }
-        }
-    }
-
-    // ===== Batch Operations =====
-
-    private fun setStatus(interventions: Set<TechnicalIntervention>, status: InterventionStatus) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(
-                    isBatchOperating = true,
-                    error = null
-                )
-
-                val interventionIds = interventions.map { it.id }
-                val result = updateTechnicalInterventionStatusUseCase.updateStatusBatch(
-                    interventionIds = interventionIds,
-                    newStatus = status,
-                    debugMode = _uiState.value.debugMode
-                )
-
-                when (result) {
-                    is QrResult.Success -> {
-                        val summary = result.data
-                        _uiState.value = _uiState.value.copy(
-                            successMessage = UiText.StringResources(
-                                R.string.interventions_status_updated_success,
-                                summary.successCount
-                            )
-                        )
-                        selectionManager.clearSelection()
-                        refresh()
-                    }
-
-                    is QrResult.Error -> {
-                        _uiState.value = _uiState.value.copy(
-                            error = UiText.StringResource(R.string.err_interventions_status_update_failed)
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Exception in batch status update")
-                _uiState.value = _uiState.value.copy(
-                    error = UiText.StringResource(R.string.err_interventions_status_update_unexpected)
-                )
-            } finally {
-                _uiState.value = _uiState.value.copy(isBatchOperating = false)
-            }
-        }
-    }
-
-    fun setActiveInterventions(interventions: Set<TechnicalIntervention>) {
-        return setStatus(interventions, InterventionStatus.IN_PROGRESS)
-    }
-
-    fun setArchivedInterventions(interventions: Set<TechnicalIntervention>) {
-        return setStatus(interventions, InterventionStatus.ARCHIVED)
-    }
-
-    fun exportInterventions(interventions: Set<TechnicalIntervention>) {
-        // TODO: Implement batch export functionality
-        Timber.d("Export batch requested for ${interventions.size} interventions")
-        _uiState.value = _uiState.value.copy(
-            successMessage = UiText.StringResource(R.string.export_feature_coming_soon)
-        )
-    }
-
-    private fun exportBatch(interventions: Set<TechnicalIntervention>) {
-        // TODO: Implement batch export functionality
-        Timber.d("Export batch requested for ${interventions.size} interventions")
-        _uiState.value = _uiState.value.copy(
-            successMessage = UiText.StringResource(R.string.export_feature_coming_soon)
-        )
-    }
-
-
-    // ===== Search and filter logic =====
 
     fun updateSearchQuery(query: String) {
         val currentState = _uiState.value
@@ -383,76 +264,20 @@ class TechnicalInterventionListViewModel @Inject constructor(
 
     fun updateFilter(filter: InterventionFilter) {
         val currentState = _uiState.value
+        val filteredAndSorted = applyFiltersAndSort(
+            currentState.interventions,
+            currentState.searchQuery,
+            filter,
+            currentState.selectedSortOrder
+        )
 
-        // If filter changed, reload data
-        if (filter != currentState.selectedFilter) {
-            _uiState.value = currentState.copy(selectedFilter = filter)
-            loadFilteredInterventions(filter)
-        }
-    }
+        _uiState.value = currentState.copy(
+            selectedFilter = filter,
+            filteredInterventions = filteredAndSorted
+        )
 
-    private fun loadFilteredInterventions(filter: InterventionFilter) {
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-
-                val useCase = when (filter) {
-                    InterventionFilter.ACTIVE -> getAllTechnicalInterventionsUseCase.getActiveInterventions()
-                    InterventionFilter.COMPLETED -> getAllTechnicalInterventionsUseCase.getCompletedInterventions()
-                    InterventionFilter.DRAFT -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
-                        InterventionStatus.DRAFT
-                    )
-
-                    InterventionFilter.IN_PROGRESS -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
-                        InterventionStatus.IN_PROGRESS
-                    )
-
-                    InterventionFilter.PENDING_REVIEW -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
-                        InterventionStatus.PENDING_REVIEW
-                    )
-
-                    InterventionFilter.ALL -> getAllTechnicalInterventionsUseCase()
-                }
-
-                useCase.collect { result ->
-                    when (result) {
-                        is QrResult.Success -> {
-                            val interventions = result.data
-                            val interventionsWithStats = enrichWithStatistics(interventions)
-
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                interventionsWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.selectedSortOrder
-                            )
-
-                            _uiState.value = currentState.copy(
-                                interventions = interventionsWithStats,
-                                filteredInterventions = filteredAndSorted,
-                                isLoading = false,
-                                error = null
-                            )
-                            return@collect // Exit after first success
-                        }
-
-                        is QrResult.Error -> {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                error = UiText.StringResource(R.string.err_interventions_filter_failed)
-                            )
-                            return@collect
-                        }
-                    }
-                }
-            } catch (_: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = UiText.StringResource(R.string.err_interventions_filter_unexpected)
-                )
-            }
-        }
+        // Reload data for new filter
+        loadInterventions()
     }
 
     fun updateSortOrder(sortOrder: InterventionSortOrder) {
@@ -470,17 +295,112 @@ class TechnicalInterventionListViewModel @Inject constructor(
         )
     }
 
-    fun toggleDebugMode() {
-        val newDebugMode = !_uiState.value.debugMode
-        _uiState.value = _uiState.value.copy(debugMode = newDebugMode)
+    fun deleteInterventions(interventions: Set<TechnicalIntervention>) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isBatchOperating = true)
 
-        // Clear selection when toggling debug mode to refresh batch actions
-        selectionManager.clearSelection()
+            try {
+                var successCount = 0
+                var failCount = 0
 
-        Timber.d("Debug mode ${if (newDebugMode) "enabled" else "disabled"}")
+                interventions.forEach { intervention ->
+                    when (deleteTechnicalInterventionUseCase(intervention.id)) {
+                        is QrResult.Success -> {
+                            successCount++
+                            Timber.d("Deleted intervention: ${intervention.id}")
+                        }
+                        is QrResult.Error -> {
+                            failCount++
+                            Timber.e("Failed to delete intervention: ${intervention.id}")
+                        }
+                    }
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    isBatchOperating = false,
+                    successMessage = if (failCount == 0) {
+                        UiText.StringResources(R.string.interventions_delete_success, successCount)
+                    } else {
+                        UiText.StringResources(R.string.interventions_delete_partial, successCount, failCount)
+                    }
+                )
+
+                // Refresh list
+                refresh()
+
+            } catch (e: Exception) {
+                Timber.e(e, "Exception deleting interventions")
+                _uiState.value = _uiState.value.copy(
+                    isBatchOperating = false,
+                    error = UiText.StringResource(R.string.err_interventions_delete_failed)
+                )
+            }
+        }
     }
 
-    // ===== Error handling =====
+    fun setActiveInterventions(interventions: Set<TechnicalIntervention>) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isBatchOperating = true)
+
+            try {
+                interventions.forEach { intervention ->
+                    updateTechnicalInterventionStatusUseCase(
+                        intervention.id,
+                        InterventionStatus.IN_PROGRESS
+                    )
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    isBatchOperating = false,
+                    successMessage = UiText.StringResources(
+                        R.string.interventions_status_updated,
+                        interventions.size
+                    )
+                )
+
+                refresh()
+
+            } catch (e: Exception) {
+                Timber.e(e, "Exception setting interventions active")
+                _uiState.value = _uiState.value.copy(
+                    isBatchOperating = false,
+                    error = UiText.StringResource(R.string.err_interventions_status_update_failed)
+                )
+            }
+        }
+    }
+
+    fun setArchivedInterventions(interventions: Set<TechnicalIntervention>) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isBatchOperating = true)
+
+            try {
+                interventions.forEach { intervention ->
+                    updateTechnicalInterventionStatusUseCase(
+                        intervention.id,
+                        InterventionStatus.ARCHIVED
+                    )
+                }
+
+                _uiState.value = _uiState.value.copy(
+                    isBatchOperating = false,
+                    successMessage = UiText.StringResources(
+                        R.string.interventions_archived,
+                        interventions.size
+                    )
+                )
+
+                refresh()
+
+            } catch (e: Exception) {
+                Timber.e(e, "Exception archiving interventions")
+                _uiState.value = _uiState.value.copy(
+                    isBatchOperating = false,
+                    error = UiText.StringResource(R.string.err_interventions_archive_failed)
+                )
+            }
+        }
+    }
 
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
@@ -488,6 +408,10 @@ class TechnicalInterventionListViewModel @Inject constructor(
 
     fun dismissSuccessMessage() {
         _uiState.value = _uiState.value.copy(successMessage = null)
+    }
+
+    fun toggleDebugMode() {
+        _uiState.value = _uiState.value.copy(debugMode = !_uiState.value.debugMode)
     }
 
     // ============================================================
@@ -602,39 +526,28 @@ data class InterventionStatistics(
  */
 class TechnicalInterventionActionHandler(
     private val onEdit: (Set<TechnicalIntervention>) -> Unit,
-    private val onDelete: (Set<TechnicalIntervention>) -> Unit,
+    private val onDelete: () -> Unit,
     private val onSetActive: (Set<TechnicalIntervention>) -> Unit,
     private val onSetInactive: (Set<TechnicalIntervention>) -> Unit,
     private val onArchive: (Set<TechnicalIntervention>) -> Unit,
-//    private val onExport: (Set<TechnicalIntervention>) -> Unit,
-    private val onSelectAll: () -> Unit
+    private val onSelectAll: () -> Unit,
+    private val onPerformDelete: (Set<TechnicalIntervention>) -> Unit
 ) : SimpleSelectionActionHandler<TechnicalIntervention> {
 
     override fun onActionClick(action: SelectionAction, selectedItems: Set<TechnicalIntervention>) {
         when (action) {
             SelectionAction.Edit -> onEdit(selectedItems)
-            SelectionAction.Delete -> onDelete(selectedItems)
+            SelectionAction.Delete -> onDelete()
             SelectionAction.SetActive -> onSetActive(selectedItems)
             SelectionAction.SetInactive -> onSetInactive(selectedItems)
-//            SelectionAction.Export -> onExport(selectedItems)
             SelectionAction.SelectAll -> onSelectAll()
-            SelectionAction.Archive -> {onArchive(selectedItems)}
-
-
-//            SelectionAction.MarkCompleted -> {
-//                // Handle mark completed - set status to COMPLETED
-//                // You would implement this in ViewModel
-//            }
+            SelectionAction.Archive -> onArchive(selectedItems)
 
             is SelectionAction.Custom -> {
                 // Handle any custom actions
                 when (action.actionId) {
-                    "duplicate" -> { /* handle duplicate */
-                    }
-
-                    "share" -> { /* handle share */
-                    }
-                    // etc.
+                    "duplicate" -> { /* handle duplicate */ }
+                    "share" -> { /* handle share */ }
                 }
             }
 
@@ -655,9 +568,7 @@ class TechnicalInterventionActionHandler(
 
             SelectionAction.SetActive -> selectedItems.isNotEmpty()
             SelectionAction.SetInactive -> selectedItems.isNotEmpty()
-//            SelectionAction.Export -> selectedItems.isNotEmpty()
             SelectionAction.Archive -> selectedItems.isNotEmpty()
-//            SelectionAction.MarkCompleted -> selectedItems.isNotEmpty()
             SelectionAction.SelectAll -> true
             is SelectionAction.Custom -> true // Custom logic per action
             else -> false
@@ -666,8 +577,12 @@ class TechnicalInterventionActionHandler(
 
     override fun getDeleteConfirmationMessage(selectedItems: Set<TechnicalIntervention>): String {
         return when (selectedItems.size) {
-            1 -> "Delete intervention ${selectedItems.first().interventionNumber}?"
-            else -> "Delete ${selectedItems.size} interventions?"
+            1 -> "Eliminare l'intervento ${selectedItems.first().interventionNumber}?"
+            else -> "Eliminare ${selectedItems.size} interventi?"
         }
+    }
+
+    fun performDelete(selectedItems: Set<TechnicalIntervention>) {
+        onPerformDelete(selectedItems)
     }
 }

@@ -58,22 +58,29 @@ fun ContactCard(
     onEdit: (() -> Unit)? = null,
     onEmail: () -> Unit = { },
     onSetPrimary: (() -> Unit)? = null,
-    isSettingPrimary: Boolean,
+    isSettingPrimary: Boolean = false,
+    isSelected: Boolean = false,
     variant: QrListItemCardVariant = QrListItemCardVariant.FULL
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-//        onClick = onClick,
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        )
     ) {
         when (variant) {
             QrListItemCardVariant.FULL -> FullContactCard(
                 contact = contact,
                 showActions = showActions,
-                onDelete = onDelete,
+                onDeleteClick = if (onDelete != null) { { showDeleteDialog = true } } else null,
                 onEdit = onEdit,
                 onSetPrimary = onSetPrimary,
                 isSettingPrimary = isSettingPrimary,
@@ -105,7 +112,7 @@ fun ContactCard(
 private fun FullContactCard(
     contact: Contact,
     showActions: Boolean = true,
-    onDelete: (() -> Unit)? = null,
+    onDeleteClick: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onSetPrimary: (() -> Unit)? = null,
     isSettingPrimary: Boolean
@@ -116,7 +123,7 @@ private fun FullContactCard(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Header row - Nome stabilimento e azioni
+        // Header row - Name and actions
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -180,10 +187,10 @@ private fun FullContactCard(
                     }
 
                     // DELETE
-                    if (onDelete != null) {
+                    if (onDeleteClick != null) {
                         IconButton(
                             modifier = Modifier.size(32.dp),
-                            onClick = onDelete
+                            onClick = onDeleteClick
                         ) {
                             Icon(
                                 Icons.Default.Delete,

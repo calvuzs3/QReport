@@ -36,7 +36,7 @@ fun InterventionFormStatus.toUiText(): UiText {
 
 fun InterventionFormStatus.Signature.toUiText(): UiText {
     return when (this) {
-        is InterventionFormStatus.Signature.SavedForm -> StringResources(R.string.IntFormStatus_saved)
+        is InterventionFormStatus.Signature.SavedForm -> StringResources(R.string.form_status_saved)
         is InterventionFormStatus.Signature.NotReady -> StringResources(R.string.form_signature_not_ready)
         is InterventionFormStatus.Signature.InterventionIncomplete -> StringResources(R.string.form_signature_intervention_Incomplete)
         is InterventionFormStatus.Signature.MissingDescription -> StringResources(R.string.form_signature_missing_desc)
