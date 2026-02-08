@@ -18,6 +18,7 @@ import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.ListStatItem
 import net.calvuz.qreport.app.app.presentation.components.StatusIndicator
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
  * ClientCard riutilizzabile per QReport
@@ -35,7 +36,7 @@ fun ClientCard(
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
-    variant: ClientCardVariant = ClientCardVariant.FULL
+    variant: ListViewMode = ListViewMode.FULL
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -46,18 +47,18 @@ fun ClientCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         when (variant) {
-            ClientCardVariant.FULL -> FullClientCard(
+            ListViewMode.FULL -> FullClientCard(
                 client = client,
                 stats = stats,
                 showActions = showActions,
                 onDelete = { showDeleteDialog = false },
                 onEdit = onEdit
             )
-            ClientCardVariant.COMPACT -> CompactClientCard(
+            ListViewMode.COMPACT -> CompactClientCard(
                 client = client,
                 stats = stats
             )
-            ClientCardVariant.MINIMAL -> MinimalClientCard(client = client)
+            ListViewMode.MINIMAL -> MinimalClientCard(client = client)
         }
     }
 
@@ -320,13 +321,4 @@ private fun ClientStatusChip(
         ),
         modifier = modifier
     )
-}
-
-/**
- * Varianti di visualizzazione per ClientCard
- */
-enum class ClientCardVariant {
-    FULL,       // Card completa con tutte le informazioni
-    COMPACT,    // Card compatta per liste dense
-    MINIMAL     // Card minimalista per selezioni
 }

@@ -18,12 +18,14 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.client.client.presentation.ui.components.ClientCard
-import net.calvuz.qreport.client.client.presentation.ui.components.ClientCardVariant
 import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
+import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 
 /**
  * Screen per la lista clienti - VERSIONE CON COMPONENTS RIUTILIZZABILI
@@ -58,6 +60,14 @@ fun ClientListScreen(
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
+
+                // View mode toggle button
+                IconButton(onClick = viewModel::cycleCardVariant) {
+                    Icon(
+                        imageVector = uiState.cardVariant.getCardVariantIcon(),
+                        contentDescription = uiState.cardVariant.getCardVariantDescription()
+                    )
+                }
 
                 // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
@@ -179,6 +189,7 @@ fun ClientListScreen(
                 else -> {
                     ClientListContent(
                         clients = uiState.filteredClients,
+                        variant = uiState.cardVariant,
                         onClientClick = onNavigateToClientDetail,
                         onClientEdit = onNavigateToEditClient,
                         onClientDelete = viewModel::deleteClient
@@ -213,6 +224,7 @@ fun ClientListScreen(
 @Composable
 private fun ClientListContent(
     clients: List<ClientWithStats>,
+    variant: ListViewMode,
     onClientClick: (String, String) -> Unit,
     onClientEdit: (String) -> Unit,
     onClientDelete: (String) -> Unit
@@ -238,7 +250,7 @@ private fun ClientListContent(
                 onEdit = { onClientEdit(clientWithStats.client.id) },
                 //onDelete = { onClientDelete(clientWithStats.client.id) },
                 onDelete = null,
-                variant = ClientCardVariant.FULL
+                variant = variant
             )
         }
     }

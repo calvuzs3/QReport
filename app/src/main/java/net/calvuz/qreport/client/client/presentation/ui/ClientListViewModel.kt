@@ -19,6 +19,9 @@ import net.calvuz.qreport.client.client.domain.usecase.ObserveAllActiveClientsUs
 import net.calvuz.qreport.client.client.domain.usecase.SearchClientsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithFacilitiesUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithIslandsUseCase
+import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -41,7 +44,9 @@ data class ClientListUiState(
     val error: String? = null,
     val searchQuery: String = "",
     val selectedFilter: ClientFilter = ClientFilter.ALL,
-    val selectedSortOrder: ClientSortOrder = ClientSortOrder.CREATED_RECENT
+    val selectedSortOrder: ClientSortOrder = ClientSortOrder.CREATED_RECENT,
+    // Card display variant, persisted via AppSettingsDataStore
+    val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 enum class ClientFilter {
@@ -61,7 +66,8 @@ class ClientListViewModel @Inject constructor(
     private val observeAllActiveClientsUseCase: ObserveAllActiveClientsUseCase,
     private val getClientStatisticsUseCase: GetClientStatisticsUseCase,
     private val deleteClientUseCase: DeleteClientUseCase,
-    private val searchClientsUseCase: SearchClientsUseCase
+    private val searchClientsUseCase: SearchClientsUseCase,
+    private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ClientListUiState())
@@ -69,6 +75,7 @@ class ClientListViewModel @Inject constructor(
 
     init {
         Timber.d("ClientListViewModel initialized with optimized use case calls")
+        observeCardVariant()
         loadClients()
     }
 
@@ -339,6 +346,35 @@ class ClientListViewModel @Inject constructor(
         )
     }
 
+
+    /**
+     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
+     * The preference is persisted via [AppSettingsRepository].
+     */
+    fun cycleCardVariant() {
+        val current = _uiState.value.cardVariant
+        val next = when (current) {
+            ListViewMode.FULL -> ListViewMode.COMPACT
+            ListViewMode.COMPACT -> ListViewMode.MINIMAL
+            ListViewMode.MINIMAL -> ListViewMode.FULL
+        }
+
+        // Update UI immediately
+        _uiState.value = _uiState.value.copy(cardVariant = next)
+
+        // Persist in background
+        viewModelScope.launch {
+            try {
+                appSettingsRepository.setListViewMode(
+                    AppSettingsDataStore.LIST_KEY_CLIENTS,
+                    next
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to persist card variant preference")
+            }
+        }
+    }
+
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -346,6 +382,23 @@ class ClientListViewModel @Inject constructor(
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
+
+    /**
+     * Observe the persisted card variant preference and apply it to UI state.
+     */
+    private fun observeCardVariant() {
+        viewModelScope.launch {
+            appSettingsRepository.getListViewMode(AppSettingsDataStore.LIST_KEY_CLIENTS)
+                .catch { e ->
+                    Timber.e(e, "Error observing card variant preference")
+                }
+                .collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(
+                        cardVariant = viewMode
+                    )
+                }
+        }
+    }
 
     private suspend fun enrichWithStatistics(clients: List<Client>): List<ClientWithStats> {
         return clients.map { client ->

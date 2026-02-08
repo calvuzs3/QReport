@@ -4,8 +4,10 @@ import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import net.calvuz.qreport.settings.data.repository.AppSettingsRepositoryImpl
 import net.calvuz.qreport.settings.data.repository.SettingsRepositoryImpl
 import net.calvuz.qreport.settings.data.repository.TechnicianSettingsRepositoryImpl
+import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import net.calvuz.qreport.settings.domain.repository.SettingsRepository
 import net.calvuz.qreport.settings.domain.repository.TechnicianSettingsRepository
 import javax.inject.Singleton
@@ -40,4 +42,9 @@ abstract class SettingsModule {
         settingsRepositoryImpl: SettingsRepositoryImpl
     ): SettingsRepository
 
+    @Binds
+    @Singleton
+    abstract fun bindAppSettingsRepository(
+        impl: AppSettingsRepositoryImpl
+    ): AppSettingsRepository
 }

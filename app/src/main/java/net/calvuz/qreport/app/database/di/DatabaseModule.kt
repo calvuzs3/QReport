@@ -82,7 +82,7 @@ object DatabaseModule {
             name = QReportDatabase.Companion.DATABASE_NAME
         )
             .addCallback(QReportDatabase.Companion.CALLBACK)
-            .fallbackToDestructiveMigration()  // Only in development
+            //.fallbackToDestructiveMigration()  // Only in development
             .addMigrations(
                 //MIGRATION_1_2
                 // Migrations go here...
