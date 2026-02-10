@@ -24,6 +24,9 @@ import kotlin.time.Duration.Companion.days
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
+import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 
 /** ContractListScreen UiState */
 data class ContractListUiState(
@@ -38,6 +41,9 @@ data class ContractListUiState(
     val searchQuery: String = "",
     val selectedFilter: ContractFilter = ContractFilter.ACTIVE,
     val selectedSortOrder: ContractSortOrder = ContractSortOrder.EXPIRE_RECENT,
+
+    // Card Variant
+    val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 /** ContractListScreen Filter */
@@ -49,7 +55,8 @@ enum class ContractSortOrder { EXPIRE_RECENT, EXPIRE_OLDEST, NAME }
 @HiltViewModel
 class ContractListViewModel @Inject constructor(
     private val getContractsByClientUseCase: GetContractsByClientUseCase,
-    private val deleteContractUseCase: DeleteContractUseCase
+    private val deleteContractUseCase: DeleteContractUseCase,
+    private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContractListUiState())
@@ -58,6 +65,10 @@ class ContractListViewModel @Inject constructor(
     // ============================================================
     // PUBLIC METHODS
     // ============================================================
+
+    companion object {
+        private const val _KEY = AppSettingsDataStore.LIST_KEY_CONTRACTS
+    }
 
     fun init() {
         Timber.d("Contact list view model initialized")
@@ -371,6 +382,34 @@ class ContractListViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
+     * The preference is persisted via [AppSettingsRepository].
+     */
+    fun cycleCardVariant() {
+        val current = _uiState.value.cardVariant
+        val next = when (current) {
+            ListViewMode.FULL -> ListViewMode.COMPACT
+            ListViewMode.COMPACT -> ListViewMode.MINIMAL
+            ListViewMode.MINIMAL -> ListViewMode.FULL
+        }
+
+        // Update UI immediately
+        _uiState.value = _uiState.value.copy(cardVariant = next)
+
+        // Persist in background
+        viewModelScope.launch {
+            try {
+                appSettingsRepository.setListViewMode(
+                    _KEY,
+                    next
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to persist card variant preference")
+            }
+        }
+    }
+
     // ===== Error handling =====
 
     fun dismissError() {
@@ -384,6 +423,23 @@ class ContractListViewModel @Inject constructor(
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
+
+    /**
+     * Observe the persisted card variant preference and apply it to UI state.
+     */
+    private fun observeCardVariant() {
+        viewModelScope.launch {
+            appSettingsRepository.getListViewMode(_KEY)
+                .catch { e ->
+                    Timber.e(e, "Error observing card variant preference")
+                }
+                .collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(
+                        cardVariant = viewMode
+                    )
+                }
+        }
+    }
 
     private fun enrichWithStatistics(contracts: List<Contract>): List<ContractWithStats> {
         return contracts.map { contract ->

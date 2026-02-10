@@ -39,6 +39,7 @@ import net.calvuz.qreport.app.app.presentation.components.simple_selection.Selec
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.ti.presentation.ui.components.TechnicalInterventionCard
 
 @Composable
@@ -421,7 +422,7 @@ private fun InterventionsListWithSelection(
                     intervention = interventionWithStats.intervention,
                     stats = interventionWithStats.stats,
                     isSelected = isSelected,
-                    variant = CardVariant.FULL
+                    variant = ListViewMode.FULL
                 )
             }
         }

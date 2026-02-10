@@ -46,7 +46,7 @@ import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
 import net.calvuz.qreport.app.app.presentation.components.DeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.PrimaryBadge
-import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard.QrListItemCardVariant
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 @Composable
 fun ContactCard(
@@ -60,7 +60,7 @@ fun ContactCard(
     onSetPrimary: (() -> Unit)? = null,
     isSettingPrimary: Boolean = false,
     isSelected: Boolean = false,
-    variant: QrListItemCardVariant = QrListItemCardVariant.FULL
+    variant: ListViewMode
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -77,7 +77,7 @@ fun ContactCard(
         )
     ) {
         when (variant) {
-            QrListItemCardVariant.FULL -> FullContactCard(
+            ListViewMode.FULL -> FullContactCard(
                 contact = contact,
                 showActions = showActions,
                 onDeleteClick = if (onDelete != null) { { showDeleteDialog = true } } else null,
@@ -86,11 +86,11 @@ fun ContactCard(
                 isSettingPrimary = isSettingPrimary,
             )
 
-            QrListItemCardVariant.COMPACT -> CompactContactCard(
+            ListViewMode.COMPACT -> CompactContactCard(
                 contact = contact,
             )
 
-            QrListItemCardVariant.MINIMAL -> MinimalContactCard(contact = contact)
+            ListViewMode.MINIMAL -> MinimalContactCard(contact = contact)
         }
     }
 

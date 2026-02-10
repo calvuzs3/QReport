@@ -6,6 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
  * Generic Card Variants System
@@ -66,7 +67,7 @@ interface CardContentProvider<T> {
 @Composable
 fun <T> GenericCard(
     item: T,
-    variant: CardVariant,
+    variant: ListViewMode,
     contentProvider: CardContentProvider<T>,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
@@ -89,21 +90,21 @@ fun <T> GenericCard(
         Column {
             // Content based on variant
             when (variant) {
-                CardVariant.FULL -> {
+                ListViewMode.FULL -> {
                     contentProvider.FullContent(
                         item = item,
                         isSelected = isSelected,
                         modifier = Modifier.padding(16.dp)
                     )
                 }
-                CardVariant.COMPACT -> {
+                ListViewMode.COMPACT -> {
                     contentProvider.CompactContent(
                         item = item,
                         isSelected = isSelected,
                         modifier = Modifier.padding(12.dp)
                     )
                 }
-                CardVariant.MINIMAL -> {
+                ListViewMode.MINIMAL -> {
                     contentProvider.MinimalContent(
                         item = item,
                         modifier = Modifier.padding(8.dp)
@@ -126,7 +127,7 @@ fun <T> GenericCard(
  */
 @Composable
 fun <T> T.asCard(
-    variant: CardVariant,
+    variant: ListViewMode,
     contentProvider: CardContentProvider<T>,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
@@ -146,12 +147,12 @@ fun <T> T.asCard(
  * Builder pattern for complex card configurations
  */
 class CardBuilder<T>(private val item: T) {
-    private var variant: CardVariant = CardVariant.FULL
+    private var variant: ListViewMode = ListViewMode.FULL
     private var isSelected: Boolean = false
     private var isLoading: Boolean = false
     private var modifier: Modifier = Modifier
 
-    fun variant(variant: CardVariant) = apply { this.variant = variant }
+    fun variant(variant: ListViewMode) = apply { this.variant = variant }
     fun selected(selected: Boolean) = apply { this.isSelected = selected }
     fun loading(loading: Boolean) = apply { this.isLoading = loading }
     fun modifier(modifier: Modifier) = apply { this.modifier = modifier }

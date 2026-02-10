@@ -21,6 +21,7 @@ import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.client.contract.data.local.isValid
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.presentation.ui.ContractsStatistics
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
  * TechnicalIntervention implementation using GenericCardSystem
@@ -181,8 +182,8 @@ class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
 @Composable
 fun ContractCard(
     contract: Contract,
+    variant: ListViewMode,
     stats: ContractsStatistics,
-    variant: CardVariant = CardVariant.FULL,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier
@@ -206,7 +207,7 @@ fun ContractCard(
 @Composable
 fun Contract.asCard(
     stats: ContractsStatistics,
-    variant: CardVariant = CardVariant.FULL,
+    variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier
@@ -228,7 +229,7 @@ fun Contract.asCard(
 fun ContractCardBuilder(
     contract: Contract,
     stats: ContractsStatistics,
-    variant: CardVariant = CardVariant.FULL,
+    variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier

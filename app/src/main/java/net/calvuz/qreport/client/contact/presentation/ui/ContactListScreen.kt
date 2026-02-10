@@ -47,7 +47,6 @@ import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
-import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard.QrListItemCardVariant
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.DeleteConfirmationDialog
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectableItem
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
@@ -59,6 +58,9 @@ import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.presentation.ui.components.ContactCard
 import androidx.compose.material.icons.filled.Star
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
+import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 import timber.log.Timber
 
 // Contact-specific custom action ID
@@ -225,6 +227,14 @@ fun ContactListScreen(
                             var showFilterMenu by remember { mutableStateOf(false) }
                             var showSortMenu by remember { mutableStateOf(false) }
 
+                            // View mode toggle button
+                            IconButton(onClick = viewModel::cycleCardVariant) {
+                                Icon(
+                                    imageVector = uiState.cardVariant.getCardVariantIcon(),
+                                    contentDescription = uiState.cardVariant.getCardVariantDescription()
+                                )
+                            }
+
                             // Sort button
                             IconButton(onClick = { showSortMenu = true }) {
                                 Icon(
@@ -330,12 +340,13 @@ fun ContactListScreen(
                     else -> {
                         ContactListWithSelection(
                             contactsWithStats = uiState.filteredContacts,
+                            variant = uiState.cardVariant,
+                            isSettingPrimary = uiState.isSettingPrimary,
                             selectionManager = selectionManager,
                             onNavigateToDetail = onNavigateToContactDetail,
                             onNavigateToEdit = onNavigateToEditContact,
                             onDeleteContact = viewModel::deleteContact,
                             onSetPrimaryContact = viewModel::setPrimaryContact,
-                            isSettingPrimary = uiState.isSettingPrimary,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
@@ -393,6 +404,7 @@ private fun ContactListWithSelection(
     onDeleteContact: (String) -> Unit,
     onSetPrimaryContact: (String) -> Unit,
     isSettingPrimary: String?,
+    variant: ListViewMode = ListViewMode.FULL,
     modifier: Modifier = Modifier
 ) {
     val selectionState by selectionManager.selectionState.collectAsState()
@@ -429,7 +441,7 @@ private fun ContactListWithSelection(
                     } else null,
                     isSettingPrimary = isSettingPrimary == contactWithStats.contact.id,
                     isSelected = isSelected,
-                    variant = QrListItemCardVariant.FULL
+                    variant = variant
                 )
             }
         }

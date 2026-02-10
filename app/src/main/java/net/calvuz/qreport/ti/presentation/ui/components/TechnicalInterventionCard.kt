@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.list.*
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.ti.domain.model.InterventionStatus
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 import net.calvuz.qreport.ti.domain.model.WorkLocationType
@@ -195,7 +196,7 @@ class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalIn
 fun TechnicalInterventionCard(
     intervention: TechnicalIntervention,
     stats: InterventionStatistics,
-    variant: CardVariant = CardVariant.FULL,
+    variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier
@@ -219,7 +220,7 @@ fun TechnicalInterventionCard(
 @Composable
 fun TechnicalIntervention.asCard(
     stats: InterventionStatistics,
-    variant: CardVariant = CardVariant.FULL,
+    variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier
@@ -241,7 +242,7 @@ fun TechnicalIntervention.asCard(
 fun TechnicalInterventionCardBuilder(
     intervention: TechnicalIntervention,
     stats: InterventionStatistics,
-    variant: CardVariant = CardVariant.FULL,
+    variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
     isLoading: Boolean = false,
     modifier: Modifier = Modifier

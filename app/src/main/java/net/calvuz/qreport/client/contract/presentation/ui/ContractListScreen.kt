@@ -41,6 +41,9 @@ import net.calvuz.qreport.app.app.presentation.components.simple_selection.Simpl
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.presentation.ui.components.ContractCard
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
+import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 
 @Composable
 fun ContractFilter.getDisplayName(): UiText {
@@ -256,6 +259,14 @@ fun ContractListScreen(
                                 var showFilterMenu by remember { mutableStateOf(false) }
                                 var showSortMenu by remember { mutableStateOf(false) }
 
+                                // View mode toggle button
+                                IconButton(onClick = viewModel::cycleCardVariant) {
+                                    Icon(
+                                        imageVector = uiState.cardVariant.getCardVariantIcon(),
+                                        contentDescription = uiState.cardVariant.getCardVariantDescription()
+                                    )
+                                }
+
                                 // Sort button
                                 IconButton(onClick = { showSortMenu = true }) {
                                     Icon(
@@ -374,6 +385,7 @@ fun ContractListScreen(
                         // Contracts list - NO padding bottom because floating indicator doesn't cover the list
                         ContractsListWithSelection(
                             contractsWithStats = uiState.filteredContracts,
+                            variant = uiState.cardVariant,
                             selectionManager = selectionManager,
                             onNavigateToEdit = onNavigateToEditContract
                         )
@@ -435,6 +447,7 @@ private fun ContractsListWithSelection(
     contractsWithStats: List<ContractWithStats>,
     selectionManager: SimpleSelectionManager<Contract>,
     onNavigateToEdit: (String) -> Unit,
+    variant: ListViewMode,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -459,7 +472,7 @@ private fun ContractsListWithSelection(
                     contract = contractWithStats.contract,
                     stats = contractWithStats.stats,
                     isSelected = isSelected,
-                    variant = CardVariant.FULL
+                    variant = variant
                 )
             }
         }

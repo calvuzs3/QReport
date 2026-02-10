@@ -16,6 +16,9 @@ import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.usecase.GetContactsByClientUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.DeleteContactUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.SetPrimaryContactUseCase
+import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
 import kotlin.collections.filter
@@ -43,7 +46,10 @@ data class ContactListUiState(
     val selectedFilter: ContactFilter = ContactFilter.ACTIVE,
     val selectedSortOrder: ContactSortOrder = ContactSortOrder.CREATED_RECENT,
     // errors
-    val error: UiText? = null
+    val error: UiText? = null,
+
+    // Card Variant
+    val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 /** ContactListScreen Filter */
@@ -70,7 +76,8 @@ enum class ContactSortOrder {
 class ContactListViewModel @Inject constructor(
     private val getContactsByClientUseCase: GetContactsByClientUseCase,
     private val deleteContactUseCase: DeleteContactUseCase,
-    private val setPrimaryContactUseCase: SetPrimaryContactUseCase
+    private val setPrimaryContactUseCase: SetPrimaryContactUseCase,
+    private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContactListUiState())
@@ -84,6 +91,8 @@ class ContactListViewModel @Inject constructor(
         if (clientId == _uiState.value.clientId) return // Già inizializzato per questo cliente
 
         _uiState.value = _uiState.value.copy(clientId = clientId)
+        observeCardVariant()
+
         loadContacts(clientId)
     }
 
@@ -499,6 +508,34 @@ class ContactListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
+     * The preference is persisted via [AppSettingsRepository].
+     */
+    fun cycleCardVariant() {
+        val current = _uiState.value.cardVariant
+        val next = when (current) {
+            ListViewMode.FULL -> ListViewMode.COMPACT
+            ListViewMode.COMPACT -> ListViewMode.MINIMAL
+            ListViewMode.MINIMAL -> ListViewMode.FULL
+        }
+
+        // Update UI immediately
+        _uiState.value = _uiState.value.copy(cardVariant = next)
+
+        // Persist in background
+        viewModelScope.launch {
+            try {
+                appSettingsRepository.setListViewMode(
+                    AppSettingsDataStore.LIST_KEY_CONTACTS,
+                    next
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to persist card variant preference")
+            }
+        }
+    }
+
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -506,6 +543,23 @@ class ContactListViewModel @Inject constructor(
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
+
+    /**
+     * Observe the persisted card variant preference and apply it to UI state.
+     */
+    private fun observeCardVariant() {
+        viewModelScope.launch {
+            appSettingsRepository.getListViewMode(AppSettingsDataStore.LIST_KEY_CONTACTS)
+                .catch { e ->
+                    Timber.e(e, "Error observing card variant preference")
+                }
+                .collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(
+                        cardVariant = viewMode
+                    )
+                }
+        }
+    }
 
     private fun enrichWithStatistics(contacts: List<Contact>): List<ContactWithStats> {
         return contacts.map { contact ->
