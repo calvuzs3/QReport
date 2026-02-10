@@ -18,6 +18,9 @@ import net.calvuz.qreport.checkup.presentation.model.CheckUpFilter
 import net.calvuz.qreport.checkup.presentation.model.CheckUpSortOrder
 import net.calvuz.qreport.checkup.presentation.model.CheckUpWithStats
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -33,21 +36,29 @@ data class CheckUpListUiState(
     val error: QrError.Checkup? = null,
     val searchQuery: String = "",
     val selectedFilter: CheckUpFilter = CheckUpFilter.ALL,
-    val checkUpSortOrder: CheckUpSortOrder = CheckUpSortOrder.RECENT_FIRST
+    val checkUpSortOrder: CheckUpSortOrder = CheckUpSortOrder.RECENT_FIRST,
+    val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 @HiltViewModel
 class CheckUpListViewModel @Inject constructor(
     private val getCheckUpsUseCase: GetCheckUpsUseCase,
     private val getCheckUpStatsUseCase: GetCheckUpStatsUseCase,
-    private val deleteCheckUpUseCase: DeleteCheckUpUseCase
+    private val deleteCheckUpUseCase: DeleteCheckUpUseCase,
+    private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpListUiState())
     val uiState: StateFlow<CheckUpListUiState> = _uiState.asStateFlow()
 
+    companion object {
+        private const val KEY = AppSettingsDataStore.LIST_KEY_CHECKUPS
+
+    }
+
     init {
         Timber.d("CheckUpListViewModel initialized")
+        observeCardVariant()
         loadCheckUps()
     }
 
@@ -73,7 +84,7 @@ class CheckUpListViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                error =  QrError.Checkup.LOAD // "Errore caricamento check-ups: ${exception.message}"
+                                error = QrError.Checkup.LOAD // "Errore caricamento check-ups: ${exception.message}"
                             )
                         }
                     }
@@ -163,7 +174,7 @@ class CheckUpListViewModel @Inject constructor(
                     val stats = try {
                         getCheckUpStatsUseCase(checkUp.id).getOrElse {
                             Timber.w("Failed to get stats for check-up ${checkUp.id}: ${it.message}")
-                            CheckUpSingleStatistics( )
+                            CheckUpSingleStatistics()
                         }
                     } catch (e: Exception) {
                         Timber.e(e, "Exception getting stats for check-up ${checkUp.id}")
@@ -262,6 +273,34 @@ class CheckUpListViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
+     * The preference is persisted via [AppSettingsRepository].
+     */
+    fun cycleCardVariant() {
+        val current = _uiState.value.cardVariant
+        val next = when (current) {
+            ListViewMode.FULL -> ListViewMode.COMPACT
+            ListViewMode.COMPACT -> ListViewMode.MINIMAL
+            ListViewMode.MINIMAL -> ListViewMode.FULL
+        }
+
+        // Update UI immediately
+        _uiState.value = _uiState.value.copy(cardVariant = next)
+
+        // Persist in background
+        viewModelScope.launch {
+            try {
+                appSettingsRepository.setListViewMode(
+                    KEY,
+                    next
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to persist card variant preference")
+            }
+        }
+    }
+
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -269,6 +308,23 @@ class CheckUpListViewModel @Inject constructor(
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
+
+    /**
+     * Observe the persisted card variant preference and apply it to UI state.
+     */
+    private fun observeCardVariant() {
+        viewModelScope.launch {
+            appSettingsRepository.getListViewMode(KEY)
+                .catch { e ->
+                    Timber.e(e, "Error observing card variant preference")
+                }
+                .collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(
+                        cardVariant = viewMode
+                    )
+                }
+        }
+    }
 
     private fun applyFiltersAndSort(
         checkUps: List<CheckUpWithStats>,

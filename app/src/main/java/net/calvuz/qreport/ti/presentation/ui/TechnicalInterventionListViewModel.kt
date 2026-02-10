@@ -26,6 +26,9 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
+import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 
 /** TechnicalInterventionListScreen UiState */
 data class TechnicalInterventionListUiState(
@@ -40,7 +43,7 @@ data class TechnicalInterventionListUiState(
     val searchQuery: String = "",
     val selectedFilter: InterventionFilter = InterventionFilter.ACTIVE,
     val selectedSortOrder: InterventionSortOrder = InterventionSortOrder.UPDATED_RECENT,
-    val debugMode: Boolean = false
+    val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 /** TechnicalInterventionListScreen Filter */
@@ -67,13 +70,22 @@ enum class InterventionSortOrder {
 class TechnicalInterventionListViewModel @Inject constructor(
     private val getAllTechnicalInterventionsUseCase: GetAllTechnicalInterventionsUseCase,
     private val deleteTechnicalInterventionUseCase: DeleteTechnicalInterventionUseCase,
-    private val updateTechnicalInterventionStatusUseCase: UpdateTechnicalInterventionStatusUseCase
+    private val updateTechnicalInterventionStatusUseCase: UpdateTechnicalInterventionStatusUseCase,
+    private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TechnicalInterventionListUiState())
     val uiState: StateFlow<TechnicalInterventionListUiState> = _uiState.asStateFlow()
 
     val selectionManager = SimpleSelectionManager<TechnicalIntervention>()
+
+    companion object {
+        const val KEY = AppSettingsDataStore.LIST_KEY_TI
+    }
+
+    init {
+        observeCardVariant()
+    }
 
     // ============================================================
     // PUBLIC METHODS
@@ -402,6 +414,34 @@ class TechnicalInterventionListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
+     * The preference is persisted via [AppSettingsRepository].
+     */
+    fun cycleCardVariant() {
+        val current = _uiState.value.cardVariant
+        val next = when (current) {
+            ListViewMode.FULL -> ListViewMode.COMPACT
+            ListViewMode.COMPACT -> ListViewMode.MINIMAL
+            ListViewMode.MINIMAL -> ListViewMode.FULL
+        }
+
+        // Update UI immediately
+        _uiState.value = _uiState.value.copy(cardVariant = next)
+
+        // Persist in background
+        viewModelScope.launch {
+            try {
+                appSettingsRepository.setListViewMode(
+                    KEY,
+                    next
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to persist card variant preference")
+            }
+        }
+    }
+
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -410,13 +450,26 @@ class TechnicalInterventionListViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(successMessage = null)
     }
 
-    fun toggleDebugMode() {
-        _uiState.value = _uiState.value.copy(debugMode = !_uiState.value.debugMode)
-    }
-
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
+
+    /**
+     * Observe the persisted card variant preference and apply it to UI state.
+     */
+    private fun observeCardVariant() {
+        viewModelScope.launch {
+            appSettingsRepository.getListViewMode(KEY)
+                .catch { e ->
+                    Timber.e(e, "Error observing card variant preference")
+                }
+                .collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(
+                        cardVariant = viewMode
+                    )
+                }
+        }
+    }
 
     private fun enrichWithStatistics(interventions: List<TechnicalIntervention>): List<TechnicalInterventionWithStats> {
         return interventions.map { intervention ->

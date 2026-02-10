@@ -40,6 +40,7 @@ class AppSettingsDataStore @Inject constructor(
         const val LIST_KEY_CONTRACTS = "contracts"
         const val LIST_KEY_ISLANDS = "islands"
         const val LIST_KEY_CHECKUPS = "checkups"
+        const val LIST_KEY_TI = "technical_intervention"
 
         /** Builds the DataStore preference key for a given list. */
         private fun viewModeKey(listKey: String): Preferences.Key<String> {

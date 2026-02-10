@@ -3,7 +3,6 @@ package net.calvuz.qreport.checkup.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -45,6 +44,7 @@ import net.calvuz.qreport.app.app.presentation.components.StatusIndicator
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDateTime
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.app.util.NumberUtils.toItalianPercentage
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 
 @Composable
@@ -57,7 +57,7 @@ fun CheckupCard(
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
-    variant: CheckupCardVariant = CheckupCardVariant.FULL
+    variant: ListViewMode = ListViewMode.FULL
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -69,7 +69,7 @@ fun CheckupCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         when (variant) {
-            CheckupCardVariant.FULL -> FullCheckupCard(
+            ListViewMode.FULL -> FullCheckupCard(
                 checkup = checkup,
                 stats = stats,
                 showActions = showActions,
@@ -77,12 +77,12 @@ fun CheckupCard(
                 onEdit = onEdit
             )
 
-            CheckupCardVariant.COMPACT -> CompactCheckupCard(
+            ListViewMode.COMPACT -> CompactCheckupCard(
                 checkup = checkup,
                 stats = stats
             )
 
-            CheckupCardVariant.MINIMAL -> MinimalCheckupCard(
+            ListViewMode.MINIMAL -> MinimalCheckupCard(
                 checkup = checkup
             )
         }

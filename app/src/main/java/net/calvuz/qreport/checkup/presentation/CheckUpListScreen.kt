@@ -31,6 +31,9 @@ import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorDialog
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
+import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 
 /**
  * Check up list Screen
@@ -55,6 +58,14 @@ fun CheckUpListScreen(
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
+
+                // View mode toggle button
+                IconButton(onClick = viewModel::cycleCardVariant) {
+                    Icon(
+                        imageVector = uiState.cardVariant.getCardVariantIcon(),
+                        contentDescription = uiState.cardVariant.getCardVariantDescription()
+                    )
+                }
 
                 // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
@@ -184,6 +195,7 @@ fun CheckUpListScreen(
                 else -> {
                     CheckupListContent(
                         checkups = uiState.filteredCheckUps,
+                        variant = uiState.cardVariant,
                         onClick = onNavigateToCheckUpDetail,
                         onEdit = onNavigateToEditCheckUp,
                         onDelete = {}
@@ -220,7 +232,8 @@ private fun CheckupListContent(
     checkups: List<CheckUpWithStats>,
     onClick: (String) -> Unit,
     onEdit: (String) -> Unit,
-    onDelete: (String) -> Unit
+    onDelete: (String) -> Unit,
+    variant: ListViewMode
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -238,7 +251,7 @@ private fun CheckupListContent(
                 onEdit = { onEdit(checkupWithStats.checkUp.id) },
                 //onDelete = { onDelete(checkupWithStats.checkUp.id) },
                 onDelete = null,
-                variant = CheckupCardVariant.FULL
+                variant = variant
             )
         }
     }

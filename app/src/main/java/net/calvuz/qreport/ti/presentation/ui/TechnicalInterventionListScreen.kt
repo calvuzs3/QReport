@@ -40,6 +40,8 @@ import net.calvuz.qreport.app.app.presentation.components.simple_selection.Selec
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
 import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
+import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 import net.calvuz.qreport.ti.presentation.ui.components.TechnicalInterventionCard
 
 @Composable
@@ -232,16 +234,11 @@ fun TechnicalInterventionListScreen(
                                 var showFilterMenu by remember { mutableStateOf(false) }
                                 var showSortMenu by remember { mutableStateOf(false) }
 
-                                // Debug mode toggle
-                                IconButton(onClick = { viewModel.toggleDebugMode() }) {
+                                // View mode toggle button
+                                IconButton(onClick = viewModel::cycleCardVariant) {
                                     Icon(
-                                        imageVector = Icons.Default.BugReport,
-                                        contentDescription = "Toggle debug mode",
-                                        tint = if (uiState.debugMode) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant
-                                        }
+                                        imageVector = uiState.cardVariant.getCardVariantIcon(),
+                                        contentDescription = uiState.cardVariant.getCardVariantDescription()
                                     )
                                 }
 
@@ -338,6 +335,7 @@ fun TechnicalInterventionListScreen(
                     else -> {
                         InterventionsListWithSelection(
                             interventionsWithStats = uiState.filteredInterventions,
+                            variant = uiState.cardVariant,
                             selectionManager = selectionManager,
                             onNavigateToEditIntervention = onNavigateToEditIntervention,
                             modifier = Modifier.fillMaxSize()
@@ -398,6 +396,7 @@ private fun InterventionsListWithSelection(
     interventionsWithStats: List<TechnicalInterventionWithStats>,
     selectionManager: SimpleSelectionManager<TechnicalIntervention>,
     onNavigateToEditIntervention: (String) -> Unit,
+    variant: ListViewMode,
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -422,7 +421,7 @@ private fun InterventionsListWithSelection(
                     intervention = interventionWithStats.intervention,
                     stats = interventionWithStats.stats,
                     isSelected = isSelected,
-                    variant = ListViewMode.FULL
+                    variant = variant
                 )
             }
         }

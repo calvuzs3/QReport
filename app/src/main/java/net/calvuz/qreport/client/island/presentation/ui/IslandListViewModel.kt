@@ -45,7 +45,7 @@ class IslandListViewModel @Inject constructor(
     private var currentFacilityId: String = ""
 
     companion object{
-        private const val KEY = AppSettingsDataStore.LIST_KEY_CLIENTS
+        private const val KEY = AppSettingsDataStore.LIST_KEY_ISLANDS
     }
 
     /**
