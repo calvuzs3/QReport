@@ -25,8 +25,10 @@ import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
-import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard
 import net.calvuz.qreport.app.app.util.MapUtils
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
+import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 
 /**
  * Screen per la lista stabilimenti di un cliente - seguendo pattern ClientListScreen
@@ -72,6 +74,14 @@ fun FacilityListScreen(
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
+
+                // View mode toggle button
+                IconButton(onClick = viewModel::cycleCardVariant) {
+                    Icon(
+                        imageVector = uiState.cardVariant.getCardVariantIcon(),
+                        contentDescription = uiState.cardVariant.getCardVariantDescription()
+                    )
+                }
 
                 // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
@@ -184,6 +194,7 @@ fun FacilityListScreen(
                 else -> {
                     FacilityListContent(
                         context = context,
+                        variant = uiState.cardVariant,
                         facilities = uiState.filteredFacilities,
                         onFacilityClick = onNavigateToFacilityDetail,
                         onFacilityEdit = onEditFacility,
@@ -219,6 +230,7 @@ fun FacilityListScreen(
 @Composable
 private fun FacilityListContent(
     context: Context,
+    variant: ListViewMode,
     facilities: List<FacilityWithStats>,
     onFacilityClick: (String) -> Unit,
     onFacilityEdit: (String) -> Unit,
@@ -244,7 +256,7 @@ private fun FacilityListContent(
                 onOpenMaps = if (facilityWithStats.facility.address.isComplete()) {
                     { MapUtils.openMapsWithAddress(context, facilityWithStats.facility.address) }
                 } else null,
-                variant = QrListItemCard.QrListItemCardVariant.FULL,
+                variant = variant
             )
         }
     }

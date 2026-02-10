@@ -13,6 +13,9 @@ import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilitiesByClientUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilityWithIslandsUseCase
+import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -37,7 +40,8 @@ data class FacilityListUiState(
     val searchQuery: String = "",
     val selectedFilter: FacilityFilter = FacilityFilter.ALL,
     val sortOrder: FacilitySortOrder = FacilitySortOrder.NAME,
-    val clientId: String = ""
+    val clientId: String = "",
+    val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 enum class FacilityFilter {
@@ -52,11 +56,16 @@ enum class FacilitySortOrder {
 class FacilityListViewModel @Inject constructor(
     private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase,
     private val deleteFacilityUseCase: DeleteFacilityUseCase,
-    private val getFacilityWithIslandsUseCase: GetFacilityWithIslandsUseCase
+    private val getFacilityWithIslandsUseCase: GetFacilityWithIslandsUseCase,
+    private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityListUiState())
     val uiState: StateFlow<FacilityListUiState> = _uiState.asStateFlow()
+
+    companion object {
+        private const val KEY = AppSettingsDataStore.LIST_KEY_FACILITIES
+    }
 
     // ============================================================
     // PUBLIC METHODS
@@ -287,6 +296,35 @@ class FacilityListViewModel @Inject constructor(
         )
     }
 
+
+    /**
+     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
+     * The preference is persisted via [AppSettingsRepository].
+     */
+    fun cycleCardVariant() {
+        val current = _uiState.value.cardVariant
+        val next = when (current) {
+            ListViewMode.FULL -> ListViewMode.COMPACT
+            ListViewMode.COMPACT -> ListViewMode.MINIMAL
+            ListViewMode.MINIMAL -> ListViewMode.FULL
+        }
+
+        // Update UI immediately
+        _uiState.value = _uiState.value.copy(cardVariant = next)
+
+        // Persist in background
+        viewModelScope.launch {
+            try {
+                appSettingsRepository.setListViewMode(
+                    KEY,
+                    next
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to persist card variant preference")
+            }
+        }
+    }
+
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -294,6 +332,23 @@ class FacilityListViewModel @Inject constructor(
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
+
+    /**
+     * Observe the persisted card variant preference and apply it to UI state.
+     */
+    private fun observeCardVariant() {
+        viewModelScope.launch {
+            appSettingsRepository.getListViewMode(KEY)
+                .catch { e ->
+                    Timber.e(e, "Error observing card variant preference")
+                }
+                .collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(
+                        cardVariant = viewMode
+                    )
+                }
+        }
+    }
 
     private suspend fun enrichWithStatistics(facilities: List<Facility>): List<FacilityWithStats> {
         return facilities.map { facility ->

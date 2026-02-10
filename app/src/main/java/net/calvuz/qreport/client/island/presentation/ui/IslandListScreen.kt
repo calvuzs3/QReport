@@ -29,6 +29,9 @@ import net.calvuz.qreport.client.island.presentation.ui.components.IslandCardVar
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
+import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 
 /**
  * Screen per la lista isole di un facility - seguendo pattern FacilityListScreen
@@ -83,6 +86,14 @@ fun IslandListScreen(
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
+
+                // View mode toggle button
+                IconButton(onClick = viewModel::cycleCardVariant) {
+                    Icon(
+                        imageVector = uiState.cardVariant.getCardVariantIcon(),
+                        contentDescription = uiState.cardVariant.getCardVariantDescription()
+                    )
+                }
 
                 // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
@@ -207,6 +218,7 @@ fun IslandListScreen(
                 else -> {
                     IslandListContent(
                         islands = uiState.filteredIslands,
+                        variant = uiState.cardVariant,
                         onIslandClick = onNavigateToIslandDetail,
                         onIslandDelete = viewModel::deleteIsland
                     )
@@ -370,6 +382,7 @@ private fun StatisticItem(
 @Composable
 private fun IslandListContent(
     islands: List<Island>,
+    variant: ListViewMode,
     onIslandClick: (String) -> Unit,
     onIslandDelete: (String) -> Unit
 ) {
@@ -386,7 +399,7 @@ private fun IslandListContent(
                 island = island,
                 onClick = { onIslandClick(island.id) },
                 onDelete = { onIslandDelete(island.id) },
-                variant = IslandCardVariant.FULL
+                variant = variant
             )
         }
     }

@@ -21,8 +21,8 @@ import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 import net.calvuz.qreport.client.facility.presentation.ui.FacilityStatistics
 import net.calvuz.qreport.app.app.presentation.components.PrimaryBadge
-import net.calvuz.qreport.app.app.presentation.components.list.QrListItemCard.QrListItemCardVariant
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
  * FacilityCard riutilizzabile per QReport
@@ -41,7 +41,7 @@ fun FacilityCard(
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onOpenMaps: (() -> Unit)?= null,
-    variant: QrListItemCardVariant = QrListItemCardVariant.FULL
+    variant: ListViewMode,
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -52,7 +52,7 @@ fun FacilityCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         when (variant) {
-            QrListItemCardVariant.FULL -> FullFacilityCard(
+            ListViewMode.FULL -> FullFacilityCard(
                 facility = facility,
                 stats = stats,
                 showActions = showActions,
@@ -60,12 +60,12 @@ fun FacilityCard(
                 onEdit = onEdit,
                 onOpenMaps = onOpenMaps
             )
-            QrListItemCardVariant.COMPACT -> CompactFacilityCard(
+            ListViewMode.COMPACT -> CompactFacilityCard(
                 facility = facility,
                 stats = stats,
                 onOpenMaps = onOpenMaps
             )
-            QrListItemCardVariant.MINIMAL -> MinimalFacilityCard(facility = facility)
+            ListViewMode.MINIMAL -> MinimalFacilityCard(facility = facility)
         }
     }
 

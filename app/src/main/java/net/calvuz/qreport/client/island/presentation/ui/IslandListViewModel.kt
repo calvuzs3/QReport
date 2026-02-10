@@ -13,6 +13,10 @@ import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
 import net.calvuz.qreport.client.island.domain.usecase.SearchIslandsUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
+import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
+import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -29,7 +33,8 @@ import javax.inject.Inject
 class IslandListViewModel @Inject constructor(
     private val getIslandsByFacilityUseCase: GetIslandsByFacilityUseCase,
     private val searchIslandsUseCase: SearchIslandsUseCase,
-    private val deleteIslandUseCase: DeleteIslandUseCase
+    private val deleteIslandUseCase: DeleteIslandUseCase,
+    private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityIslandListUiState())
@@ -38,6 +43,10 @@ class IslandListViewModel @Inject constructor(
     private var loadJob: Job? = null
     private var searchJob: Job? = null
     private var currentFacilityId: String = ""
+
+    companion object{
+        private const val KEY = AppSettingsDataStore.LIST_KEY_CLIENTS
+    }
 
     /**
      * Inizializza per una facility specifica
@@ -244,10 +253,59 @@ class IslandListViewModel @Inject constructor(
     }
 
     /**
+     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
+     * The preference is persisted via [AppSettingsRepository].
+     */
+    fun cycleCardVariant() {
+        val current = _uiState.value.cardVariant
+        val next = when (current) {
+            ListViewMode.FULL -> ListViewMode.COMPACT
+            ListViewMode.COMPACT -> ListViewMode.MINIMAL
+            ListViewMode.MINIMAL -> ListViewMode.FULL
+        }
+
+        // Update UI immediately
+        _uiState.value = _uiState.value.copy(cardVariant = next)
+
+        // Persist in background
+        viewModelScope.launch {
+            try {
+                appSettingsRepository.setListViewMode(
+                    KEY,
+                    next
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to persist card variant preference")
+            }
+        }
+    }
+
+    /**
      * Dismisses current error
      */
     fun dismissError() {
         _uiState.update { it.copy(error = null) }
+    }
+
+    // ============================================================
+    // PRIVATE METHODS
+    // ============================================================
+
+    /**
+     * Observe the persisted card variant preference and apply it to UI state.
+     */
+    private fun observeCardVariant() {
+        viewModelScope.launch {
+            appSettingsRepository.getListViewMode(KEY)
+                .catch { e ->
+                    Timber.e(e, "Error observing card variant preference")
+                }
+                .collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(
+                        cardVariant = viewMode
+                    )
+                }
+        }
     }
 
     /**
@@ -316,7 +374,8 @@ data class FacilityIslandListUiState(
     val sortOrder: IslandSortOrder = IslandSortOrder.SERIAL_NUMBER,
     val statistics: FacilityOperationalSummary? = null,
     val searchSuggestions: List<Island> = emptyList(),
-    val error: String? = null
+    val error: String? = null,
+    val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 /**

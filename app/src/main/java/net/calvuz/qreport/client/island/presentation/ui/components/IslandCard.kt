@@ -19,6 +19,7 @@ import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
  * Card per visualizzazione isola robotizzata
@@ -37,7 +38,7 @@ fun IslandCard(
     island: Island,
     onClick: () -> Unit,
     onDelete: (() -> Unit)? = null,
-    variant: IslandCardVariant = IslandCardVariant.FULL,
+    variant: ListViewMode,
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -69,12 +70,12 @@ fun IslandCard(
             IslandMainInfo(island = island, variant = variant)
 
             // Stato manutenzione
-            if (variant == IslandCardVariant.FULL || island.needsMaintenance()) {
+            if (variant == ListViewMode.FULL || island.needsMaintenance()) {
                 IslandMaintenanceStatus(island = island)
             }
 
             // Statistiche operative (solo nella versione completa)
-            if (variant == IslandCardVariant.FULL) {
+            if (variant == ListViewMode.FULL) {
                 IslandOperationalStats(island = island)
             }
         }
@@ -198,7 +199,7 @@ private fun IslandHeader(
 @Composable
 private fun IslandMainInfo(
     island: Island,
-    variant: IslandCardVariant
+    variant: ListViewMode
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -219,7 +220,7 @@ private fun IslandMainInfo(
                 )
             }
 
-            if (variant == IslandCardVariant.FULL) {
+            if (variant == ListViewMode.FULL) {
                 Text(
                     text = island.islandType.displayName,
                     style = MaterialTheme.typography.bodySmall,
