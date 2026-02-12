@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.client.client.presentation.ui.components.FormAddressSection
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 
 /**
@@ -184,75 +185,91 @@ private fun FacilityFormContent(
             }
         }
 
-        // Sezione Indirizzo
-        Card {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Indirizzo Stabilimento",
-                    style = MaterialTheme.typography.titleSmall
-                )
-
-                // Via
-                OutlinedTextField(
-                    value = uiState.street,
-                    onValueChange = { onFormEvent(FacilityFormEvent.StreetChanged(it)) },
-                    label = { Text("Via/Indirizzo") },
-                    placeholder = { Text("Es. Via Roma 123") },
-                    isError = uiState.streetError != null,
-                    supportingText = uiState.streetError?.let { { Text(it) } },
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Città e CAP
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = uiState.city,
-                        onValueChange = { onFormEvent(FacilityFormEvent.CityChanged(it)) },
-                        label = { Text("Città *") },
-                        placeholder = { Text("Milano") },
-                        isError = uiState.cityError != null,
-                        supportingText = uiState.cityError?.let { { Text(it) } },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    OutlinedTextField(
-                        value = uiState.postalCode,
-                        onValueChange = { onFormEvent(FacilityFormEvent.PostalCodeChanged(it)) },
-                        label = { Text("CAP") },
-                        placeholder = { Text("20100") },
-                        modifier = Modifier.weight(0.6f)
-                    )
-                }
-
-                // Provincia e Paese
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = uiState.province,
-                        onValueChange = { onFormEvent(FacilityFormEvent.ProvinceChanged(it)) },
-                        label = { Text("Provincia") },
-                        placeholder = { Text("MI") },
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    OutlinedTextField(
-                        value = uiState.country,
-                        onValueChange = { onFormEvent(FacilityFormEvent.CountryChanged(it)) },
-                        label = { Text("Paese") },
-                        placeholder = { Text("Italia") },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
+        // Address Section
+        FormAddressSection(
+            street = uiState.street,
+            streetNumber = uiState.streetNumber,
+            city = uiState.city,
+            province = uiState.province,
+            region = uiState.region,
+            postalCode = uiState.postalCode,
+            country = uiState.country,
+            onStreetChange = { onFormEvent(FacilityFormEvent.StreetChanged(it)) }, //viewModel::updateStreet,
+            onStreetNumberChange = { onFormEvent(FacilityFormEvent.StreetNumberChanged(it)) }, //viewModel::updateStreetNumber,
+            onCityChange = { onFormEvent(FacilityFormEvent.CityChanged(it)) }, //viewModel::updateCity,
+            onProvinceChange = { onFormEvent(FacilityFormEvent.ProvinceChanged(it)) }, //viewModel::updateProvince,
+            onRegionChange = { onFormEvent(FacilityFormEvent.RegionChanged(it)) }, //viewModel::updateRegion,
+            onPostalCodeChange = { onFormEvent(FacilityFormEvent.PostalCodeChanged(it)) }, //viewModel::updatePostalCode,
+            onCountryChange = { onFormEvent(FacilityFormEvent.CountryChanged(it)) }, //viewModel::updateCountry
+        )
+//        Card {
+//            Column(
+//                modifier = Modifier.padding(16.dp),
+//                verticalArrangement = Arrangement.spacedBy(12.dp)
+//            ) {
+//                Text(
+//                    text = "Indirizzo Stabilimento",
+//                    style = MaterialTheme.typography.titleSmall
+//                )
+//
+//                // Via
+//                OutlinedTextField(
+//                    value = uiState.street,
+//                    onValueChange = { onFormEvent(FacilityFormEvent.StreetChanged(it)) },
+//                    label = { Text("Via/Indirizzo") },
+//                    placeholder = { Text("Es. Via Roma 123") },
+//                    isError = uiState.streetError != null,
+//                    supportingText = uiState.streetError?.let { { Text(it) } },
+//                    modifier = Modifier.fillMaxWidth()
+//                )
+//
+//                // Città e CAP
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                ) {
+//                    OutlinedTextField(
+//                        value = uiState.city,
+//                        onValueChange = { onFormEvent(FacilityFormEvent.CityChanged(it)) },
+//                        label = { Text("Città *") },
+//                        placeholder = { Text("Milano") },
+//                        isError = uiState.cityError != null,
+//                        supportingText = uiState.cityError?.let { { Text(it) } },
+//                        modifier = Modifier.weight(1f)
+//                    )
+//
+//                    OutlinedTextField(
+//                        value = uiState.postalCode,
+//                        onValueChange = { onFormEvent(FacilityFormEvent.PostalCodeChanged(it)) },
+//                        label = { Text("CAP") },
+//                        placeholder = { Text("20100") },
+//                        modifier = Modifier.weight(0.6f)
+//                    )
+//                }
+//
+//                // Provincia e Paese
+//                Row(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                ) {
+//                    OutlinedTextField(
+//                        value = uiState.province,
+//                        onValueChange = { onFormEvent(FacilityFormEvent.ProvinceChanged(it)) },
+//                        label = { Text("Provincia") },
+//                        placeholder = { Text("MI") },
+//                        modifier = Modifier.weight(1f)
+//                    )
+//
+//                    OutlinedTextField(
+//                        value = uiState.country,
+//                        onValueChange = { onFormEvent(FacilityFormEvent.CountryChanged(it)) },
+//                        label = { Text("Paese") },
+//                        placeholder = { Text("Italia") },
+//                        modifier = Modifier.weight(1f)
+//                    )
+//                }
+//            }
+//        }
 
         // Descrizione
         OutlinedTextField(

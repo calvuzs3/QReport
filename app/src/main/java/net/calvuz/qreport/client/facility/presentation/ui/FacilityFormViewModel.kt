@@ -38,9 +38,11 @@ data class FacilityFormUiState(
 
     // Address fields
     val street: String = "",
+    val streetNumber: String = "",
     val city: String = "",
     val postalCode: String = "",
     val province: String = "",
+    val region: String = "",
     val country: String = "IT",
 
     // Options
@@ -70,8 +72,10 @@ sealed class FacilityFormEvent {
     data class TypeChanged(val type: FacilityType) : FacilityFormEvent()
     data class DescriptionChanged(val description: String) : FacilityFormEvent()
     data class StreetChanged(val street: String) : FacilityFormEvent()
+    data class StreetNumberChanged(val streetNumber: String) : FacilityFormEvent()
     data class CityChanged(val city: String) : FacilityFormEvent()
     data class PostalCodeChanged(val postalCode: String) : FacilityFormEvent()
+    data class RegionChanged(val region: String) : FacilityFormEvent()
     data class ProvinceChanged(val province: String) : FacilityFormEvent()
     data class CountryChanged(val country: String) : FacilityFormEvent()
     data class PrimaryChanged(val isPrimary: Boolean) : FacilityFormEvent()
@@ -108,37 +112,6 @@ class FacilityFormViewModel @Inject constructor(
         }
     }
 
-//    fun initialize(clientId: String, facilityId: String?) {
-//        viewModelScope.launch {
-//            if (facilityId != null) {
-//                // Edit mode: determina clientId dalla facility esistente
-//                 getFacilitiesByClientUseCase.getFacilityById(facilityId).fold(
-//                    onSuccess = { facility ->
-//                        if (facility != null) {
-//                            _uiState.value = _uiState.value.copy(
-//                                clientId = facility.clientId, // ✅ Auto-determine clientId
-//                                facilityId = facilityId
-//                            )
-//                            populateFormWithFacility(facility)
-//                        }
-//                    },
-//                    onFailure = { error ->
-//                        _uiState.value = _uiState.value.copy(
-//                            error = "Errore caricamento: ${error.message}"
-//                        )
-//                    }
-//                )
-//            } else {
-//                // Create mode: usa clientId passato
-//                _uiState.value = _uiState.value.copy(
-//                    clientId = clientId,
-//                    facilityId = null
-//                )
-//            }
-//            validateForm()
-//        }
-//    }
-
     fun onFormEvent(event: FacilityFormEvent) {
         when (event) {
             is FacilityFormEvent.NameChanged -> updateName(event.name)
@@ -146,8 +119,10 @@ class FacilityFormViewModel @Inject constructor(
             is FacilityFormEvent.TypeChanged -> updateType(event.type)
             is FacilityFormEvent.DescriptionChanged -> updateDescription(event.description)
             is FacilityFormEvent.StreetChanged -> updateStreet(event.street)
+            is FacilityFormEvent.StreetNumberChanged -> updateStreetNumber(event.streetNumber)
             is FacilityFormEvent.CityChanged -> updateCity(event.city)
             is FacilityFormEvent.PostalCodeChanged -> updatePostalCode(event.postalCode)
+            is FacilityFormEvent.RegionChanged -> updateRegion(event.region)
             is FacilityFormEvent.ProvinceChanged -> updateProvince(event.province)
             is FacilityFormEvent.CountryChanged -> updateCountry(event.country)
             is FacilityFormEvent.PrimaryChanged -> updatePrimary(event.isPrimary)
@@ -224,6 +199,11 @@ class FacilityFormViewModel @Inject constructor(
         validateForm()
     }
 
+    private fun updateStreetNumber(streetNumber: String) {
+        _uiState.value = _uiState.value.copy(streetNumber = streetNumber)
+        validateForm()
+    }
+
     private fun updateCity(city: String) {
         _uiState.value = _uiState.value.copy(
             city = city,
@@ -234,6 +214,11 @@ class FacilityFormViewModel @Inject constructor(
 
     private fun updatePostalCode(postalCode: String) {
         _uiState.value = _uiState.value.copy(postalCode = postalCode)
+        validateForm()
+    }
+
+    private fun updateRegion(region: String) {
+        _uiState.value = _uiState.value.copy(region = region)
         validateForm()
     }
 
@@ -455,8 +440,10 @@ class FacilityFormViewModel @Inject constructor(
     private fun createAddress(state: FacilityFormUiState): Address {
         return Address(
             street = state.street.trim().takeIf { it.isNotBlank() },
+            streetNumber = state.street.trim().takeIf { it.isNotBlank() },
             city = state.city.trim().takeIf { it.isNotBlank() },
             postalCode = state.postalCode.trim().takeIf { it.isNotBlank() },
+            region = state.region.trim().takeIf { it.isNotBlank() },
             province = state.province.trim().takeIf { it.isNotBlank() },
             country = state.country.trim().takeIf { it.isNotBlank() } ?: "Italia"
         )

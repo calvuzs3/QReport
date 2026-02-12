@@ -42,6 +42,7 @@ data class ClientFormUiState(
     val province: String = "",
     val region: String = "",
     val postalCode: String = "",
+    val country: String = "",
 
     // State
     val isLoading: Boolean = false,
@@ -198,6 +199,10 @@ class ClientFormViewModel @Inject constructor(
     fun updatePostalCode(postalCode: String) {
         val cleaned = postalCode.replace("\\s+".toRegex(), "")
         _uiState.value = _uiState.value.copy(postalCode = cleaned)
+    }
+
+    fun updateCountry(country: String) {
+        _uiState.value = _uiState.value.copy(country = country)
     }
 
     // ============================================================

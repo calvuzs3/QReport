@@ -11,9 +11,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.client.client.presentation.ui.components.FormAddressSection
 import timber.log.Timber
 
 /**
@@ -70,6 +72,18 @@ fun ClientFormScreen(
                         contentDescription = "Indietro"
                     )
                 }
+            },
+            actions = {
+                IconButton(
+                    onClick = viewModel::saveClient,
+                    enabled = uiState.canSave && !uiState.isSaving,
+                    modifier = Modifier.weight(1f)
+                ){
+                    Icon(
+                        imageVector = Icons.Default.Save,
+                        contentDescription = "Salva",
+                    )
+                }
             }
         )
 
@@ -112,19 +126,21 @@ fun ClientFormScreen(
 
                 // Section 2: Indirizzo Sede Legale
                 item {
-                    AddressSection(
+                    FormAddressSection(
                         street = uiState.street,
                         streetNumber = uiState.streetNumber,
                         city = uiState.city,
                         province = uiState.province,
                         region = uiState.region,
                         postalCode = uiState.postalCode,
+                        country = uiState.country,
                         onStreetChange = viewModel::updateStreet,
                         onStreetNumberChange = viewModel::updateStreetNumber,
                         onCityChange = viewModel::updateCity,
                         onProvinceChange = viewModel::updateProvince,
                         onRegionChange = viewModel::updateRegion,
-                        onPostalCodeChange = viewModel::updatePostalCode
+                        onPostalCodeChange = viewModel::updatePostalCode,
+                        onCountryChange = viewModel::updateCountry
                     )
                 }
 
@@ -132,7 +148,8 @@ fun ClientFormScreen(
                 item {
                     NotesSection(
                         notes = uiState.notes,
-                        onNotesChange = viewModel::updateNotes
+                        onNotesChange = viewModel::updateNotes,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 
@@ -213,6 +230,10 @@ private fun CompanyDataSection(
                 onValueChange = onCompanyNameChange,
                 label = { Text("Ragione Sociale *") },
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    capitalization = KeyboardCapitalization.Characters
+                ),
                 singleLine = true,
                 isError = errors.containsKey("companyName"),
                 supportingText = errors["companyName"]?.let {
@@ -227,7 +248,9 @@ private fun CompanyDataSection(
                 label = { Text("Partita IVA") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number
+                ),
                 placeholder = { Text("00000000000") },
                 isError = errors.containsKey("vatNumber"),
                 supportingText = errors["vatNumber"]?.let {
@@ -241,6 +264,10 @@ private fun CompanyDataSection(
                 onValueChange = onFiscalCodeChange,
                 label = { Text("Codice Fiscale") },
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    capitalization = KeyboardCapitalization.Characters
+                ),
                 singleLine = true,
                 placeholder = { Text("RSSMRA80A01H501X") },
                 isError = errors.containsKey("fiscalCode"),
@@ -255,8 +282,12 @@ private fun CompanyDataSection(
                 onValueChange = onIndustryChange,
                 label = { Text("Settore") },
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    capitalization = KeyboardCapitalization.Words
+                ),
                 singleLine = true,
-                placeholder = { Text("Automotive, Metalmeccanico, etc.") }
+                placeholder = { Text("Acciaieria, Ceramica, etc.") }
             )
 
             // Website
@@ -267,115 +298,12 @@ private fun CompanyDataSection(
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                placeholder = { Text("www.azienda.it") },
+                placeholder = { Text("www.azienda.com") },
                 isError = errors.containsKey("website"),
                 supportingText = errors["website"]?.let {
                     { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
             )
-        }
-    }
-}
-
-@Composable
-private fun AddressSection(
-    street: String,
-    streetNumber: String,
-    city: String,
-    province: String,
-    region: String,
-    postalCode: String,
-    onStreetChange: (String) -> Unit,
-    onStreetNumberChange: (String) -> Unit,
-    onCityChange: (String) -> Unit,
-    onProvinceChange: (String) -> Unit,
-    onRegionChange: (String) -> Unit,
-    onPostalCodeChange: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Indirizzo Sede Legale",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            // Street and number row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = street,
-                    onValueChange = onStreetChange,
-                    label = { Text("Via/Corso") },
-                    modifier = Modifier.weight(2f),
-                    singleLine = true,
-                    placeholder = { Text("Via Roma") }
-                )
-
-                OutlinedTextField(
-                    value = streetNumber,
-                    onValueChange = onStreetNumberChange,
-                    label = { Text("N.") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("123") }
-                )
-            }
-
-            // City and postal code row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = city,
-                    onValueChange = onCityChange,
-                    label = { Text("Città") },
-                    modifier = Modifier.weight(2f),
-                    singleLine = true,
-                    placeholder = { Text("Milano") }
-                )
-
-                OutlinedTextField(
-                    value = postalCode,
-                    onValueChange = onPostalCodeChange,
-                    label = { Text("CAP") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    placeholder = { Text("20100") }
-                )
-            }
-
-            // Province and region row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedTextField(
-                    value = province,
-                    onValueChange = onProvinceChange,
-                    label = { Text("Provincia") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    placeholder = { Text("MI") }
-                )
-
-                OutlinedTextField(
-                    value = region,
-                    onValueChange = onRegionChange,
-                    label = { Text("Regione") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    placeholder = { Text("Lombardia") }
-                )
-            }
         }
     }
 }
@@ -387,7 +315,7 @@ private fun NotesSection(
     modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -406,7 +334,11 @@ private fun NotesSection(
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
                 maxLines = 5,
-                placeholder = { Text("Informazioni aggiuntive sul cliente...") }
+                placeholder = { Text("note aggiuntive...") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    capitalization = KeyboardCapitalization.Sentences
+                ),
             )
         }
     }
