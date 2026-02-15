@@ -12,6 +12,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import net.calvuz.qreport.app.navigation.QReportNavigation
@@ -39,6 +40,9 @@ class MainActivity : ComponentActivity() {
 
         // Enable edge-to-edge layout
         enableEdgeToEdge()
+
+        // Abilita edge-to-edge per gestire correttamente gli insets
+        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
             QReportTheme {

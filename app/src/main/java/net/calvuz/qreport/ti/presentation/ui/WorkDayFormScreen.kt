@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -249,7 +250,9 @@ private fun BasicInfoSection(
                     value = technicianCount,
                     onValueChange = onTechnicianCountChange,
                     label = { Text("N° Tecnici") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    ),
                     modifier = Modifier.weight(0.4f)
                 )
 
@@ -258,6 +261,10 @@ private fun BasicInfoSection(
                     onValueChange = onTechnicianInitialsChange,
                     label = { Text("Sigle Tecnici") },
                     placeholder = { Text("LC, AB, MR") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        capitalization = KeyboardCapitalization.Characters
+                    ),
                     modifier = Modifier.weight(0.6f)
                 )
             }

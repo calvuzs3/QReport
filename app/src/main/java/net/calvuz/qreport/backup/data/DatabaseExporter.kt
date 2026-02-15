@@ -16,6 +16,7 @@ import net.calvuz.qreport.backup.domain.model.backup.PhotoBackup
 import net.calvuz.qreport.backup.domain.model.backup.SparePartBackup
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.backup.domain.model.backup.ContractBackup
+import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -37,6 +38,7 @@ import net.calvuz.qreport.client.contract.data.local.ContractDao
 import net.calvuz.qreport.client.contract.data.local.ContractEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
+import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -463,6 +465,32 @@ fun CheckUpIslandAssociationEntity.toBackup(): CheckUpAssociationBackup {
     )
 }
 
+/**
+ * Extension function to convert TechnicalInterventionEntity to TechnicalInterventionBackup
+ *
+ * Follows the same pattern as other entity mappers in DatabaseExporter.kt
+ */
+fun TechnicalInterventionEntity.toBackup(): TechnicalInterventionBackup {
+    return TechnicalInterventionBackup(
+        id = id,
+        interventionNumber = intervention_number,
+        createdAt = created_at,
+        updatedAt = updated_at,
+        status = status.name,
+        customerDataJson = customer_data,
+        robotDataJson = robot_data,
+        workLocationJson = work_location,
+        techniciansJson = technicians,
+        workDaysJson = work_days,
+        interventionDescription = intervention_description,
+        materialsUsedJson = materials_used,
+        externalReportJson = external_report,
+        isComplete = is_complete,
+        technicianSignatureJson = technician_signature,
+        customerSignatureJson = customer_signature,
+        customerName = customer_name
+    )
+}
 
 /**
  * =============================================================================

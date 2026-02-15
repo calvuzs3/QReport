@@ -1,5 +1,6 @@
 package net.calvuz.qreport.ti.presentation.ui
 
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -40,6 +41,9 @@ class WorkDaysTabViewModel @Inject constructor(
             return
         }
 
+        // Log
+        Timber.v("Loading work days for intervention: $interventionId")
+
         currentInterventionId = interventionId
 
         viewModelScope.launch {
@@ -47,7 +51,7 @@ class WorkDaysTabViewModel @Inject constructor(
 
             when (val result = getTechnicalInterventionByIdUseCase(interventionId)) {
                 is QrResult.Success -> {
-                    if (result.data != null) {
+//                    if (result.data != null) {
                         currentIntervention = result.data
                         _state.update {
                             it.copy(
@@ -56,14 +60,18 @@ class WorkDaysTabViewModel @Inject constructor(
                                 errorMessage = null
                             )
                         }
-                    } else {
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = "Intervento non trovato"
-                            )
-                        }
-                    }
+
+                        // Log
+                        Timber.v("Loaded ${result.data.workDays.size} work days")
+
+//                    } else {
+//                        _state.update {
+//                            it.copy(
+//                                isLoading = false,
+//                                errorMessage = "Intervento non trovato"
+//                            )
+//                        }
+//                    }
                 }
                 is QrResult.Error -> {
                     _state.update {
@@ -85,12 +93,12 @@ class WorkDaysTabViewModel @Inject constructor(
             viewModelScope.launch {
                 when (val result = getTechnicalInterventionByIdUseCase(id)) {
                     is QrResult.Success -> {
-                        if (result.data != null) {
+//                        if (result.data != null) {
                             currentIntervention = result.data
                             _state.update {
                                 it.copy(workDays = result.data.workDays)
                             }
-                        }
+//                        }
                     }
                     is QrResult.Error -> {
                         Timber.e("Failed to refresh work days: ${result.error}")
@@ -129,8 +137,10 @@ class WorkDaysTabViewModel @Inject constructor(
     /**
      * Navigate back to list view
      */
-    fun navigateBackToList() {
-        refreshWorkDays()
+    fun navigateBackToList(skipDataRefresh: Boolean = false) {
+        if (!skipDataRefresh) {
+            refreshWorkDays()
+        }
         _state.update {
             it.copy(viewMode = WorkDaysViewMode.List)
         }
@@ -195,7 +205,7 @@ class WorkDaysTabViewModel @Inject constructor(
     /**
      * Auto-save on tab change - delegates to detail form if in detail mode
      */
-    suspend fun autoSaveOnTabChange(): QrResult<Unit, QrError> {
+    fun autoSaveOnTabChange(): QrResult<Unit, QrError> {
         // If we're in list mode, nothing to save at this level
         // The detail form handles its own saving
         return QrResult.Success(Unit)

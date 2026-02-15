@@ -70,6 +70,9 @@ fun EditInterventionScreen(
     // Coroutine scope for coordinated tab switching
     val coroutineScope = rememberCoroutineScope()
 
+    // SnackBar
+    val snackbarHostState = remember { SnackbarHostState() }
+
     // Initialize ViewModels with intervention ID
     LaunchedEffect(interventionId) {
         viewModel.loadIntervention(interventionId)
@@ -92,7 +95,7 @@ fun EditInterventionScreen(
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let { error ->
             Timber.e("EditInterventionScreen: Error message: $error")
-            // TODO: Show snackbar with error message
+            snackbarHostState.showSnackbar(error.toString())
             viewModel.clearError()
         }
     }
@@ -101,7 +104,7 @@ fun EditInterventionScreen(
     LaunchedEffect(state.successMessage) {
         state.successMessage?.let { message ->
             Timber.d("EditInterventionScreen: Success message: $message")
-            // TODO: Show snackbar with success message
+            snackbarHostState.showSnackbar(message.toString())
             viewModel.clearSuccess()
         }
     }
@@ -412,12 +415,12 @@ private fun handleCoordinatedTabSwitch(
             val autoSaveResult = when (EditInterventionTab.entries[currentTabIndex]) {
                 EditInterventionTab.GENERAL -> {
                     // TODO: Implement when TechnicalInterventionFormViewModel has autoSaveOnTabChange
-                    Timber.d("handleCoordinatedTabSwitch: General tab auto-save not yet implemented")
+                    Timber.i("handleCoordinatedTabSwitch: General tab auto-save not yet implemented")
                     QrResult.Success(Unit)
                 }
 
                 EditInterventionTab.DETAILS -> {
-                    Timber.d("handleCoordinatedTabSwitch: Auto-saving Details tab")
+                    Timber.i("handleCoordinatedTabSwitch: Auto-saving Details tab")
                     detailsViewModel.autoSaveOnTabChange()
                 }
 
@@ -427,12 +430,12 @@ private fun handleCoordinatedTabSwitch(
 //                }
 
                 EditInterventionTab.WORK_DAYS -> {
-                    Timber.d("handleCoordinatedTabSwitch: Auto-saving WorkDays tab")
+                    Timber.i("handleCoordinatedTabSwitch: Auto-saving WorkDays tab")
                     workDaysTabViewModel.autoSaveOnTabChange()
                 }
 
                 EditInterventionTab.SIGNATURES -> {
-                    Timber.d("handleCoordinatedTabSwitch: Auto-saving Signatures tab")
+                    Timber.i("handleCoordinatedTabSwitch: Auto-saving Signatures tab")
                     signaturesViewModel.autoSaveOnTabChange()
                 }
             }

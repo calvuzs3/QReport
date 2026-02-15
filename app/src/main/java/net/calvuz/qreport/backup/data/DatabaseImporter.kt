@@ -15,6 +15,7 @@ import net.calvuz.qreport.backup.domain.model.enum.RestoreStrategy
 import net.calvuz.qreport.backup.domain.model.backup.SparePartBackup
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.backup.domain.model.backup.ContractBackup
+import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -36,7 +37,8 @@ import net.calvuz.qreport.client.contract.data.local.ContractEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
-import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
+import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
+import net.calvuz.qreport.ti.domain.model.InterventionStatus
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -598,5 +600,33 @@ fun CheckUpAssociationBackup.toEntity(): CheckUpIslandAssociationEntity {
         notes = notes,
         createdAt = createdAt.toEpochMilliseconds(),
         updatedAt = updatedAt.toEpochMilliseconds()
+    )
+}
+
+/**
+ * Extension function to convert TechnicalInterventionBackup to TechnicalInterventionEntity
+ *
+ * Reverse of TechnicalInterventionEntity.toBackup()
+ * Used during restore/import operations
+ */
+fun TechnicalInterventionBackup.toEntity(): TechnicalInterventionEntity {
+    return TechnicalInterventionEntity(
+        id = id,
+        intervention_number = interventionNumber,
+        created_at = createdAt,
+        updated_at = updatedAt,
+        status = InterventionStatus.valueOf(status),
+        customer_data = customerDataJson,
+        robot_data = robotDataJson,
+        work_location = workLocationJson,
+        technicians = techniciansJson,
+        work_days = workDaysJson,
+        intervention_description = interventionDescription,
+        materials_used = materialsUsedJson,
+        external_report = externalReportJson,
+        is_complete = isComplete,
+        technician_signature = technicianSignatureJson,
+        customer_signature = customerSignatureJson,
+        customer_name = customerName
     )
 }

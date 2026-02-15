@@ -87,7 +87,7 @@ fun WorkDaysTabContent(
                         workDayIndex = viewMode.workDayIndex,
                         totalWorkDays = tabState.workDays.size,
                         formViewModel = formViewModel,
-                        onNavigateBack = { tabViewModel.navigateBackToList() },
+                        onNavigateBack = { skipDataRefresh -> tabViewModel.navigateBackToList(skipDataRefresh) },
                         modifier = Modifier.fillMaxSize()
                     )
                 }
@@ -105,7 +105,7 @@ private fun WorkDayDetailWrapper(
     workDayIndex: Int?,
     totalWorkDays: Int,
     formViewModel: WorkDayFormViewModel,
-    onNavigateBack: () -> Unit,
+    onNavigateBack: (skipDataRefresh: Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val formState by formViewModel.state.collectAsStateWithLifecycle()
@@ -127,7 +127,7 @@ private fun WorkDayDetailWrapper(
                 if (formState.isDirty) {
                     formViewModel.saveAndNavigateBack(onNavigateBack)
                 } else {
-                    onNavigateBack()
+                    onNavigateBack(false)
                 }
             }
         )

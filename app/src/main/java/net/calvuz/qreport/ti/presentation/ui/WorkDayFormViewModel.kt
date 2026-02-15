@@ -376,18 +376,18 @@ class WorkDayFormViewModel @Inject constructor(
      * Save and navigate back to list.
      * Called when user presses back button in detail view.
      */
-    fun saveAndNavigateBack(onComplete: () -> Unit) {
+    fun saveAndNavigateBack(onComplete: (skipDataRefresh: Boolean) -> Unit) {
         val currentState = _state.value
         val intervention = currentIntervention
 
         if (!currentState.isDirty) {
-            onComplete()
+            onComplete(false)
             return
         }
 
         if (intervention == null) {
             _state.update { it.copy(errorMessage = "Intervento non caricato") }
-            onComplete()
+            onComplete(false)
             return
         }
 
@@ -406,7 +406,7 @@ class WorkDayFormViewModel @Inject constructor(
                         )
                     }
                     resetFormState()
-                    onComplete()
+                    onComplete(true)
                 }
                 is QrResult.Error -> {
                     _state.update {
@@ -416,7 +416,7 @@ class WorkDayFormViewModel @Inject constructor(
                         )
                     }
                     // Still navigate back even on error
-                    onComplete()
+                    onComplete(false)
                 }
             }
         }
