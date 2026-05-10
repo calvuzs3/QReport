@@ -15,41 +15,115 @@ import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.island.domain.usecase.IslandDeletionInfo
+import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
+import net.calvuz.qreport.client.unit.domain.repository.MechanicalUnitRepository
+import net.calvuz.qreport.client.unit.domain.usecase.GetMechanicalUnitsByIslandUseCase
 import timber.log.Timber
 import javax.inject.Inject
 
+// =============================================================================
+// TAB ENUM
+// =============================================================================
+
 /**
- * ViewModel per FacilityIslandDetailScreen
- *
- * Gestisce:
- * - Caricamento dettagli isola con statistiche
- * - Aggiornamenti stato operativo
- * - Gestione manutenzione (registro, programmazione)
- * - Eliminazione isola con validazioni
- * - Refresh dati real-time
+ * Tabs available in the island detail screen.
+ * Mirrors [FacilityDetailTab] with UNITS replacing ISLANDS.
  */
+enum class IslandDetailTab(val title: String) {
+    UNITS("Unità"),
+    MAINTENANCE("Manutenzione"),
+    INFO("Informazioni"),
+}
+
+// =============================================================================
+// UI STATE
+// =============================================================================
+
+data class FacilityIslandDetailUiState(
+    val isLoading: Boolean = false,
+    val hasData: Boolean = false,
+    val island: Island? = null,
+    val statistics: SingleIslandStatistics? = null,
+
+    // Tab navigation
+    val selectedTab: IslandDetailTab = IslandDetailTab.UNITS,
+
+    // Mechanical units
+    val units: List<MechanicalUnit> = emptyList(),
+    val isLoadingUnits: Boolean = false,
+
+    // Delete states (island)
+    val isDeleting: Boolean = false,
+    val deleteSuccess: Boolean = false,
+    val deleteError: String? = null,
+    val showDeleteConfirmation: Boolean = false,
+    val islandDeleted: Boolean = false,
+
+    // Operation states
+    val isUpdatingMaintenance: Boolean = false,
+
+    val deletionInfo: IslandDeletionInfo? = null,
+
+    // Errors
+    val error: String? = null
+) {
+    val islandName: String
+        get() = island?.displayName ?: "Isola"
+
+    val hasOperationsInProgress: Boolean
+        get() = isUpdatingMaintenance || isDeleting
+
+    val needsAttention: Boolean
+        get() = statistics?.needsAttention == true || island?.needsMaintenance() == true
+
+    val statusText: String
+        get() = statistics?.statusDescription
+            ?: island?.islandOperationalStatus?.displayName ?: ""
+
+    // Badge counts for tabs
+    val unitsCount: Int
+        get() = units.size
+}
+
+// =============================================================================
+// VIEWMODEL
+// =============================================================================
+
 @HiltViewModel
 class IslandDetailViewModel @Inject constructor(
     private val getIslandByIdUseCase: GetIslandByIdUseCase,
     private val getStatisticsUseCase: GetIslandStatisticsUseCase,
+    private val getMechanicalUnitsUseCase: GetMechanicalUnitsByIslandUseCase,
     private val updateMaintenanceUseCase: UpdateMaintenanceUseCase,
-    private val deleteIslandUseCase: DeleteIslandUseCase
+    private val deleteIslandUseCase: DeleteIslandUseCase,
+    private val mechanicalUnitRepository: MechanicalUnitRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityIslandDetailUiState())
     val uiState = _uiState.asStateFlow()
 
     private var loadJob: Job? = null
-    private var currentFacilityId: String = ""
     private var currentIslandId: String = ""
 
     init {
         Timber.d("IslandDetailViewModel initialized")
     }
 
-    /**
-     * Carica dettagli isola
-     */
+    // ============================================================
+    // TAB NAVIGATION
+    // ============================================================
+
+    fun selectTab(tab: IslandDetailTab) {
+        if (_uiState.value.selectedTab != tab) {
+            _uiState.update { it.copy(selectedTab = tab) }
+            Timber.d("Island detail tab selected: ${tab.title}")
+        }
+    }
+
+    // ============================================================
+    // LOADING
+    // ============================================================
+
     fun loadIslandDetails(islandId: String) {
         if (islandId.isBlank()) {
             _uiState.update { it.copy(error = "ID isola non valido") }
@@ -63,16 +137,15 @@ class IslandDetailViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                // Carica isola e statistiche in parallelo
                 val islandResult = getIslandByIdUseCase(islandId)
-                val statsResult = getStatisticsUseCase(islandId)
+                val statsResult  = getStatisticsUseCase(islandId)
 
                 islandResult.fold(
                     onSuccess = { island ->
                         statsResult.fold(
                             onSuccess = { statistics ->
-                                _uiState.update { currentState ->
-                                    currentState.copy(
+                                _uiState.update {
+                                    it.copy(
                                         isLoading = false,
                                         island = island,
                                         statistics = statistics,
@@ -82,9 +155,8 @@ class IslandDetailViewModel @Inject constructor(
                                 }
                             },
                             onFailure = { error ->
-                                // Mostra isola anche se le statistiche falliscono
-                                _uiState.update { currentState ->
-                                    currentState.copy(
+                                _uiState.update {
+                                    it.copy(
                                         isLoading = false,
                                         island = island,
                                         statistics = null,
@@ -103,8 +175,13 @@ class IslandDetailViewModel @Inject constructor(
                                 hasData = false
                             )
                         }
+                        return@launch
                     }
                 )
+
+                // Load mechanical units independently — failure is non-critical
+                loadMechanicalUnits(islandId)
+
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -117,9 +194,42 @@ class IslandDetailViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Registra manutenzione completata
-     */
+    private suspend fun loadMechanicalUnits(islandId: String) {
+        _uiState.update { it.copy(isLoadingUnits = true) }
+        getMechanicalUnitsUseCase(islandId).fold(
+            onSuccess = { units ->
+                _uiState.update { it.copy(units = units, isLoadingUnits = false) }
+            },
+            onFailure = { error ->
+                Timber.w(error, "Failed to load mechanical units for island $islandId")
+                _uiState.update { it.copy(isLoadingUnits = false) }
+            }
+        )
+    }
+
+    // ============================================================
+    // MECHANICAL UNIT ACTIONS
+    // ============================================================
+
+    fun deleteUnit(unit: MechanicalUnit) {
+        viewModelScope.launch {
+            mechanicalUnitRepository.delete(unit.id).fold(
+                onSuccess = {
+                    Timber.d("MechanicalUnit deleted: ${unit.id}")
+                    loadMechanicalUnits(currentIslandId)
+                },
+                onFailure = { error ->
+                    Timber.e(error, "Failed to delete MechanicalUnit: ${unit.id}")
+                    _uiState.update { it.copy(error = "Errore eliminazione unità: ${error.message}") }
+                }
+            )
+        }
+    }
+
+    // ============================================================
+    // MAINTENANCE
+    // ============================================================
+
     fun recordMaintenance(
         maintenanceDate: Instant? = null,
         resetOperatingHours: Boolean = true,
@@ -135,7 +245,6 @@ class IslandDetailViewModel @Inject constructor(
                 notes = notes
             ).fold(
                 onSuccess = {
-                    // Ricarica dati dopo aggiornamento
                     loadIslandDetails(currentIslandId)
                     _uiState.update { it.copy(isUpdatingMaintenance = false) }
                 },
@@ -151,9 +260,6 @@ class IslandDetailViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Aggiorna prossima manutenzione programmata
-     */
     fun updateNextMaintenance(nextMaintenanceDate: Instant?) {
         viewModelScope.launch {
             _uiState.update { it.copy(isUpdatingMaintenance = true) }
@@ -163,7 +269,6 @@ class IslandDetailViewModel @Inject constructor(
                 nextMaintenanceDate = nextMaintenanceDate
             ).fold(
                 onSuccess = {
-                    // Ricarica dati
                     loadIslandDetails(currentIslandId)
                     _uiState.update { it.copy(isUpdatingMaintenance = false) }
                 },
@@ -180,147 +285,69 @@ class IslandDetailViewModel @Inject constructor(
     }
 
     // ============================================================
-    // DELETE OPERATIONS
+    // DELETE ISLAND
     // ============================================================
 
-    /**
-     * Mostra dialog di conferma prima di eliminare
-     */
     fun showDeleteConfirmation() {
-        _uiState.value = _uiState.value.copy(
-            showDeleteConfirmation = true
-        )
+        _uiState.update { it.copy(showDeleteConfirmation = true) }
     }
 
-    /**
-     * Nasconde dialog di conferma
-     */
     fun hideDeleteConfirmation() {
-        _uiState.value = _uiState.value.copy(
-            showDeleteConfirmation = false
-        )
+        _uiState.update { it.copy(showDeleteConfirmation = false) }
     }
 
-    /**
-     * Elimina isola con validazioni
-     */
     fun deleteFacilityIsland(force: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isDeleting = true,
-                deleteError = null,
-                showDeleteConfirmation = false
-            )
+            _uiState.update {
+                it.copy(isDeleting = true, deleteError = null, showDeleteConfirmation = false)
+            }
 
             try {
                 deleteIslandUseCase(islandId = currentIslandId, force = force).fold(
                     onSuccess = {
                         Timber.d("Island deleted successfully: $currentIslandId")
-                        _uiState.value = _uiState.value.copy(
-                            isDeleting = false,
-                            deleteSuccess = true  // ✅ Trigger navigation back
-                        )
+                        _uiState.update { it.copy(isDeleting = false, deleteSuccess = true) }
                     },
                     onFailure = { error ->
-                        Timber.e(error, "Failed to delete Island: $currentIslandId")
-
-                        _uiState.value = _uiState.value.copy(
-                            isDeleting = false,
-                            deleteError = "Errore eliminazione: ${error.message}"
-                        )
+                        Timber.e(error, "Failed to delete island: $currentIslandId")
+                        _uiState.update {
+                            it.copy(
+                                isDeleting = false,
+                                deleteError = "Errore eliminazione: ${error.message}"
+                            )
+                        }
                     }
                 )
             } catch (e: Exception) {
-                Timber.e(e, "Exception deleting Island")
-                _uiState.value = _uiState.value.copy(
-                    isDeleting = false,
-                    deleteError = "Errore imprevisto: ${e.message}"
-                )
+                Timber.e(e, "Exception deleting island")
+                _uiState.update {
+                    it.copy(isDeleting = false, deleteError = "Errore imprevisto: ${e.message}")
+                }
             }
         }
     }
 
-    /**
-     * Refresh dati
-     */
+    // ============================================================
+    // MISC
+    // ============================================================
+
     fun refreshData() {
-        if (currentIslandId.isNotBlank()) {
-            loadIslandDetails(currentIslandId)
-        }
+        if (currentIslandId.isNotBlank()) loadIslandDetails(currentIslandId)
     }
 
-    /**
-     * Dismisses current error
-     */
     fun dismissError() {
         _uiState.update { it.copy(error = null) }
     }
 
-    /**
-     * Reset DELETE STATES
-     */
     fun resetDeleteState() {
-        _uiState.value = _uiState.value.copy(
-            deleteSuccess = false,
-            deleteError = null
-        )
+        _uiState.update { it.copy(deleteSuccess = false, deleteError = null) }
     }
 }
 
-/**
- * UI State per dettaglio isola
- */
-data class FacilityIslandDetailUiState(
-    val isLoading: Boolean = false,
-    val hasData: Boolean = false,
-    val island: Island? = null,
-    val statistics: SingleIslandStatistics? = null,
+// =============================================================================
+// EVENTS (unchanged)
+// =============================================================================
 
-    // Delete states
-    val isDeleting: Boolean = false,
-    val deleteSuccess: Boolean = false,
-    val deleteError: String? = null,
-    val showDeleteConfirmation: Boolean = false,
-    val islandDeleted: Boolean = false,
-
-    // Stati operazioni
-    val isUpdatingMaintenance: Boolean = false,
-
-    // Dati aggiuntivi
-    val deletionInfo: IslandDeletionInfo? = null,
-
-    // Errori
-    val error: String? = null
-) {
-    /**
-     * Nome display per UI
-     */
-    val islandName: String
-        get() = island?.displayName ?: "Isola"
-
-    /**
-     * Indica se ci sono operazioni in corso
-     */
-    val hasOperationsInProgress: Boolean
-        get() = isUpdatingMaintenance || isDeleting
-
-    /**
-     * Indica se l'isola richiede attenzione immediata
-     */
-    val needsAttention: Boolean
-        get() = statistics?.needsAttention == true || island?.needsMaintenance() == true
-
-    /**
-     * Testo stato per subtitle
-     */
-    val statusText: String
-        get() = statistics?.statusDescription
-            ?: island?.islandOperationalStatus?.displayName ?: ""
-}
-
-/**
- * Eventi UI
- */
 sealed class FacilityIslandDetailEvent {
     object Refresh : FacilityIslandDetailEvent()
     object DismissError : FacilityIslandDetailEvent()
@@ -332,9 +359,7 @@ sealed class FacilityIslandDetailEvent {
     ) : FacilityIslandDetailEvent()
 
     data class UpdateNextMaintenance(val date: Instant?) : FacilityIslandDetailEvent()
-
     data class DeleteIsland(val force: Boolean = false) : FacilityIslandDetailEvent()
-
     object GetDeletionInfo : FacilityIslandDetailEvent()
     object DismissDeletionInfo : FacilityIslandDetailEvent()
 }

@@ -5,6 +5,7 @@ import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.*
 import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
+import timber.log.Timber
 
 /**
  * Tipi di isola robotizzata supportati - FAMIGLIA POLY
@@ -57,5 +58,7 @@ enum class IslandType(
         code = "SAMPLE",
         description = "Sistema robotizzato per campionamento e analisi",
         icon = Icons.Default.Science
-    )
+    );
+
+    companion object
 }

@@ -15,6 +15,7 @@ import net.calvuz.qreport.backup.domain.model.enum.RestoreStrategy
 import net.calvuz.qreport.backup.domain.model.backup.SparePartBackup
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.backup.domain.model.backup.ContractBackup
+import net.calvuz.qreport.backup.domain.model.backup.MechanicalUnitBackup
 import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
@@ -34,6 +35,8 @@ import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.ContractDao
 import net.calvuz.qreport.client.contract.data.local.ContractEntity
+import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
+import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
@@ -63,6 +66,7 @@ class DatabaseImporter @Inject constructor(
     private val contractDao: ContractDao,
     private val facilityDao: FacilityDao,
     private val islandDao: IslandDao,
+    private val mechanicalUnitDao: MechanicalUnitDao,
     private val checkUpAssociationDao: CheckUpAssociationDao,
     private val technicalInterventionDao: TechnicalInterventionDao
 ) {
@@ -159,6 +163,10 @@ class DatabaseImporter @Inject constructor(
             contractDao.deleteAll()
             Timber.v("Cleared contracts")
 
+            // 6.2 Mechanical Unit (depèends on facility islands)
+            mechanicalUnitDao.deleteAll()
+            Timber.d("Cleared mechanical_units")
+
             // 7. Facility Islands (dipende da facilities)
             islandDao.deleteAll()
             Timber.v("Cleared facility_islands")
@@ -216,6 +224,13 @@ class DatabaseImporter @Inject constructor(
                 islandDao.insertAllFromBackup(backup.facilityIslands.map { it.toEntity() })
                 Timber.v("Imported ${backup.facilityIslands.size} facility islands")
             }
+
+            // 4. Mechanical Units (dipende da islands)
+            if (backup.mechanicalUnits.isNotEmpty()) {
+                mechanicalUnitDao.insertAllFromBackup(backup.mechanicalUnits.map { it.toEntity() })
+                Timber.v("Imported ${backup.facilityIslands.size} facility islands")
+            }
+
 
             // 5. Checkups (dipende da facility_islands tramite associations)
             if (backup.checkUps.isNotEmpty()) {
@@ -280,6 +295,7 @@ class DatabaseImporter @Inject constructor(
                 "contacts" to contactDao.count(),
                 "contracts" to contractDao.count(),
                 "facilityIslands" to islandDao.count(),
+                "mechanicalUnits" to mechanicalUnitDao.count(),
                 "checkUps" to checkUpDao.count(),
                 "checkItems" to checkItemDao.count(),
                 "photos" to photoDao.count(),
@@ -294,6 +310,7 @@ class DatabaseImporter @Inject constructor(
                 "contacts" to originalBackup.contacts.size,
                 "contracts" to originalBackup.contracts.size,
                 "facilityIslands" to originalBackup.facilityIslands.size,
+                "mechanicalUnits" to originalBackup.mechanicalUnits.size,
                 "checkUps" to originalBackup.checkUps.size,
                 "checkItems" to originalBackup.checkItems.size,
                 "photos" to originalBackup.photos.size,
@@ -354,6 +371,7 @@ class DatabaseImporter @Inject constructor(
                 "Contacts" to contactDao.count(),
                 "Contracts" to contractDao.count(),
                 "Facility Islands" to islandDao.count(),
+                "Mechanical Units" to mechanicalUnitDao.count(),
                 "Checkups" to checkUpDao.count(),
                 "Check Items" to checkItemDao.count(),
                 "Photos" to photoDao.count(),
@@ -489,10 +507,6 @@ fun ClientBackup.toEntity(): ClientEntity {
     return ClientEntity(
         id = id,
         companyName = companyName,
-        vatNumber = vatNumber,
-        fiscalCode = fiscalCode,
-        website = website,
-        industry = industry,
         notes = notes,
         headquartersJson = headquartersJson,
         isActive = isActive,
@@ -553,7 +567,7 @@ fun FacilityBackup.toEntity(): FacilityEntity {
         clientId = clientId,
         name = name,
         code = code,
-        description = description,
+        notes = description,
         facilityType = facilityType,
         addressJson = addressJson,
         isPrimary = isPrimary,
@@ -587,6 +601,26 @@ fun FacilityIslandBackup.toEntity(): IslandEntity {
         updatedAt = updatedAt.toEpochMilliseconds()
     )
 }
+
+
+/**
+ * Mapping da MechanicalUnitBackup a MechanicalUnitEntity
+ */
+fun MechanicalUnitBackup.toEntity(): MechanicalUnitEntity {
+    return MechanicalUnitEntity(
+    id = id,
+    islandId = islandId,
+    unitType = unitType,
+    name = name,
+    serialNumber = serialNumber,
+    model = model,
+    notes = notes,
+    isActive = isActive,
+    createdAt = createdAt.toEpochMilliseconds(),
+    updatedAt = updatedAt.toEpochMilliseconds()
+    )
+}
+
 
 /**
  * Mapping da CheckUpAssociationBackup a CheckUpIslandAssociationEntity

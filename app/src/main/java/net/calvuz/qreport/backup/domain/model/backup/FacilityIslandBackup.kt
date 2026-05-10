@@ -4,9 +4,6 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 
-/**
- * FacilityIslandBackup - Backup delle isole robotiche
- */
 @Serializable
 data class FacilityIslandBackup(
     val id: String,

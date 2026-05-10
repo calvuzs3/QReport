@@ -5,8 +5,7 @@ import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 
 /**
- * DAO per gestione stabilimenti
- * Definisce tutte le operazioni CRUD e query complesse per FacilityEntity
+ * Facility DAO
  */
 @Dao
 interface FacilityDao {
@@ -184,22 +183,3 @@ interface FacilityDao {
     @Query("SELECT COUNT(*) FROM facilities")
     suspend fun count(): Int
 }
-
-/**
- * Result class per query con conteggio isole
- */
-data class FacilityWithIslandCountResult(
-    val id: String,
-    val clientId: String,
-    val name: String,
-    val code: String?,
-    val description: String?,
-    val facilityType: String,
-    val addressJson: String,
-    val isPrimary: Boolean,
-    val isActive: Boolean,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val islandsCount: Int,
-
-)

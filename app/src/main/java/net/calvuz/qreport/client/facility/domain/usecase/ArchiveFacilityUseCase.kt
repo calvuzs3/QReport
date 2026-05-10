@@ -167,13 +167,13 @@ class ArchiveFacilityUseCase @Inject constructor(
             // Aggiorna descrizione con info archiviazione se fornito motivo
             val updatedDescription = if (reason != null) {
                 val archiveNote = "\n[ARCHIVIATO il $now: $reason]"
-                (facility.description ?: "") + archiveNote
-            } else facility.description
+                (facility.notes ?: "") + archiveNote
+            } else facility.notes
 
             val archivedFacility = facility.copy(
                 isActive = false,
                 isPrimary = false, // Rimuovi flag primario
-                description = updatedDescription,
+                notes = updatedDescription,
                 updatedAt = now
             )
 

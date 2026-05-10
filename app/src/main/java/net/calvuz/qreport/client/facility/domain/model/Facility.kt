@@ -5,31 +5,28 @@ import kotlinx.serialization.Serializable
 import net.calvuz.qreport.app.app.domain.model.Address
 
 /**
- * Stabilimento del cliente
- * Un cliente può avere più stabilimenti produttivi
+ * Facility
  */
 @Serializable
 data class Facility(
     val id: String,
     val clientId: String,
 
-    // ===== DATI STABILIMENTO =====
+    // ===== DATA =====
     val name: String,
     val code: String? = null,              // Codice interno cliente
-    val description: String? = null,
+    val notes: String? = null,
     val facilityType: FacilityType = FacilityType.PRODUCTION,
 
-    // ===== LOCALIZZAZIONE =====
+    // ===== ADDRESS =====
     val address: Address,
 
-    // ===== STATO =====
-    val isPrimary: Boolean = false,        // Stabilimento principale
-    val isActive: Boolean = true,
-
-    // ===== RELAZIONI =====
+    // ===== RELATIONSHIPS =====
     val islands: List<String> = emptyList(), // IDs delle isole POLY
 
-    // ===== METADATI =====
+    // ===== META =====
+    val isPrimary: Boolean = false,        // Stabilimento principale
+    val isActive: Boolean = true,
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
@@ -51,8 +48,8 @@ data class Facility(
     val fullDescription: String
         get() = buildString {
             append(displayName)
-            if (!description.isNullOrBlank()) {
-                append(" - $description")
+            if (!notes.isNullOrBlank()) {
+                append(" - $notes")
             }
             append(" [${facilityType.displayName}]")
         }
@@ -66,7 +63,7 @@ data class Facility(
     /**
      * Verifica se lo stabilimento ha dati completi
      */
-    fun isComplete(): Boolean = name.isNotBlank() && address.isComplete()
+    fun isComplete(): Boolean = name.isNotBlank()
 
     /**
      * Badge per UI (primario/secondario)
@@ -74,7 +71,7 @@ data class Facility(
     val badgeText: String?
         get() = when {
             isPrimary -> "Principale"
-            !isActive -> "Inattivo"
+            !isActive -> ""
             else -> null
         }
 

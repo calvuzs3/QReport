@@ -39,7 +39,7 @@ data class FacilityDetailUiState(
     val facility: Facility? = null,
 
     // UI State
-    val selectedTab: FacilityDetailTab = FacilityDetailTab.INFO,
+    val selectedTab: FacilityDetailTab = FacilityDetailTab.ISLANDS,
 
     // Delete states
     val isDeleting: Boolean = false,
@@ -95,9 +95,9 @@ data class FacilityDetailUiState(
  * Tab disponibili nella facility detail screen
  */
 enum class FacilityDetailTab(val title: String) {
-    INFO("Informazioni"),
     ISLANDS("Isole"),
-    MAINTENANCE("Manutenzione")
+    MAINTENANCE("Manutenzione"),
+    INFO("Informazioni"),
 }
 
 /**

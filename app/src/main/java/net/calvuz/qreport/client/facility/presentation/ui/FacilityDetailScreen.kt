@@ -27,6 +27,8 @@ import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummar
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.util.SizeUtils.getFormattedCycleCount
+import net.calvuz.qreport.app.util.SizeUtils.getFormattedHours
 
 /**
  * Screen per il dettaglio facility con gestione islands
@@ -175,6 +177,7 @@ fun FacilityDetailScreen(
                     onTabSelected = viewModel::selectTab,
                     onIslandFilterSelected = viewModel::updateIslandFilter,
                     onIslandClick = onNavigateToIslandDetail,
+                    onEdit = { onNavigateToEdit(facilityId) },
                     onViewAll = { onNavigateToIslandsList(facilityId) },
                     onCreateIsland = { onNavigateToCreateIsland(facilityId) },
                     onEditIsland = { onNavigateToEditIsland },
@@ -216,6 +219,7 @@ private fun FacilityDetailContent(
     uiState: FacilityDetailUiState,
     onTabSelected: (FacilityDetailTab) -> Unit,
     onIslandFilterSelected: (IslandFilter) -> Unit,
+    onEdit: (String) -> Unit,
     onIslandClick: (String) -> Unit,
     onViewAll: () -> Unit,
     onCreateIsland: () -> Unit,
@@ -225,15 +229,15 @@ private fun FacilityDetailContent(
 ) {
     Column {
         // Header con badge status e statistics
-        if (uiState.statusBadge.isNotBlank() || uiState.isPrimaryFacility) {
-            HeaderSection(
-                facility = uiState.facility!!,
-                statusBadge = uiState.statusBadge,
-                statusColor = uiState.statusBadgeColor.toLongOrNull() ?: 0xFF22C55EL,
-                statisticsSummary = uiState.statisticsSummary,
-                operationalSummary = uiState.operationalSummary
-            )
-        }
+//        if (uiState.statusBadge.isNotBlank() || uiState.isPrimaryFacility) {
+//            HeaderSection(
+//                facility = uiState.facility!!,
+//                statusBadge = uiState.statusBadge,
+//                statusColor = uiState.statusBadgeColor.toLongOrNull() ?: 0xFF22C55EL,
+//                statisticsSummary = uiState.statisticsSummary,
+//                operationalSummary = uiState.operationalSummary
+//            )
+//        }
 
         // Tab Row
         TabRow(
@@ -278,7 +282,8 @@ private fun FacilityDetailContent(
                 InfoTabContent(
                     facility = uiState.facility!!,
                     operationalSummary = uiState.operationalSummary,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    onEdit = onEdit
                 )
             }
 
@@ -327,67 +332,67 @@ private fun HeaderSection(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Top row: Status and primary badge
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Status badge
-                    if (statusBadge.isNotBlank()) {
-                        AssistChip(
-                            onClick = { },
-                            label = { Text(statusBadge) },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = Color(statusColor)
-                            )
-                        )
-                    }
+//            // Top row: Status and primary badge
+//            Row(
+//                modifier = Modifier.fillMaxWidth(),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Row(
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    // Status badge
+//                    if (statusBadge.isNotBlank()) {
+//                        AssistChip(
+//                            onClick = { },
+//                            label = { Text(statusBadge) },
+//                            colors = AssistChipDefaults.assistChipColors(
+//                                containerColor = Color(statusColor)
+//                            )
+//                        )
+//                    }
+//
+//                    // Primary facility badge
+//                    if (facility.isPrimary) {
+//                        AssistChip(
+//                            onClick = { },
+//                            label = {
+//                                Row(
+//                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+//                                    verticalAlignment = Alignment.CenterVertically
+//                                ) {
+//                                    Icon(
+//                                        Icons.Default.Star,
+//                                        contentDescription = null,
+//                                        modifier = Modifier.size(14.dp)
+//                                    )
+//                                    Text("Primario")
+//                                }
+//                            },
+//                            colors = AssistChipDefaults.assistChipColors(
+//                                containerColor = MaterialTheme.colorScheme.primary
+//                            )
+//                        )
+//                    }
+//                }
 
-                    // Primary facility badge
-                    if (facility.isPrimary) {
-                        AssistChip(
-                            onClick = { },
-                            label = {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        Icons.Default.Star,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(14.dp)
-                                    )
-                                    Text("Primario")
-                                }
-                            },
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        )
-                    }
-                }
-
-                // Statistics summary
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Text(
-                        text = facility.facilityType.displayName,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = statisticsSummary,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
+//                // Statistics summary
+//                Column(
+//                    horizontalAlignment = Alignment.End
+//                ) {
+//                    Text(
+//                        text = facility.facilityType.displayName,
+//                        style = MaterialTheme.typography.bodySmall,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
+//                    Text(
+//                        text = statisticsSummary,
+//                        style = MaterialTheme.typography.bodySmall,
+//                        fontWeight = FontWeight.Medium
+//                    )
+//                }
+//            }
 
             // Operational statistics (se disponibili)
             operationalSummary?.let { summary ->
@@ -431,130 +436,143 @@ private fun HeaderSection(
 private fun InfoTabContent(
     facility: Facility,
     operationalSummary: FacilityOperationalSummary?,
+    onEdit: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Column(
+        modifier = modifier.fillMaxSize()
     ) {
-        item {
-            InfoCard(
-                title = "Informazioni Generali",
-                icon = Icons.Default.Business
+        // ✅ Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // ✅ Title
+            Text(
+                text = "Informazioni",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InfoItem(
-                    label = "Nome Stabilimento",
-                    value = facility.displayName
-                )
 
-                facility.code?.let {
-                    InfoItem(
-                        label = "Codice Interno",
-                        value = it
+                // ✅ Action Buttons
+                Button(onClick = { onEdit }) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
                     )
-                }
-
-                InfoItem(
-                    label = "Tipo Stabilimento",
-                    value = facility.facilityType.displayName
-                )
-
-                facility.description?.let {
-                    InfoItem(
-                        label = "Descrizione",
-                        value = it
-                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Modifica")
                 }
             }
         }
-
-        item {
-            InfoCard(
-                title = "Indirizzo",
-                icon = Icons.Default.LocationOn
-            ) {
-                InfoItem(
-                    label = "Indirizzo Completo",
-                    value = facility.addressDisplay
-                )
-
-                facility.address.city?.let {
-                    InfoItem(
-                        label = "Città",
-                        value = it
-                    )
-                }
-
-                facility.address.postalCode?.let {
-                    InfoItem(
-                        label = "CAP",
-                        value = it
-                    )
-                }
-
-                facility.address.country.let {
-                    InfoItem(
-                        label = "Paese",
-                        value = it
-                    )
-                }
-            }
-        }
-
-        // Statistiche operative
-        operationalSummary?.let { summary ->
+        LazyColumn(
+            modifier = modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Info
             item {
                 InfoCard(
-                    title = "Statistiche Operative",
-                    icon = Icons.Default.Analytics
+                    title = "Informazioni Generali",
+                    icon = Icons.Default.Business
                 ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column {
-                            InfoItem(
-                                label = "Ore Totali",
-                                value = formatOperatingHours(summary.totalOperatingHours)
-                            )
-                            InfoItem(
-                                label = "Cicli Totali",
-                                value = formatNumber(summary.totalCycles)
-                            )
-                        }
+                    InfoItem(
+                        label = "Nome Stabilimento",
+                        value = facility.displayName
+                    )
 
-                        Column {
-                            InfoItem(
-                                label = "Media Ore/Isola",
-                                value = formatOperatingHours(summary.averageOperatingHours)
-                            )
-                            InfoItem(
-                                label = "Efficienza",
-                                value = "${(summary.activeIslands * 100 / summary.totalIslands.coerceAtLeast(1))}%"
-                            )
-                        }
+                    facility.code?.let {
+                        InfoItem(
+                            label = "Codice Interno",
+                            value = it
+                        )
+                    }
+
+                    InfoItem(
+                        label = "Tipo Stabilimento",
+                        value = facility.facilityType.displayName
+                    )
+
+                    facility.notes?.let {
+                        InfoItem(
+                            label = "Descrizione",
+                            value = it
+                        )
                     }
                 }
             }
-        }
 
-        item {
-            InfoCard(
-                title = "Metadati",
-                icon = Icons.Default.Info
-            ) {
-                InfoItem(
-                    label = "Creato",
-                    value = formatTimestamp(facility.createdAt)
-                )
-                InfoItem(
-                    label = "Ultima modifica",
-                    value = formatTimestamp(facility.updatedAt)
-                )
-                InfoItem(
-                    label = "Stato",
-                    value = if (facility.isActive) "Attivo" else "Inattivo"
-                )
+            // Address
+            item {
+                InfoCard(
+                    title = "Sede Stabilimento",
+                    icon = Icons.Default.LocationOn
+                ) {
+                    InfoItem(
+                        label = "Indirizzo Completo",
+                        value = facility.address.toDisplayString()
+                    )
+                }
+            }
+
+            // Statistiche operative
+//        operationalSummary?.let { summary ->
+//            item {
+//                InfoCard(
+//                    title = "Statistiche Operative",
+//                    icon = Icons.Default.Analytics
+//                ) {
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.SpaceBetween
+//                    ) {
+//                        Column {
+//                            InfoItem(
+//                                label = "Ore Totali",
+//                                value = formatOperatingHours(summary.totalOperatingHours)
+//                            )
+//                            InfoItem(
+//                                label = "Cicli Totali",
+//                                value = formatNumber(summary.totalCycles)
+//                            )
+//                        }
+//
+//                        Column {
+//                            InfoItem(
+//                                label = "Media Ore/Isola",
+//                                value = formatOperatingHours(summary.averageOperatingHours)
+//                            )
+//                            InfoItem(
+//                                label = "Efficienza",
+//                                value = "${(summary.activeIslands * 100 / summary.totalIslands.coerceAtLeast(1))}%"
+//                            )
+//                        }
+//                    }
+//                }
+//            }
+//        }
+
+            item {
+                InfoCard(
+                    title = "Metadati",
+                    icon = Icons.Default.Info
+                ) {
+                    InfoItem(
+                        label = "Creato",
+                        value = formatTimestamp(facility.createdAt)
+                    )
+                    InfoItem(
+                        label = "Ultima modifica",
+                        value = formatTimestamp(facility.updatedAt)
+                    )
+                }
             }
         }
     }
@@ -574,8 +592,6 @@ private fun IslandsTabContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        // Header con azioni e filtri
-        Column {
             // Actions row
             Row(
                 modifier = Modifier
@@ -607,32 +623,6 @@ private fun IslandsTabContent(
                 }
             }
 
-            // Filter chips
-            if (selectedFilter != IslandFilter.ALL) {
-                LazyRow(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp)
-                ) {
-                    item {
-                        FilterChip(
-                            selected = true,
-                            onClick = { onFilterSelected(IslandFilter.ALL) },
-                            label = { Text("Filtro: ${getIslandFilterDisplayName(selectedFilter)}") },
-                            trailingIcon = {
-                                Icon(
-                                    Icons.Default.Close,
-                                    contentDescription = "Rimuovi filtro",
-                                    modifier = Modifier.size(18.dp)
-                                )
-                            }
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-
         // Content
         if (islands.isEmpty()) {
             EmptyState(
@@ -650,7 +640,7 @@ private fun IslandsTabContent(
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(
                     items = islands,
@@ -676,87 +666,120 @@ private fun MaintenanceTabContent(
     onIslandClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Manutenzioni richieste
-        item {
-            Card {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Warning,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text = "Manutenzioni Richieste (${islandsNeedingMaintenance.size})",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+    Column(modifier = modifier.fillMaxSize()) {
+        // ✅ Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // ✅ Title
+            Text(
+                text = "Manutenzioni",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
 
-                    if (islandsNeedingMaintenance.isEmpty()) {
-                        Text(
-                            text = "Tutte le isole sono in regola con le manutenzioni",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        islandsNeedingMaintenance.forEach { island ->
-                            MaintenanceIslandItem(
-                                island = island,
-                                onMarkComplete = onMarkMaintenanceComplete,
-                                onIslandClick = onIslandClick
-                            )
-                        }
-                    }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Empty
+                Button(onClick = {}) {
+//                        Icon(
+//                            imageVector = Icons.Default.Add,
+//                            contentDescription = null,
+//                            modifier = Modifier.size(18.dp)
+//                        )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(" ")
                 }
             }
         }
 
-        // Isole sotto garanzia
-        item {
-            Card {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        LazyColumn(
+            modifier = modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Manutenzioni richieste
+            item {
+                Card {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Security,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "Isole in Garanzia (${islandsUnderWarranty.size})",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-
-                    if (islandsUnderWarranty.isEmpty()) {
-                        Text(
-                            text = "Nessuna isola attualmente in garanzia",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    } else {
-                        islandsUnderWarranty.forEach { island ->
-                            WarrantyIslandItem(
-                                island = island,
-                                onIslandClick = onIslandClick
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error
                             )
+                            Text(
+                                text = "Manutenzioni Richieste (${islandsNeedingMaintenance.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        if (islandsNeedingMaintenance.isEmpty()) {
+                            Text(
+                                text = "Tutte le isole sono in regola con le manutenzioni",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            islandsNeedingMaintenance.forEach { island ->
+                                MaintenanceIslandItem(
+                                    island = island,
+                                    onMarkComplete = onMarkMaintenanceComplete,
+                                    onIslandClick = onIslandClick
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Isole sotto garanzia
+            item {
+                Card {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Security,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "Isole in Garanzia (${islandsUnderWarranty.size})",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        if (islandsUnderWarranty.isEmpty()) {
+                            Text(
+                                text = "Nessuna isola attualmente in garanzia",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            islandsUnderWarranty.forEach { island ->
+                                WarrantyIslandItem(
+                                    island = island,
+                                    onIslandClick = onIslandClick
+                                )
+                            }
                         }
                     }
                 }
@@ -797,7 +820,7 @@ private fun IslandItem(
 
                 if (island.operatingHours > 0 || island.cycleCount > 0) {
                     Text(
-                        text = "${formatOperatingHours(island.operatingHours)} • ${formatNumber(island.cycleCount)} cicli",
+                        text = "${(island.operatingHours.getFormattedHours())} • ${island.cycleCount.getFormattedCycleCount()} cicli",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1072,21 +1095,6 @@ private fun getIslandFilterDisplayName(filter: IslandFilter): String {
         IslandFilter.NEEDS_MAINTENANCE -> "Da manutenere"
         IslandFilter.UNDER_WARRANTY -> "In garanzia"
         IslandFilter.BY_TYPE -> "Per tipo"
-    }
-}
-
-private fun formatOperatingHours(hours: Int): String {
-    return when {
-        hours >= 1000 -> "${hours / 1000}K ore"
-        else -> "$hours ore"
-    }
-}
-
-private fun formatNumber(number: Long): String {
-    return when {
-        number >= 1_000_000 -> "${number / 1_000_000}M"
-        number >= 1_000 -> "${number / 1_000}K"
-        else -> number.toString()
     }
 }
 

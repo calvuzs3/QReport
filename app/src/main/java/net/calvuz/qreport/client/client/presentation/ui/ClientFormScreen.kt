@@ -111,45 +111,35 @@ fun ClientFormScreen(
                 item {
                     CompanyDataSection(
                         companyName = uiState.companyName,
-                        vatNumber = uiState.vatNumber,
-                        fiscalCode = uiState.fiscalCode,
-                        industry = uiState.industry,
-                        website = uiState.website,
                         onCompanyNameChange = viewModel::updateCompanyName,
-                        onVatNumberChange = viewModel::updateVatNumber,
-                        onFiscalCodeChange = viewModel::updateFiscalCode,
-                        onIndustryChange = viewModel::updateIndustry,
-                        onWebsiteChange = viewModel::updateWebsite,
                         errors = uiState.fieldErrors
                     )
                 }
 
-                // Section 2: Indirizzo Sede Legale
+                // Section 2: Note aggiuntive
+                item {
+                    NotesSection(
+                        notes = uiState.notes,
+                        onNotesChange = viewModel::updateNotes,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Section 3: Indirizzo
                 item {
                     FormAddressSection(
                         street = uiState.street,
                         streetNumber = uiState.streetNumber,
                         city = uiState.city,
                         province = uiState.province,
-                        region = uiState.region,
                         postalCode = uiState.postalCode,
                         country = uiState.country,
                         onStreetChange = viewModel::updateStreet,
                         onStreetNumberChange = viewModel::updateStreetNumber,
                         onCityChange = viewModel::updateCity,
                         onProvinceChange = viewModel::updateProvince,
-                        onRegionChange = viewModel::updateRegion,
                         onPostalCodeChange = viewModel::updatePostalCode,
                         onCountryChange = viewModel::updateCountry
-                    )
-                }
-
-                // Section 3: Note aggiuntive
-                item {
-                    NotesSection(
-                        notes = uiState.notes,
-                        onNotesChange = viewModel::updateNotes,
-                        modifier = Modifier.fillMaxWidth()
                     )
                 }
 
@@ -199,15 +189,7 @@ fun ClientFormScreen(
 @Composable
 private fun CompanyDataSection(
     companyName: String,
-    vatNumber: String,
-    fiscalCode: String,
-    industry: String,
-    website: String,
     onCompanyNameChange: (String) -> Unit,
-    onVatNumberChange: (String) -> Unit,
-    onFiscalCodeChange: (String) -> Unit,
-    onIndustryChange: (String) -> Unit,
-    onWebsiteChange: (String) -> Unit,
     errors: Map<String, String>,
     modifier: Modifier = Modifier
 ) {
@@ -240,70 +222,6 @@ private fun CompanyDataSection(
                     { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
             )
-
-            // VAT Number
-            OutlinedTextField(
-                value = vatNumber,
-                onValueChange = onVatNumberChange,
-                label = { Text("Partita IVA") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Number
-                ),
-                placeholder = { Text("00000000000") },
-                isError = errors.containsKey("vatNumber"),
-                supportingText = errors["vatNumber"]?.let {
-                    { Text(it, color = MaterialTheme.colorScheme.error) }
-                }
-            )
-
-            // Fiscal Code
-            OutlinedTextField(
-                value = fiscalCode,
-                onValueChange = onFiscalCodeChange,
-                label = { Text("Codice Fiscale") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    capitalization = KeyboardCapitalization.Characters
-                ),
-                singleLine = true,
-                placeholder = { Text("RSSMRA80A01H501X") },
-                isError = errors.containsKey("fiscalCode"),
-                supportingText = errors["fiscalCode"]?.let {
-                    { Text(it, color = MaterialTheme.colorScheme.error) }
-                }
-            )
-
-            // Industry
-            OutlinedTextField(
-                value = industry,
-                onValueChange = onIndustryChange,
-                label = { Text("Settore") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    capitalization = KeyboardCapitalization.Words
-                ),
-                singleLine = true,
-                placeholder = { Text("Acciaieria, Ceramica, etc.") }
-            )
-
-            // Website
-            OutlinedTextField(
-                value = website,
-                onValueChange = onWebsiteChange,
-                label = { Text("Sito Web") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
-                placeholder = { Text("www.azienda.com") },
-                isError = errors.containsKey("website"),
-                supportingText = errors["website"]?.let {
-                    { Text(it, color = MaterialTheme.colorScheme.error) }
-                }
-            )
         }
     }
 }
@@ -322,7 +240,7 @@ private fun NotesSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Note Aggiuntive",
+                text = "Note",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )

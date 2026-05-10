@@ -13,7 +13,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Get customer with details
+ * Get Client with details
  *
  * @return ClientWithDetails
  * - Customer data

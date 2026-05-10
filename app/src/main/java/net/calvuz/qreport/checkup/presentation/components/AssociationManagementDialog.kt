@@ -203,7 +203,7 @@ private fun ClientSelectionStep(
             clients.forEach { client ->
                 SelectionItem(
                     title = client.companyName,
-                    subtitle = client.vatNumber ?: "",
+                    subtitle = client.companyName,
                     isSelected = client.id == selectedClientId,
                     onClick = { onClientSelected(client.id) }
                 )

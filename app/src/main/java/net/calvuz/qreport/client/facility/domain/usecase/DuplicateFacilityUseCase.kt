@@ -140,8 +140,8 @@ class DuplicateFacilityUseCase @Inject constructor(
             code = if (options.duplicateCode) {
                 generateCopyCode(sourceFacility.code)
             } else null,
-            description = if (options.duplicateDescription) {
-                addCopyNoteToDescription(sourceFacility.description)
+            notes = if (options.duplicateDescription) {
+                addCopyNoteToDescription(sourceFacility.notes)
             } else null,
             isPrimary = false, // Le copie non sono mai primarie
             isActive = options.activateImmediately,

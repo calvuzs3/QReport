@@ -139,6 +139,16 @@ private fun FacilityFormContent(
             modifier = Modifier.fillMaxWidth()
         )
 
+        // Notes
+        OutlinedTextField(
+            value = uiState.notes,
+            onValueChange = { onFormEvent(FacilityFormEvent.NotesChanged(it)) },
+            label = { Text("Note") },
+            placeholder = { Text("note aggiuntive...") },
+            maxLines = 3,
+            modifier = Modifier.fillMaxWidth()
+        )
+
         // Tipo stabilimento
         var expanded by remember { mutableStateOf(false) }
 
@@ -147,6 +157,7 @@ private fun FacilityFormContent(
             onExpandedChange = { expanded = it },
             modifier = Modifier.fillMaxWidth()
         ) {
+            // Name
             OutlinedTextField(
                 value = uiState.facilityType.displayName,
                 onValueChange = { },
@@ -159,6 +170,7 @@ private fun FacilityFormContent(
                     .fillMaxWidth()
             )
 
+            // Type
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
@@ -191,97 +203,17 @@ private fun FacilityFormContent(
             streetNumber = uiState.streetNumber,
             city = uiState.city,
             province = uiState.province,
-            region = uiState.region,
             postalCode = uiState.postalCode,
             country = uiState.country,
             onStreetChange = { onFormEvent(FacilityFormEvent.StreetChanged(it)) }, //viewModel::updateStreet,
             onStreetNumberChange = { onFormEvent(FacilityFormEvent.StreetNumberChanged(it)) }, //viewModel::updateStreetNumber,
             onCityChange = { onFormEvent(FacilityFormEvent.CityChanged(it)) }, //viewModel::updateCity,
             onProvinceChange = { onFormEvent(FacilityFormEvent.ProvinceChanged(it)) }, //viewModel::updateProvince,
-            onRegionChange = { onFormEvent(FacilityFormEvent.RegionChanged(it)) }, //viewModel::updateRegion,
             onPostalCodeChange = { onFormEvent(FacilityFormEvent.PostalCodeChanged(it)) }, //viewModel::updatePostalCode,
             onCountryChange = { onFormEvent(FacilityFormEvent.CountryChanged(it)) }, //viewModel::updateCountry
         )
-//        Card {
-//            Column(
-//                modifier = Modifier.padding(16.dp),
-//                verticalArrangement = Arrangement.spacedBy(12.dp)
-//            ) {
-//                Text(
-//                    text = "Indirizzo Stabilimento",
-//                    style = MaterialTheme.typography.titleSmall
-//                )
-//
-//                // Via
-//                OutlinedTextField(
-//                    value = uiState.street,
-//                    onValueChange = { onFormEvent(FacilityFormEvent.StreetChanged(it)) },
-//                    label = { Text("Via/Indirizzo") },
-//                    placeholder = { Text("Es. Via Roma 123") },
-//                    isError = uiState.streetError != null,
-//                    supportingText = uiState.streetError?.let { { Text(it) } },
-//                    modifier = Modifier.fillMaxWidth()
-//                )
-//
-//                // Città e CAP
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-//                ) {
-//                    OutlinedTextField(
-//                        value = uiState.city,
-//                        onValueChange = { onFormEvent(FacilityFormEvent.CityChanged(it)) },
-//                        label = { Text("Città *") },
-//                        placeholder = { Text("Milano") },
-//                        isError = uiState.cityError != null,
-//                        supportingText = uiState.cityError?.let { { Text(it) } },
-//                        modifier = Modifier.weight(1f)
-//                    )
-//
-//                    OutlinedTextField(
-//                        value = uiState.postalCode,
-//                        onValueChange = { onFormEvent(FacilityFormEvent.PostalCodeChanged(it)) },
-//                        label = { Text("CAP") },
-//                        placeholder = { Text("20100") },
-//                        modifier = Modifier.weight(0.6f)
-//                    )
-//                }
-//
-//                // Provincia e Paese
-//                Row(
-//                    modifier = Modifier.fillMaxWidth(),
-//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-//                ) {
-//                    OutlinedTextField(
-//                        value = uiState.province,
-//                        onValueChange = { onFormEvent(FacilityFormEvent.ProvinceChanged(it)) },
-//                        label = { Text("Provincia") },
-//                        placeholder = { Text("MI") },
-//                        modifier = Modifier.weight(1f)
-//                    )
-//
-//                    OutlinedTextField(
-//                        value = uiState.country,
-//                        onValueChange = { onFormEvent(FacilityFormEvent.CountryChanged(it)) },
-//                        label = { Text("Paese") },
-//                        placeholder = { Text("Italia") },
-//                        modifier = Modifier.weight(1f)
-//                    )
-//                }
-//            }
-//        }
 
-        // Descrizione
-        OutlinedTextField(
-            value = uiState.description,
-            onValueChange = { onFormEvent(FacilityFormEvent.DescriptionChanged(it)) },
-            label = { Text("Descrizione") },
-            placeholder = { Text("Descrizione opzionale dello stabilimento...") },
-            maxLines = 3,
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        // Opzioni aggiuntive
+        // Meta
         Card {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -292,7 +224,7 @@ private fun FacilityFormContent(
                     style = MaterialTheme.typography.titleSmall
                 )
 
-                // Stabilimento primario
+                // Primary Facility
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -312,44 +244,10 @@ private fun FacilityFormContent(
                         onCheckedChange = { onFormEvent(FacilityFormEvent.PrimaryChanged(it)) }
                     )
                 }
-
-                // Stato attivo
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Stabilimento Attivo")
-                        Text(
-                            text = "Se disabilitato, lo stabilimento non sarà visibile nelle liste",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Switch(
-                        checked = uiState.isActive,
-                        onCheckedChange = { onFormEvent(FacilityFormEvent.ActiveChanged(it)) }
-                    )
-                }
             }
         }
 
         // Spacer per FAB
         Spacer(modifier = Modifier.height(80.dp))
-    }
-}
-
-// Preview helpers
-@Composable
-private fun FacilityFormScreenPreview() {
-    MaterialTheme {
-        FacilityFormScreen(
-            clientId = "client-1",
-            facilityId = null,
-            onNavigateBack = {},
-            onFacilitySaved = {}
-        )
     }
 }

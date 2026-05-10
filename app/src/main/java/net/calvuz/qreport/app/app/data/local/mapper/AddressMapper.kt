@@ -59,14 +59,6 @@ class AddressMapper @Inject constructor() {
     }
 
     /**
-     * Estrae provincia dal JSON
-     */
-    fun extractProvinceFromJson(addressJson: String?): String? {
-        val address = fromJsonSafe(addressJson)
-        return address?.province
-    }
-
-    /**
      * Estrae coordinate dal JSON
      */
     fun extractCoordinatesFromJson(addressJson: String?): Pair<Double, Double>? {

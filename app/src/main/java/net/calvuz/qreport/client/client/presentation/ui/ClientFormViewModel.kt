@@ -12,7 +12,6 @@ import net.calvuz.qreport.client.client.domain.usecase.CreateClientUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetClientByIdUseCase
 import net.calvuz.qreport.client.client.domain.usecase.UpdateClientUseCase
 import timber.log.Timber
-import java.net.URL
 import java.util.UUID
 import javax.inject.Inject
 
@@ -29,19 +28,14 @@ import javax.inject.Inject
 data class ClientFormUiState(
     // Company data
     val companyName: String = "",
-    val vatNumber: String = "",
-    val fiscalCode: String = "",
-    val industry: String = "",
-    val website: String = "",
     val notes: String = "",
 
     // Address data
     val street: String = "",
     val streetNumber: String = "",
+    val postalCode: String = "",
     val city: String = "",
     val province: String = "",
-    val region: String = "",
-    val postalCode: String = "",
     val country: String = "",
 
     // State
@@ -123,16 +117,11 @@ class ClientFormViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             isLoading = false,
             companyName = client.companyName,
-            vatNumber = client.vatNumber ?: "",
-            fiscalCode = client.fiscalCode ?: "",
-            industry = client.industry ?: "",
-            website = client.website ?: "",
             notes = client.notes ?: "",
             street = address?.street ?: "",
             streetNumber = address?.streetNumber ?: "",
             city = address?.city ?: "",
             province = address?.province ?: "",
-            region = address?.region ?: "",
             postalCode = address?.postalCode ?: ""
         )
     }
@@ -144,28 +133,6 @@ class ClientFormViewModel @Inject constructor(
     fun updateCompanyName(name: String) {
         _uiState.value = _uiState.value.copy(companyName = name)
         validateCompanyName(name)
-    }
-
-    fun updateVatNumber(vatNumber: String) {
-        val cleaned = vatNumber.replace("\\s+".toRegex(), "")
-        _uiState.value = _uiState.value.copy(vatNumber = cleaned)
-        validateVatNumber(cleaned)
-    }
-
-    fun updateFiscalCode(fiscalCode: String) {
-        val cleaned = fiscalCode.replace("\\s+".toRegex(), "").uppercase()
-        _uiState.value = _uiState.value.copy(fiscalCode = cleaned)
-        validateFiscalCode(cleaned)
-    }
-
-    fun updateIndustry(industry: String) {
-        _uiState.value = _uiState.value.copy(industry = industry)
-        validateIndustry(industry)
-    }
-
-    fun updateWebsite(website: String) {
-        _uiState.value = _uiState.value.copy(website = website)
-        validateWebsite(website)
     }
 
     fun updateNotes(notes: String) {
@@ -192,10 +159,6 @@ class ClientFormViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(province = province.uppercase())
     }
 
-    fun updateRegion(region: String) {
-        _uiState.value = _uiState.value.copy(region = region)
-    }
-
     fun updatePostalCode(postalCode: String) {
         val cleaned = postalCode.replace("\\s+".toRegex(), "")
         _uiState.value = _uiState.value.copy(postalCode = cleaned)
@@ -220,64 +183,6 @@ class ClientFormViewModel @Inject constructor(
         }
 
         _uiState.value = _uiState.value.copy(fieldErrors = errors)
-    }
-
-    private fun validateVatNumber(vatNumber: String) {
-        val errors = _uiState.value.fieldErrors.toMutableMap()
-
-        if (vatNumber.isNotBlank() && !vatNumber.matches("\\d{11}".toRegex())) {
-            errors["vatNumber"] = "Formato non valido (11 cifre)"
-        } else {
-            errors.remove("vatNumber")
-        }
-
-        _uiState.value = _uiState.value.copy(fieldErrors = errors)
-    }
-
-    private fun validateFiscalCode(fiscalCode: String) {
-        val errors = _uiState.value.fieldErrors.toMutableMap()
-
-        if (fiscalCode.isNotBlank() && !fiscalCode.matches("[A-Z0-9]{16}".toRegex())) {
-            errors["fiscalCode"] = "Formato non valido (16 caratteri)"
-        } else {
-            errors.remove("fiscalCode")
-        }
-
-        _uiState.value = _uiState.value.copy(fieldErrors = errors)
-    }
-
-    private fun validateIndustry(industry: String) {
-        val errors = _uiState.value.fieldErrors.toMutableMap()
-
-        if (industry.length > 100) {
-            errors["industry"] = "Massimo 100 caratteri"
-        } else {
-            errors.remove("industry")
-        }
-
-        _uiState.value = _uiState.value.copy(fieldErrors = errors)
-    }
-
-    private fun validateWebsite(website: String) {
-        val errors = _uiState.value.fieldErrors.toMutableMap()
-
-        if (website.isNotBlank() && !isValidWebsite(website)) {
-            errors["website"] = "Formato website non valido"
-        } else {
-            errors.remove("website")
-        }
-
-        _uiState.value = _uiState.value.copy(fieldErrors = errors)
-    }
-
-    private fun isValidWebsite(website: String): Boolean {
-        return try {
-            val cleanWebsite = if (!website.startsWith("http")) "https://$website" else website
-            URL(cleanWebsite)
-            true
-        } catch (e: Exception) {
-            false
-        }
     }
 
     // ============================================================
@@ -387,7 +292,6 @@ class ClientFormViewModel @Inject constructor(
                 streetNumber = state.streetNumber.takeIf { it.isNotBlank() },
                 city = state.city.takeIf { it.isNotBlank() },
                 province = state.province.takeIf { it.isNotBlank() },
-                region = state.region.takeIf { it.isNotBlank() },
                 postalCode = state.postalCode.takeIf { it.isNotBlank() },
                 country = "Italia"
             )
@@ -398,10 +302,6 @@ class ClientFormViewModel @Inject constructor(
         return Client(
             id = state.clientId ?: UUID.randomUUID().toString(),
             companyName = state.companyName.trim(),
-            vatNumber = state.vatNumber.takeIf { it.isNotBlank() },
-            fiscalCode = state.fiscalCode.takeIf { it.isNotBlank() },
-            industry = state.industry.takeIf { it.isNotBlank() },
-            website = state.website.takeIf { it.isNotBlank() },
             notes = state.notes.takeIf { it.isNotBlank() },
             headquarters = address,
             isActive = true,

@@ -24,7 +24,7 @@ class FacilityMapper @Inject constructor(
             clientId = entity.clientId,
             name = entity.name,
             code = entity.code,
-            description = entity.description,
+            notes = entity.notes,
             facilityType = parseFacilityType(entity.facilityType),
             address = addressConverter.toAddress(entity.addressJson)
                 ?: throw IllegalStateException("Facility must have a valid address"),
@@ -45,7 +45,7 @@ class FacilityMapper @Inject constructor(
             clientId = domain.clientId,
             name = domain.name,
             code = domain.code,
-            description = domain.description,
+            notes = domain.notes,
             facilityType = domain.facilityType.name,
             addressJson = addressConverter.fromAddress(domain.address)
                 ?: throw IllegalStateException("Cannot serialize facility address"),
@@ -83,7 +83,7 @@ class FacilityMapper @Inject constructor(
             clientId = entity.clientId,
             name = entity.name,
             code = entity.code,
-            description = entity.description,
+            notes = entity.notes,
             facilityType = parseFacilityType(entity.facilityType),
             address = addressConverter.toAddress(entity.addressJson)
                 ?: throw IllegalStateException("Facility must have a valid address"),

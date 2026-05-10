@@ -5,13 +5,15 @@ import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 
 /**
- * DAO per gestione clienti
- * Definisce tutte le operazioni CRUD e query complesse per ClientEntity
+ * Client DAO
  */
 @Dao
 interface ClientDao {
 
     // ===== BASIC CRUD =====
+
+    @Query("SELECT * FROM clients ORDER BY company_name ASC")
+    fun getAllClientsFlow(): Flow<List<ClientEntity>>
 
     @Query("SELECT * FROM clients WHERE is_active = 1 ORDER BY company_name ASC")
     fun getAllActiveClientsFlow(): Flow<List<ClientEntity>>
@@ -46,33 +48,39 @@ interface ClientDao {
         SELECT * FROM clients 
         WHERE is_active = 1 
         AND (company_name LIKE '%' || :query || '%' 
-             OR vat_number LIKE '%' || :query || '%'
-             OR industry LIKE '%' || :query || '%')
+             OR notes LIKE '%' || :query || '%' )
         ORDER BY company_name ASC
     """)
     suspend fun searchClients(query: String): List<ClientEntity>
+    @Query("""
+        SELECT * FROM clients 
+        WHERE (company_name LIKE '%' || :query || '%' 
+             OR notes LIKE '%' || :query || '%' )
+        ORDER BY company_name ASC
+    """)
+    suspend fun searchAllClients(query: String): List<ClientEntity>
 
     @Query("""
         SELECT * FROM clients 
         WHERE is_active = 1 
         AND (company_name LIKE '%' || :query || '%' 
-             OR vat_number LIKE '%' || :query || '%'
-             OR industry LIKE '%' || :query || '%')
+             OR notes LIKE '%' || :query || '%' )
         ORDER BY company_name ASC
     """)
     fun searchClientsFlow(query: String): Flow<List<ClientEntity>>
+    @Query("""
+        SELECT * FROM clients 
+        WHERE (company_name LIKE '%' || :query || '%' 
+             OR notes LIKE '%' || :query || '%' )
+        ORDER BY company_name ASC
+    """)
+    fun searchAllClientsFlow(query: String): Flow<List<ClientEntity>>
 
     @Query("SELECT * FROM clients WHERE is_active = 1")
     suspend fun getActiveClients(): List<ClientEntity>
 
     @Query("SELECT * FROM clients WHERE is_active = 0 ORDER BY updated_at DESC")
     suspend fun getInactiveClients(): List<ClientEntity>
-
-    @Query("SELECT * FROM clients WHERE industry = :industry AND is_active = 1 ORDER BY company_name ASC")
-    suspend fun getClientsByIndustry(industry: String): List<ClientEntity>
-
-    @Query("SELECT * FROM clients WHERE vat_number = :vatNumber")
-    suspend fun getClientByVatNumber(vatNumber: String): ClientEntity?
 
     // ===== STATISTICS =====
 
@@ -81,9 +89,6 @@ interface ClientDao {
 
     @Query("SELECT COUNT(*) FROM clients")
     suspend fun getTotalClientsCount(): Int
-
-    @Query("SELECT DISTINCT industry FROM clients WHERE industry IS NOT NULL AND is_active = 1 ORDER BY industry ASC")
-    suspend fun getAllIndustries(): List<String>
 
     @Query("""
         SELECT COUNT(*) FROM facilities f
@@ -118,9 +123,6 @@ interface ClientDao {
 
     @Query("SELECT COUNT(*) > 0 FROM clients WHERE company_name = :companyName AND id != :excludeId")
     suspend fun isCompanyNameTaken(companyName: String, excludeId: String = ""): Boolean
-
-    @Query("SELECT COUNT(*) > 0 FROM clients WHERE vat_number = :vatNumber AND id != :excludeId")
-    suspend fun isVatNumberTaken(vatNumber: String, excludeId: String = ""): Boolean
 
     // ===== BULK OPERATIONS =====
 
@@ -162,6 +164,17 @@ interface ClientDao {
         SELECT c.* FROM clients c
         WHERE c.is_active = 1
         AND EXISTS (
+            SELECT 1 FROM contracts ct 
+            WHERE ct.client_id = c.id AND ct.is_active = 1
+        )
+        ORDER BY c.company_name ASC
+    """)
+    suspend fun getClientsWithContracts(): List<ClientEntity>
+
+    @Query("""
+        SELECT c.* FROM clients c
+        WHERE c.is_active = 1
+        AND EXISTS (
             SELECT 1 FROM facility_islands fi
             INNER JOIN facilities f ON fi.facility_id = f.id
             WHERE f.client_id = c.id AND fi.is_active = 1 AND f.is_active = 1
@@ -174,10 +187,6 @@ interface ClientDao {
     @Query("""
         SELECT c.id,
                c.company_name as companyName,
-               c.vat_number as vatNumber,
-               c.fiscal_code as fiscalCode,
-               c.website,
-               c.industry,
                c.notes,
                c.headquarters_json as headquartersJson,
                c.is_active as isActive,
@@ -191,7 +200,7 @@ interface ClientDao {
         LEFT JOIN contacts ct ON c.id = ct.client_id AND ct.is_active = 1  
         LEFT JOIN facility_islands fi ON f.id = fi.facility_id AND fi.is_active = 1
         WHERE c.is_active = 1
-        GROUP BY c.id, c.company_name, c.vat_number, c.fiscal_code, c.website, c.industry, c.notes, c.headquarters_json, c.is_active, c.created_at, c.updated_at
+        GROUP BY c.id, c.company_name, c.notes, c.headquarters_json, c.is_active, c.created_at, c.updated_at
         ORDER BY c.company_name ASC
     """)
     suspend fun getClientsWithCounts(): List<ClientWithCountsResult>
@@ -218,16 +227,9 @@ interface ClientDao {
     suspend fun count(): Int
 }
 
-/**
- * Result class per query con conteggi - CORRETTA ✅
- */
 data class ClientWithCountsResult(
     val id: String,
     val companyName: String,           // ✅ Matches alias in query
-    val vatNumber: String?,            // ✅ Matches alias in query
-    val fiscalCode: String?,           // ✅ Matches alias in query
-    val website: String?,
-    val industry: String?,
     val notes: String?,
     val headquartersJson: String?,     // ✅ Matches alias in query
     val isActive: Boolean,             // ✅ Matches alias in query

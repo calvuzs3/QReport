@@ -10,7 +10,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class IslandRepositoryyModule {
+abstract class IslandRepositoryModule {
 
     @Binds
     @Singleton

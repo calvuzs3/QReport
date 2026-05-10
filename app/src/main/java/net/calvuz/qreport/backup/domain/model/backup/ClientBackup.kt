@@ -11,10 +11,6 @@ import kotlinx.serialization.Serializable
 data class ClientBackup(
     val id: String,
     val companyName: String,
-    val vatNumber: String?,
-    val fiscalCode: String?,
-    val website: String?,
-    val industry: String?,
     val notes: String?,
     val headquartersJson: String?,
     val isActive: Boolean,

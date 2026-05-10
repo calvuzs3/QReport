@@ -8,9 +8,9 @@ class GetAllActiveClientsWithIslandsUseCase @Inject constructor(
     val clientRepository: ClientRepository
 ){
     /**
-     * Recupera clienti con isole associate
+     * Get active Clients with Islands
      *
-     * @return Result con lista clienti che hanno isole robotizzate
+     * @return Client List
      */
     suspend operator fun invoke(): Result<List<Client>> {
         return try {

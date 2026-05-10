@@ -82,6 +82,11 @@ class ClientRepositoryImpl @Inject constructor(
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
     override fun getAllClientsFlow(): Flow<List<Client>> {
+        return clientDao.getAllClientsFlow()
+            .map { entities -> entities.map { clientMapper.toDomain(it) } }
+    }
+
+    override fun getAllActiveClientsFlow(): Flow<List<Client>> {
         return clientDao.getAllActiveClientsFlow()
             .map { entities -> entities.map { clientMapper.toDomain(it) } }
     }
@@ -108,40 +113,11 @@ class ClientRepositoryImpl @Inject constructor(
             .map { entities -> entities.map { clientMapper.toDomain(it) } }
     }
 
-    override suspend fun getClientsByIndustry(industry: String): Result<List<Client>> {
-        return try {
-            val entities = clientDao.getClientsByIndustry(industry)
-            val clients = entities.map { clientMapper.toDomain(it) }
-            Result.success(clients)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun getClientByVatNumber(vatNumber: String): Result<Client?> {
-        return try {
-            val entity = clientDao.getClientByVatNumber(vatNumber)
-            val client = entity?.let { clientMapper.toDomain(it) }
-            Result.success(client)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
     // ===== VALIDATION =====
 
     override suspend fun isCompanyNameTaken(companyName: String, excludeId: String): Result<Boolean> {
         return try {
             val isTaken = clientDao.isCompanyNameTaken(companyName, excludeId)
-            Result.success(isTaken)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun isVatNumberTaken(vatNumber: String, excludeId: String): Result<Boolean> {
-        return try {
-            val isTaken = clientDao.isVatNumberTaken(vatNumber, excludeId)
             Result.success(isTaken)
         } catch (e: Exception) {
             Result.failure(e)
@@ -163,15 +139,6 @@ class ClientRepositoryImpl @Inject constructor(
         return try {
             val count = clientDao.getTotalClientsCount()
             Result.success(count)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    override suspend fun getAllIndustries(): Result<List<String>> {
-        return try {
-            val industries = clientDao.getAllIndustries()
-            Result.success(industries)
         } catch (e: Exception) {
             Result.failure(e)
         }
@@ -228,6 +195,16 @@ class ClientRepositoryImpl @Inject constructor(
     override suspend fun getClientsWithContacts(): Result<List<Client>> {
         return try {
             val entities = clientDao.getClientsWithContacts()
+            val clients = entities.map { clientMapper.toDomain(it) }
+            Result.success(clients)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getClientsWithContracts(): Result<List<Client>> {
+        return try {
+            val entities = clientDao.getClientsWithContracts()
             val clients = entities.map { clientMapper.toDomain(it) }
             Result.success(clients)
         } catch (e: Exception) {

@@ -9,9 +9,9 @@ class GetClientsWithFacilitiesUseCase @Inject constructor(
 ) {
 
     /**
-     * Recupera clienti con facilities associate
+     * Get Client with facilities
      *
-     * @return Result con lista clienti che hanno stabilimenti
+     * @return Clients List
      */
     suspend operator fun invoke(): Result<List<Client>> {
         return try {

@@ -13,9 +13,7 @@ import androidx.room.PrimaryKey
     tableName = "clients",
     indices = [
         Index(value = ["company_name"]),
-        Index(value = ["vat_number"], unique = true),
         Index(value = ["is_active"]),
-        Index(value = ["industry"])
     ]
 )
 data class ClientEntity(
@@ -25,15 +23,6 @@ data class ClientEntity(
     // ===== DATI AZIENDALI =====
     @ColumnInfo(name = "company_name")
     val companyName: String,
-
-    @ColumnInfo(name = "vat_number")
-    val vatNumber: String?,
-
-    @ColumnInfo(name = "fiscal_code")
-    val fiscalCode: String?,
-
-    val website: String?,
-    val industry: String?,
     val notes: String?,
 
     // ===== HEADQUARTERS SERIALIZZATO JSON =====

@@ -2,6 +2,8 @@ package net.calvuz.qreport.app.database.di
 
 import android.content.Context
 import androidx.room.Room
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -18,7 +20,9 @@ import net.calvuz.qreport.client.island.data.local.dao.IslandDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.client.contract.data.local.ContractDao
+import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
+import timber.log.Timber
 import javax.inject.Singleton
 
 /**
@@ -38,35 +42,21 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
 
-//    val MIGRATION_1_2 = object : Migration(1,2){
+//    val MIGRATION_1_2 = object : Migration(1, 2) {
 //        override fun migrate(db: SupportSQLiteDatabase) {
-//            val TABLE_NAME = "contracts"
+//            val TABLE_NAME = "clients"
 //
-//            // 1. TABLE
-//            db.execSQL("""
-//                    CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (
-//                    `id` TEXT NOT NULL,
-//                    `client_id` TEXT NOT NULL,
-//                    `name` TEXT,
-//                    `description` TEXT,
-//                    `start_date` INTEGER NOT NULL,
-//                    `end_date` INTEGER NOT NULL,
-//                    `has_priority` INTEGER NOT NULL,
-//                     `has_remote_assistance` INTEGER NOT NULL,
-//                     `has_maintenance` INTEGER NOT NULL,
-//                     `created_at` INTEGER NOT NULL,
-//                     `updated_at` INTEGER NOT NULL,
-//                     PRIMARY KEY(`id`),
-//                     FOREIGN KEY(`client_id`) REFERENCES `clients`(`id`)
-//                        ON UPDATE NO ACTION ON DELETE CASCADE )
-//                """.trimIndent())
+//            // 1. INDEXES
+//            db.execSQL("DROP INDEX index_clients_vat_number")
+//            db.execSQL("DROP INDEX index_clients_industry")
 //
-//            // 2. INDEXES
-//            db.execSQL("CREATE INDEX IF NOT EXISTS `index_contracts_client_id` ON `${TABLE_NAME}` (`client_id`)")
-//            db.execSQL("CREATE INDEX IF NOT EXISTS `index_contracts_has_maintenance` ON `${TABLE_NAME}` (`has_maintenance`)")
-//            db.execSQL("CREATE INDEX IF NOT EXISTS `index_contracts_name` ON `${TABLE_NAME}` (`name`)")
+//            // 2. TABLE
+//            db.execSQL("ALTER TABLE $TABLE_NAME DROP COLUMN vat_number;")
+//            db.execSQL("ALTER TABLE $TABLE_NAME DROP COLUMN fiscal_code;")
+//            db.execSQL("ALTER TABLE $TABLE_NAME DROP COLUMN website;")
+//            db.execSQL("ALTER TABLE $TABLE_NAME DROP COLUMN industry;")
 //
-//            Timber.d("Database migration from version 3 to 4 completed successfully")
+//            Timber.d("Database migration from version 1 to 2 completed successfully")
 //        }
 //    }
 
@@ -82,10 +72,10 @@ object DatabaseModule {
             name = QReportDatabase.Companion.DATABASE_NAME
         )
             .addCallback(QReportDatabase.Companion.CALLBACK)
-            //.fallbackToDestructiveMigration()  // Only in development
+            .fallbackToDestructiveMigration()  // Only in development
             .addMigrations(
-                //MIGRATION_1_2
                 // Migrations go here...
+//                MIGRATION_1_2,
             )
             .build()
     }
@@ -139,6 +129,11 @@ object DatabaseModule {
     fun provideContractsDao(
         database: QReportDatabase
     ): ContractDao = database.contractDao()
+
+    @Provides
+    fun provideMechanicalUnitDao(
+        database: QReportDatabase
+    ): MechanicalUnitDao = database.mechanicalUnitDao()
 
     @Provides
     fun provideTechnicianInterventionDao(

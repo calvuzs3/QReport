@@ -205,22 +205,17 @@ fun ClientDetailScreen(
                     clientId = clientId,
                     clientName = clientName,
                     onTabSelected = viewModel::selectTab,
+                    onEdit = { onNavigateToEdit(clientId) },
 
                     // Facility management callbacks
                     onFacilityClick = { facilityId ->
-                        onNavigateToFacilityDetail(
-                            clientId,
-                            facilityId
-                        )
+                        onNavigateToFacilityDetail( clientId, facilityId)
                     },
                     onIslandClick = onNavigateToIslandDetail,
                     onManageFacilities = { onNavigateToFacilityList(clientId) },
                     onCreateFacility = { onNavigateToCreateFacility(clientId) },
                     onEditFacility = { facilityId ->
-                        onNavigateToEditFacility(
-                            clientId,
-                            facilityId
-                        )
+                        onNavigateToEditFacility( clientId, facilityId)
                     },
 
                     // Contact callbacks
@@ -270,6 +265,7 @@ private fun ClientDetailContent(
     clientId: String,
     clientName: String,
     onTabSelected: (ClientDetailTab) -> Unit,
+    onEdit: () -> Unit,
 
     // Facility callbacks
     onFacilityClick: (String) -> Unit,
@@ -294,32 +290,20 @@ private fun ClientDetailContent(
 ) {
     Column {
         // Header con badge status e industry
-        if (uiState.statusBadge.isNotBlank() || !uiState.industry.isNullOrBlank()) {
-            HeaderSection(
-                statusBadge = uiState.statusBadge,
-                statusColor = uiState.statusBadgeColor.toLongOrNull() ?: 0xFF00B050L,
-                industry = uiState.industry,
-                statisticsSummary = uiState.statisticsSummary
-            )
-        }
+//        if (uiState.statusBadge.isNotBlank() || !uiState.industry.isNullOrBlank()) {
+//            HeaderSection(
+//                statusBadge = uiState.statusBadge,
+//                statusColor = uiState.statusBadgeColor.toLongOrNull() ?: 0xFF00B050L,
+//                industry = uiState.industry,
+//                statisticsSummary = uiState.statisticsSummary
+//            )
+//        }
 
         // Tab Row
         TabRow(
             selectedTabIndex = uiState.selectedTab.ordinal,
             containerColor = MaterialTheme.colorScheme.surface
         ) {
-            // Tab Info
-            Tab(
-                selected = uiState.selectedTab == ClientDetailTab.INFO,
-                onClick = { onTabSelected(ClientDetailTab.INFO) },
-                icon = {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = "Info"
-                    )
-                },
-                text = { Text("Info") },
-            )
 
             // Tab Facilities
             Tab(
@@ -331,10 +315,10 @@ private fun ClientDetailContent(
                         contentDescription = "Stabilimenti"
                     )
                 },
-                text = {
-                    Text("Stabilim")
+//                text = {
+//                    Text("Stabilim")
 //                    Row(
-//                        verticalAlignment = Alignment.CenterVertically,
+////                        verticalAlignment = Alignment.CenterVertically,
 //                        horizontalArrangement = Arrangement.spacedBy(4.dp)
 //                    ) {
 //                        Text("Stab")
@@ -342,7 +326,7 @@ private fun ClientDetailContent(
 //                            Badge { Text(count.toString()) }
 //                        }
 //                    }
-                },
+//                },
             )
 
             // Tab Contacts
@@ -355,8 +339,8 @@ private fun ClientDetailContent(
                         contentDescription = "Contatti",
                     )
                 },
-                text = {
-                    Text("Contatti")
+//                text = {
+//                    Text("Contatti")
 //                    uiState.contactsCount.takeIf { it > 0 }?.let { count ->
 //                        Badge { Text(count.toString()) }
 //                    }
@@ -369,7 +353,7 @@ private fun ClientDetailContent(
 //                            Badge { Text(count.toString()) }
 //                        }
 //                    }
-                },
+//                },
             )
 
             // Tab Contracts
@@ -382,10 +366,10 @@ private fun ClientDetailContent(
                         contentDescription = "Contratti"
                     )
                 },
-                text = {
-                    Text("Contratti")
+//                text = {
+//                    Text("Contratti")
 //                    Row(
-//                        verticalAlignment = Alignment.CenterVertically,
+////                        verticalAlignment = Alignment.CenterVertically,
 //                        horizontalArrangement = Arrangement.spacedBy(4.dp)
 //                    ) {
 //                        Text("Storico")
@@ -393,22 +377,38 @@ private fun ClientDetailContent(
 //                            Badge { Text(count.toString()) }
 //                        }
 //                    }
-                }
+//                }
+            )
+
+            // Tab Info
+            Tab(
+                selected = uiState.selectedTab == ClientDetailTab.INFO,
+                onClick = { onTabSelected(ClientDetailTab.INFO) },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = "Info"
+                    )
+                },
+//                text = { Text("Info") },
             )
         }
 
         // Tab Content
         when (uiState.selectedTab) {
+
+            // ✅ Tab Info
             ClientDetailTab.INFO -> {
                 Timber.w("INFO {${uiState.clientDetails}}")
                 InfoTabContent(
+                    modifier = Modifier.weight(1f),
                     clientDetails = uiState.clientDetails!!,
-                    modifier = Modifier.weight(1f)
+                    onEdit = onEdit,
                 )
             }
 
+            // ✅ Tab Facilities
             ClientDetailTab.FACILITIES -> {
-                // ✅ Tab Facilities con gestione completa
                 FacilitiesTabContentWithManagement(
                     facilitiesWithIslands = uiState.facilitiesWithIslands,
                     onFacilityClick = onFacilityClick,
@@ -420,8 +420,8 @@ private fun ClientDetailContent(
                 )
             }
 
+            // ✅ Tab Contacts
             ClientDetailTab.CONTACTS -> {
-                // ✅ Tab Contacts con statistiche dettagliate
                 ContactsTabContent(
                     contacts = uiState.contacts,
                     contactStatistics = uiState.contactStatistics, // ← STATISTICHE AGGIUNTE
@@ -433,6 +433,7 @@ private fun ClientDetailContent(
                 )
             }
 
+            // ✅ Tab Contracts
             ClientDetailTab.CONTRACTS -> {
                 ContractsTabContent(
                     contracts = uiState.contracts,
@@ -450,70 +451,99 @@ private fun ClientDetailContent(
 // TAB Info
 @Composable
 private fun InfoTabContent(
+    modifier: Modifier = Modifier,
     clientDetails: ClientWithDetails,
-    modifier: Modifier = Modifier
+    onEdit: () -> Unit = {}
 ) {
-    LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Column(
+        modifier = modifier.fillMaxSize()
     ) {
-        item {
-            InfoCard(
-                title = "Informazioni Generali",
-                icon = Icons.Default.Business
+        // ✅ Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // ✅ Title
+            Text(
+                text = "Informazioni",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InfoItem(
-                    label = "Ragione Sociale",
-                    value = clientDetails.client.companyName
-                )
 
-                clientDetails.client.vatNumber?.let {
-                    InfoItem(
-                        label = "Partita IVA",
-                        value = it
+                // ✅ Action Buttons
+                Button(onClick = { onEdit } ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
                     )
-                }
-
-                clientDetails.client.industry?.let {
-                    InfoItem(
-                        label = "Settore",
-                        value = it
-                    )
-                }
-            }
-        }
-
-        item {
-            InfoCard(
-                title = "Sede Legale",
-                icon = Icons.Default.LocationOn
-            ) {
-                clientDetails.client.headquarters?.let { address ->
-                    InfoItem(
-                        label = "Indirizzo",
-                        value = address.toDisplayString()
-                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Modifica")
                 }
             }
         }
 
-        item {
-            InfoCard(
-                title = "Metadati",
-                icon = Icons.Default.Info
-            ) {
-                InfoItem(
-                    label = "Creato",
-                    value = formatTimestamp(clientDetails.client.createdAt)
-                )
-                InfoItem(
-                    label = "Ultima modifica",
-                    value = formatTimestamp(clientDetails.client.updatedAt)
-                )
-                InfoItem(
-                    label = "Stato",
-                    value = if (clientDetails.client.isActive) "Attivo" else "Inattivo"
-                )
+        LazyColumn(
+            modifier = modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item {
+                InfoCard(
+                    title = "Informazioni Generali",
+                    icon = Icons.Default.Business
+                ) {
+                    InfoItem(
+                        label = "Ragione Sociale",
+                        value = clientDetails.client.companyName
+                    )
+                    clientDetails.client.notes?.let {
+                        InfoItem(
+                            label = "Note",
+                            value = clientDetails.client.notes
+                        )
+                    }
+                }
+            }
+
+            item {
+                InfoCard(
+                    title = "Sede Legale",
+                    icon = Icons.Default.LocationOn
+                ) {
+                    clientDetails.client.headquarters?.let { address ->
+                        InfoItem(
+                            label = "Indirizzo",
+                            value = address.toDisplayString()
+                        )
+                    }
+                }
+            }
+
+            item {
+                InfoCard(
+                    title = "Metadati",
+                    icon = Icons.Default.Info
+                ) {
+                    InfoItem(
+                        label = "Creato",
+                        value = formatTimestamp(clientDetails.client.createdAt)
+                    )
+                    InfoItem(
+                        label = "Ultima modifica",
+                        value = formatTimestamp(clientDetails.client.updatedAt)
+                    )
+                    InfoItem(
+                        label = "Stato",
+                        value = if (clientDetails.client.isActive) "Attivo" else "Inattivo"
+                    )
+                }
             }
         }
     }

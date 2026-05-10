@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.facility.domain.model.Facility
@@ -38,7 +39,7 @@ data class FacilityListUiState(
     val isDeletingFacility: String? = null,
     val error: String? = null,
     val searchQuery: String = "",
-    val selectedFilter: FacilityFilter = FacilityFilter.ALL,
+    val selectedFilter: FacilityFilter = FacilityFilter.ACTIVE,
     val sortOrder: FacilitySortOrder = FacilitySortOrder.NAME,
     val clientId: String = "",
     val cardVariant: ListViewMode = ListViewMode.FULL
@@ -157,6 +158,7 @@ class FacilityListViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
 
                 Timber.d("Refreshing facilities for client: $clientId")
+                delay(500)
 
                 getFacilitiesByClientUseCase(clientId).fold(
                     onSuccess = { facilities ->
@@ -374,7 +376,7 @@ class FacilityListViewModel @Inject constructor(
             val facility = facilityWithStats.facility
             facility.name.contains(query, ignoreCase = true) ||
                     facility.code?.contains(query, ignoreCase = true) == true ||
-                    facility.description?.contains(query, ignoreCase = true) == true ||
+                    facility.notes?.contains(query, ignoreCase = true) == true ||
                     facility.facilityType.displayName.contains(query, ignoreCase = true) ||
                     facility.address.city?.contains(query, ignoreCase = true) == true
         }
@@ -451,21 +453,7 @@ class FacilityListViewModel @Inject constructor(
 data class FacilityWithStats(
     val facility: Facility,
     val stats: FacilityStatistics
-) {
-    val formattedLastModified: String
-        get() {
-            val now = Clock.System.now()
-            val updated = facility.updatedAt
-            val diffMillis = (now - updated).inWholeMilliseconds
-
-            return when {
-                diffMillis < 60000 -> "Aggiornato ora"
-                diffMillis < 3600000 -> "Aggiornato ${diffMillis / 60000} min fa"
-                diffMillis < 86400000 -> "Aggiornato ${diffMillis / 3600000}h fa"
-                else -> "Aggiornato ${diffMillis / 86400000} giorni fa"
-            }
-        }
-}
+)
 
 /**
  * Statistiche per facility

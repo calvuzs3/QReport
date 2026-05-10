@@ -23,6 +23,7 @@ import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -56,7 +57,8 @@ fun ClientListScreen(
     ) {
         // Top App Bar con azioni
         TopAppBar(
-            title = { Text("Clienti") },
+            navigationIcon = { ClientPkg.icon },
+            title = { Text(ClientPkg.title) },
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
@@ -115,8 +117,8 @@ fun ClientListScreen(
         if (uiState.selectedFilter != ClientFilter.ALL || uiState.selectedSortOrder != ClientSortOrder.COMPANY_NAME) {
             ActiveFiltersChipRow(
                 selectedFilter = getFilterDisplayName(uiState.selectedFilter),
-                avoidFilter = getFilterDisplayName(ClientFilter.ALL),
-                onClearFilter = { viewModel.updateFilter(ClientFilter.ALL) },
+                avoidFilter = getFilterDisplayName(ClientFilter.ACTIVE),
+                onClearFilter = { viewModel.updateFilter(ClientFilter.ACTIVE) },
                 selectedSort = getSortOrderDisplayName(uiState.selectedSortOrder),
                 avoidSort = getSortOrderDisplayName(ClientSortOrder.CREATED_RECENT),
                 onClearSort = { viewModel.updateSortOrder(ClientSortOrder.CREATED_RECENT) },
@@ -192,7 +194,7 @@ fun ClientListScreen(
                         variant = uiState.cardVariant,
                         onClientClick = onNavigateToClientDetail,
                         onClientEdit = onNavigateToEditClient,
-                        onClientDelete = viewModel::deleteClient
+                        onClientDelete = viewModel::inactivateClient
                     )
                 }
             }
@@ -316,6 +318,7 @@ private fun getFilterDisplayName(filter: ClientFilter): String {
         ClientFilter.INACTIVE -> "Inattivi"
         ClientFilter.WITH_FACILITIES -> "Con Stabilimenti"
         ClientFilter.WITH_CONTACTS -> "Con Contatti"
+        ClientFilter.WITH_CONTRACTS -> "Con Contratti"
         ClientFilter.WITH_ISLANDS -> "Con Isole"
     }
 }

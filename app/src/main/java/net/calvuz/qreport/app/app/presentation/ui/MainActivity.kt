@@ -11,7 +11,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,13 +19,13 @@ import net.calvuz.qreport.app.app.presentation.ui.theme.QReportTheme
 import timber.log.Timber
 
 /**
- * MainActivity per QReport
+ * MainActivity
  *
- * Activity principale dell'applicazione che gestisce:
- * - Dependency Injection con Hilt
- * - Navigation setup con Compose Navigation
- * - Theme configuration con Material Design 3
- * - Edge-to-edge layout per Android moderni
+ * QReport's Main Activity:
+ * - Hilt dependency injection
+ * - Navigation setup
+ * - Theme configuration
+ * - Edge-to-edge layout
  *
  * @version 1.0
  */
@@ -36,7 +35,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        Timber.d("MainActivity onCreate - Starting QReport")
+        Timber.d("Starting QReport")
 
         // Enable edge-to-edge layout
         enableEdgeToEdge()
@@ -53,7 +52,7 @@ class MainActivity : ComponentActivity() {
 }
 
 /**
- * Composable principale dell'app
+ * Main Composable
  */
 @Composable
 fun QReportApp() {
@@ -73,13 +72,5 @@ fun QReportApp() {
                     .padding(innerPadding)
             )
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun QReportAppPreview() {
-    QReportTheme {
-        QReportApp()
     }
 }

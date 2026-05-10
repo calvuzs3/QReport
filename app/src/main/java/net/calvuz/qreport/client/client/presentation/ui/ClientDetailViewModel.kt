@@ -44,7 +44,7 @@ data class ClientDetailUiState(
     val showDeleteConfirmation: Boolean = false,
 
     // UI State
-    val selectedTab: ClientDetailTab = ClientDetailTab.INFO,
+    val selectedTab: ClientDetailTab = ClientDetailTab.FACILITIES,
     val contactStatistics: ContactStatistics? = null,
 
     // Quick access data
@@ -104,10 +104,10 @@ data class ClientDetailUiState(
  * Tab disponibili nella detail screen
  */
 enum class ClientDetailTab(val title: String) {
-    INFO("Informazioni"),
     FACILITIES("Stabilimenti"),
     CONTACTS("Referenti"),
-    CONTRACTS("Contratti")
+    CONTRACTS("Contratti"),
+    INFO("Informazioni"),
 }
 
 @HiltViewModel
@@ -211,7 +211,6 @@ class ClientDetailViewModel @Inject constructor(
 
             // Quick access data
             companyName = client.companyName,
-            industry = client.industry,
             statusBadge = statusBadge.text,
             statusBadgeColor = statusBadge.color,
             statisticsSummary = clientDetails.statistics.summaryText,

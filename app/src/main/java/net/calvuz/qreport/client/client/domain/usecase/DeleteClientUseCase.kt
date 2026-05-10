@@ -28,36 +28,38 @@ class DeleteClientUseCase @Inject constructor(
 ) {
 
     /**
-     * Elimina un cliente
+     * Delete a Cliente
      *
-     * @param clientId ID del cliente da eliminare
-     * @param force Se true, elimina anche facilities e contatti associati
-     * @return Result con Unit se successo, errore con dettagli se fallimento
+     * @param clientId Client ID
+     * @param cascade If true, cascade (default)
+     * @return Unit Result
      */
     suspend operator fun invoke(
         clientId: String,
-        force: Boolean = false
+        cascade: Boolean = true
     ): Result<Unit> {
         return try {
-            // 1. Validazione input
+
+            // 1. Input validation
             if (clientId.isBlank()) {
                 return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
             }
 
-            // 2. Verificare che il cliente esista
+            // 2. Client check
             checkClientExists(clientId).onFailure { return Result.failure(it) }
 
-            // 3. Controllo dipendenze se non è forzato
-            if (!force) {
+            // 3. Dependencies check
+            if (!cascade) {
+                // It would leave orphans behind
                 checkClientDependencies(clientId).onFailure { return Result.failure(it) }
             }
 
-            // 4. Eliminazione dipendenze se forzato
-            if (force) {
+            // 4. Delete dependencies
+            if (cascade) {
                 deleteClientDependencies(clientId).onFailure { return Result.failure(it) }
             }
 
-            // 5. Eliminazione cliente (soft delete)
+            // 5. Delete Client
             clientRepository.deleteClient(clientId)
 
         } catch (e: Exception) {

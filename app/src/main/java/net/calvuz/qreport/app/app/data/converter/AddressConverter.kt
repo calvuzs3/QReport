@@ -22,10 +22,9 @@ class AddressConverter @Inject constructor() {
                 val json = JSONObject().apply {
                     addr.street?.let { put("street", it) }
                     addr.streetNumber?.let { put("streetNumber", it) }
+                    addr.postalCode?.let { put("postalCode", it) }
                     addr.city?.let { put("city", it) }
                     addr.province?.let { put("province", it) }
-                    addr.region?.let { put("region", it) }
-                    addr.postalCode?.let { put("postalCode", it) }
                     put("country", addr.country)
                     addr.notes?.let { put("notes", it) }
 
@@ -69,10 +68,9 @@ class AddressConverter @Inject constructor() {
                 Address(
                     street = json.optString("street").takeIf { it.isNotBlank() },
                     streetNumber = json.optString("streetNumber").takeIf { it.isNotBlank() },
+                    postalCode = json.optString("postalCode").takeIf { it.isNotBlank() },
                     city = json.optString("city").takeIf { it.isNotBlank() },
                     province = json.optString("province").takeIf { it.isNotBlank() },
-                    region = json.optString("region").takeIf { it.isNotBlank() },
-                    postalCode = json.optString("postalCode").takeIf { it.isNotBlank() },
                     country = json.optString("country", "Italia"),
                     coordinates = coordinates,
                     notes = json.optString("notes").takeIf { it.isNotBlank() }

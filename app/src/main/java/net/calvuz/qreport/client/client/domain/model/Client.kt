@@ -5,58 +5,49 @@ import kotlinx.serialization.Serializable
 import net.calvuz.qreport.app.app.domain.model.Address
 
 /**
- * Cliente industriale completo
- * Estende il concetto di ClientInfo esistente mantenendo compatibilità
+ * Customer
  */
 @Serializable
 data class Client(
+
+    // ID)
     val id: String,
 
-    // ===== DATI AZIENDALI =====
+    // ===== DATA =====
     val companyName: String,
-    val vatNumber: String? = null,
-    val fiscalCode: String? = null,
-    val website: String? = null,
-    val industry: String? = null,
+//    val vatNumber: String? = null,
+//    val fiscalCode: String? = null,
+//    val website: String? = null,
+//    val industry: String? = null,
     val notes: String? = null,
 
-    // ===== LOCALIZZAZIONE =====
-    val headquarters: Address? = null,
+    // ===== LOCALIZATION =====
+    val headquarters: Address? = null,           // Address in JSON
 
-    // ===== RELAZIONI =====
-    val facilities: List<String> = emptyList(),  // IDs delle facilities
-    val contacts: List<String> = emptyList(),    // IDs dei contacts
+    // ===== RELATIONSHIPS =====
+    val facilities: List<String> = emptyList(),  // Facility IDs
+    val contacts: List<String> = emptyList(),    // Contact IDs
+    val contracts: List<String> = emptyList(),   // Contract IDs
 
-    // ===== METADATI =====
+    // ===== METADATA =====
     val isActive: Boolean = true,
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
 
-    /**
-     * Verifica se cliente ha stabilimenti
-     */
+    // Helper functions
     fun hasFacilities(): Boolean = facilities.isNotEmpty()
-
-    /**
-     * Verifica se cliente ha referenti
-     */
     fun hasContacts(): Boolean = contacts.isNotEmpty()
+    fun hasContracts(): Boolean = contracts.isNotEmpty()
 
-    /**
-     * Nome display per UI
-     */
+    // Helper values
     val displayName: String
         get() = companyName
-
-    /**
-     * Badge per UI basato su stato
-     */
     val statusBadge: ClientStatusBadge
         get() = when {
             !isActive -> ClientStatusBadge("Inattivo", "FF0000")
-            !hasFacilities() -> ClientStatusBadge("Setup incompleto", "FFC000")
-            !hasContacts() -> ClientStatusBadge("Manca referente", "FF9500")
-            else -> ClientStatusBadge("Attivo", "00B050")
+//            !hasFacilities() -> ClientStatusBadge("Setup incompleto", "FFC000")
+//            !hasContacts() -> ClientStatusBadge("Manca referente", "FF9500")
+            else -> ClientStatusBadge("", "00B050")
         }
 }

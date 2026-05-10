@@ -1,9 +1,7 @@
 package net.calvuz.qreport.client.client.domain.usecase
 
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import net.calvuz.qreport.client.contact.domain.repository.ContactRepository
-import net.calvuz.qreport.client.contact.domain.usecase.DeleteContactUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.GetContactsByClientUseCase
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import javax.inject.Inject

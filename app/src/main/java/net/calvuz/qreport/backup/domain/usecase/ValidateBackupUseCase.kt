@@ -9,6 +9,7 @@ import net.calvuz.qreport.backup.domain.model.BackupValidationResult
 import net.calvuz.qreport.backup.domain.model.backup.DatabaseBackup
 import net.calvuz.qreport.backup.domain.model.PhotoManifest
 import net.calvuz.qreport.app.util.SizeUtils
+import net.calvuz.qreport.app.util.SizeUtils.getFormattedSize
 import timber.log.Timber
 import java.io.File
 import java.security.MessageDigest
@@ -329,7 +330,7 @@ class ValidateBackupUseCase @Inject constructor(
 
         // File molto grandi
         if (fileSizeMB > 500) {
-            warnings.add("File backup molto grande (${SizeUtils.getFormattedSize(fileSizeMB.toDouble())}) - potrebbero esserci problemi di performance")
+            warnings.add("File backup molto grande (${fileSizeMB.toDouble().getFormattedSize()}) - potrebbero esserci problemi di performance")
         }
 
         // Molti record

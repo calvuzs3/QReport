@@ -5,6 +5,10 @@ import kotlinx.serialization.Serializable
 /**
  * Informazioni cliente
  */
+@Deprecated(
+    message = "No longer use it",
+    level = DeprecationLevel.WARNING
+)
 @Serializable
 data class ClientInfo(
     val companyName: String,

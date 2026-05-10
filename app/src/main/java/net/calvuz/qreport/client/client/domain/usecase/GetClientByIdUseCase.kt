@@ -4,23 +4,15 @@ import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import javax.inject.Inject
 
-/**
- * Use Case per recuperare un cliente per ID
- *
- * Gestisce:
- * - Validazione ID input
- * - Recupero dal repository
- * - Gestione cliente non trovato
- */
 class GetClientByIdUseCase @Inject constructor(
     private val clientRepository: ClientRepository
 ) {
 
     /**
-     * Recupera un cliente per ID
+     * Get a Client by ID
      *
-     * @param clientId ID del cliente da recuperare
-     * @return Result con Client se trovato, errore se non trovato o errore di sistema
+     * @param clientId Client ID
+     * @return Client
      */
     suspend operator fun invoke(clientId: String): Result<Client> {
         return try {

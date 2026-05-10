@@ -49,6 +49,8 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.contract.presentation.ui.ContractFormScreen
 import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen
+import net.calvuz.qreport.client.unit.presentation.ui.MechanicalUnitFormScreen
+import net.calvuz.qreport.client.unit.presentation.ui.MechanicalUnitListScreen
 import net.calvuz.qreport.ti.presentation.ui.EditInterventionScreen
 import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionFormScreen
 import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionListScreen
@@ -67,10 +69,6 @@ import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionListScreen
  * - Check-up: Lista e gestione check-up
  * - Clienti: Gestione clienti
  * - Impostazioni: Configurazioni app
- */
-
-/**
- * Sealed class per le destinazioni principali
  */
 sealed class QReportDestination(
     val route: String,
@@ -151,15 +149,24 @@ object QReportRoutes {
     const val FACILITY_LIST = "facilities/{clientId}"
     const val FACILITY_DETAIL = "facility_detail/{clientId}/{facilityId}"
     const val FACILITY_CREATE = "facility_form/{clientId}"
-
     const val FACILITY_EDIT = "facility_form/{clientId}/{facilityId}"
 
     // Island routes
     const val ISLAND_LIST = "islands/{facilityId}"
     const val ISLAND_DETAIL = "island_detail/{facilityId}/{islandId}"
     const val ISLAND_CREATE = "island_form/{facilityId}"
-
     const val ISLAND_EDIT = "island_form/{facilityId}/{islandId}"
+
+    // Unit
+
+    const val UNIT_LIST = "islands/{islandId}/units"
+    const val UNIT_ADD = "islands/{islandId}/units/add"
+    const val UNIT_EDIT = "islands/{islandId}/units/{unitId}/edit"
+
+    fun unitList(islandId: String) = "islands/$islandId/units"
+    fun unitAdd(islandId: String) = "islands/$islandId/units/add"
+    fun unitEdit(islandId: String, unitId: String) = "islands/$islandId/units/$unitId/edit"
+
 
     // Backup
     const val BACKUP = "backup"
@@ -343,7 +350,7 @@ fun QReportNavigation(
                         onNavigateToCreateIntervention = {
                             navController.navigate(QReportRoutes.tiCreateRoute())
                         },
-                        onNavigateToEditIntervention = {interventionId ->
+                        onNavigateToEditIntervention = { interventionId ->
                             navController.navigate(QReportRoutes.tiEditRoute(interventionId))
                         },
                         onNavigateBack = {
@@ -1127,6 +1134,23 @@ fun QReportNavigation(
                         onNavigateToMaintenance = { islandId ->
                             // TODO: Navigate to maintenance screen when implemented
                         },
+                        onNavigateToCreateUnit = { islandId ->
+                            navController.navigate(
+                                QReportRoutes.unitAdd(
+                                    islandId
+                                )
+                            )
+                        },
+                        onNavigateToEditUnit = { unitId ->
+                            navController.navigate(
+                                QReportRoutes.unitEdit(
+                                    islandId, unitId
+                                )
+                            )
+                        },
+                        onNavigateToUnitList = { islandId ->
+                            navController.navigate(QReportRoutes.unitList(islandId))
+                        },
                         onIslandDeleted = {
                             navController.popBackStack()
                         }
@@ -1159,6 +1183,54 @@ fun QReportNavigation(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }
+
+                // ============================================================
+                // ✅ UNIT
+                // ============================================================
+
+                // ── MechanicalUnit list ──────────────────────────────────────────────────────
+                composable(
+                    route = QReportRoutes.UNIT_LIST,
+                    arguments = listOf(navArgument("islandId") { type = NavType.StringType })
+                ) { backStack ->
+                    val islandId = backStack.arguments?.getString("islandId")!!
+                    val islandName = backStack.arguments?.getString("islandName") ?: "Isola"
+
+                    MechanicalUnitListScreen(
+                        islandName = islandName,
+                        onNavigateBack = { navController.popBackStack() },
+                        onNavigateToAdd = {
+                            navController.navigate(QReportRoutes.unitAdd(islandId))
+                        },
+                        onNavigateToEdit = { unitId ->
+                            navController.navigate(QReportRoutes.unitEdit(islandId, unitId))
+                        }
+                    )
+                }
+
+                // ── MechanicalUnit add ───────────────────────────────────────────────────────
+                composable(
+                    route = QReportRoutes.UNIT_ADD,
+                    arguments = listOf(navArgument("islandId") { type = NavType.StringType })
+                ) {
+                    MechanicalUnitFormScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                // ── MechanicalUnit edit ──────────────────────────────────────────────────────
+                composable(
+                    route = QReportRoutes.UNIT_EDIT,
+                    arguments = listOf(
+                        navArgument("islandId") { type = NavType.StringType },
+                        navArgument("unitId") { type = NavType.StringType }
+                    )
+                ) {
+                    MechanicalUnitFormScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
 
                 // ============================================================
                 // ✅ BACKUP

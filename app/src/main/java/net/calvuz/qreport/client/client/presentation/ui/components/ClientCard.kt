@@ -21,10 +21,9 @@ import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
- * ClientCard riutilizzabile per QReport
+ * ClientCard
  *
- * Mostra le informazioni principali del cliente con statistiche
- * Supporta diverse modalità di visualizzazione e azioni
+ * Client main infos with stats
  */
 
 @Composable
@@ -124,27 +123,6 @@ private fun FullClientCard(
         }
 
         // Industry and headquarters
-        if (!client.industry.isNullOrBlank()) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Business,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = client.industry,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
         if (client.headquarters != null) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),

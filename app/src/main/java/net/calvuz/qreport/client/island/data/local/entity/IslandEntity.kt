@@ -36,13 +36,23 @@ data class IslandEntity(
     @ColumnInfo(name = "facility_id")
     val facilityId: String,
 
-    // TIPO ISOLA
+    // ===== COMMISSIONING =====
+
+    @ColumnInfo("commissioning_number")
+    val commissioningNumber: String? = null,
+
+    // ===== ISLAND TYPE =====
+
     @ColumnInfo(name = "island_type")
     val islandType: String, // IslandType.name
 
-    // DETTAGLI TECNICI
+    // ===== TECHNICAL DETAILS =====
+
     @ColumnInfo(name = "serial_number")
     val serialNumber: String,
+
+    @ColumnInfo("model_number")
+    val modelNumber: String? = null,
 
     @ColumnInfo(name = "model")
     val model: String? = null,
@@ -53,9 +63,7 @@ data class IslandEntity(
     @ColumnInfo(name = "warranty_expiration")
     val warrantyExpiration: Long? = null,
 
-    // STATO OPERATIVO
-    @ColumnInfo(name = "is_active")
-    val isActive: Boolean = true,
+    // ===== STATUS =====
 
     @ColumnInfo(name = "operating_hours")
     val operatingHours: Int = 0,
@@ -69,7 +77,8 @@ data class IslandEntity(
     @ColumnInfo(name = "next_scheduled_maintenance")
     val nextScheduledMaintenance: Long? = null,
 
-    // CONFIGURAZIONE
+    // ===== CONFIGURATION =====
+
     @ColumnInfo(name = "custom_name")
     val customName: String? = null,
 
@@ -79,7 +88,11 @@ data class IslandEntity(
     @ColumnInfo(name = "notes")
     val notes: String? = null,
 
-    // METADATI
+    // ===== META =====
+
+    @ColumnInfo(name = "is_active")
+    val isActive: Boolean = true,
+
     @ColumnInfo(name = "created_at")
     val createdAt: Long,
 

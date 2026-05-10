@@ -5,9 +5,7 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.client.domain.model.Client
 
 /**
- * Repository interface per gestione clienti
- * Definisce il contratto per accesso ai dati dei clienti
- * Implementazione nel data layer
+ * Client Repository
  */
 interface ClientRepository {
 
@@ -23,25 +21,22 @@ interface ClientRepository {
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
     fun getAllClientsFlow(): Flow<List<Client>>
+    fun getAllActiveClientsFlow(): Flow<List<Client>>
     fun getClientByIdFlow(id: String): Flow<Client?>
 
     // ===== SEARCH & FILTER =====
 
     suspend fun searchClients(query: String): Result<List<Client>>
     fun searchClientsFlow(query: String): Flow<List<Client>>
-    suspend fun getClientsByIndustry(industry: String): Result<List<Client>>
-    suspend fun getClientByVatNumber(vatNumber: String): Result<Client?>
 
     // ===== VALIDATION =====
 
     suspend fun isCompanyNameTaken(companyName: String, excludeId: String = ""): Result<Boolean>
-    suspend fun isVatNumberTaken(vatNumber: String, excludeId: String = ""): Result<Boolean>
 
     // ===== STATISTICS =====
 
     suspend fun getActiveClientsCount(): Result<Int>
     suspend fun getTotalClientsCount(): Result<Int>
-    suspend fun getAllIndustries(): Result<List<String>>
     suspend fun getFacilitiesCount(clientId: String): Result<Int>
     suspend fun getContactsCount(clientId: String): Result<Int>
     suspend fun getContractsCount(clientId: String): Result<Int>
@@ -51,6 +46,7 @@ interface ClientRepository {
 
     suspend fun getClientsWithFacilities(): Result<List<Client>>
     suspend fun getClientsWithContacts(): Result<List<Client>>
+    suspend fun getClientsWithContracts(): Result<List<Client>>
     suspend fun getClientsWithIslands(): Result<List<Client>>
 
     // ===== BULK OPERATIONS =====

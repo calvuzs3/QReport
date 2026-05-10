@@ -22,13 +22,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
-import net.calvuz.qreport.client.island.presentation.ui.components.IslandCardVariant
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.util.SizeUtils.getFormattedCycleCount
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -322,7 +321,7 @@ private fun IslandStatisticsHeader(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "Cicli: ${formatCycleCount(statistics.totalCycles)}",
+                        text = "Cicli: ${statistics.totalCycles.getFormattedCycleCount()}",
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -334,15 +333,6 @@ private fun IslandStatisticsHeader(
                 }
             }
         }
-    }
-}
-
-// Helper per formattare cicli
-private fun formatCycleCount(cycleCount: Long): String {
-    return when {
-        cycleCount >= 1_000_000 -> "${(cycleCount / 1_000_000).toInt()}M"
-        cycleCount >= 1_000 -> "${(cycleCount / 1_000).toInt()}K"
-        else -> cycleCount.toString()
     }
 }
 
@@ -381,7 +371,7 @@ private fun StatisticItem(
 
 @Composable
 private fun IslandListContent(
-    islands: List<Island>,
+    islands: List<IslandWithStats>,
     variant: ListViewMode,
     onIslandClick: (String) -> Unit,
     onIslandDelete: (String) -> Unit
@@ -393,12 +383,12 @@ private fun IslandListContent(
     ) {
         items(
             items = islands,
-            key = { it.id }
-        ) { island ->
+            key = { it.island.id }
+        ) { islandWithStats ->
             IslandCard(
-                island = island,
-                onClick = { onIslandClick(island.id) },
-                onDelete = { onIslandDelete(island.id) },
+                island = islandWithStats.island,
+                onClick = { onIslandClick(islandWithStats.island.id) },
+                onDelete = { onIslandDelete(islandWithStats.island.id) },
                 variant = variant
             )
         }

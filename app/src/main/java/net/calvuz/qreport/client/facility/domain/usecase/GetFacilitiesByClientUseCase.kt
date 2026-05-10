@@ -279,7 +279,7 @@ class GetFacilitiesByClientUseCase @Inject constructor(
                 facilities.filter { facility ->
                     facility.name.lowercase().contains(searchQuery) ||
                             facility.code?.lowercase()?.contains(searchQuery) == true ||
-                            facility.description?.lowercase()?.contains(searchQuery) == true ||
+                            facility.notes?.lowercase()?.contains(searchQuery) == true ||
                             facility.facilityType.displayName.lowercase().contains(searchQuery)
                 }
             }

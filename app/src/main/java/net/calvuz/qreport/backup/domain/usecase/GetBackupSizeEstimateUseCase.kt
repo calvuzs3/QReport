@@ -2,6 +2,7 @@ package net.calvuz.qreport.backup.domain.usecase
 
 import net.calvuz.qreport.backup.domain.repository.BackupRepository
 import net.calvuz.qreport.app.util.SizeUtils
+import net.calvuz.qreport.app.util.SizeUtils.getFormattedSize
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -29,7 +30,7 @@ class GetBackupSizeEstimateUseCase @Inject constructor(
                 else -> estimate
             }
 
-            Timber.Forest.d("Stima backup: ${SizeUtils.getFormattedSize(adjustedEstimate.toDouble())}")
+            Timber.Forest.d("Stima backup: ${adjustedEstimate.toDouble().getFormattedSize()}")
             adjustedEstimate.toDouble()
 
         } catch (e: Exception) {

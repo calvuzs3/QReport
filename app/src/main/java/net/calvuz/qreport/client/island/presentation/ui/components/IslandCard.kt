@@ -22,24 +22,23 @@ import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
- * Card per visualizzazione isola robotizzata
+ * Island Card
  *
  * Features:
- * - Indicatori stato operativo (colori e icone)
- * - Info manutenzione con countdown/warning
- * - Ore operative e cicli
- * - Tipo isola con icona specifica
- * - Serial number e nome custom
- * - Azioni rapide (dettaglio, eliminazione)
+ * - Operational Status (colors and icons)
+ * - Maintenance Infos (countdown and warnings)
+ * - Duty hours and cycles
+ * - IslandType (icon)
+ * - Actions (detail, delete)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IslandCard(
+    modifier: Modifier = Modifier,
     island: Island,
     onClick: () -> Unit,
     onDelete: (() -> Unit)? = null,
-    variant: ListViewMode,
-    modifier: Modifier = Modifier
+    variant: ListViewMode = ListViewMode.FULL
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
@@ -50,7 +49,10 @@ fun IslandCard(
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = when (island.islandOperationalStatus) {
-                IslandOperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
+                IslandOperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.errorContainer.copy(
+                    alpha = 0.1f
+                )
+
                 IslandOperationalStatus.INACTIVE -> MaterialTheme.colorScheme.surfaceVariant
                 else -> MaterialTheme.colorScheme.surface
             }
@@ -63,7 +65,9 @@ fun IslandCard(
             // Header con tipo isola e stato
             IslandHeader(
                 island = island,
-                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null
+                onDelete = if (onDelete != null) {
+                    { showDeleteDialog = true }
+                } else null
             )
 
             // Informazioni principali
@@ -220,7 +224,7 @@ private fun IslandMainInfo(
                 )
             }
 
-            if (variant == ListViewMode.FULL) {
+            if (variant == ListViewMode.FULL || variant == ListViewMode.COMPACT) {
                 Text(
                     text = island.islandType.displayName,
                     style = MaterialTheme.typography.bodySmall,
@@ -230,25 +234,28 @@ private fun IslandMainInfo(
             }
         }
 
-        // Ubicazione (se disponibile)
-        island.location?.let { location ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.LocationOn,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = location,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+        // FULL
+        if (variant == ListViewMode.FULL) {
+            // Ubicazione (se disponibile)
+            island.location?.let { location ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.LocationOn,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = location,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }

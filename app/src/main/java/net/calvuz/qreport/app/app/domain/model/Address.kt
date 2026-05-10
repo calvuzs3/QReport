@@ -11,10 +11,9 @@ data class Address(
     // ===== INDIRIZZO =====
     val street: String? = null,
     val streetNumber: String? = null,
+    val postalCode: String? = null,
     val city: String? = null,
     val province: String? = null,
-    val region: String? = null,
-    val postalCode: String? = null,
     val country: String = "Italia",
 
     // ===== COORDINATE GPS =====
@@ -48,6 +47,11 @@ data class Address(
         if (!province.isNullOrBlank()) {
             if (isNotEmpty()) append(" - ")
             append(province)
+        }
+
+        if (!country.equals("Italia")) {
+            if (isNotEmpty()) append(", ")
+            append(country)
         }
     }
 

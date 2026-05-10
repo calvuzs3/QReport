@@ -4,23 +4,69 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
 import net.calvuz.qreport.client.island.domain.usecase.SearchIslandsUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
+import net.calvuz.qreport.client.island.domain.usecase.GetIslandWithUnitsUseCase
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.collections.count
+import kotlin.collections.filter
+import kotlin.collections.map
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.text.contains
 
 /**
- * ViewModel per FacilityIslandListScreen
+ * ISLAND UI State
+ */
+data class FacilityIslandListUiState(
+    val islands: List<IslandWithStats> = emptyList(),
+    val facilityId: String = "",
+    val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
+    val isDeletingIsland: String? = null,
+    val allIslands: List<Island> = emptyList(),
+    val filteredIslands: List<IslandWithStats> = emptyList(),
+    val searchQuery: String = "",
+    val selectedFilter: IslandFilter = IslandFilter.ALL,
+    val sortOrder: IslandSortOrder = IslandSortOrder.SERIAL_NUMBER,
+    val statistics: FacilityOperationalSummary? = null,
+    val searchSuggestions: List<Island> = emptyList(),
+    val error: String? = null,
+    val cardVariant: ListViewMode = ListViewMode.FULL
+)
+
+/**
+ * ISLAND WITH STATS
+ */
+data class IslandWithStats(
+    val island: Island,
+    val stats: IslandStatistics
+)
+
+/**
+ * ISLAND STATS
+ */
+data class IslandStatistics(
+    val unitsCount: Int = 0,
+    val activeUnitsCount: Int = 0,
+) {
+    val hasUnits: Boolean = unitsCount > 0
+}
+
+/**
+ * FacilityIslandListScreen ViewModel
  *
  * Gestisce:
  * - Lista isole per facility con ricerca e filtri
@@ -32,6 +78,7 @@ import javax.inject.Inject
 @HiltViewModel
 class IslandListViewModel @Inject constructor(
     private val getIslandsByFacilityUseCase: GetIslandsByFacilityUseCase,
+    private val getIslandWithUnitsUseCase: GetIslandWithUnitsUseCase,
     private val searchIslandsUseCase: SearchIslandsUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
     private val appSettingsRepository: AppSettingsRepository
@@ -44,7 +91,7 @@ class IslandListViewModel @Inject constructor(
     private var searchJob: Job? = null
     private var currentFacilityId: String = ""
 
-    companion object{
+    companion object {
         private const val KEY = AppSettingsDataStore.LIST_KEY_ISLANDS
     }
 
@@ -62,6 +109,10 @@ class IslandListViewModel @Inject constructor(
      * Carica isole della facility
      */
     fun loadIslands() {
+        val facilityId = _uiState.value.facilityId
+        if (facilityId.isEmpty()) return
+
+
         if (currentFacilityId.isBlank()) return
 
         loadJob?.cancel()
@@ -69,40 +120,52 @@ class IslandListViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true, error = null) }
 
             try {
-                // Carica solo isole, statistiche semplificate
-                val islandsResult = getIslandsByFacilityUseCase(currentFacilityId)
+                Timber.d("Loading islands for facility: $facilityId")
 
-                islandsResult.fold(
-                    onSuccess = { islands ->
-                        // Calcola statistiche semplici localmente
-                        val stats = calculateSimpleStats(islands)
-
-                        _uiState.update { currentState ->
-                            val filteredIslands = applyFiltersAndSort(
-                                islands = islands,
-                                searchQuery = currentState.searchQuery,
-                                filter = currentState.selectedFilter,
-                                sortOrder = currentState.sortOrder
-                            )
-
-                            currentState.copy(
+                getIslandsByFacilityUseCase.observeIslandsByFacility(currentFacilityId)
+                    .catch { exception ->
+                        if (exception is kotlinx.coroutines.CancellationException) throw exception
+                        Timber.e(exception, "Error in islands flow")
+                        if (currentCoroutineContext().isActive) {
+                            _uiState.value = _uiState.value.copy(
                                 isLoading = false,
-                                allIslands = islands,
-                                filteredIslands = filteredIslands,
-                                statistics = stats,
-                                error = null
-                            )
-                        }
-                    },
-                    onFailure = { error ->
-                        _uiState.update {
-                            it.copy(
-                                isLoading = false,
-                                error = error.message ?: "Errore nel caricamento isole"
+                                isRefreshing = false,
+                                error = "Errore caricamento isole: ${exception.message}"
                             )
                         }
                     }
-                )
+                    .collect { islands ->
+                        if (!currentCoroutineContext().isActive) {
+                            Timber.d("Skipping facilities processing - job cancelled")
+                            return@collect
+                        }
+
+                        // Enrich with statistics
+                        val islandsWithStats = enrichWithStatistics(islands)
+
+                        if (currentCoroutineContext().isActive) {
+                            val currentState = _uiState.value
+                            val filteredAndSorted = applyFiltersAndSort(
+                                islandsWithStats,
+                                currentState.searchQuery,
+                                currentState.selectedFilter,
+                                currentState.sortOrder
+                            )
+
+                            _uiState.value = currentState.copy(
+                                islands = islandsWithStats,
+                                filteredIslands = filteredAndSorted,
+                                isLoading = false,
+                                isRefreshing = false,
+                                error = null
+                            )
+
+                            Timber.d("Loaded ${islands.size} facilities successfully")
+                        }
+                    }
+
+            } catch (_: kotlinx.coroutines.CancellationException) {
+                Timber.d("Islands loading cancelled")
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(
@@ -114,142 +177,158 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Calcola statistiche semplici localmente
-     */
-    private fun calculateSimpleStats(islands: List<Island>): FacilityOperationalSummary {
-        val currentTime = Clock.System.now()
 
-        return FacilityOperationalSummary(
-            facilityId = currentFacilityId,
-            totalIslands = islands.size,
-            activeIslands = islands.count { it.isActive },
-            islandsByType = islands.groupBy { it.islandType }.mapValues { it.value.size },
-            totalOperatingHours = islands.sumOf { it.operatingHours },
-            totalCycles = islands.sumOf { it.cycleCount },
-            islandsUnderWarranty = islands.count { island ->
-                island.warrantyExpiration?.let { it > currentTime } == true
-            },
-            islandsDueMaintenance = islands.count { island ->
-                island.needsMaintenance()
-            },
-            averageOperatingHours = if (islands.isNotEmpty()) {
-                islands.map { it.operatingHours }.average().toInt()
-            } else 0
+    fun refresh() {
+        val facilityId = currentFacilityId
+        if (facilityId.isBlank()) return
+
+        viewModelScope.launch {
+            try {
+
+                Timber.d("Refreshing islands for facility: $facilityId")
+                delay(500)
+
+                _uiState.update { it.copy(isRefreshing = true, error = null) }
+
+                getIslandsByFacilityUseCase(facilityId).fold(
+                    onSuccess = { islands ->
+                        if (!currentCoroutineContext().isActive) {
+                            Timber.d("Skipping refresh processing - job cancelled")
+                            return@launch
+                        }
+
+                        val islandWithStats = enrichWithStatistics(islands)
+
+                        if (currentCoroutineContext().isActive) {
+                            val currentState = _uiState.value
+                            val filteredAndSorted = applyFiltersAndSort(
+                                islandWithStats,
+                                currentState.searchQuery,
+                                currentState.selectedFilter,
+                                currentState.sortOrder
+                            )
+
+                            _uiState.value = currentState.copy(
+                                islands = islandWithStats,
+                                filteredIslands = filteredAndSorted,
+                                isRefreshing = false,
+                                error = null
+                            )
+
+                            Timber.d("Facilities refresh completed successfully")
+                        }
+                    },
+                    onFailure = { error ->
+                        if (currentCoroutineContext().isActive) {
+                            Timber.e(error, "Failed to refresh islands")
+                            _uiState.value = _uiState.value.copy(
+                                isRefreshing = false,
+                                error = "Errore refresh: ${error.message}"
+                            )
+                        }
+                    }
+                )
+//                loadIslands()
+
+                // Il flag isRefreshing viene resettato al completamento del caricamento
+                _uiState.update { it.copy(isRefreshing = false) }
+
+            } catch (_: CancellationException) {
+                Timber.d("Refresh cancelled")
+                if (currentCoroutineContext().isActive) {
+                    _uiState.value = _uiState.value.copy(isRefreshing = false)
+                }
+            } catch (e: Exception) {
+                if (currentCoroutineContext().isActive) {
+                    Timber.e(e, "Failed to refresh islands")
+                    _uiState.value = _uiState.value.copy(
+                        isRefreshing = false,
+                        error = "Errore refresh: ${e.message}"
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteIsland(islandId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeletingIsland = islandId)
+
+            try {
+                Timber.d("Deleting island: $islandId")
+
+                deleteIslandUseCase(islandId).fold(
+                    onSuccess = {
+                        Timber.d("Island deleted successfully")
+                        refresh()
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to delete island")
+                        _uiState.value = _uiState.value.copy(
+                            isDeletingIsland = null,
+                            error = "Errore eliminazione isola: ${error.message}"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Exception deleting island")
+                _uiState.value = _uiState.value.copy(
+                    error = "Errore eliminazione isola: ${e.message}"
+                )
+            } finally {
+                _uiState.value = _uiState.value.copy(isDeletingIsland = null)
+            }
+        }
+    }
+
+    fun updateSearchQuery(query: String) {
+        val currentState = _uiState.value
+
+        if (query.length >= 3) {
+            performSearch(query)
+        } else {
+            val filteredAndSorted = applyFiltersAndSort(
+                currentState.islands,
+                query,
+                currentState.selectedFilter,
+                currentState.sortOrder
+            )
+
+            _uiState.value = currentState.copy(
+                searchQuery = query,
+                filteredIslands = filteredAndSorted
+            )
+        }
+    }
+
+    fun updateFilter(filter: IslandFilter) {
+        val currentState = _uiState.value
+        val filteredAndSorted = applyFiltersAndSort(
+            currentState.islands,
+            currentState.searchQuery,
+            filter,
+            currentState.sortOrder
+        )
+
+        _uiState.value = currentState.copy(
+            selectedFilter = filter,
+            filteredIslands = filteredAndSorted
         )
     }
 
-    /**
-     * Aggiorna query di ricerca
-     */
-    fun updateSearchQuery(query: String) {
-        _uiState.update { currentState ->
-            val filteredIslands = applyFiltersAndSort(
-                islands = currentState.allIslands,
-                searchQuery = query,
-                filter = currentState.selectedFilter,
-                sortOrder = currentState.sortOrder
-            )
-
-            currentState.copy(
-                searchQuery = query,
-                filteredIslands = filteredIslands
-            )
-        }
-
-        // Se la query non è vuota, cerca globalmente per suggerimenti
-        if (query.length >= 3) {
-            performGlobalSearch(query)
-        }
-    }
-
-    /**
-     * Ricerca globale per suggerimenti
-     */
-    private fun performGlobalSearch(query: String) {
-        searchJob?.cancel()
-        searchJob = viewModelScope.launch {
-            searchIslandsUseCase(query).fold(
-                onSuccess = { globalResults ->
-                    // Filtra solo le isole di altre facility per suggerimenti
-                    val suggestions = globalResults.filter { it.facilityId != currentFacilityId }
-                    _uiState.update {
-                        it.copy(searchSuggestions = suggestions.take(3)) // Max 3 suggerimenti
-                    }
-                },
-                onFailure = {
-                    // Ignora errori di ricerca globale
-                    _uiState.update { it.copy(searchSuggestions = emptyList()) }
-                }
-            )
-        }
-    }
-
-    /**
-     * Aggiorna filtro
-     */
-    fun updateFilter(filter: IslandFilter) {
-        _uiState.update { currentState ->
-            val filteredIslands = applyFiltersAndSort(
-                islands = currentState.allIslands,
-                searchQuery = currentState.searchQuery,
-                filter = filter,
-                sortOrder = currentState.sortOrder
-            )
-
-            currentState.copy(
-                selectedFilter = filter,
-                filteredIslands = filteredIslands
-            )
-        }
-    }
-
-    /**
-     * Aggiorna ordinamento
-     */
     fun updateSortOrder(sortOrder: IslandSortOrder) {
-        _uiState.update { currentState ->
-            val filteredIslands = applyFiltersAndSort(
-                islands = currentState.allIslands,
-                searchQuery = currentState.searchQuery,
-                filter = currentState.selectedFilter,
-                sortOrder = sortOrder
-            )
+        val currentState = _uiState.value
+        val filteredAndSorted = applyFiltersAndSort(
+            currentState.islands,
+            currentState.searchQuery,
+            currentState.selectedFilter,
+            sortOrder
+        )
 
-            currentState.copy(
-                sortOrder = sortOrder,
-                filteredIslands = filteredIslands
-            )
-        }
-    }
-
-    /**
-     * Elimina isola con conferma
-     */
-    fun deleteIsland(islandId: String) {
-        viewModelScope.launch {
-            deleteIslandUseCase(islandId).fold(
-                onSuccess = {
-                    // Ricarica lista dopo eliminazione
-                    loadIslands()
-                },
-                onFailure = { error ->
-                    _uiState.update {
-                        it.copy(error = "Errore eliminazione: ${error.message}")
-                    }
-                }
-            )
-        }
-    }
-
-    /**
-     * Refresh con pull to refresh
-     */
-    fun refresh() {
-        _uiState.update { it.copy(isRefreshing = true) }
-        loadIslands()
-        // Il flag isRefreshing viene resettato al completamento del caricamento
-        _uiState.update { it.copy(isRefreshing = false) }
+        _uiState.value = currentState.copy(
+            sortOrder = sortOrder,
+            filteredIslands = filteredAndSorted
+        )
     }
 
     /**
@@ -287,6 +366,9 @@ class IslandListViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 
+
+
+
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
@@ -308,75 +390,99 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Applica filtri e ordinamento
-     */
+    private suspend fun enrichWithStatistics(islands: List<Island>): List<IslandWithStats> {
+        return islands.map { island ->
+            val stats = try {
+                val islandWithUnits = getIslandWithUnitsUseCase(island.id).getOrNull()
+                IslandStatistics(
+                    unitsCount = islandWithUnits?.units?.size ?: 0,
+                    activeUnitsCount = islandWithUnits?.units?.count { it.isActive } ?: 0
+                )
+            } catch (e: Exception) {
+                Timber.e(e, "Exception getting stats for island ${island.id}")
+                createEmptyStats()
+            }
+
+            IslandWithStats(island = island, stats = stats)
+        }
+    }
+    private fun createEmptyStats() = IslandStatistics(
+        unitsCount = 0,
+        activeUnitsCount = 0
+    )
+
+    private fun performSearch(query: String) {
+        val currentState = _uiState.value
+        val filtered = currentState.islands.filter { islandWithStats ->
+            val island = islandWithStats.island
+            island.islandType.displayName.contains(query, ignoreCase = true) ||
+                    island.customName?.contains(query, ignoreCase = true) == true ||
+                    island.notes?.contains(query, ignoreCase = true) == true
+        }
+
+        val filteredAndSorted = applyFiltersAndSort(
+            filtered,
+            query,
+            currentState.selectedFilter,
+            currentState.sortOrder
+        )
+
+        _uiState.value = currentState.copy(
+            searchQuery = query,
+            filteredIslands = filteredAndSorted
+        )
+    }
+
     private fun applyFiltersAndSort(
-        islands: List<Island>,
+        islands: List<IslandWithStats>,
         searchQuery: String,
         filter: IslandFilter,
         sortOrder: IslandSortOrder
-    ): List<Island> {
-        var result = islands
+    ): List<IslandWithStats> {
+        var filtered = islands
 
         // Applica filtro di ricerca
         if (searchQuery.isNotBlank()) {
             val query = searchQuery.lowercase()
-            result = result.filter { island ->
-                island.serialNumber.lowercase().contains(query) ||
-                        island.customName?.lowercase()?.contains(query) == true ||
-                        island.model?.lowercase()?.contains(query) == true ||
-                        island.location?.lowercase()?.contains(query) == true ||
-                        island.islandType.displayName.lowercase().contains(query)
+            filtered = filtered.filter {
+                it.island.serialNumber.lowercase().contains(query) ||
+                        it.island.customName?.lowercase()?.contains(query) == true ||
+                        it.island.model?.lowercase()?.contains(query) == true ||
+                        it.island.location?.lowercase()?.contains(query) == true ||
+                        it.island.islandType.displayName.lowercase().contains(query)
             }
         }
 
         // Applica filtro categoria
-        result = when (filter) {
-            IslandFilter.ALL -> result
-            IslandFilter.ACTIVE -> result.filter { it.isActive }
-            IslandFilter.INACTIVE -> result.filter { !it.isActive }
-            IslandFilter.MAINTENANCE_DUE -> result.filter { it.needsMaintenance() }
-            IslandFilter.UNDER_WARRANTY -> result.filter { it.isUnderWarranty() }
-            IslandFilter.HIGH_OPERATING_HOURS -> result.filter { it.operatingHours > 5000 }
-            IslandFilter.BY_TYPE -> result // Gestito separatamente nei dropdown menu
+        filtered = when (filter) {
+            IslandFilter.ALL -> filtered
+            IslandFilter.ACTIVE -> filtered.filter { it.island.isActive }
+            IslandFilter.INACTIVE -> filtered.filter { !it.island.isActive }
+            IslandFilter.MAINTENANCE_DUE -> filtered.filter { it.island.needsMaintenance() }
+            IslandFilter.UNDER_WARRANTY -> filtered.filter { it.island.isUnderWarranty() }
+            IslandFilter.HIGH_OPERATING_HOURS -> filtered.filter { it.island.operatingHours > 5000 }
+            IslandFilter.BY_TYPE -> filtered // Gestito separatamente nei dropdown menu
         }
 
         // Applica ordinamento
-        result = when (sortOrder) {
-            IslandSortOrder.SERIAL_NUMBER -> result.sortedBy { it.serialNumber.lowercase() }
-            IslandSortOrder.TYPE -> result.sortedBy { it.islandType.name }
-            IslandSortOrder.STATUS -> result.sortedBy { it.islandOperationalStatus.ordinal }
-            IslandSortOrder.OPERATING_HOURS -> result.sortedByDescending { it.operatingHours }
-            IslandSortOrder.MAINTENANCE_DATE -> result.sortedBy {
-                it.nextScheduledMaintenance ?: Instant.DISTANT_FUTURE
+        filtered = when (sortOrder) {
+            IslandSortOrder.SERIAL_NUMBER -> filtered.sortedBy { it.island.serialNumber.lowercase() }
+            IslandSortOrder.TYPE -> filtered.sortedBy { it.island.islandType.name }
+            IslandSortOrder.STATUS -> filtered.sortedBy { it.island.islandOperationalStatus.ordinal }
+            IslandSortOrder.OPERATING_HOURS -> filtered.sortedByDescending { it.island.operatingHours }
+            IslandSortOrder.MAINTENANCE_DATE -> filtered.sortedBy {
+                it.island.nextScheduledMaintenance ?: Instant.DISTANT_FUTURE
             }
-            IslandSortOrder.CREATED_RECENT -> result.sortedByDescending { it.createdAt }
-            IslandSortOrder.CUSTOM_NAME -> result.sortedBy {
-                it.customName?.lowercase() ?: it.serialNumber.lowercase()
+
+            IslandSortOrder.CREATED_RECENT -> filtered.sortedByDescending { it.island.createdAt }
+            IslandSortOrder.CUSTOM_NAME -> filtered.sortedBy {
+                it.island.customName?.lowercase() ?: it.island.serialNumber.lowercase()
             }
         }
 
-        return result
+        return filtered
     }
 }
-
-/**
- * UI State per lista isole
- */
-data class FacilityIslandListUiState(
-    val isLoading: Boolean = false,
-    val isRefreshing: Boolean = false,
-    val allIslands: List<Island> = emptyList(),
-    val filteredIslands: List<Island> = emptyList(),
-    val searchQuery: String = "",
-    val selectedFilter: IslandFilter = IslandFilter.ALL,
-    val sortOrder: IslandSortOrder = IslandSortOrder.SERIAL_NUMBER,
-    val statistics: FacilityOperationalSummary? = null,
-    val searchSuggestions: List<Island> = emptyList(),
-    val error: String? = null,
-    val cardVariant: ListViewMode = ListViewMode.FULL
-)
 
 /**
  * Filtri per isole

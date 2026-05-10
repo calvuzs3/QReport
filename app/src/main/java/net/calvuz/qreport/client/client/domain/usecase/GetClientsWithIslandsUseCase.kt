@@ -9,9 +9,9 @@ class GetClientsWithIslandsUseCase @Inject constructor(
 ){
 
     /**
-     * Recupera clienti con isole associate
+     * Get Client with Islands
      *
-     * @return Result con lista clienti che hanno isole robotizzate
+     * @return Clients List
      */
     suspend operator fun invoke(): Result<List<Client>> {
         return try {

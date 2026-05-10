@@ -15,10 +15,12 @@ import net.calvuz.qreport.client.client.domain.usecase.GetClientStatisticsUseCas
 import net.calvuz.qreport.client.client.domain.usecase.DeleteClientUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithContactsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithContractsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.ObserveAllActiveClientsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.SearchClientsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithFacilitiesUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithIslandsUseCase
+import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -43,14 +45,14 @@ data class ClientListUiState(
     val isRefreshing: Boolean = false,
     val error: String? = null,
     val searchQuery: String = "",
-    val selectedFilter: ClientFilter = ClientFilter.ALL,
-    val selectedSortOrder: ClientSortOrder = ClientSortOrder.CREATED_RECENT,
+    val selectedFilter: ClientFilter = ClientPkg.selectedFilter,
+    val selectedSortOrder: ClientSortOrder = ClientPkg.selectedSortOrder,
     // Card display variant, persisted via AppSettingsDataStore
     val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 enum class ClientFilter {
-    ALL, ACTIVE, INACTIVE, WITH_FACILITIES, WITH_CONTACTS, WITH_ISLANDS
+    ACTIVE, ALL, INACTIVE, WITH_FACILITIES, WITH_ISLANDS, WITH_CONTACTS, WITH_CONTRACTS
 }
 
 enum class ClientSortOrder {
@@ -62,6 +64,7 @@ class ClientListViewModel @Inject constructor(
     private val getAllActiveClientsUseCase: GetAllActiveClientsUseCase,
     private val getAllActiveClientsWithFacilitiesUseCase: GetAllActiveClientsWithFacilitiesUseCase,
     private val getAllActiveClientWithContactsUseCase: GetAllActiveClientsWithContactsUseCase,
+    private val getAllActiveClientWithContractsUseCase: GetAllActiveClientsWithContractsUseCase,
     private val getAllActiveClientsWithIslandsUseCase: GetAllActiveClientsWithIslandsUseCase,
     private val observeAllActiveClientsUseCase: ObserveAllActiveClientsUseCase,
     private val getClientStatisticsUseCase: GetClientStatisticsUseCase,
@@ -216,10 +219,10 @@ class ClientListViewModel @Inject constructor(
         }
     }
 
-    fun deleteClient(clientId: String) {
+    fun inactivateClient(clientId: String) {
         viewModelScope.launch {
             try {
-                Timber.d("Deleting client: $clientId")
+                Timber.d("Inactivating Client: $clientId")
 
                 deleteClientUseCase(clientId).fold(
                     onSuccess = {
@@ -274,8 +277,9 @@ class ClientListViewModel @Inject constructor(
         // Per alcuni filtri, usa metodi specializzati del use case per performance migliori
         when (filter) {
             ClientFilter.WITH_FACILITIES -> loadClientsWithSpecialFilter { getAllActiveClientsWithFacilitiesUseCase() }
-            ClientFilter.WITH_CONTACTS -> loadClientsWithSpecialFilter { getAllActiveClientWithContactsUseCase() }
             ClientFilter.WITH_ISLANDS -> loadClientsWithSpecialFilter { getAllActiveClientsWithIslandsUseCase() }
+            ClientFilter.WITH_CONTACTS -> loadClientsWithSpecialFilter { getAllActiveClientWithContactsUseCase() }
+            ClientFilter.WITH_CONTRACTS -> loadClientsWithSpecialFilter { getAllActiveClientWithContractsUseCase() }
             else -> {
                 // Per filtri semplici, usa filtro locale
                 val currentState = _uiState.value
@@ -472,12 +476,13 @@ class ClientListViewModel @Inject constructor(
 
         // Apply status filter (solo per filtri che non usano metodi specializzati)
         filtered = when (filter) {
-            ClientFilter.ALL -> filtered
             ClientFilter.ACTIVE -> filtered.filter { it.client.isActive }
+            ClientFilter.ALL -> filtered
             ClientFilter.INACTIVE -> filtered.filter { !it.client.isActive }
             // I filtri WITH_* sono gestiti dai metodi specializzati
             ClientFilter.WITH_FACILITIES,
             ClientFilter.WITH_CONTACTS,
+            ClientFilter.WITH_CONTRACTS,
             ClientFilter.WITH_ISLANDS -> filtered
         }
 
@@ -486,7 +491,6 @@ class ClientListViewModel @Inject constructor(
             filtered = filtered.filter { clientWithStats ->
                 val client = clientWithStats.client
                 client.companyName.contains(searchQuery, ignoreCase = true) ||
-                        client.vatNumber?.contains(searchQuery, ignoreCase = true) == true ||
                         client.headquarters?.city?.contains(searchQuery, ignoreCase = true) == true
             }
         }

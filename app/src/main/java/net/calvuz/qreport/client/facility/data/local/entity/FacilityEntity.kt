@@ -8,8 +8,7 @@ import androidx.room.PrimaryKey
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 
 /**
- * Entity Room per Facility
- * Mapping del domain model Facility per persistenza database
+ * Facility Entity Room
  */
 @Entity(
     tableName = "facilities",
@@ -41,8 +40,8 @@ data class FacilityEntity(
     @ColumnInfo(name = "code")
     val code: String? = null,
 
-    @ColumnInfo(name = "description")
-    val description: String? = null,
+    @ColumnInfo(name = "notes")
+    val notes: String? = null,
 
     @ColumnInfo(name = "facility_type")
     val facilityType: String, // FacilityType.name

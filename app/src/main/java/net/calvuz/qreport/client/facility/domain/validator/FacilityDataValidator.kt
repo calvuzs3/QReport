@@ -22,9 +22,6 @@ class FacilityDataValidator @Inject constructor(){
             name.length > 100 ->
                 Result.failure(IllegalArgumentException("Nome stabilimento troppo lungo (max 100 caratteri)"))
 
-            !address.isComplete() ->
-                Result.failure(IllegalArgumentException("Indirizzo stabilimento incompleto"))
-
             else -> Result.success(Unit)
         }
     }

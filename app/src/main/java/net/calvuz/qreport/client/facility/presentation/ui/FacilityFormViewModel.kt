@@ -34,7 +34,7 @@ data class FacilityFormUiState(
     val name: String = "",
     val code: String = "",
     val facilityType: FacilityType = FacilityType.PRODUCTION,
-    val description: String = "",
+    val notes: String = "",
 
     // Address fields
     val street: String = "",
@@ -42,8 +42,7 @@ data class FacilityFormUiState(
     val city: String = "",
     val postalCode: String = "",
     val province: String = "",
-    val region: String = "",
-    val country: String = "IT",
+    val country: String = "Italia",
 
     // Options
     val isPrimary: Boolean = false,
@@ -52,8 +51,6 @@ data class FacilityFormUiState(
     // Validation errors
     val nameError: String? = null,
     val codeError: String? = null,
-    val cityError: String? = null,
-    val streetError: String? = null,
 
     // State
     val isLoading: Boolean = false,
@@ -70,16 +67,14 @@ sealed class FacilityFormEvent {
     data class NameChanged(val name: String) : FacilityFormEvent()
     data class CodeChanged(val code: String) : FacilityFormEvent()
     data class TypeChanged(val type: FacilityType) : FacilityFormEvent()
-    data class DescriptionChanged(val description: String) : FacilityFormEvent()
+    data class NotesChanged(val notes: String) : FacilityFormEvent()
     data class StreetChanged(val street: String) : FacilityFormEvent()
     data class StreetNumberChanged(val streetNumber: String) : FacilityFormEvent()
     data class CityChanged(val city: String) : FacilityFormEvent()
     data class PostalCodeChanged(val postalCode: String) : FacilityFormEvent()
-    data class RegionChanged(val region: String) : FacilityFormEvent()
     data class ProvinceChanged(val province: String) : FacilityFormEvent()
     data class CountryChanged(val country: String) : FacilityFormEvent()
     data class PrimaryChanged(val isPrimary: Boolean) : FacilityFormEvent()
-    data class ActiveChanged(val isActive: Boolean) : FacilityFormEvent()
 }
 
 @HiltViewModel
@@ -117,16 +112,14 @@ class FacilityFormViewModel @Inject constructor(
             is FacilityFormEvent.NameChanged -> updateName(event.name)
             is FacilityFormEvent.CodeChanged -> updateCode(event.code)
             is FacilityFormEvent.TypeChanged -> updateType(event.type)
-            is FacilityFormEvent.DescriptionChanged -> updateDescription(event.description)
+            is FacilityFormEvent.NotesChanged -> updateDescription(event.notes)
             is FacilityFormEvent.StreetChanged -> updateStreet(event.street)
             is FacilityFormEvent.StreetNumberChanged -> updateStreetNumber(event.streetNumber)
             is FacilityFormEvent.CityChanged -> updateCity(event.city)
             is FacilityFormEvent.PostalCodeChanged -> updatePostalCode(event.postalCode)
-            is FacilityFormEvent.RegionChanged -> updateRegion(event.region)
             is FacilityFormEvent.ProvinceChanged -> updateProvince(event.province)
             is FacilityFormEvent.CountryChanged -> updateCountry(event.country)
             is FacilityFormEvent.PrimaryChanged -> updatePrimary(event.isPrimary)
-            is FacilityFormEvent.ActiveChanged -> updateActive(event.isActive)
         }
     }
 
@@ -187,14 +180,13 @@ class FacilityFormViewModel @Inject constructor(
     }
 
     private fun updateDescription(description: String) {
-        _uiState.value = _uiState.value.copy(description = description)
+        _uiState.value = _uiState.value.copy(notes = description)
         validateForm()
     }
 
     private fun updateStreet(street: String) {
         _uiState.value = _uiState.value.copy(
             street = street,
-            streetError = null
         )
         validateForm()
     }
@@ -207,18 +199,12 @@ class FacilityFormViewModel @Inject constructor(
     private fun updateCity(city: String) {
         _uiState.value = _uiState.value.copy(
             city = city,
-            cityError = null
         )
         validateForm()
     }
 
     private fun updatePostalCode(postalCode: String) {
         _uiState.value = _uiState.value.copy(postalCode = postalCode)
-        validateForm()
-    }
-
-    private fun updateRegion(region: String) {
-        _uiState.value = _uiState.value.copy(region = region)
         validateForm()
     }
 
@@ -263,25 +249,11 @@ class FacilityFormViewModel @Inject constructor(
             else -> null
         }
 
-        // Validate city
-        val cityError = when {
-            currentState.city.isBlank() -> "Città è obbligatoria"
-            else -> null
-        }
-
-        // Validate street (optional but basic check)
-        val streetError = when {
-            currentState.street.isNotBlank() && currentState.street.length < 3 -> "Indirizzo troppo corto"
-            else -> null
-        }
-
-        val isValid = nameError == null && codeError == null && cityError == null && streetError == null
+        val isValid = nameError == null && codeError == null
 
         _uiState.value = currentState.copy(
             nameError = nameError,
             codeError = codeError,
-            cityError = cityError,
-            streetError = streetError,
             isFormValid = isValid
         )
     }
@@ -333,7 +305,7 @@ class FacilityFormViewModel @Inject constructor(
             name = facility.name,
             code = facility.code ?: "",
             facilityType = facility.facilityType,
-            description = facility.description ?: "",
+            notes = facility.notes ?: "",
             street = facility.address.street ?: "",
             city = facility.address.city ?: "",
             postalCode = facility.address.postalCode ?: "",
@@ -355,7 +327,7 @@ class FacilityFormViewModel @Inject constructor(
             address = createAddress(currentState),
             facilityType = currentState.facilityType,
             code = currentState.code.trim().takeIf { it.isNotBlank() },
-            description = currentState.description.trim().takeIf { it.isNotBlank() },
+            description = currentState.notes.trim().takeIf { it.isNotBlank() },
             isPrimary = currentState.isPrimary
         ).fold(
             onSuccess = { facilityId ->
@@ -392,7 +364,7 @@ class FacilityFormViewModel @Inject constructor(
                         name = currentState.name.trim(),
                         code = currentState.code.trim().takeIf { it.isNotBlank() },
                         facilityType = currentState.facilityType,
-                        description = currentState.description.trim().takeIf { it.isNotBlank() },
+                        notes = currentState.notes.trim().takeIf { it.isNotBlank() },
                         address = createAddress(currentState),
                         isPrimary = currentState.isPrimary,
                         isActive = currentState.isActive,
@@ -441,9 +413,8 @@ class FacilityFormViewModel @Inject constructor(
         return Address(
             street = state.street.trim().takeIf { it.isNotBlank() },
             streetNumber = state.street.trim().takeIf { it.isNotBlank() },
-            city = state.city.trim().takeIf { it.isNotBlank() },
             postalCode = state.postalCode.trim().takeIf { it.isNotBlank() },
-            region = state.region.trim().takeIf { it.isNotBlank() },
+            city = state.city.trim().takeIf { it.isNotBlank() },
             province = state.province.trim().takeIf { it.isNotBlank() },
             country = state.country.trim().takeIf { it.isNotBlank() } ?: "Italia"
         )

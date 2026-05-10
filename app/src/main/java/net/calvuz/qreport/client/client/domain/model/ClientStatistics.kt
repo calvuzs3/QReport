@@ -9,6 +9,4 @@ data class ClientStatistics (
         val totalClients: Int,
         val inactiveClients: Int,
         val activationRate: Int, // Percentuale
-        val totalIndustries: Int,
-        val industries: List<String>
 )

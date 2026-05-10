@@ -24,7 +24,9 @@ import kotlinx.datetime.toLocalDateTime
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.checkup.presentation.components.CheckupStatusChip
+import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 
 /**
  * Home Screen - QReport Dashboard
@@ -608,17 +610,15 @@ private fun NavigationActionsSection(
     ) {
         // Client Management - Featured
         item { NavigationActionCard(
-//            modifier = Modifier.weight(1f),
-            title = "Clienti",
-            description = "Gestisci aziende",
-            icon = Icons.Default.Business,
+            title = ClientPkg.title, // "Clienti",
+            description = ClientPkg.description, //"Gestisci aziende",
+            icon = ClientPkg.icon, // Icons.Default.Business,
             onClick = onNavigateToClients,
             isHighlighted = true
         )}
 
         // Check-ups Management
         item {NavigationActionCard(
-//            modifier = Modifier.weight(1f),
             title = "Check-up",
             description = "Controlli attivi",
             icon = Icons.AutoMirrored.Filled.Assignment,

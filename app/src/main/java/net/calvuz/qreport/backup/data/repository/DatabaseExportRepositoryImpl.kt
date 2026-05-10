@@ -84,6 +84,7 @@ class DatabaseExportRepositoryImpl @Inject constructor(
                 contracts = emptyList(),
                 facilities = emptyList(),
                 facilityIslands = emptyList(),
+                mechanicalUnits = emptyList(),
                 checkUpAssociations = emptyList(),
                 exportedAt = Clock.System.now()
             )

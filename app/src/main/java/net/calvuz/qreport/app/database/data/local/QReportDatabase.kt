@@ -32,6 +32,8 @@ import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.ContractDao
 import net.calvuz.qreport.client.contract.data.local.ContractEntity
+import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
+import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
 
@@ -61,6 +63,7 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
         ContactEntity::class,
         FacilityEntity::class,
         IslandEntity::class,
+        MechanicalUnitEntity::class,
         // checkup-client association
         CheckUpIslandAssociationEntity::class,
         // client-contract association
@@ -91,6 +94,7 @@ abstract class QReportDatabase() : RoomDatabase() {
     abstract fun contactDao(): ContactDao
     abstract fun facilityDao(): FacilityDao
     abstract fun facilityIslandDao(): IslandDao
+    abstract fun mechanicalUnitDao(): MechanicalUnitDao
     abstract fun checkUpAssociationDao(): CheckUpAssociationDao
     abstract fun contractDao(): ContractDao
     abstract fun technicalInterventionDao(): TechnicalInterventionDao
@@ -116,14 +120,5 @@ abstract class QReportDatabase() : RoomDatabase() {
                 // Ad esempio pulizia di dati temporanei vecchi
             }
         }
-
-
-        // Migrations, in DatabaseModule:
-        //        val MIGRATION_2_3 = Migration(2, 3) { database ->
-        //          // ← Write SQL manually
-        //          database.execSQL("CREATE TABLE ...")
-        //        }
-        // and add:
-        //        .addMigrations()
     }
 }

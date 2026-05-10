@@ -95,7 +95,7 @@ class UpdateFacilityUseCase @Inject constructor(
             (facility.code?.length ?: 0) > 50 ->
                 Result.failure(IllegalArgumentException("Codice interno troppo lungo (max 50 caratteri)"))
 
-            (facility.description?.length ?: 0) > 500 ->
+            (facility.notes?.length ?: 0) > 500 ->
                 Result.failure(IllegalArgumentException("Descrizione troppo lunga (max 500 caratteri)"))
 
             !facility.address.isComplete() ->
@@ -187,7 +187,7 @@ class UpdateFacilityUseCase @Inject constructor(
                 updatedFacility = when (field) {
                     "name" -> updatedFacility.copy(name = value as String)
                     "code" -> updatedFacility.copy(code = value as? String)
-                    "description" -> updatedFacility.copy(description = value as? String)
+                    "description" -> updatedFacility.copy(notes = value as? String)
                     "isPrimary" -> updatedFacility.copy(isPrimary = value as Boolean)
                     "isActive" -> updatedFacility.copy(isActive = value as Boolean)
                     else -> throw IllegalArgumentException("Campo '$field' non supportato per aggiornamento")

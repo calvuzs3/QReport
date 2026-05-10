@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * Informazioni isola robotizzata
  */
+@Deprecated(message = "Do not use it", level = DeprecationLevel.WARNING)
 @Serializable
 data class IslandInfo(
     val serialNumber: String,

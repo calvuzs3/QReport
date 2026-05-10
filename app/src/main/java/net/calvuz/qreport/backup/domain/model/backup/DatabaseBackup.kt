@@ -21,6 +21,7 @@ data class DatabaseBackup(
     val contracts: List<ContractBackup>,
     val facilities: List<FacilityBackup>,
     val facilityIslands: List<FacilityIslandBackup>,
+    val mechanicalUnits: List<MechanicalUnitBackup>,
 
     // ===== ASSOCIATIONS =====
     val checkUpAssociations: List<CheckUpAssociationBackup>,
@@ -67,6 +68,7 @@ data class DatabaseBackup(
                 contracts = emptyList(),
                 facilities = emptyList(),
                 facilityIslands = emptyList(),
+                mechanicalUnits = emptyList(),
                 checkUpAssociations = emptyList(),
                 technicalInterventions = emptyList(),
                 exportedAt = Instant.fromEpochMilliseconds(0)

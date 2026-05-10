@@ -10,8 +10,6 @@ import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.domain.usecase.CreateCheckUpUseCase
-import net.calvuz.qreport.checkup.domain.usecase.GetCheckUpStatsUseCase
-import net.calvuz.qreport.checkup.domain.usecase.GetCheckUpsByStatusUseCase
 import net.calvuz.qreport.checkup.domain.usecase.GetCheckUpsUseCase
 import net.calvuz.qreport.client.client.domain.model.ClientInfo
 import net.calvuz.qreport.client.island.domain.model.IslandInfo
@@ -32,9 +30,9 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getCheckUpsUseCase: GetCheckUpsUseCase,
-    private val getCheckUpsByStatusUseCase: GetCheckUpsByStatusUseCase,
+//    private val getCheckUpsByStatusUseCase: GetCheckUpsByStatusUseCase,
     private val createCheckUpUseCase: CreateCheckUpUseCase,
-    private val getCheckUpStatsUseCase: GetCheckUpStatsUseCase
+//    private val getCheckUpStatsUseCase: GetCheckUpStatsUseCase
 ) : ViewModel() {
 
     // ============================================================

@@ -21,9 +21,7 @@ import javax.inject.Inject
 class CreateClientUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
     private val validateClientData: ClientDataValidator,
-    private val checkCompanyNameUniqueness: CheckCompanyNameUniquenessUseCase,
-    private val checkVatNumberUniqueness: CheckVatNumberUniquenessUseCase
-
+    private val checkCompanyNameUniqueness: CheckCompanyNameUniquenessUseCase
 ) {
 
     /**
@@ -39,11 +37,6 @@ class CreateClientUseCase @Inject constructor(
 
             // 2. Controllo duplicati ragione sociale
             checkCompanyNameUniqueness(client).onFailure { return Result.failure(it) }
-
-            // 3. Controllo duplicati partita IVA (se fornita)
-            client.vatNumber?.let { vatNumber ->
-                checkVatNumberUniqueness(client.id, vatNumber).onFailure { return Result.failure(it) }
-            }
 
             // 4. Creazione nel repository
             clientRepository.createClient(client)

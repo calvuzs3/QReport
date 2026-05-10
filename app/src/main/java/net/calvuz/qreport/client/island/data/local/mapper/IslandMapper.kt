@@ -23,21 +23,27 @@ class IslandMapper @Inject constructor() {
         return Island(
             id = entity.id,
             facilityId = entity.facilityId,
-            islandType = parseIslandType(entity.islandType),
+            commissioningNumber = entity.commissioningNumber,
+            islandType = IslandType.parseIslandType(entity.islandType),
             serialNumber = entity.serialNumber,
+            modelNumber = entity.modelNumber,
             model = entity.model,
             installationDate = entity.installationDate?.let { Instant.fromEpochMilliseconds(it) },
             warrantyExpiration = entity.warrantyExpiration?.let { Instant.fromEpochMilliseconds(it) },
-            isActive = entity.isActive,
             operatingHours = entity.operatingHours,
             cycleCount = entity.cycleCount,
             lastMaintenanceDate = entity.lastMaintenanceDate?.let { Instant.fromEpochMilliseconds(it) },
-            nextScheduledMaintenance = entity.nextScheduledMaintenance?.let { Instant.fromEpochMilliseconds(it) },
+            nextScheduledMaintenance = entity.nextScheduledMaintenance?.let {
+                Instant.fromEpochMilliseconds(
+                    it
+                )
+            },
             customName = entity.customName,
             location = entity.location,
             notes = entity.notes,
+            isActive = entity.isActive,
             createdAt = Instant.fromEpochMilliseconds(entity.createdAt),
-            updatedAt = Instant.fromEpochMilliseconds(entity.updatedAt)
+            updatedAt = Instant.fromEpochMilliseconds(entity.updatedAt),
         )
     }
 
@@ -48,12 +54,13 @@ class IslandMapper @Inject constructor() {
         return IslandEntity(
             id = domain.id,
             facilityId = domain.facilityId,
+            commissioningNumber = domain.commissioningNumber,
             islandType = domain.islandType.name,
             serialNumber = domain.serialNumber,
+            modelNumber = domain.modelNumber,
             model = domain.model,
             installationDate = domain.installationDate?.toEpochMilliseconds(),
             warrantyExpiration = domain.warrantyExpiration?.toEpochMilliseconds(),
-            isActive = domain.isActive,
             operatingHours = domain.operatingHours,
             cycleCount = domain.cycleCount,
             lastMaintenanceDate = domain.lastMaintenanceDate?.toEpochMilliseconds(),
@@ -61,6 +68,7 @@ class IslandMapper @Inject constructor() {
             customName = domain.customName,
             location = domain.location,
             notes = domain.notes,
+            isActive = domain.isActive,
             createdAt = domain.createdAt.toEpochMilliseconds(),
             updatedAt = domain.updatedAt.toEpochMilliseconds()
         )
@@ -98,6 +106,25 @@ class IslandMapper @Inject constructor() {
                 it.name.equals(islandTypeString, ignoreCase = true)
             } ?: IslandType.POLY_MOVE // Default fallback
         }
+    }
+}
+
+/*
+ * Parsing of an Island Type
+ *
+ * Fallback: PolyMove
+ */
+fun IslandType.Companion.parseIslandType(islandType: String): IslandType {
+    return try {
+        IslandType.valueOf(islandType)
+    } catch (_: IllegalArgumentException) {
+        // Log the error and use a fallback
+        Timber.w("Unknown island type: $islandType, using POLY_MOVE as fallback")
+
+        // Try case-insensitive parsing
+        IslandType.entries.find {
+            it.name.equals(islandType, ignoreCase = true)
+        } ?: IslandType.POLY_MOVE // Default fallback
     }
 }
 

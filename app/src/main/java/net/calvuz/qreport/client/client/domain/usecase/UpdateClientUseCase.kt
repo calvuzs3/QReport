@@ -19,7 +19,6 @@ class UpdateClientUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
     private val checkClientExistsUseCase: CheckClientExistsUseCase,
     private val checkCompanyNameUniqueness: CheckCompanyNameUniquenessUseCase,
-    private val checkVatNumberUniquenessUseCase: CheckVatNumberUniquenessUseCase,
     private val validateClientData: ClientDataValidator
 ) {
 
@@ -39,11 +38,6 @@ class UpdateClientUseCase @Inject constructor(
 
             // 3. Controllo duplicati ragione sociale (escludendo questo cliente)
             checkCompanyNameUniqueness(client).onFailure { return Result.failure(it) }
-
-            // 4. Controllo duplicati partita IVA (se fornita, escludendo questo cliente)
-            client.vatNumber?.let { vatNumber ->
-                checkVatNumberUniquenessUseCase(client.id, vatNumber).onFailure { return Result.failure(it) }
-            }
 
             // 5. Aggiornamento con timestamp corrente
             val updatedClient = client.copy(updatedAt = Clock.System.now())

@@ -22,17 +22,15 @@ import androidx.compose.ui.unit.dp
 fun FormAddressSection(
     street: String,
     streetNumber: String,
+    postalCode: String,
     city: String,
     province: String,
-    region: String,
-    postalCode: String,
     country: String,
     onStreetChange: (String) -> Unit,
     onStreetNumberChange: (String) -> Unit,
+    onPostalCodeChange: (String) -> Unit,
     onCityChange: (String) -> Unit,
     onProvinceChange: (String) -> Unit,
-    onRegionChange: (String) -> Unit,
-    onPostalCodeChange: (String) -> Unit,
     onCountryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -122,19 +120,6 @@ fun FormAddressSection(
                         capitalization = KeyboardCapitalization.Characters
                     ),
                     placeholder = { Text("MI") }
-                )
-
-                OutlinedTextField(
-                    value = region,
-                    onValueChange = onRegionChange,
-                    label = { Text("Regione") },
-                    modifier = Modifier.weight(1f),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text,
-                        capitalization = KeyboardCapitalization.Words
-                    ),
-                    placeholder = { Text("Lombardia") }
                 )
             }
 

@@ -111,15 +111,15 @@ private fun FullFacilityCard(
                         overflow = TextOverflow.Ellipsis
                     )
 
-//                    if (facility.isPrimary) {
-//                        Spacer(modifier = Modifier.height(4.dp))
-//                        Icon(
-//                            Icons.Default.Star,
-//                            contentDescription = "Contatto primario",
-//                            tint = MaterialTheme.colorScheme.primary,
-//                            modifier = Modifier.size(18.dp)
-//                        )
-//                    }
+                    if (facility.isPrimary) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Icon(
+                            Icons.Default.Star,
+                            contentDescription = "Primario",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
 
                 if (facility.isPrimary) {

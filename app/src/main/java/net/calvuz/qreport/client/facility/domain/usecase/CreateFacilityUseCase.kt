@@ -72,7 +72,7 @@ class CreateFacilityUseCase @Inject constructor(
                 clientId = clientId,
                 name = name.trim(),
                 code = code?.trim()?.takeIf { it.isNotBlank() },
-                description = description?.trim()?.takeIf { it.isNotBlank() },
+                notes = description?.trim()?.takeIf { it.isNotBlank() },
                 facilityType = facilityType,
                 address = address,
                 isPrimary = isPrimary,

@@ -5,36 +5,40 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 /**
- * Isola robotizzata associata a uno stabilimento
- * Combina IslandType e IslandInfo esistenti per gestione client-centric
+ * Robotic Island
  */
 @Serializable
 data class Island(
     val id: String,
     val facilityId: String,
 
-    // ===== TIPO ISOLA =====
-    val islandType: IslandType,           // ✅ Riutilizzo enum esistente
+    // ===== COMMISSIONING & NAME =====
+    val commissioningNumber: String? = null,    // Commissioning phase Number or Code *
+    val customName: String? = null,
 
-    // ===== DETTAGLI TECNICI =====
-    val serialNumber: String,             // Numero seriale unico
+    // ===== ISLAND TYPE =====
+    val islandType: IslandType,
+
+    // ===== TECHNICAL DETAILS =====
+    val serialNumber: String,
+    val modelNumber:String? = null,
+    //DEPRECATED
     val model: String? = null,
     val installationDate: Instant? = null,
     val warrantyExpiration: Instant? = null,
 
-    // ===== STATO OPERATIVO =====
-    val isActive: Boolean = true,
+    // ===== MAINTENANCE STATUS =====
     val operatingHours: Int = 0,
     val cycleCount: Long = 0L,
     val lastMaintenanceDate: Instant? = null,
     val nextScheduledMaintenance: Instant? = null,
 
-    // ===== CONFIGURAZIONE =====
-    val customName: String? = null,       // Nome personalizzato dal cliente
-    val location: String? = null,         // Posizione nello stabilimento
+    // ===== CONFIGURATION =====
+    val location: String? = null,
     val notes: String? = null,
 
-    // ===== METADATI =====
+    // ===== META =====
+    val isActive: Boolean = true,
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
@@ -44,18 +48,6 @@ data class Island(
      */
     val displayName: String
         get() = customName ?: "${islandType.displayName} (${serialNumber})"
-
-    /**
-     * Conversione a IslandInfo per compatibilità CheckUp
-     */
-    fun toIslandInfo(): IslandInfo = IslandInfo(
-        serialNumber = serialNumber,
-        model = model ?: "",
-        installationDate = installationDate?.toString() ?: "",
-        lastMaintenanceDate = lastMaintenanceDate?.toString() ?: "",
-        operatingHours = operatingHours,
-        cycleCount = cycleCount
-    )
 
     /**
      * Verifica se isola ha bisogno di manutenzione

@@ -13,6 +13,9 @@ class IslandDataValidator @Inject constructor() {
             island.facilityId.isBlank() ->
                 Result.failure(IllegalArgumentException("ID facility è obbligatorio"))
 
+            !isValidSerialNumber(island.commissioningNumber ?: "") ->
+                Result.failure(IllegalArgumentException("Commissioning number non valido (solo lettere, numeri, trattini)"))
+
             island.serialNumber.isBlank() ->
                 Result.failure(IllegalArgumentException("Serial number è obbligatorio"))
 
@@ -23,7 +26,10 @@ class IslandDataValidator @Inject constructor() {
                 Result.failure(IllegalArgumentException("Serial number troppo lungo (max 50 caratteri)"))
 
             !isValidSerialNumber(island.serialNumber) ->
-                Result.failure(IllegalArgumentException("Formato serial number non valido (solo lettere, numeri, trattini)"))
+                Result.failure(IllegalArgumentException("Serial number non valido (solo lettere, numeri, trattini)"))
+
+            !isValidSerialNumber(island.modelNumber ?: "") ->
+                Result.failure(IllegalArgumentException("Model number non valido (solo lettere, numeri, trattini)"))
 
             (island.model?.length ?: 0) > 100 ->
                 Result.failure(IllegalArgumentException("Modello troppo lungo (max 100 caratteri)"))
@@ -45,9 +51,10 @@ class IslandDataValidator @Inject constructor() {
     }
 
     /**
-     * Validazione formato serial number (alfanumerico + trattini)
+     * Alphanumeric and dashes
+     * Blank is valid
      */
-    private fun isValidSerialNumber(serialNumber: String): Boolean {
-        return serialNumber.matches("[A-Za-z0-9\\-_]+".toRegex())
+    private fun isValidSerialNumber(number: String): Boolean {
+        return number.isBlank() || number.matches("[A-Za-z0-9\\-_]+".toRegex())
     }
 }

@@ -8,9 +8,9 @@ class GetAllActiveClientsWithFacilitiesUseCase @Inject constructor(
     val clientRepository: ClientRepository
 ){
     /**
-     * Recupera clienti con facilities associate
+     * Get Clients with facilities
      *
-     * @return Result con lista clienti che hanno stabilimenti
+     * @return Client List
      */
     suspend operator fun invoke(): Result<List<Client>> {
         return try {
