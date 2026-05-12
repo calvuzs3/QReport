@@ -20,7 +20,9 @@ import net.calvuz.qreport.client.client.domain.usecase.ObserveAllActiveClientsUs
 import net.calvuz.qreport.client.client.domain.usecase.SearchClientsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithFacilitiesUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithIslandsUseCase
+import net.calvuz.qreport.client.client.presentation.model.ClientFilter
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
+import net.calvuz.qreport.client.client.presentation.model.ClientSortOrder
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -50,14 +52,6 @@ data class ClientListUiState(
     // Card display variant, persisted via AppSettingsDataStore
     val cardVariant: ListViewMode = ListViewMode.FULL
 )
-
-enum class ClientFilter {
-    ACTIVE, ALL, INACTIVE, WITH_FACILITIES, WITH_ISLANDS, WITH_CONTACTS, WITH_CONTRACTS
-}
-
-enum class ClientSortOrder {
-    COMPANY_NAME, CREATED_RECENT, CREATED_OLDEST, FACILITIES_COUNT, CHECKUPS_COUNT
-}
 
 @HiltViewModel
 class ClientListViewModel @Inject constructor(
@@ -476,8 +470,8 @@ class ClientListViewModel @Inject constructor(
 
         // Apply status filter (solo per filtri che non usano metodi specializzati)
         filtered = when (filter) {
-            ClientFilter.ACTIVE -> filtered.filter { it.client.isActive }
             ClientFilter.ALL -> filtered
+            ClientFilter.ACTIVE -> filtered.filter { it.client.isActive }
             ClientFilter.INACTIVE -> filtered.filter { !it.client.isActive }
             // I filtri WITH_* sono gestiti dai metodi specializzati
             ClientFilter.WITH_FACILITIES,

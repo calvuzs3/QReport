@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -78,7 +79,10 @@ fun ContractFormScreen(
     }
 
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding()
+//            .verticalScroll(rememberScrollState())
     ) {
         // Top App Bar
         TopAppBar(
@@ -86,7 +90,7 @@ fun ContractFormScreen(
                 Column {
                     Text(
                         text = if (uiState.isEditMode) stringResource(R.string.contracts_screen_form_title_edit)
-                            else stringResource(R.string.contracts_screen_form_title_new),
+                        else stringResource(R.string.contracts_screen_form_title_new),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -215,7 +219,7 @@ private fun ContractFormContent(
             OutlinedTextField(
                 value = uiState.description,
                 onValueChange = { onFormEvent(ContractFormEvent.DescriptionChanged(it)) },
-                label = { Text(stringResource(R.string.contracts_screen_form_field_description) ) },
+                label = { Text(stringResource(R.string.contracts_screen_form_field_description)) },
                 placeholder = { Text(stringResource(R.string.contracts_screen_form_field_description_placeholder)) },
                 isError = uiState.descriptionError != null,
                 supportingText = uiState.descriptionError?.let { { Text(it.asString()) } },

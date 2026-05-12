@@ -9,11 +9,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilitiesByClientUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilityWithIslandsUseCase
+import net.calvuz.qreport.client.facility.presentation.model.FacilityFilter
+import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
+import net.calvuz.qreport.client.facility.presentation.model.FacilitySortOrder
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -39,19 +41,12 @@ data class FacilityListUiState(
     val isDeletingFacility: String? = null,
     val error: String? = null,
     val searchQuery: String = "",
-    val selectedFilter: FacilityFilter = FacilityFilter.ACTIVE,
-    val sortOrder: FacilitySortOrder = FacilitySortOrder.NAME,
+    val selectedFilter: FacilityFilter = FacilityPkg.selectedFilter,
+    val sortOrder: FacilitySortOrder = FacilityPkg.selectedSortOrder,
     val clientId: String = "",
     val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
-enum class FacilityFilter {
-    ALL, ACTIVE, INACTIVE, PRIMARY_ONLY, WITH_ISLANDS, BY_TYPE
-}
-
-enum class FacilitySortOrder {
-    NAME, CREATED_RECENT, CREATED_OLDEST, ISLANDS_COUNT, TYPE
-}
 
 @HiltViewModel
 class FacilityListViewModel @Inject constructor(

@@ -20,12 +20,14 @@ data class Island(
     val islandType: IslandType,
 
     // ===== TECHNICAL DETAILS =====
-    val serialNumber: String,
     val modelNumber:String? = null,
-    //DEPRECATED
+    val serialNumber: String,
+
+    //DEPRECATED ---
     val model: String? = null,
     val installationDate: Instant? = null,
     val warrantyExpiration: Instant? = null,
+    // ---
 
     // ===== MAINTENANCE STATUS =====
     val operatingHours: Int = 0,

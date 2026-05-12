@@ -73,7 +73,10 @@ fun ContactFormScreen(
     }
 
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding()
+//            .verticalScroll(rememberScrollState())
     ) {
         // Top App Bar
         TopAppBar(

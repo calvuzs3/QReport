@@ -23,7 +23,10 @@ import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.client.client.presentation.model.ClientFilter
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
+import net.calvuz.qreport.client.client.presentation.model.ClientSortOrder
+import net.calvuz.qreport.client.client.presentation.model.getDisplayName
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -114,14 +117,14 @@ fun ClientListScreen(
         )
 
         // Filter chips
-        if (uiState.selectedFilter != ClientFilter.ALL || uiState.selectedSortOrder != ClientSortOrder.COMPANY_NAME) {
+        if (uiState.selectedFilter != ClientPkg.selectedFilter || uiState.selectedSortOrder != ClientPkg.selectedSortOrder) {
             ActiveFiltersChipRow(
-                selectedFilter = getFilterDisplayName(uiState.selectedFilter),
-                avoidFilter = getFilterDisplayName(ClientFilter.ACTIVE),
-                onClearFilter = { viewModel.updateFilter(ClientFilter.ACTIVE) },
-                selectedSort = getSortOrderDisplayName(uiState.selectedSortOrder),
-                avoidSort = getSortOrderDisplayName(ClientSortOrder.CREATED_RECENT),
-                onClearSort = { viewModel.updateSortOrder(ClientSortOrder.CREATED_RECENT) },
+                selectedFilter = uiState.selectedFilter.getDisplayName(),
+                avoidFilter = ClientPkg.selectedFilter.getDisplayName(),
+                onClearFilter = { viewModel.updateFilter(ClientPkg.selectedFilter) },
+                selectedSort = uiState.selectedSortOrder.getDisplayName(),
+                avoidSort = ClientPkg.selectedSortOrder.getDisplayName(),
+                onClearSort = { viewModel.updateSortOrder(ClientPkg.selectedSortOrder) },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
@@ -169,9 +172,7 @@ fun ClientListScreen(
                     val (title, message) = when {
                         uiState.clients.isEmpty() -> "Nessun Cliente" to "Non ci sono ancora Clienti"
                         uiState.selectedFilter != ClientFilter.ALL -> "Nessun risultato" to "Non ci sono Clienti che corrispondono al filtro '${
-                            getFilterDisplayName(
-                                uiState.selectedFilter
-                            )
+                            uiState.selectedFilter.getDisplayName()
                         }'"
 
                         else -> "Lista vuota" to "Errore nel caricamento dati"
@@ -271,7 +272,7 @@ private fun FilterMenu(
     ) {
         ClientFilter.entries.forEach { filter ->
             DropdownMenuItem(
-                text = { Text(getFilterDisplayName(filter)) },
+                text = { Text(filter.getDisplayName()) },
                 onClick = {
                     onFilterSelected(filter)
                     onDismiss()
@@ -297,7 +298,7 @@ private fun SortMenu(
     ) {
         ClientSortOrder.entries.forEach { sortOrder ->
             DropdownMenuItem(
-                text = { Text(getSortOrderDisplayName(sortOrder)) },
+                text = { Text(sortOrder.getDisplayName()) },
                 onClick = {
                     onSortSelected(sortOrder)
                     onDismiss()
@@ -307,28 +308,5 @@ private fun SortMenu(
                 } else null
             )
         }
-    }
-}
-
-// Helper functions
-private fun getFilterDisplayName(filter: ClientFilter): String {
-    return when (filter) {
-        ClientFilter.ALL -> "Tutti"
-        ClientFilter.ACTIVE -> "Attivi"
-        ClientFilter.INACTIVE -> "Inattivi"
-        ClientFilter.WITH_FACILITIES -> "Con Stabilimenti"
-        ClientFilter.WITH_CONTACTS -> "Con Contatti"
-        ClientFilter.WITH_CONTRACTS -> "Con Contratti"
-        ClientFilter.WITH_ISLANDS -> "Con Isole"
-    }
-}
-
-private fun getSortOrderDisplayName(clientSortOrder: ClientSortOrder): String {
-    return when (clientSortOrder) {
-        ClientSortOrder.COMPANY_NAME -> "Nome Azienda"
-        ClientSortOrder.CREATED_RECENT -> "Più Recenti"
-        ClientSortOrder.CREATED_OLDEST -> "Meno Recenti"
-        ClientSortOrder.FACILITIES_COUNT -> "Stabilimenti"
-        ClientSortOrder.CHECKUPS_COUNT -> "Check-up"
     }
 }

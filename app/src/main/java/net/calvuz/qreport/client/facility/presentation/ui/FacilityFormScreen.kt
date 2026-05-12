@@ -7,13 +7,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 import net.calvuz.qreport.client.client.presentation.ui.components.FormAddressSection
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 
@@ -52,7 +55,12 @@ fun FacilityFormScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding()
+//            .verticalScroll(rememberScrollState())
+    ) {
         // Top App Bar
         TopAppBar(
             title = {
@@ -66,6 +74,25 @@ fun FacilityFormScreen(
                 }
             },
             actions = {
+                // Save button
+                IconButton(
+                    onClick = { viewModel::saveFacility },
+                    enabled = uiState.isFormValid && !uiState.isLoading
+                ) {
+                    if (uiState.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = if (uiState.isFormValid) Icons.Default.Save else Icons.Outlined.Save,
+                            contentDescription = stringResource(R.string.action_save),
+                            tint = if (uiState.isFormValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
                 TextButton(
                     onClick = viewModel::saveFacility,
                     enabled = uiState.isFormValid && !uiState.isLoading

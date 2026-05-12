@@ -649,22 +649,11 @@ fun QReportNavigation(
                     )
                 }
 
-                // ✅ Client Create/Edit Screen
+                // ✅ Client Create
                 composable(QReportRoutes.CLIENT_CREATE) {
                     ClientFormScreen(
                         onNavigateBack = {
                             navController.popBackStack()
-                        },
-                        onNavigateToClientDetail = { clientId, clientName ->
-                            navController.navigate(
-                                QReportRoutes.clientDetail(
-                                    clientId, clientName = ""
-                                )
-                            ) {
-                                popUpTo(QReportRoutes.CLIENTS) {
-                                    inclusive = false
-                                }
-                            }
                         },
                         onClientSaved = { clientId, clientName ->
                             navController.navigate(
@@ -678,7 +667,7 @@ fun QReportNavigation(
                     )
                 }
 
-                // ✅ Client Edit Screen
+                // ✅ Client Edit
                 composable(
                     route = QReportRoutes.CLIENT_EDIT,
                     arguments = listOf(
@@ -693,15 +682,6 @@ fun QReportNavigation(
                         clientId = clientId,
                         onNavigateBack = {
                             navController.popBackStack()
-                        },
-                        onNavigateToClientDetail = { savedClientId, savedClientName ->
-                            navController.navigate(
-                                QReportRoutes.clientDetail(savedClientId, savedClientName)
-                            ) {
-                                popUpTo(QReportRoutes.CLIENTS) {
-                                    inclusive = false
-                                }
-                            }
                         },
                         onClientSaved = { clientId, clientName ->
                             navController.navigate(

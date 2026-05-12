@@ -12,27 +12,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.client.client.presentation.ui.components.FormAddressSection
 import timber.log.Timber
 
-/**
- * Screen per la creazione/modifica di un cliente
- *
- * Features:
- * - Dual mode: Create (clientId = null) / Edit (clientId != null)
- * - ValidationError validation real-time
- * - Sezioni organizzate: Dati Aziendali, Indirizzo, Note
- * - Loading states e error handling
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientFormScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit,
-    onNavigateToClientDetail: (String, String) -> Unit,
     onClientSaved: (String, String) -> Unit,
     clientId: String? = null, // null = create, non-null = edit
     viewModel: ClientFormViewModel = hiltViewModel()
@@ -58,12 +49,28 @@ fun ClientFormScreen(
     }
 
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding()
+//            .verticalScroll(rememberScrollState())
     ) {
         // Top App Bar
         TopAppBar(
             title = {
-                Text(if (clientId == null) "Nuovo Cliente" else "Modifica Cliente")
+                Column {
+                    Text(
+                        text = if (uiState.isEditMode) "Modifica Cliente" else "Nuovo Cliente",
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = uiState.companyName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
@@ -78,7 +85,7 @@ fun ClientFormScreen(
                     onClick = viewModel::saveClient,
                     enabled = uiState.canSave && !uiState.isSaving,
                     modifier = Modifier.weight(1f)
-                ){
+                ) {
                     Icon(
                         imageVector = Icons.Default.Save,
                         contentDescription = "Salva",

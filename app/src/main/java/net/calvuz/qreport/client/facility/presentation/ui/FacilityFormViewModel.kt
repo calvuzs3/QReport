@@ -54,6 +54,7 @@ data class FacilityFormUiState(
 
     // State
     val isLoading: Boolean = false,
+    val isSaving: Boolean = false,
     val error: String? = null,
     val savedFacilityId: String? = null,
     val clientId: String = "",
@@ -126,9 +127,10 @@ class FacilityFormViewModel @Inject constructor(
     fun saveFacility() {
         val currentState = _uiState.value
         if (!currentState.isFormValid) return
+        if (currentState.isSaving) return
 
         viewModelScope.launch {
-            _uiState.value = currentState.copy(isLoading = true, error = null)
+            _uiState.value = currentState.copy(isLoading = true, isSaving = true, error = null)
 
             try {
                 if (currentState.isEditMode) {
@@ -146,6 +148,8 @@ class FacilityFormViewModel @Inject constructor(
                         error = "Errore salvataggio: ${e.message}"
                     )
                 }
+            } finally {
+                _uiState.value = currentState.copy(isSaving = false)
             }
         }
     }

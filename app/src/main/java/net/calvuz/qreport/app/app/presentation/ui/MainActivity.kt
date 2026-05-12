@@ -4,14 +4,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.core.view.WindowCompat
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import net.calvuz.qreport.app.navigation.QReportNavigation
@@ -40,9 +38,6 @@ class MainActivity : ComponentActivity() {
         // Enable edge-to-edge layout
         enableEdgeToEdge()
 
-        // Abilita edge-to-edge per gestire correttamente gli insets
-        WindowCompat.setDecorFitsSystemWindows(window, false)
-
         setContent {
             QReportTheme {
                 QReportApp()
@@ -58,19 +53,20 @@ class MainActivity : ComponentActivity() {
 fun QReportApp() {
     val navController = rememberNavController()
 
-    Surface(
+//    Surface(
+//        modifier = Modifier.fillMaxSize(),
+//        color = MaterialTheme.colorScheme.background
+//    ) {
+    Scaffold(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Scaffold(
-            modifier = Modifier.fillMaxSize()
-        ) { innerPadding ->
-            QReportNavigation(
-                navController = navController,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-            )
-        }
+        contentWindowInsets = WindowInsets(0) // 👈 non consumare gli insets qui
+    ) { innerPadding ->
+        QReportNavigation(
+            navController = navController,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        )
     }
+//    }
 }

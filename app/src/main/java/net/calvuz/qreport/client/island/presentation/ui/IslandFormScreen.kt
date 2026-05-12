@@ -53,7 +53,12 @@ fun IslandFormScreen(
         }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .imePadding()
+//            .verticalScroll(rememberScrollState())
+    ) {
         // Top App Bar
         TopAppBar(
             title = {

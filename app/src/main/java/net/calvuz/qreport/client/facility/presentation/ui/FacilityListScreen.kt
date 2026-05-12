@@ -26,6 +26,10 @@ import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.util.MapUtils
+import net.calvuz.qreport.client.facility.presentation.model.FacilityFilter
+import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
+import net.calvuz.qreport.client.facility.presentation.model.FacilitySortOrder
+import net.calvuz.qreport.client.facility.presentation.model.getDisplayName
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -126,12 +130,12 @@ fun FacilityListScreen(
         )
 
         // Filter chips
-        if (uiState.selectedFilter != FacilityFilter.ALL || uiState.sortOrder != FacilitySortOrder.NAME) {
+        if (uiState.selectedFilter != FacilityPkg.selectedFilter || uiState.sortOrder != FacilityPkg.selectedSortOrder) {
             ActiveFiltersChipRow(
                 selectedFilter = uiState.selectedFilter,
                 selectedSort = uiState.sortOrder,
-                onClearFilter = { viewModel.updateFilter(FacilityFilter.ALL) },
-                onClearSort = { viewModel.updateSortOrder(FacilitySortOrder.NAME) },
+                onClearFilter = { viewModel.updateFilter(FacilityPkg.selectedFilter) },
+                onClearSort = { viewModel.updateSortOrder(FacilityPkg.selectedSortOrder) },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
@@ -176,7 +180,7 @@ fun FacilityListScreen(
                 uiState.filteredFacilities.isEmpty() -> {
                     val (title, message) = when {
                         uiState.facilities.isEmpty() -> "Nessuno Stabilimento" to "Non ci sono ancora Stabilimenti per questo Cliente"
-                        uiState.selectedFilter != FacilityFilter.ALL -> "Nessun risultato" to "Non ci sono Stabilimenti che corrispondono al filtro '${getFacilityFilterDisplayName(uiState.selectedFilter)}'"
+                        uiState.selectedFilter != FacilityPkg.selectedFilter -> "Nessun risultato" to "Non ci sono Stabilimenti che corrispondono al filtro '${uiState.selectedFilter.getDisplayName()}'"
                         else -> "Lista vuota" to "Errore nel caricamento dati"
                     }
                     EmptyState(
@@ -275,12 +279,12 @@ private fun ActiveFiltersChipRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
-        if (selectedFilter != FacilityFilter.ALL) {
+        if (selectedFilter != FacilityPkg.selectedFilter) {
             item {
                 FilterChip(
                     selected = true,
                     onClick = onClearFilter,
-                    label = { Text("Filtro: ${getFacilityFilterDisplayName(selectedFilter)}") },
+                    label = { Text("Filtro: ${selectedFilter.getDisplayName()}") },
                     trailingIcon = {
                         Icon(
                             Icons.Default.Close,
@@ -292,12 +296,12 @@ private fun ActiveFiltersChipRow(
             }
         }
 
-        if (selectedSort != FacilitySortOrder.NAME) {
+        if (selectedSort != FacilityPkg.selectedSortOrder) {
             item {
                 FilterChip(
                     selected = true,
                     onClick = onClearSort,
-                    label = { Text("Ordine: ${getFacilitySortDisplayName(selectedSort)}") },
+                    label = { Text("Ordine: ${selectedSort.getDisplayName()}") },
                     trailingIcon = {
                         Icon(
                             Icons.Default.Close,
@@ -324,7 +328,7 @@ private fun FacilityFilterMenu(
     ) {
         FacilityFilter.entries.forEach { filter ->
             DropdownMenuItem(
-                text = { Text(getFacilityFilterDisplayName(filter)) },
+                text = { Text(filter.getDisplayName()) },
                 onClick = {
                     onFilterSelected(filter)
                     onDismiss()
@@ -350,7 +354,7 @@ private fun FacilitySortMenu(
     ) {
         FacilitySortOrder.entries.forEach { sortOrder ->
             DropdownMenuItem(
-                text = { Text(getFacilitySortDisplayName(sortOrder)) },
+                text = { Text(sortOrder.getDisplayName()) },
                 onClick = {
                     onSortSelected(sortOrder)
                     onDismiss()
@@ -360,27 +364,5 @@ private fun FacilitySortMenu(
                 } else null
             )
         }
-    }
-}
-
-// Helper functions per display names
-private fun getFacilityFilterDisplayName(filter: FacilityFilter): String {
-    return when (filter) {
-        FacilityFilter.ALL -> "Tutti"
-        FacilityFilter.ACTIVE -> "Attivi"
-        FacilityFilter.INACTIVE -> "Inattivi"
-        FacilityFilter.PRIMARY_ONLY -> "Solo Primari"
-        FacilityFilter.WITH_ISLANDS -> "Con Isole"
-        FacilityFilter.BY_TYPE -> "Per Tipo"
-    }
-}
-
-private fun getFacilitySortDisplayName(sortOrder: FacilitySortOrder): String {
-    return when (sortOrder) {
-        FacilitySortOrder.NAME -> "Nome"
-        FacilitySortOrder.CREATED_RECENT -> "Più Recenti"
-        FacilitySortOrder.CREATED_OLDEST -> "Meno Recenti"
-        FacilitySortOrder.ISLANDS_COUNT -> "Numero Isole"
-        FacilitySortOrder.TYPE -> "Tipo"
     }
 }
