@@ -159,13 +159,13 @@ object QReportRoutes {
 
     // Unit
 
-    const val UNIT_LIST = "islands/{islandId}/units"
-    const val UNIT_ADD = "islands/{islandId}/units/add"
-    const val UNIT_EDIT = "islands/{islandId}/units/{unitId}/edit"
+    const val UNIT_LIST = "units/{islandId}"
+    const val UNIT_ADD = "unit_form/{islandId}"
+    const val UNIT_EDIT = "unit_form/{islandId}/{unitId}"
 
-    fun unitList(islandId: String) = "islands/$islandId/units"
-    fun unitAdd(islandId: String) = "islands/$islandId/units/add"
-    fun unitEdit(islandId: String, unitId: String) = "islands/$islandId/units/$unitId/edit"
+    fun unitList(islandId: String) = "units/$islandId"
+    fun unitAdd(islandId: String) = "unit_form/$islandId"
+    fun unitEdit(islandId: String, unitId: String) = "unit_form/$islandId/$unitId"
 
 
     // Backup
@@ -1174,7 +1174,7 @@ fun QReportNavigation(
                     arguments = listOf(navArgument("islandId") { type = NavType.StringType })
                 ) { backStack ->
                     val islandId = backStack.arguments?.getString("islandId")!!
-                    val islandName = backStack.arguments?.getString("islandName") ?: "Isola"
+                    val islandName = backStack.arguments?.getString("islandName") ?: "Unità meccaniche"
 
                     MechanicalUnitListScreen(
                         islandName = islandName,

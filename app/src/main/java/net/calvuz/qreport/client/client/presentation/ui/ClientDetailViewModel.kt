@@ -132,6 +132,7 @@ class ClientDetailViewModel @Inject constructor(
 
     fun loadClientDetails(clientId: String) {
         if (clientId.isBlank()) {
+            Timber.e("ClientId blank")
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 error = "ID cliente non valido"

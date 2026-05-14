@@ -19,7 +19,7 @@ data class Facility(
     val facilityType: FacilityType = FacilityType.PRODUCTION,
 
     // ===== ADDRESS =====
-    val address: Address,
+    val address: Address? = null,
 
     // ===== RELATIONSHIPS =====
     val islands: List<String> = emptyList(), // IDs delle isole POLY
@@ -57,8 +57,8 @@ data class Facility(
     /**
      * Indirizzo formattato per display
      */
-    val addressDisplay: String
-        get() = address.toDisplayString()
+    val addressDisplay: String?
+        get() = address?.toDisplayString()
 
     /**
      * Verifica se lo stabilimento ha dati completi

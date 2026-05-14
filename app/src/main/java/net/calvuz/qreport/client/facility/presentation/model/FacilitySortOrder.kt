@@ -1,16 +1,15 @@
 package net.calvuz.qreport.client.facility.presentation.model
 
-enum class FacilitySortOrder {
-    NAME, CREATED_RECENT, CREATED_OLDEST, ISLANDS_COUNT, TYPE
-}
+import net.calvuz.qreport.app.app.presentation.model.QReportSortOrder
 
-// Extension
-fun FacilitySortOrder.getDisplayName(): String {
-    return when (this) {
-        FacilitySortOrder.NAME -> "Nome"
-        FacilitySortOrder.CREATED_RECENT -> "Più Recenti"
-        FacilitySortOrder.CREATED_OLDEST -> "Meno Recenti"
-        FacilitySortOrder.ISLANDS_COUNT -> "Numero Isole"
-        FacilitySortOrder.TYPE -> "Tipo"
+enum class FacilitySortOrder: QReportSortOrder {
+    NAME, CREATED_RECENT, CREATED_OLDEST, ISLANDS_COUNT, TYPE;
+
+    override fun getDisplayName(): String = when( this) {
+        NAME -> "Nome"
+        CREATED_RECENT -> "Più Recenti"
+        CREATED_OLDEST -> "Meno Recenti"
+        ISLANDS_COUNT -> "Numero Isole"
+        TYPE -> "Tipo"
     }
 }

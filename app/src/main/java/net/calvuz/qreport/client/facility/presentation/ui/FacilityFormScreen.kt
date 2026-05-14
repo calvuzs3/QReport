@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.client.client.presentation.ui.components.FormAddressSection
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
+import timber.log.Timber
 
 /**
  * Screen per creazione/modifica stabilimento
@@ -51,7 +52,11 @@ fun FacilityFormScreen(
     // Handle success
     LaunchedEffect(uiState.savedFacilityId) {
         uiState.savedFacilityId?.let { savedId ->
+            Timber.d("Facility saved ID: ${uiState.savedFacilityId}")
+            Timber.d("Facility saved NAME: ${uiState.name}")
+
             onFacilitySaved(savedId)
+            viewModel::resetSaveCompleted
         }
     }
 

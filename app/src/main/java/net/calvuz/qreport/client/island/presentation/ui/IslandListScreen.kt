@@ -4,7 +4,6 @@ package net.calvuz.qreport.client.island.presentation.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
@@ -26,23 +25,20 @@ import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummar
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
+import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
+import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
 import net.calvuz.qreport.app.util.SizeUtils.getFormattedCycleCount
+import net.calvuz.qreport.client.island.presentation.model.IslandFilter
+import net.calvuz.qreport.client.island.presentation.model.IslandPkg
+import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
+import timber.log.Timber
 
-/**
- * Screen per la lista isole di un facility - seguendo pattern FacilityListScreen
- *
- * Features:
- * - Lista isole dal database con statistiche reali
- * - Ricerca e filtri per tipo/stato isola
- * - Pull to refresh
- * - Stati loading/error/empty ottimizzati
- * - FacilityIslandCard con indicatori manutenzione
- * - Statistiche aggregate in header
- */
 @Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +55,7 @@ fun IslandListScreen(
 
     // Initialize for specific facility
     LaunchedEffect(facilityId) {
+        Timber.d("IslandListScreen facilityId=$facilityId")
         viewModel.initializeForFacility(facilityId)
     }
 
@@ -111,16 +108,18 @@ fun IslandListScreen(
                 }
 
                 // Sort menu
-                IslandSortMenu(
+                QReportSortOrderMenu(
                     expanded = showSortMenu,
-                    selectedSort = uiState.sortOrder,
-                    onSortSelected = viewModel::updateSortOrder,
+                    entries = IslandSortOrder.entries,
+                    selectedSortOrder = uiState.sortOrder,
+                    onSortOrderSelected = viewModel::updateSortOrder,
                     onDismiss = { showSortMenu = false }
                 )
 
                 // Filter menu
-                IslandFilterMenu(
+                QReportFilterMenu(
                     expanded = showFilterMenu,
+                    entries = IslandFilter.entries,
                     selectedFilter = uiState.selectedFilter,
                     onFilterSelected = viewModel::updateFilter,
                     onDismiss = { showFilterMenu = false }
@@ -145,13 +144,15 @@ fun IslandListScreen(
         )
 
         // Filter chips
-        if (uiState.selectedFilter != IslandFilter.ALL || uiState.sortOrder != IslandSortOrder.SERIAL_NUMBER) {
-            ActiveFiltersChipRow(
+        if (uiState.selectedFilter != IslandPkg.selectedFilter || uiState.sortOrder != IslandPkg.selectedSortOrder) {
+            QReportFiltersChipRow(
+                modifier = Modifier.padding(horizontal = 16.dp),
                 selectedFilter = uiState.selectedFilter,
+                avoidFilter = IslandPkg.selectedFilter,
                 selectedSort = uiState.sortOrder,
+                avoidSort = IslandPkg.selectedSortOrder,
                 onClearFilter = { viewModel.updateFilter(IslandFilter.ALL) },
-                onClearSort = { viewModel.updateSortOrder(IslandSortOrder.SERIAL_NUMBER) },
-                modifier = Modifier.padding(horizontal = 16.dp)
+                onClearSort = { viewModel.updateSortOrder(IslandSortOrder.SERIAL_NUMBER) }
             )
         }
 
@@ -195,11 +196,10 @@ fun IslandListScreen(
                 uiState.filteredIslands.isEmpty() -> {
                     val (title, message) = when {
                         uiState.allIslands.isEmpty() -> "Nessuna Isola" to "Non ci sono ancora Isole per questo Stabilimento"
-                        uiState.selectedFilter!= IslandFilter.ALL -> "Nessun risultato" to "Non ci sono Isole che corrispondono al filtro '${
-                            getIslandFilterDisplayName(
-                                uiState.selectedFilter
-                            )
+                        uiState.selectedFilter != IslandPkg.selectedFilter -> "Nessun risultato" to "Non ci sono Isole che corrispondono al filtro '${
+                            uiState.selectedFilter.getDisplayName()
                         }'"
+
                         else -> "Lista vuota" to "Errore nel caricamento dati"
                     }
                     EmptyState(
@@ -392,151 +392,5 @@ private fun IslandListContent(
                 variant = variant
             )
         }
-    }
-}
-
-@Composable
-private fun ActiveFiltersChipRow(
-    selectedFilter: IslandFilter,
-    selectedSort: IslandSortOrder,
-    onClearFilter: () -> Unit,
-    onClearSort: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    LazyRow(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
-    ) {
-        if (selectedFilter != IslandFilter.ALL) {
-            item {
-                FilterChip(
-                    selected = true,
-                    onClick = onClearFilter,
-                    label = { Text("Filtro: ${getIslandFilterDisplayName(selectedFilter)}") },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Rimuovi filtro",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                )
-            }
-        }
-
-        if (selectedSort != IslandSortOrder.SERIAL_NUMBER) {
-            item {
-                FilterChip(
-                    selected = true,
-                    onClick = onClearSort,
-                    label = { Text("Ordine: ${getIslandSortDisplayName(selectedSort)}") },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Rimuovi ordinamento",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun IslandFilterMenu(
-    expanded: Boolean,
-    selectedFilter: IslandFilter,
-    onFilterSelected: (IslandFilter) -> Unit,
-    onDismiss: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        IslandFilter.entries.forEach { filter ->
-            DropdownMenuItem(
-                text = { Text(getIslandFilterDisplayName(filter)) },
-                onClick = {
-                    onFilterSelected(filter)
-                    onDismiss()
-                },
-                leadingIcon = if (selectedFilter == filter) {
-                    { Icon(Icons.Default.Check, contentDescription = null) }
-                } else null
-            )
-        }
-    }
-}
-
-@Composable
-private fun IslandSortMenu(
-    expanded: Boolean,
-    selectedSort: IslandSortOrder,
-    onSortSelected: (IslandSortOrder) -> Unit,
-    onDismiss: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        IslandSortOrder.entries.forEach { sortOrder ->
-            DropdownMenuItem(
-                text = { Text(getIslandSortDisplayName(sortOrder)) },
-                onClick = {
-                    onSortSelected(sortOrder)
-                    onDismiss()
-                },
-                leadingIcon = if (selectedSort == sortOrder) {
-                    { Icon(Icons.Default.Check, contentDescription = null) }
-                } else null
-            )
-        }
-    }
-}
-
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            CircularProgressIndicator()
-            Text(
-                text = "Caricamento isole...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-// Helper functions per display names
-private fun getIslandFilterDisplayName(filter: IslandFilter): String {
-    return when (filter) {
-        IslandFilter.ALL -> "Tutte"
-        IslandFilter.ACTIVE -> "Attive"
-        IslandFilter.INACTIVE -> "Inattive"
-        IslandFilter.MAINTENANCE_DUE -> "Manutenzione Dovuta"
-        IslandFilter.UNDER_WARRANTY -> "In Garanzia"
-        IslandFilter.HIGH_OPERATING_HOURS -> "Ore Elevate"
-        IslandFilter.BY_TYPE -> "Per Tipo"
-    }
-}
-
-private fun getIslandSortDisplayName(sortOrder: IslandSortOrder): String {
-    return when (sortOrder) {
-        IslandSortOrder.SERIAL_NUMBER -> "Serial Number"
-        IslandSortOrder.TYPE -> "Tipo"
-        IslandSortOrder.STATUS -> "Stato"
-        IslandSortOrder.OPERATING_HOURS -> "Ore Operative"
-        IslandSortOrder.MAINTENANCE_DATE -> "Data Manutenzione"
-        IslandSortOrder.CREATED_RECENT -> "Più Recenti"
-        IslandSortOrder.CUSTOM_NAME -> "Nome Personalizzato"
     }
 }

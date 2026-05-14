@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
@@ -41,9 +42,9 @@ fun IslandDetailScreen(
     islandId: String,
     onNavigateBack: () -> Unit,
     onNavigateToEdit: (facilityId: String, islandId: String) -> Unit,
-    onNavigateToCreateUnit: (islandId: String) -> Unit = {},
-    onNavigateToUnitList: (islandId: String) -> Unit = {},
-    onNavigateToEditUnit: (unitId: String) -> Unit = {},
+    onNavigateToCreateUnit: (islandId: String) -> Unit,
+    onNavigateToUnitList: (islandId: String) -> Unit,
+    onNavigateToEditUnit: (unitId: String) -> Unit,
     onNavigateToMaintenance: (String) -> Unit = {},
     onIslandDeleted: () -> Unit = {},
     viewModel: IslandDetailViewModel = hiltViewModel()
@@ -105,8 +106,16 @@ fun IslandDetailScreen(
                         onClick = viewModel::showDeleteConfirmation,
                         enabled = !uiState.isDeleting
                     ) {
-                        if (uiState.isDeleting) CircularProgressIndicator(modifier = Modifier.size(18.dp))
-                        else Icon(Icons.Default.Delete, tint = MaterialTheme.colorScheme.error, contentDescription = "Elimina isola")
+                        if (uiState.isDeleting) CircularProgressIndicator(
+                            modifier = Modifier.size(
+                                18.dp
+                            )
+                        )
+                        else Icon(
+                            Icons.Default.Delete,
+                            tint = MaterialTheme.colorScheme.error,
+                            contentDescription = "Elimina isola"
+                        )
                     }
 
                     if (uiState.island?.needsMaintenance() == true) {
@@ -126,7 +135,9 @@ fun IslandDetailScreen(
                     IconButton(onClick = { showMoreMenu = true }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "Altre azioni")
                     }
-                    DropdownMenu(expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
+                    DropdownMenu(
+                        expanded = showMoreMenu,
+                        onDismissRequest = { showMoreMenu = false }) {
                         DropdownMenuItem(
                             text = { Text("Registra Manutenzione") },
                             onClick = { showMaintenanceDialog = true; showMoreMenu = false },
@@ -135,17 +146,21 @@ fun IslandDetailScreen(
                     }
                 }
 
-                IconButton(onClick = viewModel::refreshData, enabled = !uiState.hasOperationsInProgress) {
+                IconButton(
+                    onClick = viewModel::refreshData,
+                    enabled = !uiState.hasOperationsInProgress
+                ) {
                     Icon(Icons.Default.Refresh, contentDescription = "Aggiorna")
                 }
             }
         )
 
         when {
-            uiState.isLoading  -> LoadingState(
+            uiState.isLoading -> LoadingState(
                 modifier = Modifier.fillMaxSize(),
                 message = "Caricamento dettagli isola..."
             )
+
             uiState.error != null && !uiState.hasData -> ErrorState(
                 modifier = Modifier
                     .fillMaxSize()
@@ -154,10 +169,11 @@ fun IslandDetailScreen(
                 onRetry = { viewModel.loadIslandDetails(islandId) },
                 onDismiss = viewModel::dismissError,
             )
+
             uiState.hasData -> IslandDetailContent(
                 uiState = uiState,
                 onTabSelected = viewModel::selectTab,
-                onNavigateToUnitList = { onNavigateToUnitList(islandId)},
+                onNavigateToUnitList = onNavigateToUnitList,
                 onCreateUnit = { onNavigateToCreateUnit(islandId) },
                 onEditUnit = onNavigateToEditUnit,
                 onDeleteUnit = viewModel::deleteUnit,
@@ -165,6 +181,7 @@ fun IslandDetailScreen(
                 onEdit = { onNavigateToEdit(facilityId, islandId) },
                 onDismissError = viewModel::dismissError
             )
+
             else -> EmptyState(
                 textTitle = "Nessuna Isola",
                 textMessage = "Aggiungi nuova Isola",
@@ -199,7 +216,7 @@ private fun IslandDetailContent(
     onEditUnit: (String) -> Unit,
     onDeleteUnit: (MechanicalUnit) -> Unit,
     onMaintenanceAction: () -> Unit,
-    onNavigateToUnitList: () -> Unit,
+    onNavigateToUnitList: (String) -> Unit,
     onDismissError: () -> Unit
 ) {
     Column {
@@ -237,15 +254,17 @@ private fun IslandDetailContent(
                 onEdit = onEdit,
                 modifier = Modifier.weight(1f)
             )
+
             IslandDetailTab.UNITS -> UnitsTabContent(
                 units = uiState.units,
                 isLoading = uiState.isLoadingUnits,
                 onCreateUnit = onCreateUnit,
                 onEditUnit = onEditUnit,
                 onDeleteUnit = onDeleteUnit,
-                onViewAll = { onNavigateToUnitList },
+                onViewAll = { onNavigateToUnitList(uiState.island?.id ?: "") },
                 modifier = Modifier.weight(1f)
             )
+
             IslandDetailTab.MAINTENANCE -> MaintenanceTabContent(
                 island = uiState.island!!,
                 statistics = uiState.statistics,

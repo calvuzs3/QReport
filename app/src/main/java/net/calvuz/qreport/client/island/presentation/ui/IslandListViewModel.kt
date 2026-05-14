@@ -13,9 +13,10 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
-import net.calvuz.qreport.client.island.domain.usecase.SearchIslandsUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandWithUnitsUseCase
+import net.calvuz.qreport.client.island.presentation.model.IslandFilter
+import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -39,8 +40,8 @@ data class FacilityIslandListUiState(
     val allIslands: List<Island> = emptyList(),
     val filteredIslands: List<IslandWithStats> = emptyList(),
     val searchQuery: String = "",
-    val selectedFilter: IslandFilter = IslandFilter.ALL,
-    val sortOrder: IslandSortOrder = IslandSortOrder.SERIAL_NUMBER,
+    val selectedFilter: IslandFilter = IslandFilter.ACTIVE,
+    val sortOrder: IslandSortOrder = IslandSortOrder.CUSTOM_NAME,
     val statistics: FacilityOperationalSummary? = null,
     val searchSuggestions: List<Island> = emptyList(),
     val error: String? = null,
@@ -65,21 +66,10 @@ data class IslandStatistics(
     val hasUnits: Boolean = unitsCount > 0
 }
 
-/**
- * FacilityIslandListScreen ViewModel
- *
- * Gestisce:
- * - Lista isole per facility con ricerca e filtri
- * - Statistiche aggregate
- * - Sort per tipo, serial number, stato
- * - Eliminazione isole con conferma
- * - Refresh automatico
- */
 @HiltViewModel
 class IslandListViewModel @Inject constructor(
     private val getIslandsByFacilityUseCase: GetIslandsByFacilityUseCase,
     private val getIslandWithUnitsUseCase: GetIslandWithUnitsUseCase,
-    private val searchIslandsUseCase: SearchIslandsUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
@@ -95,6 +85,9 @@ class IslandListViewModel @Inject constructor(
         private const val KEY = AppSettingsDataStore.LIST_KEY_ISLANDS
     }
 
+    init {
+        Timber.d("IslandListViewModel init")
+    }
     /**
      * Inizializza per una facility specifica
      */
@@ -102,6 +95,8 @@ class IslandListViewModel @Inject constructor(
         if (facilityId != currentFacilityId) {
             currentFacilityId = facilityId
             loadIslands()
+        } else {
+            Timber.d("facilityId == currentFacilityId")
         }
     }
 
@@ -109,11 +104,15 @@ class IslandListViewModel @Inject constructor(
      * Carica isole della facility
      */
     fun loadIslands() {
-        val facilityId = _uiState.value.facilityId
+        //val facilityId = _uiState.value.facilityId
+        val facilityId = currentFacilityId
         if (facilityId.isEmpty()) return
 
 
-        if (currentFacilityId.isBlank()) return
+        if (currentFacilityId.isBlank()) {
+            Timber.d("currentFacilityId is blank")
+            return
+        }
 
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
@@ -483,34 +482,6 @@ class IslandListViewModel @Inject constructor(
         return filtered
     }
 }
-
-/**
- * Filtri per isole
- */
-enum class IslandFilter {
-    ALL,
-    ACTIVE,
-    INACTIVE,
-    MAINTENANCE_DUE,
-    UNDER_WARRANTY,
-    HIGH_OPERATING_HOURS,
-    BY_TYPE
-}
-
-/**
- * Ordinamenti per isole
- */
-enum class IslandSortOrder {
-    SERIAL_NUMBER,
-    TYPE,
-    STATUS,
-    OPERATING_HOURS,
-    MAINTENANCE_DATE,
-    CREATED_RECENT,
-    CUSTOM_NAME
-}
-
-// IslandStatistics rimosso - ora usiamo FacilityOperationalSummary per la facility
 
 /**
  * Eventi della UI

@@ -129,6 +129,7 @@ class FacilityDetailViewModel @Inject constructor(
 
     fun loadFacilityDetails(facilityId: String) {
         if (facilityId.isBlank()) {
+            Timber.e("FacilityId blank")
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 error = "ID facility non valido"
@@ -190,7 +191,7 @@ class FacilityDetailViewModel @Inject constructor(
             // Quick access data
             facilityName = facility.displayName,
             facilityType = facility.facilityType.displayName,
-            address = facility.addressDisplay,
+            address = facility.addressDisplay ?: "",
             statusBadge = statusBadge,
             statusBadgeColor = statusColor,
             statisticsSummary = "${activeIslands.size} isole attive",

@@ -906,7 +906,7 @@ private fun FacilityItemWithActions(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${facility.facilityType.displayName} • ${facility.address.city ?: ""}",
+                            text = "${facility.facilityType.displayName} • ${facility.address?.city ?: ""}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

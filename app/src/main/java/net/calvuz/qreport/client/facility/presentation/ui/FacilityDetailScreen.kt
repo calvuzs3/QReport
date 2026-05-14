@@ -2,7 +2,6 @@ package net.calvuz.qreport.client.facility.presentation.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -30,16 +29,6 @@ import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.util.SizeUtils.getFormattedCycleCount
 import net.calvuz.qreport.app.util.SizeUtils.getFormattedHours
 
-/**
- * Screen per il dettaglio facility con gestione islands
- *
- * Features:
- * - Tab: Info, Islands, Maintenance
- * - Gestione completa islands (CRUD) nel tab dedicato
- * - Statistiche operative facility
- * - Navigation verso island management
- * - Azioni quick per manutenzione
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityDetailScreen(
@@ -51,9 +40,9 @@ fun FacilityDetailScreen(
 
     // Island navigation callbacks
     onNavigateToCreateIsland: (String) -> Unit, // Create island
-    onNavigateToEditIsland: (String) -> Unit = {}, // Edit island
-    onNavigateToIslandDetail: (String) -> Unit = { }, // View Island
-    onNavigateToIslandsList: (String) -> Unit = { },   // View all Islands
+    onNavigateToEditIsland: (String) -> Unit, // Edit island
+    onNavigateToIslandDetail: (String) -> Unit, // View Island
+    onNavigateToIslandsList: (String) -> Unit,   // View all Islands
     onDeleted: () -> Unit,
 
     viewModel: FacilityDetailViewModel = hiltViewModel()
@@ -517,7 +506,7 @@ private fun InfoTabContent(
                 ) {
                     InfoItem(
                         label = "Indirizzo Completo",
-                        value = facility.address.toDisplayString()
+                        value = facility.address?.toDisplayString() ?: ""
                     )
                 }
             }

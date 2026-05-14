@@ -98,9 +98,6 @@ class UpdateFacilityUseCase @Inject constructor(
             (facility.notes?.length ?: 0) > 500 ->
                 Result.failure(IllegalArgumentException("Descrizione troppo lunga (max 500 caratteri)"))
 
-            !facility.address.isComplete() ->
-                Result.failure(IllegalArgumentException("Indirizzo stabilimento incompleto"))
-
             else -> Result.success(Unit)
         }
     }

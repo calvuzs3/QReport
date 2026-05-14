@@ -24,12 +24,14 @@ import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityCar
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
+import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
 import net.calvuz.qreport.app.app.util.MapUtils
 import net.calvuz.qreport.client.facility.presentation.model.FacilityFilter
 import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
 import net.calvuz.qreport.client.facility.presentation.model.FacilitySortOrder
-import net.calvuz.qreport.client.facility.presentation.model.getDisplayName
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -103,20 +105,22 @@ fun FacilityListScreen(
                     )
                 }
 
-                // Sort menu
-                FacilitySortMenu(
-                    expanded = showSortMenu,
-                    selectedSort = uiState.sortOrder,
-                    onSortSelected = viewModel::updateSortOrder,
-                    onDismiss = { showSortMenu = false }
-                )
-
                 // Filter menu
-                FacilityFilterMenu(
+                QReportFilterMenu (
                     expanded = showFilterMenu,
+                    entries = FacilityFilter.entries,
                     selectedFilter = uiState.selectedFilter,
                     onFilterSelected = viewModel::updateFilter,
                     onDismiss = { showFilterMenu = false }
+                )
+
+                // Sort menu
+                QReportSortOrderMenu (
+                    expanded = showSortMenu,
+                    entries = FacilitySortOrder.entries,
+                    selectedSortOrder = uiState.sortOrder,
+                    onSortOrderSelected = viewModel::updateSortOrder,
+                    onDismiss = { showSortMenu = false }
                 )
             }
         )
@@ -131,12 +135,14 @@ fun FacilityListScreen(
 
         // Filter chips
         if (uiState.selectedFilter != FacilityPkg.selectedFilter || uiState.sortOrder != FacilityPkg.selectedSortOrder) {
-            ActiveFiltersChipRow(
+            QReportFiltersChipRow (
+                modifier = Modifier.padding(horizontal = 16.dp),
                 selectedFilter = uiState.selectedFilter,
-                selectedSort = uiState.sortOrder,
+                avoidFilter = FacilityPkg.selectedFilter,
                 onClearFilter = { viewModel.updateFilter(FacilityPkg.selectedFilter) },
-                onClearSort = { viewModel.updateSortOrder(FacilityPkg.selectedSortOrder) },
-                modifier = Modifier.padding(horizontal = 16.dp)
+                selectedSort = uiState.sortOrder,
+                avoidSort = FacilityPkg.selectedSortOrder,
+                onClearSort = { viewModel.updateSortOrder(FacilityPkg.selectedSortOrder) }
             )
         }
 
@@ -257,111 +263,10 @@ private fun FacilityListContent(
                 onDelete = if (onFacilityDelete != null) {
                     { onFacilityDelete(facilityWithStats.facility.id) }
                 } else null,
-                onOpenMaps = if (facilityWithStats.facility.address.isComplete()) {
+                onOpenMaps = /*if (facilityWithStats.facility.address?.isComplete()) {
                     { MapUtils.openMapsWithAddress(context, facilityWithStats.facility.address) }
-                } else null,
+                } else*/ null,
                 variant = variant
-            )
-        }
-    }
-}
-
-@Composable
-private fun ActiveFiltersChipRow(
-    selectedFilter: FacilityFilter,
-    selectedSort: FacilitySortOrder,
-    onClearFilter: () -> Unit,
-    onClearSort: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    LazyRow(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        contentPadding = PaddingValues(horizontal = 8.dp)
-    ) {
-        if (selectedFilter != FacilityPkg.selectedFilter) {
-            item {
-                FilterChip(
-                    selected = true,
-                    onClick = onClearFilter,
-                    label = { Text("Filtro: ${selectedFilter.getDisplayName()}") },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Rimuovi filtro",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                )
-            }
-        }
-
-        if (selectedSort != FacilityPkg.selectedSortOrder) {
-            item {
-                FilterChip(
-                    selected = true,
-                    onClick = onClearSort,
-                    label = { Text("Ordine: ${selectedSort.getDisplayName()}") },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "Rimuovi ordinamento",
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FacilityFilterMenu(
-    expanded: Boolean,
-    selectedFilter: FacilityFilter,
-    onFilterSelected: (FacilityFilter) -> Unit,
-    onDismiss: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        FacilityFilter.entries.forEach { filter ->
-            DropdownMenuItem(
-                text = { Text(filter.getDisplayName()) },
-                onClick = {
-                    onFilterSelected(filter)
-                    onDismiss()
-                },
-                leadingIcon = if (selectedFilter == filter) {
-                    { Icon(Icons.Default.Check, contentDescription = null) }
-                } else null
-            )
-        }
-    }
-}
-
-@Composable
-private fun FacilitySortMenu(
-    expanded: Boolean,
-    selectedSort: FacilitySortOrder,
-    onSortSelected: (FacilitySortOrder) -> Unit,
-    onDismiss: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        FacilitySortOrder.entries.forEach { sortOrder ->
-            DropdownMenuItem(
-                text = { Text(sortOrder.getDisplayName()) },
-                onClick = {
-                    onSortSelected(sortOrder)
-                    onDismiss()
-                },
-                leadingIcon = if (selectedSort == sortOrder) {
-                    { Icon(Icons.Default.Check, contentDescription = null) }
-                } else null
             )
         }
     }

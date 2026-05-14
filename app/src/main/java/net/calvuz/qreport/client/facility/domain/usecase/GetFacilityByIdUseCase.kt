@@ -87,7 +87,7 @@ class GetFacilityByIdUseCase @Inject constructor(
                         id = facility.id,
                         name = facility.displayName,
                         type = facility.facilityType.displayName,
-                        city = facility.address.city ?: "",
+                        city = facility.address?.city ?: "",
                         isPrimary = facility.isPrimary,
                         isActive = facility.isActive
                     )

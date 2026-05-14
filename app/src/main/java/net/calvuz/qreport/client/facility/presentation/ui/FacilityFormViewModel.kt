@@ -15,8 +15,12 @@ import net.calvuz.qreport.client.facility.domain.usecase.CreateFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.UpdateFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilitiesByClientUseCase
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.client.facility.domain.usecase.NewFacilityUseCase
 import timber.log.Timber
+import java.util.UUID
 import javax.inject.Inject
+import kotlin.fold
+import kotlin.text.trim
 
 /**
  * ViewModel per FacilityFormScreen - Create/Edit facility
@@ -56,12 +60,15 @@ data class FacilityFormUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
+    val saveCompleted: Boolean = false,
     val savedFacilityId: String? = null,
     val clientId: String = "",
     val facilityId: String? = null, // null = create mode
     val isFormValid: Boolean = false
 ) {
     val isEditMode: Boolean = facilityId != null
+    val hasAddressData: Boolean
+        get() = street.isNotBlank() || city.isNotBlank()
 }
 
 sealed class FacilityFormEvent {
@@ -81,6 +88,7 @@ sealed class FacilityFormEvent {
 @HiltViewModel
 class FacilityFormViewModel @Inject constructor(
     private val createFacilityUseCase: CreateFacilityUseCase,
+    private val newFacilityUseCase: NewFacilityUseCase,
     private val updateFacilityUseCase: UpdateFacilityUseCase,
     private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase
 ) : ViewModel() {
@@ -133,11 +141,35 @@ class FacilityFormViewModel @Inject constructor(
             _uiState.value = currentState.copy(isLoading = true, isSaving = true, error = null)
 
             try {
-                if (currentState.isEditMode) {
-                    updateExistingFacility()
+                val facility = buildFacilityFromForm(currentState)
+
+                val result = if (currentState.isEditMode && currentState.facilityId != null) {
+                    updateFacilityUseCase(facility)
+//                updateExistingFacility()
                 } else {
-                    createNewFacility()
+//                createFacilityUseCase(facility)
+                    newFacilityUseCase(facility)
                 }
+
+                result.fold(
+                    onSuccess = {
+                        Timber.d("Facility saved successfully: ${facility.id} ${facility.displayName}}")
+                        _uiState.value = _uiState.value.copy(
+                            isSaving = false,
+                            saveCompleted = true,
+                            savedFacilityId = facility.id,
+                            error = null
+                        )
+                    },
+                    onFailure = { error ->
+                        Timber.e(error, "Failed to save facility")
+                        _uiState.value = _uiState.value.copy(
+                            isSaving = false,
+                            error = "Errore salvataggio: ${error.message}"
+                        )
+                    }
+                )
+
             } catch (_: CancellationException) {
                 Timber.d("Save facility cancelled")
             } catch (e: Exception) {
@@ -154,13 +186,39 @@ class FacilityFormViewModel @Inject constructor(
         }
     }
 
-    fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
     // ============================================================
     // PRIVATE METHODS - ValidationError Updates
     // ============================================================
+
+
+    private fun buildFacilityFromForm(state: FacilityFormUiState): Facility {
+        val address = if (state.hasAddressData) {
+            Address(
+                street = state.street.takeIf { it.isNotBlank() },
+                streetNumber = state.streetNumber.takeIf { it.isNotBlank() },
+                city = state.city.takeIf { it.isNotBlank() },
+                province = state.province.takeIf { it.isNotBlank() },
+                postalCode = state.postalCode.takeIf { it.isNotBlank() },
+                country = "Italia"
+            )
+        } else null
+
+        val now = Clock.System.now()
+
+        return Facility(
+            id = state.facilityId ?: UUID.randomUUID().toString(),
+            clientId = state.clientId,
+            name = state.name.trim(),
+            address = address,
+            facilityType = state.facilityType,
+            code = state.code.trim().takeIf { it.isNotBlank() },
+            notes = state.notes.takeIf { it.isNotBlank() },
+            isPrimary = state.isPrimary,
+            isActive = true,
+            createdAt = now, // Will be preserved in update
+            updatedAt = now
+        )
+    }
 
     private fun updateName(name: String) {
         _uiState.value = _uiState.value.copy(
@@ -310,11 +368,11 @@ class FacilityFormViewModel @Inject constructor(
             code = facility.code ?: "",
             facilityType = facility.facilityType,
             notes = facility.notes ?: "",
-            street = facility.address.street ?: "",
-            city = facility.address.city ?: "",
-            postalCode = facility.address.postalCode ?: "",
-            province = facility.address.province ?: "",
-            country = facility.address.country ?: "Italia",
+            street = facility.address?.street ?: "",
+            city = facility.address?.city ?: "",
+            postalCode = facility.address?.postalCode ?: "",
+            province = facility.address?.province ?: "",
+            country = facility.address?.country ?: "Italia",
             isPrimary = facility.isPrimary,
             isActive = facility.isActive,
             isLoading = false
@@ -422,5 +480,17 @@ class FacilityFormViewModel @Inject constructor(
             province = state.province.trim().takeIf { it.isNotBlank() },
             country = state.country.trim().takeIf { it.isNotBlank() } ?: "Italia"
         )
+    }
+
+    // ============================================================
+    // ERROR HANDLING
+    // ============================================================
+
+    fun dismissError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+
+    fun resetSaveCompleted() {
+        _uiState.value = _uiState.value.copy(saveCompleted = false)
     }
 }

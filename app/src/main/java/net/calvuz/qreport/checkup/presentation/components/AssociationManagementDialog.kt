@@ -230,7 +230,7 @@ private fun FacilitySelectionStep(
             facilities.forEach { facility ->
                 SelectionItem(
                     title = facility.name,
-                    subtitle = facility.address.city ?: "",
+                    subtitle = facility.address?.city ?: "",
                     isSelected = facility.id == selectedFacilityId,
                     onClick = { onFacilitySelected(facility.id) }
                 )

@@ -16,7 +16,7 @@ import net.calvuz.qreport.app.app.presentation.model.QReportFilter
 import net.calvuz.qreport.app.app.presentation.model.QReportSortOrder
 
 @Composable
-fun  QReportFiltersChipRow(
+fun QReportFiltersChipRow(
     modifier: Modifier = Modifier,
     selectedFilter: QReportFilter,
     avoidFilter: QReportFilter,
@@ -30,41 +30,31 @@ fun  QReportFiltersChipRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
-        if (selectedFilter != null) {
-            if (avoidFilter != null && avoidFilter != selectedFilter) {
-                item {
-                    FilterChip(
-                        selected = true,
-                        onClick = onClearFilter,
-                        label = { Text("Filtro: $selectedFilter") },
-                        trailingIcon = {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Rimuovi filtro",
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    )
-                }
+        if (avoidFilter != selectedFilter) {
+            item {
+                FilterChip(
+                    selected = true,
+                    onClick = onClearFilter,
+                    label = { Text("Filtro: ${selectedFilter.getDisplayName()}") }, // 👈
+                    trailingIcon = {
+                        Icon(Icons.Default.Close, contentDescription = "Rimuovi filtro",
+                            modifier = Modifier.size(18.dp))
+                    }
+                )
             }
         }
 
-        if (selectedSort != null) {
-            if (avoidSort != null && avoidSort != selectedSort) {
-                item {
-                    FilterChip(
-                        selected = true,
-                        onClick = onClearSort,
-                        label = { Text("Ordine: $selectedSort") },
-                        trailingIcon = {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Rimuovi ordinamento",
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    )
-                }
+        if (avoidSort != selectedSort) {
+            item {
+                FilterChip(
+                    selected = true,
+                    onClick = onClearSort,
+                    label = { Text("Ordine: ${selectedSort.getDisplayName()}") }, // 👈
+                    trailingIcon = {
+                        Icon(Icons.Default.Close, contentDescription = "Rimuovi ordinamento",
+                            modifier = Modifier.size(18.dp))
+                    }
+                )
             }
         }
     }

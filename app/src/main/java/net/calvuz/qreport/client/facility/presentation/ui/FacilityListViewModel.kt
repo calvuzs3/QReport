@@ -22,17 +22,6 @@ import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
 
-/**
- * ViewModel per FacilityListScreen - seguendo pattern ClientListViewModel
- *
- * Features:
- * - Gestisce lista stabilimenti per cliente
- * - Ricerca e filtri per facility type/status
- * - Statistics con conteggio isole
- * - Pull to refresh
- * - Error handling ottimizzato
- */
-
 data class FacilityListUiState(
     val facilities: List<FacilityWithStats> = emptyList(),
     val filteredFacilities: List<FacilityWithStats> = emptyList(),
@@ -373,7 +362,7 @@ class FacilityListViewModel @Inject constructor(
                     facility.code?.contains(query, ignoreCase = true) == true ||
                     facility.notes?.contains(query, ignoreCase = true) == true ||
                     facility.facilityType.displayName.contains(query, ignoreCase = true) ||
-                    facility.address.city?.contains(query, ignoreCase = true) == true
+                    facility.address?.city?.contains(query, ignoreCase = true) == true
         }
 
         val filteredAndSorted = applyFiltersAndSort(

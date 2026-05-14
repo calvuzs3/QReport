@@ -3,6 +3,7 @@ package net.calvuz.qreport.client.client.presentation.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -233,6 +234,8 @@ class ClientFormViewModel @Inject constructor(
                         )
                     }
                 )
+            } catch (_: CancellationException) {
+                Timber.d("Save client cancelled")
             } catch (e: Exception) {
                 Timber.e(e, "Exception during client save")
                 _uiState.value = currentState.copy(
@@ -241,48 +244,6 @@ class ClientFormViewModel @Inject constructor(
                 )
             }
         }
-    }
-
-    private suspend fun createNewClient(client: Client) {
-        createClientUseCase(client).fold(
-            onSuccess = {
-                Timber.d("Client created successfully: ${client.id}")
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    savedClientId = client.id,
-                    savedClientName = client.companyName,
-                    error = null
-                )
-            },
-            onFailure = { error ->
-                Timber.e(error, "Failed to create client")
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    error = error.message ?: "Errore durante la creazione"
-                )
-            }
-        )
-    }
-
-    private suspend fun updateClient(client: Client) {
-        updateClientUseCase(client).fold(
-            onSuccess = {
-                Timber.d("Client updated successfully: ${client.id}")
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    savedClientId = client.id,
-                    savedClientName = client.companyName,
-                    error = null
-                )
-            },
-            onFailure = { error ->
-                Timber.e(error, "Failed to update client")
-                _uiState.value = _uiState.value.copy(
-                    isSaving = false,
-                    error = error.message ?: "Errore durante l'aggiornamento"
-                )
-            }
-        )
     }
 
     private fun buildClientFromForm(state: ClientFormUiState): Client {

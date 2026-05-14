@@ -1,17 +1,16 @@
 package net.calvuz.qreport.client.facility.presentation.model
 
-enum class FacilityFilter {
-    ALL, ACTIVE, INACTIVE, PRIMARY_ONLY, WITH_ISLANDS, BY_TYPE
-}
+import net.calvuz.qreport.app.app.presentation.model.QReportFilter
 
-// Extension
-fun FacilityFilter.getDisplayName(): String {
-    return when (this) {
-        FacilityFilter.ALL -> "Tutti"
-        FacilityFilter.ACTIVE -> "Attivi"
-        FacilityFilter.INACTIVE -> "Inattivi"
-        FacilityFilter.PRIMARY_ONLY -> "Solo Primari"
-        FacilityFilter.WITH_ISLANDS -> "Con Isole"
-        FacilityFilter.BY_TYPE -> "Per Tipo"
+enum class FacilityFilter: QReportFilter {
+    ALL, ACTIVE, INACTIVE, PRIMARY_ONLY, WITH_ISLANDS, BY_TYPE;
+
+    override fun getDisplayName(): String = when (this) {
+        ALL -> "Tutti"
+        ACTIVE -> "Attivi"
+        INACTIVE -> "Inattivi"
+        PRIMARY_ONLY -> "Solo Primari"
+        WITH_ISLANDS -> "Con Isole"
+        BY_TYPE -> "Per Tipo"
     }
 }

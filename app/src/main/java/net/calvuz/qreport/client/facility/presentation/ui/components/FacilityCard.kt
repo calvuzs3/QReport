@@ -185,7 +185,7 @@ private fun FullFacilityCard(
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = if (onOpenMaps != null && facility.address.isComplete()) {
+            modifier = if (onOpenMaps != null && facility.address?.isComplete() ?: false) {
                 Modifier.clickable { onOpenMaps() }
             } else {
                 Modifier
@@ -193,22 +193,22 @@ private fun FullFacilityCard(
         ) {
             Icon(
                 imageVector = Icons.Default.LocationOn,
-                contentDescription = if (onOpenMaps != null && facility.address.isComplete()) {
+                contentDescription = if (onOpenMaps != null && facility.address?.isComplete() ?: false) {
                     "Apri in Mappe"
                 } else {
                     null
                 },
                 modifier = Modifier.size(16.dp),
-                tint = if (onOpenMaps != null && facility.address.isComplete()) {
+                tint = if (onOpenMaps != null && (facility.address?.isComplete() ?: false)) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 }
             )
             Text(
-                text = facility.addressDisplay,
+                text = facility.addressDisplay ?: "",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (onOpenMaps != null && facility.address.isComplete()) {
+                color = if (onOpenMaps != null && facility.address?.isComplete() ?: false) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -216,7 +216,7 @@ private fun FullFacilityCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            if (onOpenMaps != null && facility.address.isComplete()) {
+            if (onOpenMaps != null && facility.address?.isComplete() ?: false) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Default.OpenInNew,
                     contentDescription = "Apri",
@@ -230,7 +230,7 @@ private fun FullFacilityCard(
         if (stats != null) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = if (onOpenMaps != null && facility.address.isComplete()) {
+                modifier = if (onOpenMaps != null && (facility.address?.isComplete() ?: false))  {
                     Modifier.clickable { onOpenMaps() }
                         .fillMaxWidth()
                 } else {
@@ -325,15 +325,15 @@ private fun CompactFacilityCard(
             }
 
             Text(
-                text = "${facility.facilityType.displayName} • ${facility.address.city ?: ""}",
+                text = "${facility.facilityType.displayName} • ${(facility.address?.city ?: "")}",
                 style = MaterialTheme.typography.bodySmall,
-                color = if (onOpenMaps != null && facility.address.isComplete()) {
+                color = if (onOpenMaps != null && (facility.address?.isComplete() ?: false)) {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
                 maxLines = 1,
-                modifier = if (onOpenMaps != null && facility.address.isComplete()) {
+                modifier = if (onOpenMaps != null && (facility.address?.isComplete() ?: false)) {
                     Modifier.clickable { onOpenMaps() }
                 } else {
                     Modifier

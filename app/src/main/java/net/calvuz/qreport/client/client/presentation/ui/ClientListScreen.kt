@@ -18,15 +18,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.client.client.presentation.ui.components.ClientCard
-import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
+import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
 import net.calvuz.qreport.client.client.presentation.model.ClientFilter
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientSortOrder
-import net.calvuz.qreport.client.client.presentation.model.getDisplayName
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -64,7 +65,7 @@ fun ClientListScreen(
             title = { Text(ClientPkg.title) },
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
-                var showSortMenu by remember { mutableStateOf(false) }
+                var showSortOrderMenu by remember { mutableStateOf(false) }
 
                 // View mode toggle button
                 IconButton(onClick = viewModel::cycleCardVariant) {
@@ -75,7 +76,7 @@ fun ClientListScreen(
                 }
 
                 // Sort button
-                IconButton(onClick = { showSortMenu = true }) {
+                IconButton(onClick = { showSortOrderMenu = true }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Default.Sort,
                         contentDescription = "Ordinamento"
@@ -91,19 +92,21 @@ fun ClientListScreen(
                 }
 
                 // Filter menu
-                FilterMenu(
+                QReportFilterMenu(
                     expanded = showFilterMenu,
+                    entries = ClientFilter.entries,
                     selectedFilter = uiState.selectedFilter,
                     onFilterSelected = viewModel::updateFilter,
                     onDismiss = { showFilterMenu = false }
                 )
 
                 // Sort menu
-                SortMenu(
-                    expanded = showSortMenu,
-                    selectedSort = uiState.selectedSortOrder,
-                    onSortSelected = viewModel::updateSortOrder,
-                    onDismiss = { showSortMenu = false }
+                QReportSortOrderMenu (
+                    expanded = showSortOrderMenu,
+                    entries = ClientSortOrder.entries,
+                    selectedSortOrder = uiState.selectedSortOrder,
+                    onSortOrderSelected = viewModel::updateSortOrder,
+                    onDismiss = { showSortOrderMenu = false }
                 )
             }
         )
@@ -118,14 +121,14 @@ fun ClientListScreen(
 
         // Filter chips
         if (uiState.selectedFilter != ClientPkg.selectedFilter || uiState.selectedSortOrder != ClientPkg.selectedSortOrder) {
-            ActiveFiltersChipRow(
-                selectedFilter = uiState.selectedFilter.getDisplayName(),
-                avoidFilter = ClientPkg.selectedFilter.getDisplayName(),
+            QReportFiltersChipRow (
+                modifier = Modifier.padding(horizontal = 16.dp),
+                selectedFilter = uiState.selectedFilter,
+                avoidFilter = ClientPkg.selectedFilter,
                 onClearFilter = { viewModel.updateFilter(ClientPkg.selectedFilter) },
-                selectedSort = uiState.selectedSortOrder.getDisplayName(),
-                avoidSort = ClientPkg.selectedSortOrder.getDisplayName(),
-                onClearSort = { viewModel.updateSortOrder(ClientPkg.selectedSortOrder) },
-                modifier = Modifier.padding(horizontal = 16.dp)
+                selectedSort = uiState.selectedSortOrder,
+                avoidSort = ClientPkg.selectedSortOrder,
+                onClearSort = { viewModel.updateSortOrder(ClientPkg.selectedSortOrder) }
             )
         }
 
@@ -254,58 +257,6 @@ private fun ClientListContent(
                 //onDelete = { onClientDelete(clientWithStats.client.id) },
                 onDelete = null,
                 variant = variant
-            )
-        }
-    }
-}
-
-@Composable
-private fun FilterMenu(
-    expanded: Boolean,
-    selectedFilter: ClientFilter,
-    onFilterSelected: (ClientFilter) -> Unit,
-    onDismiss: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        ClientFilter.entries.forEach { filter ->
-            DropdownMenuItem(
-                text = { Text(filter.getDisplayName()) },
-                onClick = {
-                    onFilterSelected(filter)
-                    onDismiss()
-                },
-                leadingIcon = if (selectedFilter == filter) {
-                    { Icon(Icons.Default.Check, contentDescription = null) }
-                } else null
-            )
-        }
-    }
-}
-
-@Composable
-private fun SortMenu(
-    expanded: Boolean,
-    selectedSort: ClientSortOrder,
-    onSortSelected: (ClientSortOrder) -> Unit,
-    onDismiss: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        ClientSortOrder.entries.forEach { sortOrder ->
-            DropdownMenuItem(
-                text = { Text(sortOrder.getDisplayName()) },
-                onClick = {
-                    onSortSelected(sortOrder)
-                    onDismiss()
-                },
-                leadingIcon = if (selectedSort == sortOrder) {
-                    { Icon(Icons.Default.Check, contentDescription = null) }
-                } else null
             )
         }
     }
