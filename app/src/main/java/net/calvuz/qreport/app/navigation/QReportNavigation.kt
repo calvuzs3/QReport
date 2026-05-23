@@ -160,7 +160,7 @@ object QReportRoutes {
     // Unit
 
     const val UNIT_LIST = "units/{islandId}"
-    const val UNIT_ADD = "unit_form/{islandId}"
+    const val UNIT_CREATE = "unit_form/{islandId}"
     const val UNIT_EDIT = "unit_form/{islandId}/{unitId}"
 
     fun unitList(islandId: String) = "units/$islandId"
@@ -656,13 +656,14 @@ fun QReportNavigation(
                             navController.popBackStack()
                         },
                         onClientSaved = { clientId, clientName ->
-                            navController.navigate(
-                                QReportRoutes.clientDetail(clientId, clientName)
-                            ) {
-                                popUpTo(QReportRoutes.CLIENTS) {
-                                    inclusive = false
-                                }
-                            }
+                            navController.popBackStack()
+//                            navController.navigate(
+//                                QReportRoutes.clientDetail(clientId, clientName)
+//                            ) {
+//                                popUpTo(QReportRoutes.CLIENTS) {
+//                                    inclusive = false
+//                                }
+//                            }
                         }
                     )
                 }
@@ -684,13 +685,14 @@ fun QReportNavigation(
                             navController.popBackStack()
                         },
                         onClientSaved = { clientId, clientName ->
-                            navController.navigate(
-                                QReportRoutes.clientDetail(clientId, clientName)
-                            ) {
-                                popUpTo(QReportRoutes.CLIENTS) {
-                                    inclusive = false
-                                }
-                            }
+                            navController.popBackStack()
+//                            navController.navigate(
+//                                QReportRoutes.clientDetail(clientId, clientName)
+//                            ) {
+//                                popUpTo(QReportRoutes.CLIENTS) {
+//                                    inclusive = false
+//                                }
+//                            }
                         }
                     )
                 }
@@ -1177,6 +1179,7 @@ fun QReportNavigation(
                     val islandName = backStack.arguments?.getString("islandName") ?: "Unità meccaniche"
 
                     MechanicalUnitListScreen(
+                        islandId = islandId,
                         islandName = islandName,
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToAdd = {
@@ -1190,7 +1193,7 @@ fun QReportNavigation(
 
                 // ── MechanicalUnit add ───────────────────────────────────────────────────────
                 composable(
-                    route = QReportRoutes.UNIT_ADD,
+                    route = QReportRoutes.UNIT_CREATE,
                     arguments = listOf(navArgument("islandId") { type = NavType.StringType })
                 ) {
                     MechanicalUnitFormScreen(

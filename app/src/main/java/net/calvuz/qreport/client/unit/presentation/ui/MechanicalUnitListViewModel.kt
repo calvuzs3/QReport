@@ -11,9 +11,43 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
+import net.calvuz.qreport.client.island.presentation.model.IslandFilter
+import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
+import net.calvuz.qreport.client.island.presentation.ui.IslandWithStats
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.repository.MechanicalUnitRepository
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 import javax.inject.Inject
+
+//data class MechanicalUnitListUiState(
+//    val islands: List<IslandWithStats> = emptyList(),
+//    val facilityId: String = "",
+//    val isLoading: Boolean = false,
+//    val isRefreshing: Boolean = false,
+//    val isDeletingIsland: String? = null,
+//    val allIslands: List<Island> = emptyList(),
+//    val filteredIslands: List<IslandWithStats> = emptyList(),
+//    val searchQuery: String = "",
+//    val selectedFilter: IslandFilter = IslandFilter.ACTIVE,
+//    val sortOrder: IslandSortOrder = IslandSortOrder.CUSTOM_NAME,
+//    val statistics: FacilityOperationalSummary? = null,
+//    val searchSuggestions: List<Island> = emptyList(),
+//    val error: String? = null,
+//    val cardVariant: ListViewMode = ListViewMode.FULL
+//)
+//
+//data class MechanicalUnitWithStats(
+//    val mechanicalUnit: MechanicalUnit,
+//    val stats: MechanicalUnitStatistics
+//)
+//
+//data class MechanicalUnitStatistics(
+//   val emptyField: String = ""
+//) {
+//    // Empty body
+//}
 
 /**
  * ViewModel for [MechanicalUnitListScreen].

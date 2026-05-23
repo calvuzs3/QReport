@@ -30,13 +30,6 @@ fun ClientFormScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Initialize for edit mode
-    LaunchedEffect(clientId) {
-        clientId?.let { id ->
-            viewModel.loadClientForEdit(id)
-        }
-    }
-
     // Handle save completed
     LaunchedEffect(uiState.saveCompleted, uiState.savedClientId) {
         if (uiState.saveCompleted && !uiState.savedClientId.isNullOrBlank()) {
@@ -48,18 +41,25 @@ fun ClientFormScreen(
         }
     }
 
+    // Initialize for edit mode
+    LaunchedEffect(clientId) {
+        if (clientId != null) {
+            viewModel.initForEdit(clientId)
+        }
+    }
+
+    // Screen
     Column(
         modifier = modifier
             .fillMaxSize()
             .imePadding()
-//            .verticalScroll(rememberScrollState())
     ) {
         // Top App Bar
         TopAppBar(
             title = {
                 Column {
                     Text(
-                        text = if (uiState.isEditMode) "Modifica Cliente" else "Nuovo Cliente",
+                       text = if (uiState.isEditMode) "Modifica Cliente" else "Nuovo Cliente",
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -84,7 +84,6 @@ fun ClientFormScreen(
                 IconButton(
                     onClick = viewModel::saveClient,
                     enabled = uiState.canSave && !uiState.isSaving,
-                    modifier = Modifier.weight(1f)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Save,

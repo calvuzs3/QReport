@@ -1,8 +1,6 @@
 package net.calvuz.qreport.client.facility.data.local.repository
 
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import net.calvuz.qreport.client.facility.data.local.mapper.FacilityMapper
@@ -72,7 +70,7 @@ class FacilityRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteFacility(id: String): Result<Unit> {
+    override suspend fun softDeleteFacility(id: String): Result<Unit> {
         return try {
             facilityDao.softDeleteFacility(id)
             Result.success(Unit)
@@ -93,15 +91,10 @@ class FacilityRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getFacilitiesByClientFlow(clientId: String): Flow<List<Facility>> {
-        return facilityDao.getFacilitiesForClientFlow(clientId).map { entities -> // Nome DAO corretto
-            facilityMapper.toDomainList(entities)
-        }
-    }
-
     override suspend fun getActiveFacilitiesByClient(clientId: String): Result<List<Facility>> {
         return try {
-            val entities = facilityDao.getFacilitiesForClient(clientId) // Già filtrato per is_active
+            val entities =
+                facilityDao.getFacilitiesForClient(clientId) // Già filtrato per is_active
             val facilities = facilityMapper.toDomainList(entities)
             Result.success(facilities)
         } catch (e: Exception) {
@@ -121,18 +114,24 @@ class FacilityRepositoryImpl @Inject constructor(
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
+    /** Flow operation - gets facilities */
+    override fun getAllFacilitiesFlow(): Flow<List<Facility>> {
+        return facilityDao.getFacilitiesFlow().map { entities ->
+            facilityMapper.toDomainList(entities)
+        }
+    }
+
+    /** Flow operation - gets active facilities */
     override fun getAllActiveFacilitiesFlow(): Flow<List<Facility>> {
-        // FacilityDao non ha questo metodo, implemento con polling
-        return flow {
-            while (true) {
-                try {
-                    val facilities = getActiveFacilities().getOrThrow()
-                    emit(facilities)
-                    delay(1000)
-                } catch (e: Exception) {
-                    emit(emptyList())
-                }
-            }
+        return facilityDao.getActiveFacilitiesFlow().map { entities ->
+            facilityMapper.toDomainList(entities)
+        }
+    }
+
+    /** Flow operation - gets facilities by client */
+    override fun getFacilitiesByClientFlow(clientId: String): Flow<List<Facility>> {
+        return facilityDao.getFacilitiesForClientFlow(clientId).map { entities ->
+            facilityMapper.toDomainList(entities)
         }
     }
 
@@ -224,7 +223,7 @@ class FacilityRepositoryImpl @Inject constructor(
             val facilityTypes = typeStrings.mapNotNull { typeString ->
                 try {
                     FacilityType.valueOf(typeString)
-                } catch (e: IllegalArgumentException) {
+                } catch (_: IllegalArgumentException) {
                     null // Ignora tipi non validi
                 }
             }

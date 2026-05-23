@@ -55,23 +55,6 @@ class GetFacilitiesByClientUseCase @Inject constructor(
     }
 
     /**
-     * Osserva tutti gli stabilimenti di un cliente (Flow reattivo)
-     *
-     * @param clientId ID del cliente
-     * @return Flow con lista facilities che si aggiorna automaticamente
-     */
-    fun observeFacilitiesByClient(clientId: String): Flow<List<Facility>> {
-        return facilityRepository.getFacilitiesByClientFlow(clientId)
-            .map { facilities ->
-                facilities.sortedWith(
-                    compareByDescending<Facility> { it.isPrimary }
-                        .thenByDescending { it.isActive }
-                        .thenBy { it.name.lowercase() }
-                )
-            }
-    }
-
-    /**
      * Recupera solo gli stabilimenti attivi di un cliente
      *
      * @param clientId ID del cliente

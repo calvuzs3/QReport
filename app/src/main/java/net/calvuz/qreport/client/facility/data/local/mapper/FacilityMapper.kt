@@ -26,8 +26,7 @@ class FacilityMapper @Inject constructor(
             code = entity.code,
             notes = entity.notes,
             facilityType = parseFacilityType(entity.facilityType),
-            address = addressConverter.toAddress(entity.addressJson)
-                ?: throw IllegalStateException("Facility must have a valid address"),
+            address = addressConverter.toAddress(entity.addressJson),
             isPrimary = entity.isPrimary,
             isActive = entity.isActive,
             islands = emptyList(), // Le islands vengono caricate separatamente
@@ -47,8 +46,7 @@ class FacilityMapper @Inject constructor(
             code = domain.code,
             notes = domain.notes,
             facilityType = domain.facilityType.name,
-            addressJson = addressConverter.fromAddress(domain.address)
-                ?: throw IllegalStateException("Cannot serialize facility address"),
+            addressJson = addressConverter.fromAddress(domain.address),
             isPrimary = domain.isPrimary,
             isActive = domain.isActive,
             createdAt = domain.createdAt.toEpochMilliseconds(),

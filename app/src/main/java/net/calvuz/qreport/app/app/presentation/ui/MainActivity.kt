@@ -53,13 +53,9 @@ class MainActivity : ComponentActivity() {
 fun QReportApp() {
     val navController = rememberNavController()
 
-//    Surface(
-//        modifier = Modifier.fillMaxSize(),
-//        color = MaterialTheme.colorScheme.background
-//    ) {
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        contentWindowInsets = WindowInsets(0) // 👈 non consumare gli insets qui
+        contentWindowInsets = WindowInsets(0) // 👈 Do not consume insets here
     ) { innerPadding ->
         QReportNavigation(
             navController = navController,
@@ -68,5 +64,4 @@ fun QReportApp() {
                 .padding(innerPadding)
         )
     }
-//    }
 }

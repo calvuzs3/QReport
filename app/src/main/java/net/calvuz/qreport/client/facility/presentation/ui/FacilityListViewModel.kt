@@ -6,13 +6,16 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import net.calvuz.qreport.client.client.domain.usecase.ObserveAllActiveClientsUseCase
+import net.calvuz.qreport.client.client.presentation.model.ClientOption
 import net.calvuz.qreport.client.facility.domain.model.Facility
-import net.calvuz.qreport.client.facility.domain.usecase.GetFacilitiesByClientUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilityWithIslandsUseCase
+import net.calvuz.qreport.client.facility.domain.usecase.ObserveFacilitiesByClientUseCase
+import net.calvuz.qreport.client.facility.domain.usecase.ObserveFacilitiesUseCase
 import net.calvuz.qreport.client.facility.presentation.model.FacilityFilter
 import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
 import net.calvuz.qreport.client.facility.presentation.model.FacilitySortOrder
@@ -33,174 +36,150 @@ data class FacilityListUiState(
     val selectedFilter: FacilityFilter = FacilityPkg.selectedFilter,
     val sortOrder: FacilitySortOrder = FacilityPkg.selectedSortOrder,
     val clientId: String = "",
-    val cardVariant: ListViewMode = ListViewMode.FULL
+    val cardVariant: ListViewMode = ListViewMode.FULL,
+    val availableClients: List<ClientOption> = listOf(ClientOption.ALL),
+    val selectedClient: ClientOption = ClientOption.ALL
+
 )
 
 
 @HiltViewModel
 class FacilityListViewModel @Inject constructor(
-    private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase,
+    private val observeFacilitiesUseCase: ObserveFacilitiesUseCase,
+    private val observeFacilitiesByClientUseCase: ObserveFacilitiesByClientUseCase,
     private val deleteFacilityUseCase: DeleteFacilityUseCase,
     private val getFacilityWithIslandsUseCase: GetFacilityWithIslandsUseCase,
+    private val observeAllActiveClientsUseCase: ObserveAllActiveClientsUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityListUiState())
     val uiState: StateFlow<FacilityListUiState> = _uiState.asStateFlow()
 
+    // Tracks the active facility-loading coroutine so it can be cancelled
+    // before starting a new one (client switch, refresh, etc.).
+    private var loadJob: Job? = null
+
     companion object {
         private const val KEY = AppSettingsDataStore.LIST_KEY_FACILITIES
+    }
+
+
+    init {
+        loadClients()
     }
 
     // ============================================================
     // PUBLIC METHODS
     // ============================================================
 
-    fun initializeForClient(clientId: String) {
-        if (clientId == _uiState.value.clientId) return // Già inizializzato per questo cliente
-
-        _uiState.value = _uiState.value.copy(clientId = clientId)
+    fun initialize() {
         loadFacilities()
     }
 
-    fun loadFacilities() {
-        val clientId = _uiState.value.clientId
-        if (clientId.isEmpty()) return
+    fun initializeForClient(clientId: String) {
+        if (clientId == _uiState.value.clientId) return
 
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                error = null
-            )
+        _uiState.value = _uiState.value.copy(
+            clientId = clientId,
+            // Sync the dropdown selection with the client being loaded.
+            // Falls back to ALL if the client list hasn't loaded yet;
+            // it will be corrected once loadClients() delivers results.
+            selectedClient = _uiState.value.availableClients.find { it.id == clientId }
+                ?: ClientOption.ALL
+        )
+        loadFacilities()
+    }
+
+
+    /**
+     * Loads facilities by observing a Room Flow.
+     *
+     * Cancels any previous observation before starting a new one, so switching
+     * clients or calling refresh never leaves stale collectors running in parallel.
+     *
+     * Room re-emits automatically on every DB change, so no manual re-fetch is
+     * needed for inserts, updates, or deletes.
+     */
+    fun loadFacilities() {
+        // Cancel previous collector before starting a new one.
+        loadJob?.cancel()
+
+        val clientId = _uiState.value.clientId
+        val flow = if (clientId.isEmpty()) {
+            Timber.d("Observing all facilities")
+            observeFacilitiesUseCase()
+        } else {
+            Timber.d("Observing facilities for client: $clientId")
+            observeFacilitiesByClientUseCase(clientId)
+        }
+
+        loadJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, isRefreshing = false, error = null) }
 
             try {
-                Timber.d("Loading facilities for client: $clientId")
-
-                getFacilitiesByClientUseCase.observeFacilitiesByClient(clientId)
+                flow
                     .catch { exception ->
                         if (exception is CancellationException) throw exception
                         Timber.e(exception, "Error in facilities flow")
                         if (currentCoroutineContext().isActive) {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = "Errore caricamento stabilimenti: ${exception.message}"
-                            )
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isRefreshing = false,
+                                    error = "Errore caricamento stabilimenti: ${exception.message}"
+                                )
+                            }
                         }
                     }
                     .collect { facilities ->
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping facilities processing - job cancelled")
-                            return@collect
-                        }
+                        if (!currentCoroutineContext().isActive) return@collect
 
-                        // Enrich with statistics
                         val facilitiesWithStats = enrichWithStatistics(facilities)
+                        val currentState = _uiState.value
+                        val filteredAndSorted = applyFiltersAndSort(
+                            facilitiesWithStats,
+                            currentState.searchQuery,
+                            currentState.selectedFilter,
+                            currentState.sortOrder
+                        )
 
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                facilitiesWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.sortOrder
-                            )
+                        _uiState.value = currentState.copy(
+                            facilities = facilitiesWithStats,
+                            filteredFacilities = filteredAndSorted,
+                            isLoading = false,
+                            isRefreshing = false,
+                            error = null
+                        )
 
-                            _uiState.value = currentState.copy(
-                                facilities = facilitiesWithStats,
-                                filteredFacilities = filteredAndSorted,
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("Loaded ${facilities.size} facilities successfully")
-                        }
+                        Timber.d("Received ${facilities.size} facilities from Flow")
                     }
 
             } catch (_: CancellationException) {
-                Timber.d("Facilities loading cancelled")
+                Timber.d("Facilities observation cancelled")
             } catch (e: Exception) {
                 if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to load facilities")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isRefreshing = false,
-                        error = "Errore caricamento stabilimenti: ${e.message}"
-                    )
+                    Timber.e(e, "Unexpected error loading facilities")
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            error = "Errore imprevisto: ${e.message}"
+                        )
+                    }
                 }
             }
         }
     }
 
+    /** Refresh data */
     fun refresh() {
-        val clientId = _uiState.value.clientId
-        if (clientId.isEmpty()) return
-
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
-
-                Timber.d("Refreshing facilities for client: $clientId")
-                delay(500)
-
-                getFacilitiesByClientUseCase(clientId).fold(
-                    onSuccess = { facilities ->
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping refresh processing - job cancelled")
-                            return@launch
-                        }
-
-                        val facilitiesWithStats = enrichWithStatistics(facilities)
-
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                facilitiesWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.sortOrder
-                            )
-
-                            _uiState.value = currentState.copy(
-                                facilities = facilitiesWithStats,
-                                filteredFacilities = filteredAndSorted,
-                                isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("Facilities refresh completed successfully")
-                        }
-                    },
-                    onFailure = { error ->
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e(error, "Failed to refresh facilities")
-                            _uiState.value = _uiState.value.copy(
-                                isRefreshing = false,
-                                error = "Errore refresh: ${error.message}"
-                            )
-                        }
-                    }
-                )
-
-            } catch (_: CancellationException) {
-                Timber.d("Refresh cancelled")
-                if (currentCoroutineContext().isActive) {
-                    _uiState.value = _uiState.value.copy(isRefreshing = false)
-                }
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to refresh facilities")
-                    _uiState.value = _uiState.value.copy(
-                        isRefreshing = false,
-                        error = "Errore refresh: ${e.message}"
-                    )
-                }
-            }
-        }
+        _uiState.update { it.copy(isRefreshing = true, error = null) }
+        loadFacilities() // cancels old job, restarts Flow observation
     }
 
-    fun deleteFacility(facilityId: String) {
+    /** Delete facility */
+    fun softDeleteFacility(facilityId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isDeletingFacility = facilityId)
 
@@ -210,8 +189,6 @@ class FacilityListViewModel @Inject constructor(
                 deleteFacilityUseCase(facilityId).fold(
                     onSuccess = {
                         Timber.d("Facility deleted successfully")
-                        // La lista si aggiorna automaticamente tramite Flow
-                        refresh()
                     },
                     onFailure = { error ->
                         Timber.e(error, "Failed to delete facility")
@@ -282,6 +259,16 @@ class FacilityListViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Called when the user picks a client from the dropdown.
+     * Reloads facilities scoped to that client, or all facilities if ALL is selected.
+     */
+    fun updateSelectedClient(client: ClientOption) {
+        if (client == _uiState.value.selectedClient) return
+
+        _uiState.update { it.copy(selectedClient = client, clientId = client.id) }
+        loadFacilities()
+    }
 
     /**
      * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
@@ -343,7 +330,8 @@ class FacilityListViewModel @Inject constructor(
                 FacilityStatistics(
                     islandsCount = facilityWithIslands?.islands?.size ?: 0,
                     activeIslandsCount = facilityWithIslands?.islands?.count { it.isActive } ?: 0,
-                    maintenanceDueCount = facilityWithIslands?.islands?.count { it.needsMaintenance() } ?: 0
+                    maintenanceDueCount = facilityWithIslands?.islands?.count { it.needsMaintenance() }
+                        ?: 0
                 )
             } catch (e: Exception) {
                 Timber.e(e, "Exception getting stats for facility ${facility.id}")
@@ -412,6 +400,7 @@ class FacilityListViewModel @Inject constructor(
                 compareByDescending<FacilityWithStats> { it.facility.isPrimary }
                     .thenBy { it.facility.name.lowercase() }
             )
+
             FacilitySortOrder.CREATED_RECENT -> filtered.sortedByDescending { it.facility.createdAt }
             FacilitySortOrder.CREATED_OLDEST -> filtered.sortedBy { it.facility.createdAt }
             FacilitySortOrder.ISLANDS_COUNT -> filtered.sortedByDescending { it.stats.islandsCount }
@@ -429,6 +418,36 @@ class FacilityListViewModel @Inject constructor(
         activeIslandsCount = 0,
         maintenanceDueCount = 0
     )
+
+    /**
+     * Observes all clients and keeps [FacilityListUiState.availableClients] up to date.
+     * The ALL sentinel is always prepended so the user can clear the client filter.
+     */
+    private fun loadClients() {
+        viewModelScope.launch {
+            try {
+                observeAllActiveClientsUseCase()
+                    .catch { e -> Timber.e(e, "Error loading clients for dropdown") }
+                    .collect { clients ->
+                        val options = listOf(ClientOption.ALL) + clients.map { client ->
+                            ClientOption(id = client.id, companyName = client.companyName)
+                        }
+                        _uiState.update { state ->
+                            // Also fix selectedClient if it was set before clients loaded
+                            val syncedSelection = options.find { it.id == state.clientId }
+                                ?: ClientOption.ALL
+                            state.copy(
+                                availableClients = options,
+                                selectedClient = syncedSelection
+                            )
+                        }
+                    }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to start client observation")
+            }
+        }
+    }
+
 }
 
 /**

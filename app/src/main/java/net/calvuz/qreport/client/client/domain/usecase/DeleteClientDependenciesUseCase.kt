@@ -24,7 +24,7 @@ class DeleteClientDependenciesUseCase @Inject constructor(
             facilityRepository.getFacilitiesByClient(clientId)
                 .onSuccess { facilities ->
                     facilities.forEach { facility ->
-                        facilityRepository.deleteFacility(facility.id)
+                        facilityRepository.softDeleteFacility(facility.id)
                             .onFailure { return Result.failure(it) }
                     }
                 }

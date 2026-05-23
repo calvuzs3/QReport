@@ -797,12 +797,17 @@ private fun IslandItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
+                    text = island.islandType.displayName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
                     text = island.displayName,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "${island.islandType.displayName} • S/N: ${island.serialNumber}",
+                    text = "S/N: ${island.serialNumber}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -35,11 +35,11 @@ import timber.log.Timber
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityFormScreen(
+    modifier: Modifier = Modifier,
     clientId: String,
     facilityId: String? = null, // null = create mode
     onNavigateBack: () -> Unit,
     onFacilitySaved: (String) -> Unit,
-    modifier: Modifier = Modifier,
     viewModel: FacilityFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -50,7 +50,7 @@ fun FacilityFormScreen(
     }
 
     // Handle success
-    LaunchedEffect(uiState.savedFacilityId) {
+    LaunchedEffect(uiState.saveCompleted, uiState.savedFacilityId) {
         uiState.savedFacilityId?.let { savedId ->
             Timber.d("Facility saved ID: ${uiState.savedFacilityId}")
             Timber.d("Facility saved NAME: ${uiState.name}")

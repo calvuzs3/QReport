@@ -8,11 +8,12 @@ import kotlinx.serialization.Serializable
 @Serializable
 enum class UnitType(val displayName: String) {
     ROBOT("Robot"),
-    AXIS("Asse aggiuntivo (7°/8°/9°)"),
+    AXIS("Asse aggiuntivo"),
     SAFETY("Sistema di sicurezza"),
     ELECTRICAL_PANEL("Quadro elettrico"),
-    STATION("Stazione (etichettatura, collaudo, ...)"),
-    MAGAZINE("Magazzino (carico/scarico)"),
+    PNEUMATIC_PANEL("Quadro elettrico"),
+    STATION("Stazione"),
+    MAGAZINE("Magazzino"),
     TOOL_RACK("Rack cambio tool"),
     OTHER("Altro")
 }

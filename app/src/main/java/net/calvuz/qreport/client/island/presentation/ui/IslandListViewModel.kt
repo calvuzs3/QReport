@@ -183,11 +183,10 @@ class IslandListViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
+                _uiState.update { it.copy(isRefreshing = true, error = null) }
 
                 Timber.d("Refreshing islands for facility: $facilityId")
                 delay(500)
-
-                _uiState.update { it.copy(isRefreshing = true, error = null) }
 
                 getIslandsByFacilityUseCase(facilityId).fold(
                     onSuccess = { islands ->

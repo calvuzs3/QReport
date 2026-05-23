@@ -18,7 +18,7 @@ interface FacilityRepository {
     suspend fun getFacilityById(id: String): Result<Facility?>
     suspend fun createFacility(facility: Facility): Result<Unit>
     suspend fun updateFacility(facility: Facility): Result<Unit>
-    suspend fun deleteFacility(id: String): Result<Unit>
+    suspend fun softDeleteFacility(id: String): Result<Unit>
 
     // ===== CLIENT RELATED =====
 
@@ -65,4 +65,5 @@ interface FacilityRepository {
     // ===== MAINTENANCE =====
 
     suspend fun touchFacility(id: String): Result<Unit>
+    fun getAllFacilitiesFlow(): Flow<List<Facility>>
 }

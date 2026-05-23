@@ -15,7 +15,7 @@ data class FacilityBackup(
     val code: String?,
     val description: String?,
     val facilityType: String,
-    val addressJson: String,
+    val addressJson: String?,
     val isPrimary: Boolean,
     val isActive: Boolean,
     @Contextual val createdAt: Instant,

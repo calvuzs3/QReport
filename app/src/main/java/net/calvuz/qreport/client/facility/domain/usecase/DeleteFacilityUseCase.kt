@@ -59,7 +59,7 @@ class DeleteFacilityUseCase @Inject constructor(
             }
 
             // 6. Soft delete della facility
-            facilityRepository.deleteFacility(facilityId)
+            facilityRepository.softDeleteFacility(facilityId)
 
         } catch (e: Exception) {
             Result.failure(e)

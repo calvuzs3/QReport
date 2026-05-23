@@ -45,10 +45,12 @@ import net.calvuz.qreport.client.unit.presentation.ui.components.MechanicalUnitC
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MechanicalUnitListScreen(
+    islandId: String,
     islandName: String,
     onNavigateBack: () -> Unit,
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (unitId: String) -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: MechanicalUnitListViewModel = hiltViewModel()
 ) {
     val units by viewModel.units.collectAsState()
@@ -106,15 +108,15 @@ fun MechanicalUnitListScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                    .padding(innerPadding),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(units, key = { it.id }) { unit ->
                     MechanicalUnitCard(
                         unit = unit,
-                        onEditClick = { onNavigateToEdit(unit.id) },
-                        onDeleteClick = { pendingDelete = unit }
+                        onClick = {},
+                        onEdit = { onNavigateToEdit(unit.id) },
+                        onDelete = { pendingDelete = unit }
                     )
                 }
             }
@@ -134,4 +136,3 @@ fun MechanicalUnitListScreen(
         )
     }
 }
-

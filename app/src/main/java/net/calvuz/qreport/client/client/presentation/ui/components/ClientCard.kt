@@ -53,10 +53,12 @@ fun ClientCard(
                 onDelete = { showDeleteDialog = false },
                 onEdit = onEdit
             )
+
             ListViewMode.COMPACT -> CompactClientCard(
                 client = client,
                 stats = stats
             )
+
             ListViewMode.MINIMAL -> MinimalClientCard(client = client)
         }
     }
@@ -87,13 +89,13 @@ private fun FullClientCard(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Header row - Solo nome azienda e azioni
+        // Header row
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ✅ FIXED: Solo nome azienda, rimossa P.IVA
+            //
             Text(
                 text = client.companyName,
                 style = MaterialTheme.typography.titleMedium,
@@ -144,7 +146,7 @@ private fun FullClientCard(
             }
         }
 
-        // ✅ FIXED: Statistics row - Solo statistiche, senza timestamp
+        // Statistics row
         if (stats != null) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -190,7 +192,7 @@ private fun FullClientCard(
             }
         }
 
-        // ✅ FIXED: Last modified su riga separata, allineato a destra
+        // Last modified
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -214,55 +216,61 @@ private fun CompactClientCard(
     client: Client,
     stats: ClientSingleStatistics?
 ) {
-    Row(
+    Column(
         modifier = Modifier.padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = client.companyName,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-
-            if (client.headquarters?.city != null) {
+        Row(
+//            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = client.headquarters.city,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
+                    text = client.companyName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-            }
-        }
 
-        if (stats != null) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                ListStatItem(
-                    icon = Icons.Default.Business,
-                    value = stats.facilitiesCount.toString(),
-                    label = "",
-                    compact = true
-                )
-                ListStatItem(
-                    icon = Icons.AutoMirrored.Default.Assignment,
-                    value = stats.totalCheckUps.toString(),
-                    label = "",
-                    compact = true
-                )
+                if (client.headquarters?.city != null) {
+                    Text(
+                        text = client.headquarters.city,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
             }
-        }
 
-        StatusIndicator(isActive = client.isActive)
+            if (stats != null) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ListStatItem(
+                        icon = Icons.Default.Business,
+                        value = stats.facilitiesCount.toString(),
+                        label = "",
+                        compact = true
+                    )
+                    ListStatItem(
+                        icon = Icons.AutoMirrored.Default.Assignment,
+                        value = stats.totalCheckUps.toString(),
+                        label = "",
+                        compact = true
+                    )
+                }
+            }
+
+            StatusIndicator(isActive = client.isActive)
+        }
     }
 }
 
 @Composable
 private fun MinimalClientCard(client: Client) {
+
     Row(
         modifier = Modifier.padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -271,8 +279,9 @@ private fun MinimalClientCard(client: Client) {
             Text(
                 text = client.companyName,
                 style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
         }
 

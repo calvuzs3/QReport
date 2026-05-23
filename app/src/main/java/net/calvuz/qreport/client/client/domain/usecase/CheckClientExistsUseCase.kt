@@ -8,7 +8,7 @@ class CheckClientExistsUseCase @Inject constructor(
 ){
 
     /**
-     * Verifica che il cliente esista
+     * Check if the Client exists
      */
     suspend operator fun invoke(clientId: String): Result<Unit> {
         return clientRepository.getClientById(clientId)

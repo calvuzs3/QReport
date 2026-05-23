@@ -102,6 +102,11 @@ private fun FullFacilityCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = facility.facilityType.displayName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
                 Row {
                     Text(
                         text = facility.displayName,
@@ -300,6 +305,11 @@ private fun CompactFacilityCard(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = facility.facilityType.displayName,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -325,7 +335,7 @@ private fun CompactFacilityCard(
             }
 
             Text(
-                text = "${facility.facilityType.displayName} • ${(facility.address?.city ?: "")}",
+                text = facility.address?.city ?: "",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (onOpenMaps != null && (facility.address?.isComplete() ?: false)) {
                     MaterialTheme.colorScheme.primary

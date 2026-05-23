@@ -12,21 +12,22 @@ import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.usecase.CreateClientUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetClientByIdUseCase
 import net.calvuz.qreport.client.client.domain.usecase.UpdateClientUseCase
+import net.calvuz.qreport.client.contact.presentation.ui.ContactFormUiState
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
 /**
- * ViewModel per la creazione/modifica di un cliente
+ * Client ViewModel
  *
- * Gestisce:
+ * Handles:
  * - ValidationError validation real-time
  * - State management
  * - Client creation/update
  * - Error handling
  */
-
 data class ClientFormUiState(
+
     // Company data
     val companyName: String = "",
     val notes: String = "",
@@ -77,15 +78,23 @@ class ClientFormViewModel @Inject constructor(
     }
 
     // ============================================================
-    // EDIT MODE LOADING
+    // INITIALIZATION
     // ============================================================
 
-    fun loadClientForEdit(clientId: String) {
+
+    fun initForCreate() {
+        Timber.d("ClientFormViewModel: Initializing for create mode")
+
+        _uiState.value = ClientFormUiState(
+            isEditMode = false,
+        )
+    }
+    fun initForEdit(clientId: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(
+                isEditMode = true,
                 isLoading = true,
-                clientId = clientId,
-                isEditMode = true
+                clientId = clientId
             )
 
             try {

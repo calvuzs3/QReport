@@ -3,7 +3,6 @@ package net.calvuz.qreport.client.facility.presentation.ui
 import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
@@ -27,8 +26,8 @@ import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
-import net.calvuz.qreport.app.app.util.MapUtils
 import net.calvuz.qreport.client.facility.presentation.model.FacilityFilter
 import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
 import net.calvuz.qreport.client.facility.presentation.model.FacilitySortOrder
@@ -50,12 +49,12 @@ import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityListScreen(
-    clientId: String,
+    modifier: Modifier = Modifier,
+    clientId: String? = null,
     onNavigateToFacilityDetail: (String) -> Unit,
     onCreateNewFacility: () -> Unit,
     onEditFacility: (String) -> Unit,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier,
     viewModel: FacilityListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -63,7 +62,11 @@ fun FacilityListScreen(
 
     // Initialize for specific client
     LaunchedEffect(clientId) {
-        viewModel.initializeForClient(clientId)
+        if (clientId != null)  {
+            viewModel.initializeForClient(clientId)
+        } else {
+            viewModel.initialize()
+        }
     }
 
     Column(
@@ -132,6 +135,15 @@ fun FacilityListScreen(
             placeholder = "Cerca per nome, codice o tipo...",
             modifier = Modifier.padding(16.dp)
         )
+
+        QReportSelectorRow(
+            entries = uiState.availableClients,
+            selectedItem = uiState.selectedClient,
+            onItemSelected = viewModel::updateSelectedClient,
+            icon = Icons.Default.Business,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+        )
+
 
         // Filter chips
         if (uiState.selectedFilter != FacilityPkg.selectedFilter || uiState.sortOrder != FacilityPkg.selectedSortOrder) {

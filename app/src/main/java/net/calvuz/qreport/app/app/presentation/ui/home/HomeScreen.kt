@@ -80,6 +80,8 @@ fun HomeScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
+        Spacer(modifier = Modifier.height(24.dp))
+
         // Header
         HomeHeader(
             onRefresh = { viewModel.refresh() },
@@ -155,7 +157,10 @@ private fun HomeHeader(
     isLoading: Boolean
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top= 20.dp)
+        ,
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {

@@ -47,7 +47,7 @@ data class FacilityEntity(
     val facilityType: String, // FacilityType.name
 
     @ColumnInfo(name = "address_json")
-    val addressJson: String, // JSON serialized Address
+    val addressJson: String?, // JSON serialized Address
 
     @ColumnInfo(name = "is_primary")
     val isPrimary: Boolean = false,

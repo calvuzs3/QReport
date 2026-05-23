@@ -10,13 +10,13 @@ class QReportApplication : Application() {
 
     companion object {
         const val DATABASE_NAME = "qreport_database"
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION = 3
     }
 
     override fun onCreate() {
         super.onCreate()
 
-        // Inizializza Timber per il logging
+        // Timber Initialization
         if (BuildConfig.DEBUG) {
             Timber.Forest.plant(Timber.DebugTree())
         }

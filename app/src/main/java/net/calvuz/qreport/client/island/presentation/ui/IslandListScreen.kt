@@ -159,17 +159,17 @@ fun IslandListScreen(
         // Content with Pull to Refresh
         val pullToRefreshState = rememberPullToRefreshState()
 
-        // Handle pull to refresh
-        LaunchedEffect(pullToRefreshState.isRefreshing) {
-            if (pullToRefreshState.isRefreshing) {
-                viewModel.refresh()
-            }
-        }
-
         // Reset refresh state when not refreshing
         LaunchedEffect(uiState.isRefreshing) {
             if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
                 pullToRefreshState.endRefresh()
+            }
+        }
+
+        // Handle pull to refresh
+        LaunchedEffect(pullToRefreshState.isRefreshing) {
+            if (pullToRefreshState.isRefreshing) {
+                viewModel.refresh()
             }
         }
 
