@@ -1,6 +1,6 @@
 package net.calvuz.qreport.client.contract.domain.usecase
 
-import net.calvuz.qreport.client.contract.data.local.isValid
+import net.calvuz.qreport.client.contract.data.local.mapper.isValid
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.model.ContractStatistics
 import net.calvuz.qreport.app.result.domain.QrResult

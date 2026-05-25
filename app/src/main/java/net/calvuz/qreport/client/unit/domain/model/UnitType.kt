@@ -11,7 +11,7 @@ enum class UnitType(val displayName: String) {
     AXIS("Asse aggiuntivo"),
     SAFETY("Sistema di sicurezza"),
     ELECTRICAL_PANEL("Quadro elettrico"),
-    PNEUMATIC_PANEL("Quadro elettrico"),
+    PNEUMATIC_PANEL("Quadro pneumatico"),
     STATION("Stazione"),
     MAGAZINE("Magazzino"),
     TOOL_RACK("Rack cambio tool"),

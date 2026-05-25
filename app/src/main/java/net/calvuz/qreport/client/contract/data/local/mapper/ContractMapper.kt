@@ -1,8 +1,9 @@
-package net.calvuz.qreport.client.contract.data.local
+package net.calvuz.qreport.client.contract.data.local.mapper
 
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import javax.inject.Inject
 
 class ContractMapper @Inject constructor() {

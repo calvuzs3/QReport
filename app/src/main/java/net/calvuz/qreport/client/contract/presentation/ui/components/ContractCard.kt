@@ -18,7 +18,7 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.list.*
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
-import net.calvuz.qreport.client.contract.data.local.isValid
+import net.calvuz.qreport.client.contract.data.local.mapper.isValid
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.presentation.ui.ContractsStatistics
 import net.calvuz.qreport.settings.domain.model.ListViewMode

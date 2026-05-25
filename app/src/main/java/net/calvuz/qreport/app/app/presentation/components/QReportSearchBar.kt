@@ -22,10 +22,10 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun QReportSearchBar(
+    modifier: Modifier = Modifier,
     query: String,
     onQueryChange: (String) -> Unit,
     placeholder: String = "Cerca...",
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = {
         Icon(Icons.Default.Search, contentDescription = "Cerca")
@@ -44,7 +44,7 @@ fun QReportSearchBar(
                 }
             }
         } else null,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().padding(8.dp),
         singleLine = maxLines == 1,
         maxLines = maxLines,
         enabled = enabled,
@@ -204,45 +204,6 @@ fun AdvancedSearchBar(
             ) {
                 Icon(Icons.Default.FilterList, contentDescription = "Filtri")
             }
-        }
-    }
-}
-
-/**
- * Preview helpers per development
- */
-@Composable
-private fun SearchBarPreview() {
-    MaterialTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            QReportSearchBar(
-                query = "",
-                onQueryChange = {},
-                placeholder = "Cerca clienti..."
-            )
-
-            QReportSearchBar(
-                query = "Sample query",
-                onQueryChange = {},
-                placeholder = "Cerca clienti..."
-            )
-
-            CompactSearchBar(
-                query = "",
-                onQueryChange = {},
-                placeholder = "Ricerca rapida"
-            )
-
-            AdvancedSearchBar(
-                query = "",
-                onQueryChange = {},
-                filterCount = 3,
-                onFiltersClick = {},
-                placeholder = "Ricerca avanzata"
-            )
         }
     }
 }

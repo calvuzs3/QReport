@@ -62,7 +62,7 @@ class GetIslandsByFacilityUseCase @Inject constructor(
      * @return Flow con lista isole che si aggiorna automaticamente
      */
     fun observeIslandsByFacility(facilityId: String): Flow<List<Island>> {
-        return islandRepository.getIslandsByFacilityFlow(facilityId)
+        return islandRepository.getAllActiveIslandsByFacilityFlow(facilityId)
             .map { islands ->
                 islands.sortedWith(
                     compareBy<Island> { it.islandType.name }

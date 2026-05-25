@@ -33,8 +33,8 @@ import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
-import net.calvuz.qreport.client.contract.data.local.ContractDao
-import net.calvuz.qreport.client.contract.data.local.ContractEntity
+import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
+import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao

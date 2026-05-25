@@ -3,8 +3,6 @@
 package net.calvuz.qreport.client.island.presentation.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
@@ -14,27 +12,25 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
-import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
-import net.calvuz.qreport.app.util.SizeUtils.getFormattedCycleCount
+import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
 import net.calvuz.qreport.client.island.presentation.model.IslandFilter
 import net.calvuz.qreport.client.island.presentation.model.IslandPkg
 import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
-import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityOption
+import net.calvuz.qreport.client.island.presentation.ui.components.IslandListContent
+import net.calvuz.qreport.client.island.presentation.ui.components.IslandStatisticsHeader
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 import timber.log.Timber
@@ -43,12 +39,12 @@ import timber.log.Timber
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IslandListScreen(
+    modifier: Modifier = Modifier,
     facilityId: String,
     facilityName: String,
     onNavigateToIslandDetail: (String) -> Unit,
     onCreateNewIsland: () -> Unit,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier,
     viewModel: IslandListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -68,12 +64,17 @@ fun IslandListScreen(
                 Column {
                     Text("Isole Robotizzate")
                     Text(
-                        text = facilityName,
+                        // Shows the selected facility name; falls back to the nav param
+                        // until the dropdown list is loaded.
+                        text = uiState.selectedFacility
+                            .takeIf { it != FacilityOption.ALL }
+                            ?.getDisplayName() ?: facilityName,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
+
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Indietro")
@@ -140,7 +141,15 @@ fun IslandListScreen(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
             placeholder = "Cerca per serial, nome o modello...",
-            modifier = Modifier.padding(horizontal = 16.dp)
+        )
+
+        // Facility selector
+        QReportSelectorRow(
+            entries = uiState.availableFacilities,
+            selectedItem = uiState.selectedFacility,
+            onItemSelected = viewModel::updateSelectedFacility,
+            icon = FacilityPkg.icon,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
         // Filter chips
@@ -196,10 +205,7 @@ fun IslandListScreen(
                 uiState.filteredIslands.isEmpty() -> {
                     val (title, message) = when {
                         uiState.allIslands.isEmpty() -> "Nessuna Isola" to "Non ci sono ancora Isole per questo Stabilimento"
-                        uiState.selectedFilter != IslandPkg.selectedFilter -> "Nessun risultato" to "Non ci sono Isole che corrispondono al filtro '${
-                            uiState.selectedFilter.getDisplayName()
-                        }'"
-
+                        uiState.selectedFilter != IslandPkg.selectedFilter -> "Nessun risultato" to "Non ci sono Isole che corrispondono al filtro '${uiState.selectedFilter.getDisplayName()}'"
                         else -> "Lista vuota" to "Errore nel caricamento dati"
                     }
                     EmptyState(
@@ -237,160 +243,13 @@ fun IslandListScreen(
                 onClick = onCreateNewIsland,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Nuova Isola"
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun IslandStatisticsHeader(
-    statistics: FacilityOperationalSummary,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Riepilogo Isole",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                StatisticItem(
-                    icon = Icons.Default.Analytics,
-                    label = "Totali",
-                    value = statistics.totalIslands.toString(),
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                StatisticItem(
-                    icon = Icons.Default.CheckCircle,
-                    label = "Attive",
-                    value = statistics.activeIslands.toString(),
-                    color = MaterialTheme.colorScheme.tertiary
-                )
-
-                StatisticItem(
-                    icon = Icons.Default.Warning,
-                    label = "Manutenzione",
-                    value = statistics.islandsDueMaintenance.toString(),
-                    color = MaterialTheme.colorScheme.error
-                )
-
-                StatisticItem(
-                    icon = Icons.Default.Shield,
-                    label = "In Garanzia",
-                    value = statistics.islandsUnderWarranty.toString(),
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-
-            // Ore operative totali e media
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = "Ore Totali: ${statistics.totalOperatingHours}h",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "Media: ${statistics.averageOperatingHours}h per isola",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "Cicli: ${statistics.totalCycles.getFormattedCycleCount()}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Text(
-                        text = "Performance globale",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatisticItem(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    color: Color
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-            tint = color
-        )
-
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = color
-        )
-
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun IslandListContent(
-    islands: List<IslandWithStats>,
-    variant: ListViewMode,
-    onIslandClick: (String) -> Unit,
-    onIslandDelete: (String) -> Unit
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(
-            items = islands,
-            key = { it.island.id }
-        ) { islandWithStats ->
-            IslandCard(
-                island = islandWithStats.island,
-                onClick = { onIslandClick(islandWithStats.island.id) },
-                onDelete = { onIslandDelete(islandWithStats.island.id) },
-                variant = variant
-            )
         }
     }
 }

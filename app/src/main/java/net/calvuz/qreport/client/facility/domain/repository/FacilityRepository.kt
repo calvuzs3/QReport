@@ -66,4 +66,5 @@ interface FacilityRepository {
 
     suspend fun touchFacility(id: String): Result<Unit>
     fun getAllFacilitiesFlow(): Flow<List<Facility>>
+    fun getAllActiveFacilitiesByClientFlow(clientId: String): Flow<List<Facility>>
 }

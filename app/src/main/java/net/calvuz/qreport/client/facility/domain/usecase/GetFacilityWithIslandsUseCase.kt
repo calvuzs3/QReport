@@ -74,7 +74,7 @@ class GetFacilityWithIslandsUseCase @Inject constructor(
      */
     fun observeFacilityWithIslands(facilityId: String): Flow<FacilityWithIslands?> {
         val facilityFlow = facilityRepository.getFacilityByIdFlow(facilityId)
-        val islandsFlow = islandRepository.getIslandsByFacilityFlow(facilityId)
+        val islandsFlow = islandRepository.getAllActiveIslandsByFacilityFlow(facilityId)
 
         return combine(facilityFlow, islandsFlow) { facility, islands ->
             if (facility != null) {

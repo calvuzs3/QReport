@@ -7,9 +7,28 @@ import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
+import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 
 @Dao
 interface MechanicalUnitDao {
+
+    @Query(
+        """
+        SELECT * FROM mechanical_units
+        WHERE island_id = :islandId
+        ORDER BY unit_type ASC, name ASC
+    """
+    )
+    fun getForIslandFlow(islandId: String): Flow<List<MechanicalUnitEntity>>
+
+    @Query(
+        """
+        SELECT * FROM mechanical_units
+        WHERE is_active = 1
+        ORDER BY unit_type ASC, name ASC
+    """
+    )
+    fun getAllActiveMechanicalUnitFlow(): Flow<List<MechanicalUnitEntity>>
 
     @Query(
         """
@@ -18,7 +37,7 @@ interface MechanicalUnitDao {
         ORDER BY unit_type ASC, name ASC
     """
     )
-    fun getForIslandFlow(islandId: String): Flow<List<MechanicalUnitEntity>>
+    fun getAllActiveMechanicalUnitByIslandFlow(islandId: String): Flow<List<MechanicalUnitEntity>>
 
     @Query("SELECT * FROM mechanical_units WHERE id = :id")
     suspend fun getById(id: String): MechanicalUnitEntity?

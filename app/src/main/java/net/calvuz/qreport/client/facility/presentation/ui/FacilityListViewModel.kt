@@ -59,14 +59,16 @@ class FacilityListViewModel @Inject constructor(
     // Tracks the active facility-loading coroutine so it can be cancelled
     // before starting a new one (client switch, refresh, etc.).
     private var loadJob: Job? = null
+    private var currentClientId: String = ""
 
     companion object {
         private const val KEY = AppSettingsDataStore.LIST_KEY_FACILITIES
     }
 
-
     init {
-        loadClients()
+        Timber.d("FacilityListViewModel init")
+        observeCardVariant() // Restore persisted card variant on startup
+        loadClientsForDropdown()
     }
 
     // ============================================================
@@ -78,8 +80,9 @@ class FacilityListViewModel @Inject constructor(
     }
 
     fun initializeForClient(clientId: String) {
-        if (clientId == _uiState.value.clientId) return
+        if (clientId == currentClientId) return
 
+        currentClientId = clientId
         _uiState.value = _uiState.value.copy(
             clientId = clientId,
             // Sync the dropdown selection with the client being loaded.
@@ -102,10 +105,9 @@ class FacilityListViewModel @Inject constructor(
      * needed for inserts, updates, or deletes.
      */
     fun loadFacilities() {
-        // Cancel previous collector before starting a new one.
         loadJob?.cancel()
 
-        val clientId = _uiState.value.clientId
+        val clientId = currentClientId
         val flow = if (clientId.isEmpty()) {
             Timber.d("Observing all facilities")
             observeFacilitiesUseCase()
@@ -115,7 +117,12 @@ class FacilityListViewModel @Inject constructor(
         }
 
         loadJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, isRefreshing = false, error = null) }
+            // If called from refresh(), keep isRefreshing=true visible until data arrives.
+            // If called fresh, show isLoading instead.
+            _uiState.update { it.copy(
+                isLoading = !it.isRefreshing,
+                error = null
+            ) }
 
             try {
                 flow
@@ -127,8 +134,7 @@ class FacilityListViewModel @Inject constructor(
                                 it.copy(
                                     isLoading = false,
                                     isRefreshing = false,
-                                    error = "Errore caricamento stabilimenti: ${exception.message}"
-                                )
+                                    error = "Errore caricamento stabilimenti: ${exception.message}")
                             }
                         }
                     }
@@ -144,6 +150,7 @@ class FacilityListViewModel @Inject constructor(
                             currentState.sortOrder
                         )
 
+                        // Clear both loading states when data arrives
                         _uiState.value = currentState.copy(
                             facilities = facilitiesWithStats,
                             filteredFacilities = filteredAndSorted,
@@ -161,11 +168,8 @@ class FacilityListViewModel @Inject constructor(
                 if (currentCoroutineContext().isActive) {
                     Timber.e(e, "Unexpected error loading facilities")
                     _uiState.update {
-                        it.copy(
-                            isLoading = false,
-                            isRefreshing = false,
-                            error = "Errore imprevisto: ${e.message}"
-                        )
+                        it.copy(isLoading = false, isRefreshing = false,
+                            error = "Errore imprevisto: ${e.message}")
                     }
                 }
             }
@@ -266,6 +270,7 @@ class FacilityListViewModel @Inject constructor(
     fun updateSelectedClient(client: ClientOption) {
         if (client == _uiState.value.selectedClient) return
 
+        currentClientId = client.id
         _uiState.update { it.copy(selectedClient = client, clientId = client.id) }
         loadFacilities()
     }
@@ -374,16 +379,6 @@ class FacilityListViewModel @Inject constructor(
     ): List<FacilityWithStats> {
         var filtered = facilities
 
-        // Apply status filter
-        filtered = when (filter) {
-            FacilityFilter.ALL -> filtered
-            FacilityFilter.ACTIVE -> filtered.filter { it.facility.isActive }
-            FacilityFilter.INACTIVE -> filtered.filter { !it.facility.isActive }
-            FacilityFilter.PRIMARY_ONLY -> filtered.filter { it.facility.isPrimary }
-            FacilityFilter.WITH_ISLANDS -> filtered.filter { it.stats.islandsCount > 0 }
-            FacilityFilter.BY_TYPE -> filtered // Gestito dalla UI con selezione tipo
-        }
-
         // Apply local search query (per query corte)
         if (searchQuery.isNotBlank() && searchQuery.length <= 2) {
             filtered = filtered.filter { facilityWithStats ->
@@ -392,6 +387,16 @@ class FacilityListViewModel @Inject constructor(
                         facility.code?.contains(searchQuery, ignoreCase = true) == true ||
                         facility.facilityType.displayName.contains(searchQuery, ignoreCase = true)
             }
+        }
+
+        // Apply status filter
+        filtered = when (filter) {
+            FacilityFilter.ALL -> filtered
+            FacilityFilter.ACTIVE -> filtered.filter { it.facility.isActive }
+            FacilityFilter.INACTIVE -> filtered.filter { !it.facility.isActive }
+            FacilityFilter.PRIMARY_ONLY -> filtered.filter { it.facility.isPrimary }
+            FacilityFilter.WITH_ISLANDS -> filtered.filter { it.stats.islandsCount > 0 }
+            FacilityFilter.BY_TYPE -> filtered // Gestito dalla UI con selezione tipo
         }
 
         // Apply sorting
@@ -423,7 +428,7 @@ class FacilityListViewModel @Inject constructor(
      * Observes all clients and keeps [FacilityListUiState.availableClients] up to date.
      * The ALL sentinel is always prepended so the user can clear the client filter.
      */
-    private fun loadClients() {
+    private fun loadClientsForDropdown() {
         viewModelScope.launch {
             try {
                 observeAllActiveClientsUseCase()

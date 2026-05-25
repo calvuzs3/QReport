@@ -3,9 +3,9 @@ package net.calvuz.qreport.client.contract.data.local.repository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import net.calvuz.qreport.client.contract.data.local.ContractDao
-import net.calvuz.qreport.client.contract.data.local.toDomain
-import net.calvuz.qreport.client.contract.data.local.toEntity
+import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
+import net.calvuz.qreport.client.contract.data.local.mapper.toDomain
+import net.calvuz.qreport.client.contract.data.local.mapper.toEntity
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.repository.ContractRepository
 import net.calvuz.qreport.app.error.domain.model.QrError

@@ -135,10 +135,24 @@ private fun FullFacilityCard(
 
             if (showActions) {
                 Row {
+                    if (onOpenMaps != null && facility.address?.isComplete() ?: false) {
+                        IconButton(
+                            onClick = onOpenMaps,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = "Apri",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
                     if (onEdit != null) {
                         IconButton(
                             onClick = onEdit,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
@@ -152,7 +166,7 @@ private fun FullFacilityCard(
                     if (onDelete != null) {
                         IconButton(
                             onClick = onDelete,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
@@ -190,11 +204,6 @@ private fun FullFacilityCard(
         Row(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            modifier = if (onOpenMaps != null && facility.address?.isComplete() ?: false) {
-                Modifier.clickable { onOpenMaps() }
-            } else {
-                Modifier
-            }
         ) {
             Icon(
                 imageVector = Icons.Default.LocationOn,
@@ -235,12 +244,7 @@ private fun FullFacilityCard(
         if (stats != null) {
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = if (onOpenMaps != null && (facility.address?.isComplete() ?: false))  {
-                    Modifier.clickable { onOpenMaps() }
-                        .fillMaxWidth()
-                } else {
-                    Modifier.fillMaxWidth()
-                }
+                modifier = Modifier.fillMaxWidth()
             ) {
                 FacilityStatItem(
                     icon = Icons.Default.PrecisionManufacturing,

@@ -112,8 +112,8 @@ class IslandRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getIslandsByFacilityFlow(facilityId: String): Flow<List<Island>> {
-        return islandDao.getIslandsForFacilityFlow(facilityId).map { entities ->
+    override fun getAllActiveIslandsByFacilityFlow(facilityId: String): Flow<List<Island>> {
+        return islandDao.getAllActiveIslandsForFacilityFlow(facilityId).map { entities ->
             islandMapper.toDomainList(entities)
         }
     }

@@ -28,7 +28,7 @@ interface IslandDao {
     suspend fun getIslandsForFacility(facilityId: String): List<IslandEntity>
 
     @Query("SELECT * FROM facility_islands WHERE facility_id = :facilityId AND is_active = 1 ORDER BY custom_name ASC, serial_number ASC")
-    fun getIslandsForFacilityFlow(facilityId: String): Flow<List<IslandEntity>>
+    fun getAllActiveIslandsForFacilityFlow(facilityId: String): Flow<List<IslandEntity>>
 
     @Query("SELECT * FROM facility_islands WHERE serial_number = :serialNumber")
     suspend fun getIslandBySerialNumber(serialNumber: String): IslandEntity?

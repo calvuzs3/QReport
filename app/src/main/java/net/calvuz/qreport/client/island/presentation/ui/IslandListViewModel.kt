@@ -5,11 +5,11 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.client.facility.domain.usecase.ObserveFacilitiesUseCase
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
@@ -17,6 +17,8 @@ import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummar
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandWithUnitsUseCase
 import net.calvuz.qreport.client.island.presentation.model.IslandFilter
 import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
+import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityOption
+import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -45,7 +47,10 @@ data class FacilityIslandListUiState(
     val statistics: FacilityOperationalSummary? = null,
     val searchSuggestions: List<Island> = emptyList(),
     val error: String? = null,
-    val cardVariant: ListViewMode = ListViewMode.FULL
+    val cardVariant: ListViewMode = ListViewMode.FULL,
+    val availableFacilities: List<FacilityOption> = listOf(FacilityOption.ALL),
+    val selectedFacility: FacilityOption = FacilityOption.ALL
+
 )
 
 /**
@@ -62,23 +67,22 @@ data class IslandWithStats(
 data class IslandStatistics(
     val unitsCount: Int = 0,
     val activeUnitsCount: Int = 0,
-) {
-    val hasUnits: Boolean = unitsCount > 0
-}
+)
 
 @HiltViewModel
 class IslandListViewModel @Inject constructor(
     private val getIslandsByFacilityUseCase: GetIslandsByFacilityUseCase,
     private val getIslandWithUnitsUseCase: GetIslandWithUnitsUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
+    private val observeIslandsUseCase: ObserveIslandsUseCase,
+    private val observeFacilitiesUseCase: ObserveFacilitiesUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityIslandListUiState())
-    val uiState = _uiState.asStateFlow()
+    val uiState: StateFlow<FacilityIslandListUiState> = _uiState.asStateFlow()
 
     private var loadJob: Job? = null
-    private var searchJob: Job? = null
     private var currentFacilityId: String = ""
 
     companion object {
@@ -87,166 +91,125 @@ class IslandListViewModel @Inject constructor(
 
     init {
         Timber.d("IslandListViewModel init")
+        observeCardVariant()        // Restore persisted card variant
+        loadFacilitiesForDropdown() // Populate facility selector
     }
+
+    // ============================================================
+    // PUBLIC METHODS
+    // ============================================================
+
+    fun initialize() {
+        loadIslands()
+    }
+
     /**
-     * Inizializza per una facility specifica
+     * Init for a specific facility
      */
     fun initializeForFacility(facilityId: String) {
-        if (facilityId != currentFacilityId) {
-            currentFacilityId = facilityId
-            loadIslands()
-        } else {
-            Timber.d("facilityId == currentFacilityId")
+        if (facilityId == currentFacilityId) return
+
+        currentFacilityId = facilityId
+        _uiState.update { state ->
+            state.copy(
+                facilityId = facilityId,
+                // Sync dropdown; corrected once loadFacilitiesForDropdown() delivers results.
+                selectedFacility = state.availableFacilities.find { it.id == facilityId }
+                    ?: FacilityOption.ALL
+            )
         }
+        loadIslands()
     }
 
     /**
-     * Carica isole della facility
+     * Loads islands by observing a Room Flow.
+     *
+     * Cancels any previous observation before starting a new one, so switching
+     * clients or calling refresh never leaves stale collectors running in parallel.
+     *
+     * Room re-emits automatically on every DB change, so no manual re-fetch is
+     * needed for inserts, updates, or deletes.
      */
     fun loadIslands() {
-        //val facilityId = _uiState.value.facilityId
+        loadJob?.cancel()
+
         val facilityId = currentFacilityId
-        if (facilityId.isEmpty()) return
-
-
-        if (currentFacilityId.isBlank()) {
-            Timber.d("currentFacilityId is blank")
-            return
+        val flow = if (facilityId.isEmpty()) {
+            Timber.d("Observing all Islands")
+            observeIslandsUseCase(null)
+        } else {
+            Timber.d("Observing islands for facility: $facilityId")
+            observeIslandsUseCase(facilityId)
         }
 
-        loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
+            // If called from refresh(), keep isRefreshing=true visible until data arrives.
+            // If called fresh, show isLoading instead.
+            _uiState.update { it.copy(
+                isLoading = !it.isRefreshing,
+                error = null
+            ) }
 
             try {
                 Timber.d("Loading islands for facility: $facilityId")
 
-                getIslandsByFacilityUseCase.observeIslandsByFacility(currentFacilityId)
+                flow
                     .catch { exception ->
-                        if (exception is kotlinx.coroutines.CancellationException) throw exception
+                        if (exception is CancellationException) throw exception
                         Timber.e(exception, "Error in islands flow")
                         if (currentCoroutineContext().isActive) {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = "Errore caricamento isole: ${exception.message}"
-                            )
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    isRefreshing = false,
+                                    error = "Errore caricamento isole: ${exception.message}"
+                                )
+                            }
                         }
                     }
                     .collect { islands ->
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping facilities processing - job cancelled")
-                            return@collect
-                        }
+                        if (!currentCoroutineContext().isActive) return@collect
 
-                        // Enrich with statistics
                         val islandsWithStats = enrichWithStatistics(islands)
+                        val currentState = _uiState.value
+                        val filteredAndSorted = applyFiltersAndSort(
+                            islandsWithStats,
+                            currentState.searchQuery,
+                            currentState.selectedFilter,
+                            currentState.sortOrder
+                        )
 
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                islandsWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.sortOrder
-                            )
+                        _uiState.value = currentState.copy(
+                            islands = islandsWithStats,
+                            filteredIslands = filteredAndSorted,
+                            isLoading = false,
+                            isRefreshing = false,
+                            error = null
+                        )
 
-                            _uiState.value = currentState.copy(
-                                islands = islandsWithStats,
-                                filteredIslands = filteredAndSorted,
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("Loaded ${islands.size} facilities successfully")
-                        }
+                        Timber.d("Loaded ${islands.size} islands successfully")
                     }
-
-            } catch (_: kotlinx.coroutines.CancellationException) {
-                Timber.d("Islands loading cancelled")
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        error = "Errore imprevisto: ${e.message}"
-                    )
-                }
-            }
-        }
-    }
-
-
-    fun refresh() {
-        val facilityId = currentFacilityId
-        if (facilityId.isBlank()) return
-
-        viewModelScope.launch {
-            try {
-                _uiState.update { it.copy(isRefreshing = true, error = null) }
-
-                Timber.d("Refreshing islands for facility: $facilityId")
-                delay(500)
-
-                getIslandsByFacilityUseCase(facilityId).fold(
-                    onSuccess = { islands ->
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping refresh processing - job cancelled")
-                            return@launch
-                        }
-
-                        val islandWithStats = enrichWithStatistics(islands)
-
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                islandWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.sortOrder
-                            )
-
-                            _uiState.value = currentState.copy(
-                                islands = islandWithStats,
-                                filteredIslands = filteredAndSorted,
-                                isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("Facilities refresh completed successfully")
-                        }
-                    },
-                    onFailure = { error ->
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e(error, "Failed to refresh islands")
-                            _uiState.value = _uiState.value.copy(
-                                isRefreshing = false,
-                                error = "Errore refresh: ${error.message}"
-                            )
-                        }
-                    }
-                )
-//                loadIslands()
-
-                // Il flag isRefreshing viene resettato al completamento del caricamento
-                _uiState.update { it.copy(isRefreshing = false) }
 
             } catch (_: CancellationException) {
-                Timber.d("Refresh cancelled")
-                if (currentCoroutineContext().isActive) {
-                    _uiState.value = _uiState.value.copy(isRefreshing = false)
-                }
+                Timber.d("Islands loading cancelled")
             } catch (e: Exception) {
                 if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to refresh islands")
-                    _uiState.value = _uiState.value.copy(
-                        isRefreshing = false,
-                        error = "Errore refresh: ${e.message}"
-                    )
+                    _uiState.update {
+                        it.copy(isLoading = false, isRefreshing = false,
+                            error = "Errore imprevisto: ${e.message}")
+                    }
                 }
             }
         }
     }
+
+    /** Refresh data */
+    fun refresh() {
+        if (currentFacilityId.isBlank()) return
+        _uiState.update { it.copy(isRefreshing = true, error = null) }
+        loadIslands() // cancels old job, restarts Flow; isRefreshing cleared when data arrives
+    }
+
 
     fun deleteIsland(islandId: String) {
         viewModelScope.launch {
@@ -286,10 +249,10 @@ class IslandListViewModel @Inject constructor(
             performSearch(query)
         } else {
             val filteredAndSorted = applyFiltersAndSort(
-                currentState.islands,
-                query,
-                currentState.selectedFilter,
-                currentState.sortOrder
+                islands= currentState.islands,
+                searchQuery = query,
+                filter = currentState.selectedFilter,
+                sortOrder = currentState.sortOrder
             )
 
             _uiState.value = currentState.copy(
@@ -299,6 +262,7 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
+    /** Update filter */
     fun updateFilter(filter: IslandFilter) {
         val currentState = _uiState.value
         val filteredAndSorted = applyFiltersAndSort(
@@ -314,6 +278,7 @@ class IslandListViewModel @Inject constructor(
         )
     }
 
+    /** Update sort order */
     fun updateSortOrder(sortOrder: IslandSortOrder) {
         val currentState = _uiState.value
         val filteredAndSorted = applyFiltersAndSort(
@@ -327,6 +292,18 @@ class IslandListViewModel @Inject constructor(
             sortOrder = sortOrder,
             filteredIslands = filteredAndSorted
         )
+    }
+
+    /**
+     * Called when the user picks a facility from the dropdown.
+     * Reloads islands scoped to that facility.
+     */
+    fun updateSelectedFacility(facility: FacilityOption) {
+        if (facility == _uiState.value.selectedFacility) return
+
+        currentFacilityId = facility.id
+        _uiState.update { it.copy(selectedFacility = facility, facilityId = facility.id) }
+        loadIslands()
     }
 
     /**
@@ -439,8 +416,8 @@ class IslandListViewModel @Inject constructor(
     ): List<IslandWithStats> {
         var filtered = islands
 
-        // Applica filtro di ricerca
-        if (searchQuery.isNotBlank()) {
+        // Apply local search query (per query corte)
+        if (searchQuery.isNotBlank() && searchQuery.length <= 2) {
             val query = searchQuery.lowercase()
             filtered = filtered.filter {
                 it.island.serialNumber.lowercase().contains(query) ||
@@ -451,7 +428,7 @@ class IslandListViewModel @Inject constructor(
             }
         }
 
-        // Applica filtro categoria
+        // Apply status filter
         filtered = when (filter) {
             IslandFilter.ALL -> filtered
             IslandFilter.ACTIVE -> filtered.filter { it.island.isActive }
@@ -462,7 +439,7 @@ class IslandListViewModel @Inject constructor(
             IslandFilter.BY_TYPE -> filtered // Gestito separatamente nei dropdown menu
         }
 
-        // Applica ordinamento
+        // Apply sorting
         filtered = when (sortOrder) {
             IslandSortOrder.SERIAL_NUMBER -> filtered.sortedBy { it.island.serialNumber.lowercase() }
             IslandSortOrder.TYPE -> filtered.sortedBy { it.island.islandType.name }
@@ -480,6 +457,36 @@ class IslandListViewModel @Inject constructor(
 
         return filtered
     }
+
+    /**
+     * Observes all facilities and keeps [FacilityIslandListUiState.availableFacilities]
+     * up to date. Syncs [selectedFacility] once the list arrives so the dropdown
+     * shows the correct name even if navigation set the id before the list loaded.
+     */
+    private fun loadFacilitiesForDropdown() {
+        viewModelScope.launch {
+            try {
+                observeFacilitiesUseCase()
+                    .catch { e -> Timber.e(e, "Error loading facilities for dropdown") }
+                    .collect { facilities ->
+                        val options = listOf(FacilityOption.ALL) + facilities.map { facility ->
+                            FacilityOption(id = facility.id, name = facility.name)
+                        }
+                        _uiState.update { state ->
+                            val syncedSelection = options.find { it.id == state.facilityId }
+                                ?: FacilityOption.ALL
+                            state.copy(
+                                availableFacilities = options,
+                                selectedFacility = syncedSelection
+                            )
+                        }
+                    }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to start facilities observation for dropdown")
+            }
+        }
+    }
+
 }
 
 /**

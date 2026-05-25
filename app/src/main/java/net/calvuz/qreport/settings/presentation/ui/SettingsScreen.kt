@@ -13,8 +13,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    onNavigateToBackup: () -> Unit = {},
-    onNavigateToTechnicianSettings: () -> Unit = {}
+    onNavigateToBackup: () -> Unit,
+    onNavigateToTechnicianSettings: () -> Unit,
+    onNavigateToSyncSettings: () -> Unit
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -23,56 +24,35 @@ fun SettingsScreen(
             title = { Text("Impostazioni") },
         )
 
-
         // Technician info
         SettingsSection(title = "Profilo Utente") {
             SettingsItem(
                 title = "Informazioni Tecnico",
                 subtitle = "Dati per pre-compilazione CheckUp",
                 icon = Icons.Default.Engineering,
-                onClick = onNavigateToTechnicianSettings  // ✅ Connected to navigation
+                onClick = onNavigateToTechnicianSettings
             )
         }
 
-        // Backup
+        // Data
         SettingsSection(title = "Dati") {
             SettingsItem(
                 title = "Backup Database",
                 subtitle = "Backup e ripristino dati QReport",
                 icon = Icons.Default.Backup,
-                onClick = onNavigateToBackup  // ✅ Connected to navigation
+                onClick = onNavigateToBackup
             )
-//                SettingsItem(
-//                    title = "Pulizia Cache",
-//                    subtitle = "Libera spazio foto temporanee",
-//                    icon = Icons.Default.CleaningServices,
-//                    onClick = { }
-//                )
         }
 
-//            SettingsSection(title = "Generale") {
-//                SettingsItem(
-//                    title = "Template Check-up",
-//                    subtitle = "Personalizza checklist",
-//                    icon = Icons.AutoMirrored.Default.Assignment,
-//                    onClick = { }
-//                )
-//            }
-
-//            SettingsSection(title = "App") {
-//                SettingsItem(
-//                    title = "Informazioni",
-//                    subtitle = "QReport v1.0 - Calvuz",
-//                    icon = Icons.Default.Info,
-//                    onClick = { }
-//                )
-//                SettingsItem(
-//                    title = "Supporto",
-//                    subtitle = "Contatta il supporto tecnico",
-//                    icon = Icons.Default.Support,
-//                    onClick = { }
-//                )
-//            }
+        // Sync
+        SettingsSection(title = "Sincronizzazione") {
+            SettingsItem(
+                title = "Sincronizzazione Remota",
+                subtitle = "Configura la sincronizzazione con il server",
+                icon = Icons.Default.CloudSync,
+                onClick = onNavigateToSyncSettings
+            )
+        }
     }
 }
 

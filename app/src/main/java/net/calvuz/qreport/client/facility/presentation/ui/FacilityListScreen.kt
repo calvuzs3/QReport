@@ -1,9 +1,6 @@
 package net.calvuz.qreport.client.facility.presentation.ui
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
@@ -15,11 +12,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityCard
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
@@ -28,10 +23,11 @@ import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
+import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.facility.presentation.model.FacilityFilter
 import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
 import net.calvuz.qreport.client.facility.presentation.model.FacilitySortOrder
-import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityListContent
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 
@@ -58,7 +54,6 @@ fun FacilityListScreen(
     viewModel: FacilityListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
 
     // Initialize for specific client
     LaunchedEffect(clientId) {
@@ -133,15 +128,14 @@ fun FacilityListScreen(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
             placeholder = "Cerca per nome, codice o tipo...",
-            modifier = Modifier.padding(16.dp)
         )
 
         QReportSelectorRow(
             entries = uiState.availableClients,
             selectedItem = uiState.selectedClient,
             onItemSelected = viewModel::updateSelectedClient,
-            icon = Icons.Default.Business,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            icon = ClientPkg.icon,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
 
@@ -215,7 +209,6 @@ fun FacilityListScreen(
 
                 else -> {
                     FacilityListContent(
-                        context = context,
                         variant = uiState.cardVariant,
                         facilities = uiState.filteredFacilities,
                         onFacilityClick = onNavigateToFacilityDetail,
@@ -238,48 +231,13 @@ fun FacilityListScreen(
                 onClick = onCreateNewFacility,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = "Nuovo stabilimento"
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun FacilityListContent(
-    context: Context,
-    variant: ListViewMode,
-    facilities: List<FacilityWithStats>,
-    onFacilityClick: (String) -> Unit,
-    onFacilityEdit: (String) -> Unit,
-    onFacilityDelete: ((String) -> Unit)? = null
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(
-            items = facilities,
-            key = { it.facility.id }
-        ) { facilityWithStats ->
-            FacilityCard(
-                facility = facilityWithStats.facility,
-                stats = facilityWithStats.stats,
-                onClick = { onFacilityClick(facilityWithStats.facility.id) },
-                onEdit = { onFacilityEdit(facilityWithStats.facility.id) },
-                onDelete = if (onFacilityDelete != null) {
-                    { onFacilityDelete(facilityWithStats.facility.id) }
-                } else null,
-                onOpenMaps = /*if (facilityWithStats.facility.address?.isComplete()) {
-                    { MapUtils.openMapsWithAddress(context, facilityWithStats.facility.address) }
-                } else*/ null,
-                variant = variant
-            )
         }
     }
 }

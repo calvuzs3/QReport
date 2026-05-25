@@ -135,6 +135,13 @@ class FacilityRepositoryImpl @Inject constructor(
         }
     }
 
+    /** Flow operation - gets facilities by client */
+    override fun getAllActiveFacilitiesByClientFlow(clientId: String): Flow<List<Facility>> {
+        return facilityDao.getAllActiveFacilitiesForClientFlow(clientId).map { entities ->
+            facilityMapper.toDomainList(entities)
+        }
+    }
+
     override fun getFacilityByIdFlow(id: String): Flow<Facility?> {
         return facilityDao.getFacilityByIdFlow(id).map { entity ->
             entity?.let { facilityMapper.toDomain(it) }

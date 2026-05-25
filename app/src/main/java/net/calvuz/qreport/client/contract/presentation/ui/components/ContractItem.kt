@@ -22,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
-import net.calvuz.qreport.client.contract.data.local.isValid
+import net.calvuz.qreport.client.contract.data.local.mapper.isValid
 import net.calvuz.qreport.client.contract.domain.model.Contract
 
 

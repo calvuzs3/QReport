@@ -21,5 +21,7 @@ interface MechanicalUnitRepository {
     suspend fun delete(id: String): Result<Unit>
 
     suspend fun getUnitsByIsland(islandId: String): Result<List<MechanicalUnit>>
+    fun getAllActiveMechanicalUnitByIslandFlow(islandId: String): Flow<List<MechanicalUnit>>
+    fun getAllActiveMechanicalUnitFlow(): Flow<List<MechanicalUnit>>
 }
 

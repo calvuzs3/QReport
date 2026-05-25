@@ -27,8 +27,11 @@ interface FacilityDao {
     @Query("SELECT * FROM facilities WHERE is_active = 1 ORDER BY is_primary DESC, name ASC")
     fun getActiveFacilitiesFlow(): Flow<List<FacilityEntity>>
 
-    @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, name ASC")
+    @Query("SELECT * FROM facilities WHERE client_id = :clientId ORDER BY is_primary DESC, name ASC")
     fun getFacilitiesForClientFlow(clientId: String): Flow<List<FacilityEntity>>
+
+    @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, name ASC")
+    fun getAllActiveFacilitiesForClientFlow(clientId: String): Flow<List<FacilityEntity>>
 
     @Query("SELECT * FROM facilities WHERE is_active = 1 ORDER BY name ASC")
     suspend fun getAllActiveFacilities(): List<FacilityEntity>

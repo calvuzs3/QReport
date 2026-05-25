@@ -8,8 +8,14 @@ import androidx.room.PrimaryKey
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 
 /**
- * Entity Room per Island
- * Mapping del domain model Island per persistenza database
+ * Facility Island Entity Room
+ *
+ * Sync fields:
+ *  - [updatedAt]  updated on every local write (create / edit / soft-delete)
+ *  - [syncedAt]   set to [updatedAt] value after a successful push to the server;
+ *                 null means the record has never been synced
+ *  - [isDeleted]  soft-delete flag; the row is excluded from all normal queries
+ *                 and pushed to the server so other devices can mirror the deletion
  */
 @Entity(
     tableName = "facility_islands",
@@ -26,7 +32,9 @@ import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
         Index(value = ["serial_number"], unique = true),
         Index(value = ["island_type"]),
         Index(value = ["is_active"]),
-        Index(value = ["next_scheduled_maintenance"])
+        Index(value = ["next_scheduled_maintenance"]),
+        Index(value = ["is_deleted"]),   // speeds up the WHERE is_deleted = 0 filter
+        Index(value = ["updated_at"]),   // speeds up the delta query (updated_at > synced_at)
     ]
 )
 data class IslandEntity(
@@ -97,5 +105,12 @@ data class IslandEntity(
     val createdAt: Long,
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long
+    val updatedAt: Long,
+
+    // ===== SYNC =====
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null, // null = never synced; set after successful server push
+
+    @ColumnInfo(name = "is_deleted")
+    val isDeleted: Boolean = false // Soft-delete: row hidden in UI, pushed to server
 )

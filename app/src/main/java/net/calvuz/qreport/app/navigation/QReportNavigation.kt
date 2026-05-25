@@ -46,11 +46,16 @@ import java.net.URLDecoder
 import java.net.URLEncoder
 import androidx.core.net.toUri
 import net.calvuz.qreport.R
+import net.calvuz.qreport.app.app.presentation.ui.home.model.HomePkg
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.checkup.presentation.model.CheckupPkg
+import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.contract.presentation.ui.ContractFormScreen
 import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen
 import net.calvuz.qreport.client.unit.presentation.ui.MechanicalUnitFormScreen
 import net.calvuz.qreport.client.unit.presentation.ui.MechanicalUnitListScreen
+import net.calvuz.qreport.settings.presentation.model.SettingsPkg
+import net.calvuz.qreport.sync.presentation.ui.SyncSettingsScreen
 import net.calvuz.qreport.ti.presentation.ui.EditInterventionScreen
 import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionFormScreen
 import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionListScreen
@@ -79,29 +84,29 @@ sealed class QReportDestination(
     object Home : QReportDestination(
         route = QReportRoutes.HOME,
         title = UiText.StringResource(R.string.route_home_title),
-        selectedIcon = Icons.Filled.Home,
-        unselectedIcon = Icons.Outlined.Home
+        selectedIcon = HomePkg.icon,
+        unselectedIcon = HomePkg.icon_unselected
     )
 
     object Clients : QReportDestination(
         route = QReportRoutes.CLIENTS,
-        title = UiText.StringResource(R.string.route_clients_title),  //"Clienti",
-        selectedIcon = Icons.Filled.Archive,
-        unselectedIcon = Icons.Outlined.Archive
+        title = UiText.StringResource(R.string.route_clients_title),
+        selectedIcon = ClientPkg.icon,
+        unselectedIcon = ClientPkg.icon_unselected
     )
 
     object CheckUps : QReportDestination(
         route = QReportRoutes.CHECKUPS,
-        title = UiText.StringResource(R.string.route_checkups_title), //"Check-up",
-        selectedIcon = Icons.AutoMirrored.Filled.Assignment,
-        unselectedIcon = Icons.AutoMirrored.Outlined.Assignment
+        title = UiText.StringResource(R.string.route_checkups_title),
+        selectedIcon = CheckupPkg.icon,
+        unselectedIcon = CheckupPkg.icon_unselected
     )
 
     object Settings : QReportDestination(
         route = QReportRoutes.SETTINGS,
-        title = UiText.StringResource(R.string.route_settings_title), //"Impostazioni",
-        selectedIcon = Icons.Filled.Settings,
-        unselectedIcon = Icons.Outlined.Settings
+        title = UiText.StringResource(R.string.route_settings_title),
+        selectedIcon = SettingsPkg.icon,
+        unselectedIcon = SettingsPkg.icon_unselected
     )
 }
 
@@ -121,6 +126,9 @@ object QReportRoutes {
 
     // Settings
     const val TECHNICIAN_SETTINGS = "technician_settings"
+
+    // Sync
+    const val SYNC_SETTINGS = "sync_settings"
 
     // Check up management routes
     const val CHECKUP_CREATE = "checkup_create"
@@ -341,6 +349,9 @@ fun QReportNavigation(
                         },
                         onNavigateToTechnicianSettings = {
                             navController.navigate(QReportRoutes.TECHNICIAN_SETTINGS)
+                        },
+                        onNavigateToSyncSettings = {
+                            navController.navigate(QReportRoutes.SYNC_SETTINGS)
                         }
                     )
                 }
@@ -406,6 +417,16 @@ fun QReportNavigation(
                     )
                 }
 
+                // ============================================================
+                // ✅ SYNC DESTINATIONS
+                // ============================================================
+
+                composable(QReportRoutes.SYNC_SETTINGS) {
+                    SyncSettingsScreen(
+                        onNavigateBack = {
+                            navController.popBackStack() }
+                    )
+                }
                 // ============================================================
                 // ✅ CHECK-UP MANAGEMENT DESTINATIONS
                 // ============================================================
@@ -964,16 +985,16 @@ fun QReportNavigation(
                         facilityId = null, // Create mode
                         onNavigateBack = { navController.popBackStack() },
                         onFacilitySaved = { savedFacilityId ->
-                            navController.popBackStack()
-//                            navController.navigate(
-//                                QReportRoutes.facilityDetailRoute(
-//                                    clientId,
-//                                    savedFacilityId
-//                                )
-//                            ) {
-//                                // TODO use the correct route, ClientDetail, once the clientName has been passed
-//                                popUpTo(QReportRoutes.CLIENTS) { inclusive = false }
-//                            }
+//                            navController.popBackStack()
+                            navController.navigate(
+                                QReportRoutes.facilityDetailRoute(
+                                    clientId,
+                                    savedFacilityId
+                                )
+                            ) {
+                                // TODO use the correct route, ClientDetail, once the clientName has been passed
+                                popUpTo(QReportRoutes.CLIENTS) { inclusive = false }
+                            }
                         }
                     )
                 }
@@ -1045,16 +1066,16 @@ fun QReportNavigation(
                         islandId = null, // Create mode
                         onNavigateBack = { navController.popBackStack() },
                         onIslandSaved = { savedIslandId ->
-                            navController.popBackStack()
-//                            navController.navigate(
-//                                QReportRoutes.islandDetailRoute(
-//                                    facilityId,
-//                                    savedIslandId
-//                                )
-//                            ) {
-//                                // TODO use the correct route, FacilityDetail, once the clientName has been passed
-//                                popUpTo(QReportRoutes.CLIENTS) { inclusive = false }
-//                            }
+//                            navController.popBackStack()
+                            navController.navigate(
+                                QReportRoutes.islandDetailRoute(
+                                    facilityId,
+                                    savedIslandId
+                                )
+                            ) {
+                                // TODO use the correct route, FacilityDetail, once the clientName has been passed
+                                popUpTo(QReportRoutes.CLIENTS) { inclusive = false }
+                            }
                         }
                     )
                 }

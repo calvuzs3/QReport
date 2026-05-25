@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.app.error.presentation.UiText
-import net.calvuz.qreport.client.contract.data.local.isValid
+import net.calvuz.qreport.client.contract.data.local.mapper.isValid
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.usecase.DeleteContractUseCase
 import net.calvuz.qreport.client.contract.domain.usecase.GetContractsByClientUseCase

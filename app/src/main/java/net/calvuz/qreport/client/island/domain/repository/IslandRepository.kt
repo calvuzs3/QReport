@@ -53,7 +53,7 @@ interface IslandRepository {
     /**
      * Osserva isole per stabilimento (Flow reattivo)
      */
-    fun getIslandsByFacilityFlow(facilityId: String): Flow<List<Island>>
+    fun getAllActiveIslandsByFacilityFlow(facilityId: String): Flow<List<Island>>
 
     /**
      * Recupera solo isole attive per stabilimento

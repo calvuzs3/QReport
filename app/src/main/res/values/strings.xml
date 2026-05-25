@@ -10,12 +10,15 @@
     <!-- Routes -->
     <string name="route_home">home</string>
     <string name="route_home_title">Home</string>
+    <string name="route_home_subtitle">Gestione isole robotizzate</string>
     <string name="route_clients">clients</string>
     <string name="route_clients_title">Clienti</string>
     <string name="route_checkups">checkup</string>
     <string name="route_checkups_title">Check-up</string>
+    <string name="route_checkups_subtitle">Check-up isole robotizzate</string>
     <string name="route_settings">settings</string>
     <string name="route_settings_title">Impostazioni</string>
+    <string name="route_settings_subtitle">Impostazioni applicazione</string>
 
     <string name="route_photos">Foto</string>
     <string name="route_spare_parts">Ricambi</string>

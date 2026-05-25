@@ -1,4 +1,4 @@
-package net.calvuz.qreport.client.contract.data.local
+package net.calvuz.qreport.client.contract.data.local.dao
 
 import androidx.room.Dao
 import androidx.room.Delete
@@ -7,13 +7,14 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 
 @Dao
 interface ContractDao {
 
     // ===== OPERATIONS =====
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertContract(contract: ContractEntity): Long
 
     @Update
@@ -31,7 +32,7 @@ interface ContractDao {
     @Query("SELECT * FROM contracts WHERE end_date < CURRENT_TIMESTAMP ORDER BY name ASC")
     suspend fun getAllExpiredContracts(): List<ContractEntity>
 
-    @Query ("UPDATE contracts SET is_active = 1 WHERE id = :id")
+    @Query("UPDATE contracts SET is_active = 1 WHERE id = :id")
     suspend fun setActiveContract(id: String): Int
 
     @Query("UPDATE contracts SET is_active = 0 WHERE id = :id")
@@ -62,7 +63,7 @@ interface ContractDao {
 
     // ===== BULK OPERATIONS =====
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertAllContracts(contracts: List<ContractEntity>)
 
     @Query("DELETE FROM contracts WHERE client_id = :clientId")
@@ -79,7 +80,7 @@ interface ContractDao {
     @Query("SELECT * FROM contracts ORDER BY created_at ASC")
     suspend fun getAllForBackup(): List<ContractEntity>
 
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
     suspend fun insertAllFromBackup(contracts: List<ContractEntity>)
 
     @Query("DELETE FROM contracts")

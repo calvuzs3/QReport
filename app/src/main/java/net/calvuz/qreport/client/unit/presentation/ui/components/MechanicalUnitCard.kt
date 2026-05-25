@@ -58,8 +58,17 @@ fun MechanicalUnitCard(
                 onEdit = onEdit,
             )
 
-            ListViewMode.COMPACT -> CompactMechanicalUnitCard(unit)
-            ListViewMode.MINIMAL -> MinimalMechanicalUnitCard(unit)
+            ListViewMode.COMPACT -> CompactMechanicalUnitCard(
+                modifier = Modifier,
+                unit = unit,
+                showActions = showActions,
+                onEdit = onEdit,
+                onDelete = onDelete
+            )
+
+            ListViewMode.MINIMAL -> MinimalMechanicalUnitCard(
+                unit
+            )
         }
 
         // Delete confirmation dialog
@@ -197,65 +206,107 @@ private fun FullMechanicalUnitCard(
 
 @Composable
 private fun CompactMechanicalUnitCard(
+    modifier: Modifier = Modifier,
     unit: MechanicalUnit,
+    showActions: Boolean,
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?,
 ) {
     Column(
-        modifier = Modifier.padding(16.dp),
+        modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Header
+        // Header row - Nome stabilimento e azioni
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            //
-            Text(
-                text = unit.name,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-
-            // Body: Serial + model on the same line when both present
-            val subtitle = listOfNotNull(unit.serialNumber, unit.model).joinToString(" · ")
-            if (subtitle.isNotBlank()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = unit.unitType.displayName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = unit.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
             }
 
-            // Last modified
+            if (showActions) {
+                Row {
+                    if (onEdit != null) {
+                        IconButton(
+                            onClick = onEdit,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Modifica Unità",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    if (onDelete != null) {
+                        IconButton(
+                            onClick = onDelete,
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Elimina Unità",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Body: Serial + model on the same line when both present
+        val subtitle = listOfNotNull(unit.serialNumber, unit.model).joinToString(" · ")
+        if (subtitle.isNotBlank()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                //horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Left
-                //MechanicalUnitStatusChip(isActive = client.isActive)
-
-                // Right
                 Text(
-                    text = unit.updatedAt.toItalianLastModified(),
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
+
+        // Last modified
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            //horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left
+            //MechanicalUnitStatusChip(isActive = client.isActive)
+
+            // Right
+            Text(
+                text = unit.updatedAt.toItalianLastModified(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
+
 
 
 @Composable

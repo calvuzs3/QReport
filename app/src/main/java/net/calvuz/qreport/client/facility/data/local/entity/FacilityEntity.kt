@@ -9,7 +9,14 @@ import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 
 /**
  * Facility Entity Room
- */
+ *
+ * Sync fields:
+ *  - [updatedAt]  updated on every local write (create / edit / soft-delete)
+ *  - [syncedAt]   set to [updatedAt] value after a successful push to the server;
+ *                 null means the record has never been synced
+ *  - [isDeleted]  soft-delete flag; the row is excluded from all normal queries
+ *                 and pushed to the server so other devices can mirror the deletion
+*/
 @Entity(
     tableName = "facilities",
     foreignKeys = [
@@ -24,7 +31,9 @@ import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
         Index(value = ["client_id"]),
         Index(value = ["name"]),
         Index(value = ["is_primary", "client_id"]),
-        Index(value = ["is_active"])
+        Index(value = ["is_active"]),
+        Index(value = ["is_deleted"]),   // speeds up the WHERE is_deleted = 0 filter
+        Index(value = ["updated_at"]),   // speeds up the delta query (updated_at > synced_at)
     ]
 )
 data class FacilityEntity(
@@ -59,5 +68,12 @@ data class FacilityEntity(
     val createdAt: Long,
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long
+    val updatedAt: Long,
+
+    // ===== SYNC =====
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null, // null = never synced; set after successful server push
+
+    @ColumnInfo(name = "is_deleted")
+    val isDeleted: Boolean = false // Soft-delete: row hidden in UI, pushed to server
 )

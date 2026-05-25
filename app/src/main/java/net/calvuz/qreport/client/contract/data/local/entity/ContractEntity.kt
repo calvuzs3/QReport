@@ -1,4 +1,4 @@
-package net.calvuz.qreport.client.contract.data.local
+package net.calvuz.qreport.client.contract.data.local.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
@@ -7,6 +7,16 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 
+/**
+ * Contract Entity Room
+ *
+ * Sync fields:
+ *  - [updatedAt]  updated on every local write (create / edit / soft-delete)
+ *  - [syncedAt]   set to [updatedAt] value after a successful push to the server;
+ *                 null means the record has never been synced
+ *  - [isDeleted]  soft-delete flag; the row is excluded from all normal queries
+ *                 and pushed to the server so other devices can mirror the deletion
+ */
 @Entity(
     tableName = "contracts",
     foreignKeys = [
@@ -20,7 +30,9 @@ import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
     indices = [
         Index(value = ["client_id"]),
         Index(value = ["name"]),
-        Index(value = ["has_maintenance"])
+        Index(value = ["has_maintenance"]),
+        Index(value = ["is_deleted"]),   // speeds up the WHERE is_deleted = 0 filter
+        Index(value = ["updated_at"]),   // speeds up the delta query (updated_at > synced_at)
     ]
 )
 data class ContractEntity(
@@ -55,6 +67,7 @@ data class ContractEntity(
     @ColumnInfo(name = "notes")
     val notes: String? = null,
 
+    // ===== METADATA =====
     @ColumnInfo(name = "is_active")
     val isActive: Boolean = true,
 
@@ -62,5 +75,12 @@ data class ContractEntity(
     val createdAt: Long,
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long
+    val updatedAt: Long,
+
+    // ===== SYNC =====
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null, // null = never synced; set after successful server push
+
+    @ColumnInfo(name = "is_deleted")
+    val isDeleted: Boolean = false // Soft-delete: row hidden in UI, pushed to server
 )

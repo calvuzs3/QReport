@@ -24,7 +24,6 @@ import kotlinx.datetime.toLocalDateTime
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
-import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.checkup.presentation.components.CheckupStatusChip
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 

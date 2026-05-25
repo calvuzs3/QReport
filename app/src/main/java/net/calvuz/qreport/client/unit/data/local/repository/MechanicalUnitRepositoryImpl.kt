@@ -20,6 +20,18 @@ class MechanicalUnitRepositoryImpl @Inject constructor(
     override fun getForIslandFlow(islandId: String): Flow<List<MechanicalUnit>> =
         dao.getForIslandFlow(islandId).map { mapper.toDomainList(it) }
 
+    override fun getAllActiveMechanicalUnitFlow(): Flow<List<MechanicalUnit>> {
+        return dao.getAllActiveMechanicalUnitFlow().map { entities ->
+            mapper.toDomainList(entities)
+        }
+    }
+
+    override fun getAllActiveMechanicalUnitByIslandFlow(islandId: String): Flow<List<MechanicalUnit>> {
+        return dao.getAllActiveMechanicalUnitByIslandFlow(islandId).map { entities ->
+            mapper.toDomainList(entities)
+        }
+    }
+
     override suspend fun getById(id: String): MechanicalUnit? =
         dao.getById(id)?.let { mapper.toDomain(it) }
 

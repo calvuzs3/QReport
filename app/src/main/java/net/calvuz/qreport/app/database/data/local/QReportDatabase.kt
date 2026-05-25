@@ -1,17 +1,12 @@
 package net.calvuz.qreport.app.database.data.local
 
-import android.R
-import android.content.Context
-import androidx.compose.ui.platform.LocalContext
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
-import dagger.hilt.android.qualifiers.ApplicationContext
 import net.calvuz.qreport.app.app.QReportApplication
 import net.calvuz.qreport.app.app.data.converter.AddressConverter
 import net.calvuz.qreport.app.app.data.converter.DatabaseConverters
-import net.calvuz.qreport.app.app.presentation.ui.QReportApp
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -30,10 +25,11 @@ import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
-import net.calvuz.qreport.client.contract.data.local.ContractDao
-import net.calvuz.qreport.client.contract.data.local.ContractEntity
+import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
+import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
+import net.calvuz.qreport.sync.data.local.dao.SyncDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
 
@@ -98,6 +94,7 @@ abstract class QReportDatabase() : RoomDatabase() {
     abstract fun checkUpAssociationDao(): CheckUpAssociationDao
     abstract fun contractDao(): ContractDao
     abstract fun technicalInterventionDao(): TechnicalInterventionDao
+    abstract fun syncDao(): SyncDao
 
     companion object {
         const val DATABASE_NAME = QReportApplication.DATABASE_NAME
