@@ -41,4 +41,5 @@ interface SyncRepository {
 
     /** Clears sync timestamps and mode. Called on server logout. */
     suspend fun clearSyncState(): Result<Unit>
+    suspend fun resetLastSyncTimestamp(): Result<Unit>
 }

@@ -9,14 +9,26 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.sync.app.SyncEvent
+import net.calvuz.qreport.sync.app.SyncEventBus
+import net.calvuz.qreport.sync.data.local.TokenStorage
+import net.calvuz.qreport.sync.data.remote.ServerUrlHolder
 import net.calvuz.qreport.sync.domain.model.SyncMode
+import net.calvuz.qreport.sync.domain.model.SyncResult
 import net.calvuz.qreport.sync.domain.model.SyncStatus
 import net.calvuz.qreport.sync.domain.repository.SyncRepository
+import net.calvuz.qreport.sync.domain.usecase.SyncUseCase
 import javax.inject.Inject
 
 @HiltViewModel
 class SyncSettingsViewModel @Inject constructor(
-    private val syncRepository: SyncRepository
+    private val syncRepository: SyncRepository,
+    private val syncUseCase: SyncUseCase,
+    private val tokenStorage: TokenStorage,
+    private val serverUrlHolder: ServerUrlHolder,
+    private val syncEventBus: SyncEventBus
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SyncSettingsUiState())
@@ -48,6 +60,7 @@ class SyncSettingsViewModel @Inject constructor(
 
     init {
         loadSyncStatus()
+        observeSyncEvents()
     }
 
     /**
@@ -56,10 +69,11 @@ class SyncSettingsViewModel @Inject constructor(
     fun loadSyncStatus() {
         viewModelScope.launch {
             try {
-                _uiState.value = _uiState.value.copy(isLoading = true)
-
+                _uiState.value = _uiState.value.copy(
+                    isLoading = true,
+                    isLoggedIn = tokenStorage.isLoggedIn()
+                )
                 val result = syncRepository.getSyncStatus()
-
                 if (result.isSuccess) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -84,39 +98,44 @@ class SyncSettingsViewModel @Inject constructor(
      * Toggle sync mode between [SyncMode.LOCAL_ONLY] and [SyncMode.REMOTE_ENABLED].
      */
     fun toggleSyncMode() {
-        val current = syncMode.value
-        val next = when (current) {
+        val next = when (syncMode.value) {
             SyncMode.LOCAL_ONLY -> SyncMode.REMOTE_ENABLED
             SyncMode.REMOTE_ENABLED -> SyncMode.LOCAL_ONLY
         }
-        setSyncMode(next)
-    }
-
-    /**
-     * Explicitly set the sync mode.
-     */
-    fun setSyncMode(mode: SyncMode) {
         viewModelScope.launch {
-            try {
-                val result = syncRepository.setSyncMode(mode)
-
-                if (result.isFailure) {
-                    _uiState.value = _uiState.value.copy(
-                        error = "Errore aggiornamento modalità sync: ${result.exceptionOrNull()?.message}"
-                    )
-                }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    error = "Errore inaspettato: ${e.message}"
-                )
-            }
+            syncRepository.setSyncMode(next)
         }
     }
+
+//    /**
+//     * Explicitly set the sync mode.
+//     */
+//    fun setSyncMode(mode: SyncMode) {
+//        viewModelScope.launch {
+//            try {
+//                val result = syncRepository.setSyncMode(mode)
+//
+//                if (result.isFailure) {
+//                    _uiState.value = _uiState.value.copy(
+//                        error = "Errore aggiornamento modalità sync: ${result.exceptionOrNull()?.message}"
+//                    )
+//                }
+//            } catch (e: Exception) {
+//                _uiState.value = _uiState.value.copy(
+//                    error = "Errore inaspettato: ${e.message}"
+//                )
+//            }
+//        }
+//    }
 
     fun saveServerUrl(url: String) {
         viewModelScope.launch {
             val result = syncRepository.setServerUrl(url)
-            if (result.isFailure) {
+            if (result.isSuccess) {
+                // Update in-memory holder immediately
+                val normalized = if (url.endsWith("/")) url else "$url/"
+                serverUrlHolder.baseUrl = normalized
+            } else {
                 _uiState.value = _uiState.value.copy(
                     error = "Errore salvataggio URL: ${result.exceptionOrNull()?.message}"
                 )
@@ -124,39 +143,140 @@ class SyncSettingsViewModel @Inject constructor(
         }
     }
 
+//    /**
+//     * Clear sync state (timestamps and mode). Used when logging out from the server.
+//     */
+//    fun clearSyncState() {
+//        viewModelScope.launch {
+//            try {
+//                _uiState.value = _uiState.value.copy(isLoading = true)
+//
+//                val result = syncRepository.clearSyncState()
+//
+//                if (result.isSuccess) {
+//                    _uiState.value = _uiState.value.copy(
+//                        isLoading = false,
+//                        message = "Stato sincronizzazione azzerato"
+//                    )
+//                    loadSyncStatus()
+//                } else {
+//                    _uiState.value = _uiState.value.copy(
+//                        isLoading = false,
+//                        error = "Errore reset sync: ${result.exceptionOrNull()?.message}"
+//                    )
+//                }
+//            } catch (e: Exception) {
+//                _uiState.value = _uiState.value.copy(
+//                    isLoading = false,
+//                    error = "Errore inaspettato: ${e.message}"
+//                )
+//            }
+//        }
+//    }
+
     /**
-     * Clear sync state (timestamps and mode). Used when logging out from the server.
+     * Triggers a full bidirectional sync session.
      */
-    fun clearSyncState() {
+    fun triggerSync() {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isSyncing = true, error = null, syncResult = null)
 
-                val result = syncRepository.clearSyncState()
-
-                if (result.isSuccess) {
+            when (val result = syncUseCase()) {
+                is QrResult.Success -> {
                     _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        message = "Stato sincronizzazione azzerato"
+                        isSyncing = false,
+                        syncResult = result.data,
+                        message = "Sincronizzazione completata — " +
+                                "inviati: ${result.data.pushedCount}, " +
+                                "ricevuti: ${result.data.pulledCount}"
                     )
-                    loadSyncStatus()
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "Errore reset sync: ${result.exceptionOrNull()?.message}"
-                    )
+                    loadSyncStatus() // Refresh pending count
                 }
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Errore inaspettato: ${e.message}"
-                )
+                is QrResult.Error -> {
+                    val message = when (result.error) {
+                        is QrError.NetworkError.Unauthorized -> {
+                            // Token expired — force re-login
+                            tokenStorage.clearToken()
+                            _uiState.value = _uiState.value.copy(isLoggedIn = false)
+                            "Sessione scaduta, effettua nuovamente il login"
+                        }
+                        is QrError.NetworkError.NoConnection -> "Nessuna connessione di rete"
+                        is QrError.NetworkError.SyncDisabled -> "Sincronizzazione disabilitata"
+                        is QrError.NetworkError.ServerError -> "Errore server"
+                        else -> "Errore sincronizzazione"
+                    }
+                    _uiState.value = _uiState.value.copy(isSyncing = false, error = message)
+                }
             }
         }
     }
 
+    /**
+     * Resets the sync timestamp to 0 and triggers a full pull from the server.
+     * Use after login on a new device or after reinstall.
+     */
+    fun triggerFullSync() {
+        viewModelScope.launch {
+            syncRepository.resetLastSyncTimestamp()
+            executeSyncUseCase()
+        }
+    }
+
+    fun onLoginSuccess() {
+        _uiState.value = _uiState.value.copy(isLoggedIn = true)
+    }
+
+    fun logout() {
+        tokenStorage.clearToken()
+        _uiState.value = _uiState.value.copy(isLoggedIn = false, syncResult = null)
+    }
+
     fun clearMessages() {
         _uiState.value = _uiState.value.copy(error = null, message = null)
+    }
+
+    // ===== PRIVATE =====
+
+    private fun observeSyncEvents() {
+        viewModelScope.launch {
+            syncEventBus.events.collect { event ->
+                when (event) {
+                    is SyncEvent.LoginSuccess -> onLoginSuccess()
+                    is SyncEvent.LoggedOut -> { /* già gestito da logout() */ }
+                }
+            }
+        }
+    }
+
+    private suspend fun executeSyncUseCase() {
+        _uiState.value = _uiState.value.copy(isSyncing = true, error = null, syncResult = null)
+
+        when (val result = syncUseCase()) {
+            is QrResult.Success -> {
+                _uiState.value = _uiState.value.copy(
+                    isSyncing = false,
+                    syncResult = result.data,
+                    message = "Sincronizzazione completata — " +
+                            "inviati: ${result.data.pushedCount}, " +
+                            "ricevuti: ${result.data.pulledCount}"
+                )
+                loadSyncStatus()
+            }
+            is QrResult.Error -> {
+                val message = when (result.error) {
+                    is QrError.NetworkError.Unauthorized -> {
+                        tokenStorage.clearToken()
+                        _uiState.value = _uiState.value.copy(isLoggedIn = false)
+                        "Sessione scaduta, effettua nuovamente il login"
+                    }
+                    is QrError.NetworkError.NoConnection -> "Nessuna connessione di rete"
+                    is QrError.NetworkError.SyncDisabled -> "Sincronizzazione disabilitata"
+                    is QrError.NetworkError.ServerError -> "Errore server"
+                    else -> "Errore sincronizzazione"
+                }
+                _uiState.value = _uiState.value.copy(isSyncing = false, error = message)
+            }
+        }
     }
 }
 
@@ -165,7 +285,10 @@ class SyncSettingsViewModel @Inject constructor(
  */
 data class SyncSettingsUiState(
     val isLoading: Boolean = false,
+    val isSyncing: Boolean = false,
+    val isLoggedIn: Boolean = false,
     val syncStatus: SyncStatus? = null,
+    val syncResult: SyncResult? = null,
     val error: String? = null,
     val message: String? = null
 )

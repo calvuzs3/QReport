@@ -9,19 +9,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.CloudSync
 import androidx.compose.material.icons.filled.DeviceHub
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Pending
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -51,13 +58,12 @@ import java.util.Locale
 fun SyncSettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateBack: () -> Unit = {},
+    onNavigateToLogin: () -> Unit = {},
     viewModel: SyncSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val syncMode by viewModel.syncMode.collectAsState()
     val lastSyncTimestamp by viewModel.lastSyncTimestamp.collectAsState()
-    val serverUrl by viewModel.serverUrl.collectAsState()
-    var serverUrlInput by remember(serverUrl) { mutableStateOf(serverUrl) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Show messages via Snackbar
@@ -80,7 +86,7 @@ fun SyncSettingsScreen(
                 title = { Text("Sincronizzazione") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
+                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Indietro")
                     }
                 }
             )
@@ -115,11 +121,14 @@ fun SyncSettingsScreen(
             // ===== SERVER URL =====
 
             SyncSection(title = "Server") {
+                val serverUrl by viewModel.serverUrl.collectAsState()
+                var serverUrlInput by remember(serverUrl) { mutableStateOf(serverUrl) }
+
                 OutlinedTextField(
                     value = serverUrlInput,
                     onValueChange = { serverUrlInput = it },
                     label = { Text("Indirizzo server") },
-                    placeholder = { Text("https://tuoserver.com") },
+                    placeholder = { Text("https://tuamacchina.tuoserver.com") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     trailingIcon = {
@@ -132,12 +141,83 @@ fun SyncSettingsScreen(
                 )
             }
 
+            // ===== ACCOUNT =====
+            SyncSection(title = "Account") {
+                if (uiState.isLoggedIn) {
+                    // Logged in — show sync button + logout
+                    Button(
+                        onClick = { viewModel.triggerSync() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !uiState.isSyncing
+                    ) {
+                        if (uiState.isSyncing) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.padding(end = 8.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Text("Sincronizzazione in corso...")
+                        } else {
+                            Icon(
+                                Icons.Default.Sync,
+                                contentDescription = null,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text("Sincronizza ora")
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = { viewModel.logout() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Logout,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Disconnetti")
+                    }
+
+                    OutlinedButton(
+                        onClick = { viewModel.triggerFullSync() },
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !uiState.isSyncing
+                    ) {
+                        Text("Sync completa (scarica tutto)")
+                    }
+
+                } else {
+                    // Not logged in — show login button
+                    Button(
+                        onClick = onNavigateToLogin,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Login,
+                            contentDescription = null,
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+                        Text("Accedi al server")
+                    }
+                }
+            }
+
+
             // ===== SYNC STATUS =====
             SyncSection(title = "Stato") {
                 SyncInfoItem(
                     title = "Ultima sincronizzazione",
                     subtitle = lastSyncTimestamp
-                        ?.let { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(it)) }
+                        ?.let {
+                            SimpleDateFormat(
+                                "dd/MM/yyyy HH:mm",
+                                Locale.getDefault()
+                            ).format(Date(it))
+                        }
                         ?: "Mai eseguita",
                     icon = Icons.Default.History
                 )

@@ -105,4 +105,13 @@ class SyncRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+
+    override suspend fun resetLastSyncTimestamp(): Result<Unit> {
+        return try {
+            syncSettingsDataStore.setLastSyncTimestamp(0L)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -42,7 +42,7 @@ data class MechanicalUnitEntity(
     val islandId: String,
 
     @ColumnInfo(name = "unit_type")
-    val unitType: String,                   // UnitType.name()
+    val unitType: String,
 
     @ColumnInfo(name = "name")
     val name: String,

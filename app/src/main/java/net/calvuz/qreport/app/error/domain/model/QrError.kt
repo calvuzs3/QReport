@@ -126,6 +126,15 @@ interface QrError {
         }
     }
 
+    sealed interface NetworkError : QrError {
+        data class NoConnection(val message: String? = null) : NetworkError
+        data class ServerError(val code: Int, val message: String? = null) : NetworkError
+        data class Unauthorized(val message: String? = null) : NetworkError
+        data class Timeout(val message: String? = null) : NetworkError
+        data class SyncDisabled(val message: String? = null) : NetworkError
+        data class ParseError(val message: String? = null) : NetworkError
+    }
+
     enum class FileError : QrError {
         // ===== DIRECTORY OPERATIONS =====
         DIRECTORY_CREATE,           // Errore creazione directory

@@ -13,7 +13,7 @@ import javax.inject.Singleton
 abstract class SyncModule {
 
     /**
-     * Bind TechnicianSettingsRepository
+     * Bind SyncRepository
      */
     @Binds
     @Singleton

@@ -110,13 +110,13 @@ Sviluppare un'applicazione Android nativa per digitalizzare il processo di check
 ### 2.2 Requisiti Sistema
 
 **Target Device:**
-- **Primary:** Smartphone Android (5.5" - 6.7")
+- **Primary:** Smartphone Android ( 6.7" - )
 - **Secondary:** Tablet Android (7" - 10")
 - **Orientamento:** Portrait (primary), Landscape (supportato)
 
 **Requisiti Hardware:**
-- Android 8.0+ (API 26+)
-- RAM: 2 GB minimo, 4 GB consigliato
+- Android 13.0+
+- RAM: 8 GB minimo, 32 GB consigliato
 - Storage: 500 MB app + 2 GB foto/report
 - Camera: Risoluzione minima 8 MP
 

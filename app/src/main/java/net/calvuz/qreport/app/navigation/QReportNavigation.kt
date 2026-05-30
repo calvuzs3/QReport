@@ -55,6 +55,7 @@ import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen
 import net.calvuz.qreport.client.unit.presentation.ui.MechanicalUnitFormScreen
 import net.calvuz.qreport.client.unit.presentation.ui.MechanicalUnitListScreen
 import net.calvuz.qreport.settings.presentation.model.SettingsPkg
+import net.calvuz.qreport.sync.presentation.ui.SyncLoginScreen
 import net.calvuz.qreport.sync.presentation.ui.SyncSettingsScreen
 import net.calvuz.qreport.ti.presentation.ui.EditInterventionScreen
 import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionFormScreen
@@ -129,6 +130,7 @@ object QReportRoutes {
 
     // Sync
     const val SYNC_SETTINGS = "sync_settings"
+    const val SYNC_LOGIN = "sync_login"
 
     // Check up management routes
     const val CHECKUP_CREATE = "checkup_create"
@@ -424,9 +426,21 @@ fun QReportNavigation(
                 composable(QReportRoutes.SYNC_SETTINGS) {
                     SyncSettingsScreen(
                         onNavigateBack = {
-                            navController.popBackStack() }
+                            navController.popBackStack() },
+                        onNavigateToLogin = { navController.navigate(QReportRoutes.SYNC_LOGIN) }
                     )
                 }
+
+                composable(QReportRoutes.SYNC_LOGIN) {
+                    SyncLoginScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onLoginSuccess = {
+                            navController.popBackStack()
+                            // Refresh login state in SyncSettingsViewModel
+                        }
+                    )
+                }
+
                 // ============================================================
                 // ✅ CHECK-UP MANAGEMENT DESTINATIONS
                 // ============================================================
