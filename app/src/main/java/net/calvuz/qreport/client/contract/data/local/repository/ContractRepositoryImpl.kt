@@ -121,6 +121,15 @@ class ContractRepositoryImpl @Inject constructor(
             QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
         }
 
+    override suspend fun getContractsCountByClient(clientId: String): QrResult<Int, QrError> =
+        try {
+            val contracts = contractDao.getContractCountByClientId(clientId)
+            QrResult.Success(contracts)
+        } catch (e: Exception) {
+            Timber.e(e, "Errore durante il recupero dei contratti per il cliente: $clientId")
+            QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
+        }
+
     override suspend fun getActiveContractsByClient(clientId: String): QrResult<List<Contract>, QrError> =
         try {
             val contracts =

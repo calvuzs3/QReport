@@ -1,4 +1,4 @@
-package net.calvuz.qreport.client.client.domain.model
+package net.calvuz.qreport.client.client.presentation.model
 
 import kotlinx.serialization.Serializable
 

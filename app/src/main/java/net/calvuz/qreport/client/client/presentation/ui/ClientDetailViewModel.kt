@@ -5,118 +5,96 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.client.client.domain.model.ClientSingleStatistics
-import net.calvuz.qreport.client.client.domain.model.ClientWithDetails
+import net.calvuz.qreport.client.client.domain.usecase.DeleteClientUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetClientWithDetailsUseCase
+import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
+import net.calvuz.qreport.client.client.presentation.model.ClientWithDetails
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
-import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
-import net.calvuz.qreport.client.client.domain.usecase.GetClientWithDetailsUseCase
-import net.calvuz.qreport.client.client.domain.usecase.DeleteClientUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.GetContactStatisticsUseCase
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.model.ContractStatistics
-import net.calvuz.qreport.client.contract.domain.usecase.GetContractStatisticsUseCase
+import net.calvuz.qreport.client.contract.domain.usecase.NewGetContractStatisticsUseCase
+import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
+import net.calvuz.qreport.client.island.domain.model.Island
 import timber.log.Timber
 import javax.inject.Inject
 
+// =============================================================================
+// TABS
+// =============================================================================
+
 /**
- * ViewModel per ClientDetailScreen
+ * Tabs available in the detail screen.
  *
- * Gestisce:
- * - Caricamento dettagli cliente completi
- * - Navigation tra tab (Info, Facilities, Contacts, History)
- * - Stato loading/error/success
- * - Actions per modifica e navigazione
+ * Tab labels are NOT stored here as raw strings — they are resolved at
+ * runtime via stringResource() in the composable using [labelResId].
  */
+enum class ClientDetailTab(val labelResId: Int) {
+    FACILITIES(R.string.client_detail_tab_facilities),
+    CONTACTS(R.string.client_detail_tab_contacts),
+    CONTRACTS(R.string.client_detail_tab_contracts),
+    INFO(R.string.client_detail_tab_info),
+}
+
+// =============================================================================
+// UI STATE
+// =============================================================================
 
 data class ClientDetailUiState(
-    // Data loading
+
+    // ===== DATA =====
     val isLoading: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val clientDetails: ClientWithDetails? = null,
 
-    // Delete states
+    // ===== DELETE =====
     val isDeleting: Boolean = false,
     val deleteSuccess: Boolean = false,
-    val deleteError: String? = null,
+    val deleteError: UiText? = null,
     val showDeleteConfirmation: Boolean = false,
 
-    // UI State
+    // ===== UI =====
     val selectedTab: ClientDetailTab = ClientDetailTab.FACILITIES,
-    val contactStatistics: ContactStatistics? = null,
-
-    // Quick access data
     val companyName: String = "",
-    val industry: String? = null,
-    val statusBadge: String = "",
-    val statusBadgeColor: String = "6C757D",
-    val statisticsSummary: String = "",
 
-    // Tab data
+    // ===== TAB DATA =====
     val facilitiesWithIslands: List<FacilityWithIslands> = emptyList(),
     val activeContacts: List<Contact> = emptyList(),
     val activeContracts: List<Contract> = emptyList(),
     val allIslands: List<Island> = emptyList(),
-    val statistics: ClientSingleStatistics? = null,
-
-    // Tab contracts
+    val statistics: ClientStatistics? = null,
+    val contactStatistics: ContactStatistics? = null,
     val contractStatistics: ContractStatistics? = null
 
 ) {
-
-    val hasData: Boolean
-        get() = clientDetails != null
-
-    val isEmpty: Boolean
-        get() = !isLoading && !hasData && error == null
-
-    val clientId: String?
-        get() = clientDetails?.client?.id
-
-    val isFullyOperational: Boolean
-        get() = clientDetails?.isFullyOperational() == true
-
-    val facilitiesCount: Int
-        get() = facilitiesWithIslands.size
-
-    val contacts: List<Contact>
-        get() = activeContacts
-
-    val contactsCount: Int
-        get() = activeContacts.size
-
-    val contracts: List<Contract>
-        get() = activeContracts
-
-    val contractsCount: Int
-        get() = activeContracts.size
-
-    val islandsCount: Int
-        get() = allIslands.size
-
-    val checkUpsCount: Int
-        get() = clientDetails?.totalCheckUps ?: 0
+    val hasData: Boolean get() = clientDetails != null
+    val isEmpty: Boolean get() = !isLoading && !hasData && error == null
+    val clientId: String? get() = clientDetails?.client?.id
+    val isFullyOperational: Boolean get() = clientDetails?.isFullyOperational() == true
+    val facilitiesCount: Int get() = facilitiesWithIslands.size
+    val contacts: List<Contact> get() = activeContacts
+    val contactsCount: Int get() = activeContacts.size
+    val contracts: List<Contract> get() = activeContracts
+    val contractsCount: Int get() = activeContracts.size
+    val islandsCount: Int get() = allIslands.size
+    val checkUpsCount: Int get() = clientDetails?.totalCheckUps ?: 0
 }
 
-/**
- * Tab disponibili nella detail screen
- */
-enum class ClientDetailTab(val title: String) {
-    FACILITIES("Stabilimenti"),
-    CONTACTS("Referenti"),
-    CONTRACTS("Contratti"),
-    INFO("Informazioni"),
-}
+// =============================================================================
+// VIEW MODEL
+// =============================================================================
 
 @HiltViewModel
 class ClientDetailViewModel @Inject constructor(
     private val getClientWithDetailsUseCase: GetClientWithDetailsUseCase,
     private val getContactStatisticsUseCase: GetContactStatisticsUseCase,
-    private val getContractStatisticsUseCase: GetContractStatisticsUseCase,
+    private val getContractStatisticsUseCase: NewGetContractStatisticsUseCase,
     private val deleteClientUseCase: DeleteClientUseCase
-
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ClientDetailUiState())
@@ -126,327 +104,173 @@ class ClientDetailViewModel @Inject constructor(
         Timber.d("ClientDetailViewModel initialized")
     }
 
-    // ============================================================
-    // CLIENT LOADING
-    // ============================================================
+    // =========================================================================
+    // LOADING
+    // =========================================================================
 
     fun loadClientDetails(clientId: String) {
         if (clientId.isBlank()) {
             Timber.e("ClientId blank")
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = "ID cliente non valido"
-            )
+            _uiState.update {
+                it.copy(
+                    isLoading = false,
+                    error = UiText.StringResource(R.string.client_detail_error_invalid_id)
+                )
+            }
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                error = null
-            )
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-            try {
-                getClientWithDetailsUseCase(clientId).fold(
-                    onSuccess = { clientDetails ->
-                        Timber.d("Client details loaded successfully for: ${clientDetails.client.companyName}")
-                        populateUiState(clientDetails)
-
-                        // Contacts
-                        loadContactStatistics(clientId)
-                        // Contracts
-                        loadContractStatistics(clientId)
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to load client details for ID: $clientId")
-                        _uiState.value = _uiState.value.copy(
+            when (val result = getClientWithDetailsUseCase(clientId)) {
+                is QrResult.Success -> {
+                    Timber.d("Client details loaded: ${result.data.client.companyName}")
+                    populateUiState(result.data)
+                    loadContactStatistics(clientId)
+                    loadContractStatistics(clientId)
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to load client details for: $clientId — ${result.error}")
+                    _uiState.update {
+                        it.copy(
                             isLoading = false,
-                            error = "Errore caricamento cliente: ${error.message}"
+                            error = UiText.StringResource(R.string.client_detail_error_load)
                         )
                     }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception loading client details")
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Errore imprevisto: ${e.message}"
-                )
+                }
             }
         }
     }
 
     private suspend fun loadContactStatistics(clientId: String) {
         when (val result = getContactStatisticsUseCase(clientId)) {
-            is QrResult.Success -> {
-                _uiState.value = _uiState.value.copy( contactStatistics = result.data)
-            }
-            is QrResult.Error -> {
-                // Log error but don't fail the whole screen
-                Timber.e( "Failed to load contact statistics")
-            }
+            is QrResult.Success -> _uiState.update { it.copy(contactStatistics = result.data) }
+            is QrResult.Error -> Timber.w("Failed to load contact statistics for: $clientId")
         }
     }
 
     private suspend fun loadContractStatistics(clientId: String) {
-        getContractStatisticsUseCase(clientId).fold(
-            onSuccess = { stats ->
-                _uiState.value = _uiState.value.copy(
-                    contractStatistics = stats
-                )
-            },
-            onFailure = { error ->
-                // Log error but don't fail the whole screen
-                Timber.e(error, "Failed to load contract statistics")
-            }
-        )
+        when (val result = getContractStatisticsUseCase(clientId)) {
+            is QrResult.Success -> _uiState.update { it.copy(contractStatistics = result.data) }
+            is QrResult.Error -> Timber.w("Failed to load contract statistics for: $clientId")
+        }
     }
 
     private fun populateUiState(clientDetails: ClientWithDetails) {
-        val client = clientDetails.client
-        val statusBadge = client.statusBadge
-
-        _uiState.value = _uiState.value.copy(
-            isLoading = false,
-            error = null,
-            clientDetails = clientDetails,
-
-            // Quick access data
-            companyName = client.companyName,
-            statusBadge = statusBadge.text,
-            statusBadgeColor = statusBadge.color,
-            statisticsSummary = clientDetails.statistics.summaryText,
-
-            // Tab data
-            facilitiesWithIslands = clientDetails.facilities,
-            activeContacts = clientDetails.activeContacts,
-            activeContracts = clientDetails.activeContracts,
-            allIslands = clientDetails.activeIslands,
-            statistics = clientDetails.statistics
-        )
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                error = null,
+                clientDetails = clientDetails,
+                companyName = clientDetails.client.companyName,
+                facilitiesWithIslands = clientDetails.facilities,
+                activeContacts = clientDetails.activeContacts,
+                activeContracts = clientDetails.activeContracts,
+                allIslands = clientDetails.activeIslands,
+                statistics = clientDetails.statistics
+            )
+        }
     }
 
-    // ============================================================
-    // DELETE CLIENT OPERATIONS
-    // ============================================================
+    // =========================================================================
+    // DELETE
+    // =========================================================================
 
-    /**
-     * Mostra dialog di conferma prima di eliminare
-     */
     fun showDeleteConfirmation() {
-        _uiState.value = _uiState.value.copy(
-            showDeleteConfirmation = true
-        )
+        _uiState.update { it.copy(showDeleteConfirmation = true) }
     }
 
-    /**
-     * Nasconde dialog di conferma
-     */
     fun hideDeleteConfirmation() {
-        _uiState.value = _uiState.value.copy(
-            showDeleteConfirmation = false
-        )
+        _uiState.update { it.copy(showDeleteConfirmation = false) }
     }
 
-    /**
-     * Elimina il cliente corrente
-     * ✅ FUNZIONE PRINCIPALE per delete
-     */
     fun deleteClient() {
         val clientId = _uiState.value.clientId ?: return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isDeleting = true,
-                deleteError = null,
-                showDeleteConfirmation = false
-            )
+            _uiState.update {
+                it.copy(isDeleting = true, deleteError = null, showDeleteConfirmation = false)
+            }
 
-            try {
-                deleteClientUseCase(clientId).fold(
-                    onSuccess = {
-                        Timber.d("Client deleted successfully: $clientId")
-                        _uiState.value = _uiState.value.copy(
+            when (val result = deleteClientUseCase(clientId)) {
+                is QrResult.Success -> {
+                    Timber.d("Client deleted: $clientId")
+                    _uiState.update { it.copy(isDeleting = false, deleteSuccess = true) }
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to delete client: $clientId — ${result.error}")
+                    _uiState.update {
+                        it.copy(
                             isDeleting = false,
-                            deleteSuccess = true  // ✅ Trigger navigation back
-                        )
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to delete client: $clientId")
-                        _uiState.value = _uiState.value.copy(
-                            isDeleting = false,
-                            deleteError = "Errore eliminazione: ${error.message}"
+                            deleteError = result.error.asUiText()
                         )
                     }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception deleting client")
-                _uiState.value = _uiState.value.copy(
-                    isDeleting = false,
-                    deleteError = "Errore imprevisto: ${e.message}"
-                )
+                }
             }
         }
     }
 
-    /**
-     * Reset delete states
-     */
     fun resetDeleteState() {
-        _uiState.value = _uiState.value.copy(
-            deleteSuccess = false,
-            deleteError = null
-        )
+        _uiState.update { it.copy(deleteSuccess = false, deleteError = null) }
     }
 
-    // ============================================================
+    // =========================================================================
     // TAB NAVIGATION
-    // ============================================================
+    // =========================================================================
 
     fun selectTab(tab: ClientDetailTab) {
         if (_uiState.value.selectedTab != tab) {
-            _uiState.value = _uiState.value.copy(selectedTab = tab)
-            Timber.d("Selected tab: ${tab.title}")
+            _uiState.update { it.copy(selectedTab = tab) }
+            Timber.d("Selected tab: ${tab.name}")
         }
     }
 
-    // ============================================================
+    // =========================================================================
     // ACTIONS
-    // ============================================================
+    // =========================================================================
 
     fun refreshData() {
-        val currentClientId = _uiState.value.clientId
-        if (currentClientId != null) {
-            loadClientDetails(currentClientId)
-        }
+        _uiState.value.clientId?.let { loadClientDetails(it) }
     }
 
     fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 
-    // ============================================================
-    // CONTACT NAVIGATION ACTIONS
-    // ============================================================
-
-    /**
-     * Azione per navigare alla lista completa contatti
-     */
-    fun onViewAllContactsClick(): String? {
-        val clientId = _uiState.value.clientId
-        Timber.d("Navigate to contacts list for client: $clientId")
-        return clientId
-    }
-
-    /**
-     * Azione per creare nuovo contatto
-     */
-    fun onCreateContactClick(): String? {
-        val clientId = _uiState.value.clientId
-        Timber.d("Navigate to create contact for client: $clientId")
-        return clientId
-    }
-
-    /**
-     * Ottieni client ID per navigation
-     */
+    fun onViewAllContactsClick(): String? = _uiState.value.clientId
+    fun onCreateContactClick(): String? = _uiState.value.clientId
     fun getClientIdForNavigation(): String? = _uiState.value.clientId
-
-    /**
-     * Ottieni company name per navigation
-     */
     fun getCompanyNameForNavigation(): String = _uiState.value.companyName
 
-//    // Contact management convenience properties in UiState
-//    val primaryContact: Contact?
-//        get() = _uiState.value.activeContacts.find { it.isPrimary }
-//
-//    val hasContacts: Boolean
-//        get() = _uiState.value.activeContacts.isNotEmpty()
+    // =========================================================================
+    // UTILITY
+    // =========================================================================
 
-//    val hasPrimaryContact: Boolean
-//        get() = primaryContact != null
-
-    // ============================================================
-    // UTILITY METHODS per UI convenience
-    // ============================================================
-
-//    /**
-//     * Get primary contact per info section
-//     */
-//    fun getPrimaryContact(): Contact? = _uiState.value.clientDetails?.primaryContact
-
-    /**
-     * Get primary facility per info section
-     */
     fun getPrimaryFacility(): FacilityWithIslands? =
         _uiState.value.facilitiesWithIslands.find { it.facility.isPrimary }
 
-    /**
-     * Get headquarters address formatted
-     */
     fun getHeadquartersAddress(): String? =
         _uiState.value.clientDetails?.client?.headquarters?.toDisplayString()
 
-    /**
-     * Get islands needing maintenance across all facilities
-     */
     fun getIslandsNeedingMaintenance(): List<Island> =
         _uiState.value.facilitiesWithIslands.flatMap { it.islandsNeedingMaintenance }
 
-    /**
-     * Check if client has complete setup
-     */
     fun hasCompleteSetup(): Boolean = _uiState.value.isFullyOperational
-
-    /**
-     * Get status message for info section
-     */
     fun getStatusMessage(): String = _uiState.value.clientDetails?.statusMessage ?: ""
+    fun getActiveFacilitiesCount(): Int = _uiState.value.facilitiesWithIslands.count { it.facility.isActive }
+    fun getActiveContactsCount(): Int = _uiState.value.activeContacts.count { it.isActive }
+    fun getActiveIslandsCount(): Int = _uiState.value.allIslands.count { it.isActive }
 
-    /**
-     * Get facilities count with active filter
-     */
-    fun getActiveFacilitiesCount(): Int =
-        _uiState.value.facilitiesWithIslands.count { it.facility.isActive }
-
-    /**
-     * Get contacts count with active filter
-     */
-    fun getActiveContactsCount(): Int =
-        _uiState.value.activeContacts.count { it.isActive }
-
-    /**
-     * Get islands count with active filter
-     */
-    fun getActiveIslandsCount(): Int =
-        _uiState.value.allIslands.count { it.isActive }
-
-    // ============================================================
-    // FUTURE: Actions per navigazioni verso detail specifici
-    // ============================================================
-
-    /**
-     * Azione per navigare al dettaglio facility (quando implementato)
-     */
     fun onFacilityClick(facilityId: String) {
         Timber.d("TODO: Navigate to facility detail: $facilityId")
-        // TODO: Implementare navigazione quando FacilityDetailScreen sarà pronto
     }
 
-    /**
-     * Azione per navigare al dettaglio island (quando implementato)
-     */
     fun onIslandClick(islandId: String) {
         Timber.d("TODO: Navigate to island detail: $islandId")
-        // TODO: Implementare navigazione quando IslandDetailScreen sarà pronto
     }
 
-    /**
-     * Azione per creare nuovo CheckUp (quando implementato)
-     */
     fun onCreateCheckUpClick() {
-        val clientId = _uiState.value.clientId
-        Timber.d("TODO: Navigate to create CheckUp for client: $clientId")
-        // TODO: Implementare navigazione quando CheckUp creation sarà integrato con client selection
+        Timber.d("TODO: Navigate to create CheckUp for client: ${_uiState.value.clientId}")
     }
 }

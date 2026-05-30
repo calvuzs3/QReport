@@ -128,80 +128,31 @@ data class CheckUpHeader(
 ### 3.1 Client - Modello Principale
 
 ```kotlin
-package net.calvuz.qreport.domain.model.client
-
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
-import net.calvuz.qreport.client.client.domain.model.ClientInfo // ← Import esistente
-
-/**
- * Cliente industriale completo
- * Estende il concetto di ClientInfo esistente mantenendo compatibilità
- */
 @Serializable
 data class Client(
+
     val id: String,
-    
-    // ===== DATI AZIENDALI =====
+
+    // ===== DATA =====
     val companyName: String,
-    val vatNumber: String? = null,
-    val fiscalCode: String? = null,
-    val website: String? = null,
-    val industry: String? = null,
     val notes: String? = null,
-    
-    // ===== LOCALIZZAZIONE =====
-    val headquarters: Address? = null,
-    
-    // ===== RELAZIONI =====
-    val facilities: List<String> = emptyList(),  // IDs delle facilities
-    val contacts: List<String> = emptyList(),    // IDs dei contacts
-    
-    // ===== METADATI =====
-    val isActive: Boolean = true,
+
+    // ===== LOCALIZATION =====
+    val headquarters: Address? = null,  // Serialized as JSON in the DB
+
+    // ===== METADATA =====
+    val isActive: Boolean = true,       // false = soft-deleted
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
-
-    /**
-     * Conversione a ClientInfo per compatibilità con CheckUp esistente
-     */
-    fun toClientInfo(
-        primaryContact: Contact? = null,
-        primaryFacility: Facility? = null
-    ): ClientInfo = ClientInfo(
-        companyName = companyName,
-        contactPerson = primaryContact?.fullName ?: "",
-        site = primaryFacility?.name ?: "",
-        address = headquarters?.toDisplayString() ?: "",
-        phone = primaryContact?.phone ?: "",
-        email = primaryContact?.email ?: ""
-    )
-
-    /**
-     * Verifica se cliente ha stabilimenti
-     */
-    fun hasFacilities(): Boolean = facilities.isNotEmpty()
-
-    /**
-     * Verifica se cliente ha referenti
-     */
-    fun hasContacts(): Boolean = contacts.isNotEmpty()
+    /** Convenience alias used throughout the UI. */
+    val displayName: String get() = companyName
 }
 ```
 
 ### 3.2 Facility - Stabilimento
 
 ```kotlin
-package net.calvuz.qreport.domain.model.client
-
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
-
-/**
- * Stabilimento del cliente
- * Un cliente può avere più stabilimenti produttivi
- */
 @Serializable
 data class Facility(
     val id: String,
@@ -258,15 +209,6 @@ enum class FacilityType(val displayName: String) {
 ### 3.3 Contact - Referente
 
 ```kotlin
-package net.calvuz.qreport.domain.model.client
-
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
-
-/**
- * Referente del cliente
- * Solo firstName è obbligatorio come richiesto
- */
 @Serializable
 data class Contact(
     val id: String,
@@ -345,17 +287,6 @@ enum class ContactMethod(val displayName: String) {
 ### 3.4 FacilityIsland - Isola per Stabilimento
 
 ```kotlin
-package net.calvuz.qreport.domain.model.client
-
-import kotlinx.datetime.Instant
-import kotlinx.serialization.Serializable
-import net.calvuz.qreport.client.island.domain.model.IslandType
-import net.calvuz.qreport.client.island.domain.model.IslandInfo
-
-/**
- * Isola robotizzata associata a uno stabilimento
- * Combina IslandType e IslandInfo esistenti
- */
 @Serializable
 data class FacilityIsland(
     val id: String,
@@ -439,14 +370,6 @@ enum class OperationalStatus(val displayName: String, val color: String) {
 ### 3.5 Address - Localizzazione
 
 ```kotlin
-package net.calvuz.qreport.domain.model.client
-
-import kotlinx.serialization.Serializable
-
-/**
- * Indirizzo e localizzazione geografica
- * Supporta coordinate GPS per mapping industriale
- */
 @Serializable
 data class Address(
     // ===== INDIRIZZO =====
@@ -1256,7 +1179,7 @@ fun ClientCard(
                     
                     if (client.islandsCount > 0) {
                         InfoChip(
-                            icon = Icons.Default.Precision Manufacturing,
+                            icon = Icons.Default.PrecisionManufacturing,
                             text = "${client.islandsCount} isole"
                         )
                     }

@@ -26,7 +26,7 @@ import net.calvuz.qreport.checkup.domain.usecase.UpdateCheckItemStatusUseCase
 import net.calvuz.qreport.checkup.domain.usecase.UpdateCheckUpStatusUseCase
 import net.calvuz.qreport.checkup.presentation.model.AssociationDialogState
 import net.calvuz.qreport.checkup.presentation.model.CheckUpDetailUiState
-import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetClientsUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilitiesByClientUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
 import net.calvuz.qreport.photo.domain.usecase.CapturePhotoUseCase
@@ -66,7 +66,7 @@ class CheckUpDetailViewModel @Inject constructor(
     private val deletePhotoUseCase: DeletePhotoUseCase,
 
     // Association
-    private val getAllActiveClientsUseCase: GetAllActiveClientsUseCase,
+    private val getClientsUseCase: GetClientsUseCase,
     private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase,
     private val getIslandsByFacilityUseCase: GetIslandsByFacilityUseCase,
     private val associateCheckUpToIslandUseCase: AssociateCheckUpToIslandUseCase,
@@ -873,23 +873,24 @@ class CheckUpDetailViewModel @Inject constructor(
     private fun loadAvailableClients() {
         viewModelScope.launch {
             try {
-                getAllActiveClientsUseCase()
-                    .onSuccess { clients ->
-                        _associationState.value = _associationState.value.copy(
-                            availableClients = clients,
-                            isLoadingClients = false
-                        )
+                when (val result =  getClientsUseCase() ) {
+                    is QrResult.Success -> {
+                    _associationState.value = _associationState.value.copy(
+                        availableClients = result.data,
+                        isLoadingClients = false
+                    )
+                }
+                    is QrResult.Error -> {
+                            _associationState.value = _associationState.value.copy(
+                                isLoadingClients = false
+                            )
+                            _uiState.value = _uiState.value.copy(
+                                error =
+                                    // "Errore caricamento clienti: ${error.message}"
+                                    QrError.Checkup.CLIENT_LOAD.asUiText(),
+                            )
                     }
-                    .onFailure { e ->
-                        _associationState.value = _associationState.value.copy(
-                            isLoadingClients = false
-                        )
-                        _uiState.value = _uiState.value.copy(
-                            error =
-                                // "Errore caricamento clienti: ${error.message}"
-                                QrError.Checkup.CLIENT_LOAD.asUiText(),
-                        )
-                    }
+                }
             } catch (e: Exception) {
                 _associationState.value = _associationState.value.copy(
                     isLoadingClients = false

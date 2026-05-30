@@ -36,4 +36,5 @@ interface ContractRepository {
 
     suspend fun isExpired(id: String): QrResult<Boolean, QrError>
 
+    suspend fun getContractsCountByClient(clientId: String): QrResult<Int, QrError>
 }

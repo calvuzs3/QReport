@@ -15,7 +15,7 @@ abstract class ClientRepositoryModule {
     @Binds
     @Singleton
     abstract fun bindClientRepository(
-        clientRepositoryImpl: ClientRepositoryImpl
+        impl: ClientRepositoryImpl
     ): ClientRepository
 
 }

@@ -62,10 +62,7 @@ data class ContractFormUiState(
 
     val savedContractId: String? = null
 
-) {
-    val isFormValid: Boolean
-        get() = errors != null
-}
+)
 
 @HiltViewModel
 class ContractFormViewModel @Inject constructor(
@@ -169,8 +166,8 @@ class ContractFormViewModel @Inject constructor(
             clientId = state.clientId,
             name = state.name.trim(),
             description = state.description.trim(),
-            startDate = state.startDate?.let { it } ?: now,
-            endDate = state.endDate?.let { it } ?: now,
+            startDate = state.startDate ?: now,
+            endDate = state.endDate ?: now,
             hasPriority = state.hasPriority,
             hasRemoteAssistance = state.hasRemoteAssistance,
             hasMaintenance = state.hasMaintenance,
@@ -375,10 +372,11 @@ class ContractFormViewModel @Inject constructor(
 
                         _uiState.update {
                             it.copy(
-                                savedContractId = when (result) {
-                                    is QrResult.Success -> result.data  // ✅ ID reale dal database
-                                    is QrResult.Error -> null
-                                },
+                                savedContractId = result.data,
+//                                    when (result) {
+//                                    is QrResult.Success -> result.data  // ✅ ID reale dal database
+//                                    is QrResult.Error -> null
+//                                },
                                 isSaving = false,
                                 saveCompleted = true,
                                 isDirty = false

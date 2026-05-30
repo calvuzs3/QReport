@@ -8,37 +8,31 @@ import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import timber.log.Timber
 import javax.inject.Inject
 
-/** UI flow Observe facilities */
+/**
+ * Reactive Flow of facilities, optionally filtered by client.
+ *
+ * Sort order: primary first, then alphabetical by name.
+ * Flow use cases do not validate client existence synchronously —
+ * an invalid clientId produces an empty flow, which the ViewModel
+ * handles via its empty-state UI.
+ */
 class ObserveFacilitiesUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository,
-    private val checkClientExists: CheckClientExistsUseCase
 ) {
-
-    /**
-     * Observe all facilities (reactive flow)
-     *
-     * @param clientId Client ID if any
-     * @return Facility list Flow
-     */
     operator fun invoke(clientId: String? = null): Flow<List<Facility>> {
-        Timber.d("ClientId: ${clientId ?: "nullo"}")
+        Timber.d("ObserveFacilitiesUseCase clientId=${clientId ?: "none"}")
 
-        if (clientId.isNullOrBlank()) {
-            return facilityRepository.getAllFacilitiesFlow()
-                .map { facilities ->
-                    facilities.sortedWith(
-                        compareByDescending<Facility> { it.isPrimary }
-                            .thenBy { it.name.lowercase() }
-                    )
-                }
+        val flow = if (clientId.isNullOrBlank()) {
+            facilityRepository.getAllFacilitiesFlow()
         } else {
-            return facilityRepository.getFacilitiesByClientFlow(clientId)
-                .map { facilities ->
-                    facilities.sortedWith(
-                        compareByDescending<Facility> { it.isPrimary }
-                            .thenBy { it.name.lowercase() }
-                    )
-                }
+            facilityRepository.getFacilitiesByClientFlow(clientId)
+        }
+
+        return flow.map { facilities ->
+            facilities.sortedWith(
+                compareByDescending<Facility> { it.isPrimary }
+                    .thenBy { it.name.lowercase() }
+            )
         }
     }
 }

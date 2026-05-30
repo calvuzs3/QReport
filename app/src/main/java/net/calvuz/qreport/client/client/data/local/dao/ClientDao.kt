@@ -13,13 +13,13 @@ interface ClientDao {
     // ===== BASIC CRUD =====
 
     @Query("SELECT * FROM clients ORDER BY company_name ASC")
-    fun getAllClientsFlow(): Flow<List<ClientEntity>>
+    fun getClientsFlow(): Flow<List<ClientEntity>>
 
     @Query("SELECT * FROM clients WHERE is_active = 1 ORDER BY company_name ASC")
-    fun getAllActiveClientsFlow(): Flow<List<ClientEntity>>
+    fun getActiveClientsFlow(): Flow<List<ClientEntity>>
 
     @Query("SELECT * FROM clients ORDER BY company_name ASC")
-    suspend fun getAllClients(): List<ClientEntity>
+    suspend fun getClients(): List<ClientEntity>
 
     @Query("SELECT * FROM clients WHERE id = :id")
     suspend fun getClientById(id: String): ClientEntity?
@@ -147,7 +147,7 @@ interface ClientDao {
         )
         ORDER BY c.company_name ASC
     """)
-    suspend fun getClientsWithFacilities(): List<ClientEntity>
+    suspend fun getActiveClientsWithFacilities(): List<ClientEntity>
 
     @Query("""
         SELECT c.* FROM clients c
@@ -158,7 +158,7 @@ interface ClientDao {
         )
         ORDER BY c.company_name ASC
     """)
-    suspend fun getClientsWithContacts(): List<ClientEntity>
+    suspend fun getActiveClientsWithContacts(): List<ClientEntity>
 
     @Query("""
         SELECT c.* FROM clients c
@@ -169,7 +169,7 @@ interface ClientDao {
         )
         ORDER BY c.company_name ASC
     """)
-    suspend fun getClientsWithContracts(): List<ClientEntity>
+    suspend fun getActiveClientsWithContracts(): List<ClientEntity>
 
     @Query("""
         SELECT c.* FROM clients c
@@ -181,7 +181,7 @@ interface ClientDao {
         )
         ORDER BY c.company_name ASC
     """)
-    suspend fun getClientsWithIslands(): List<ClientEntity>
+    suspend fun getActiveClientsWithIslands(): List<ClientEntity>
 
     // ===== QUERY CON CONTEGGI CORRETTA ===== ✅
     @Query("""

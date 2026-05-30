@@ -2,7 +2,6 @@ package net.calvuz.qreport.client.facility.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import net.calvuz.qreport.client.client.domain.usecase.CheckClientExistsUseCase
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import timber.log.Timber

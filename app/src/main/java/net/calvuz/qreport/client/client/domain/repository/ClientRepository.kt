@@ -11,7 +11,7 @@ interface ClientRepository {
 
     // ===== CRUD OPERATIONS =====
 
-    suspend fun getAllClients(): Result<List<Client>>
+    suspend fun getClients(): Result<List<Client>>
     suspend fun getActiveClients(): Result<List<Client>>
     suspend fun getClientById(id: String): Result<Client?>
     suspend fun createClient(client: Client): Result<Unit>
@@ -20,8 +20,8 @@ interface ClientRepository {
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
-    fun getAllClientsFlow(): Flow<List<Client>>
-    fun getAllActiveClientsFlow(): Flow<List<Client>>
+    fun getClientsFlow(): Flow<List<Client>>
+    fun getActiveClientsFlow(): Flow<List<Client>>
     fun getClientByIdFlow(id: String): Flow<Client?>
 
     // ===== SEARCH & FILTER =====
@@ -44,10 +44,10 @@ interface ClientRepository {
 
     // ===== COMPLEX QUERIES =====
 
-    suspend fun getClientsWithFacilities(): Result<List<Client>>
-    suspend fun getClientsWithContacts(): Result<List<Client>>
-    suspend fun getClientsWithContracts(): Result<List<Client>>
-    suspend fun getClientsWithIslands(): Result<List<Client>>
+    suspend fun getActiveClientsWithFacilities(): Result<List<Client>>
+    suspend fun getActiveClientsWithContacts(): Result<List<Client>>
+    suspend fun getActiveClientsWithContracts(): Result<List<Client>>
+    suspend fun getActiveClientsWithIslands(): Result<List<Client>>
 
     // ===== BULK OPERATIONS =====
 

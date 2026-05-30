@@ -91,6 +91,27 @@ interface QrError {
 
     }
 
+    sealed interface ClientError : QrError {
+
+        // ── CRUD ─────────────────────────────────────────────────────────────
+
+        data class LoadError(val message: String? = null) : ClientError
+        data class NotFound(val message: String? = null) : ClientError
+        data class CreateError(val message: String? = null) : ClientError
+        data class UpdateError(val message: String? = null) : ClientError
+        data class DeleteError(val message: String? = null) : ClientError
+
+        // ── Validation ───────────────────────────────────────────────────────
+
+        data class MissingCompanyName(val message: String? = null) : ClientError
+
+        // ── Business rules ───────────────────────────────────────────────────
+
+        /** Client still owns active facilities; deactivate them before deleting. */
+        data class CannotDeleteHasActiveFacilities(val message: String? = null) : ClientError
+    }
+
+
     sealed interface Contracts : QrError {
         data class ClientIdEmpty(val message: String?) : Contracts
         data class ClientNotFound(val message: String?) : Contracts

@@ -84,6 +84,18 @@ fun QrError.ValidationError.toUiText(): UiText {
     }
 }
 
+fun QrError.ClientError.toUiText(): UiText {
+    return when (this) {
+        is QrError.ClientError.LoadError -> StringResources(R.string.err_client_load)
+        is QrError.ClientError.NotFound -> StringResources(R.string.err_client_not_found)
+        is QrError.ClientError.CreateError -> StringResources(R.string.err_client_create)
+        is QrError.ClientError.UpdateError -> StringResources(R.string.err_client_update)
+        is QrError.ClientError.DeleteError -> StringResources(R.string.err_client_delete)
+        is QrError.ClientError.MissingCompanyName -> StringResources(R.string.err_client_fields_required)
+        is QrError.ClientError.CannotDeleteHasActiveFacilities -> StringResources(R.string.err_client_cannot_delete_has_active_facilities)
+    }
+}
+
 fun QrError.Contracts.toUiText(): UiText {
     return when (this) {
         is QrError.Contracts.ClientIdEmpty -> StringResources(R.string.err_contracts_client_id_empty)
@@ -127,14 +139,15 @@ fun QrError.asUiText(): UiText {
     return when (this) {
 
         is QrError.SystemError -> this.toUiText()
+        is QrError.DatabaseError -> this.toUiText()
+        is QrError.Export -> this.toUiText()
         is QrError.CreateInterventionError -> this.toUiText()
         is QrError.InterventionError -> this.toUiText()
         is QrError.App -> this.toUiText()
         is QrError.ValidationError -> this.toUiText()
+        is QrError.ClientError -> this.toUiText()
         is QrError.Contacts -> this.toUiText()
         is QrError.Contracts -> this.toUiText()
-        is QrError.DatabaseError -> this.toUiText()
-        is QrError.Export -> this.toUiText()
 
 
         // File Error Mappings - Core File Operations

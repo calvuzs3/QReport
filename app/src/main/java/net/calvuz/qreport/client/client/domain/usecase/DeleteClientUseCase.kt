@@ -1,69 +1,57 @@
 package net.calvuz.qreport.client.client.domain.usecase
 
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
-import net.calvuz.qreport.client.contact.domain.repository.ContactRepository
-import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import javax.inject.Inject
 
 /**
- * Use Case per eliminazione di un cliente
+ * Soft-deletes a client, optionally cascading to its dependencies.
  *
- * Gestisce:
- * - Validazione esistenza cliente
- * - Controllo dipendenze (facilities, contatti, isole)
- * - Eliminazione sicura (soft delete)
- * - Pulizia opzionale dipendenze
- *
- * Business Rules:
- * - Cliente può essere eliminato solo se non ha dipendenze attive
- * - Oppure con flag di forzatura per eliminare anche dipendenze
+ * @param clientId  ID of the client to delete
+ * @param cascade   if true (default) deletes facilities and contacts first;
+ *                  if false, fails when dependencies exist
  */
 class DeleteClientUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
-    private val facilityRepository: FacilityRepository,
-    private val contactRepository: ContactRepository,
     private val checkClientExists: CheckClientExistsUseCase,
     private val checkClientDependencies: CheckClientDependenciesUseCase,
     private val deleteClientDependencies: DeleteClientDependenciesUseCase
 ) {
-
-    /**
-     * Delete a Cliente
-     *
-     * @param clientId Client ID
-     * @param cascade If true, cascade (default)
-     * @return Unit Result
-     */
     suspend operator fun invoke(
         clientId: String,
-        cascade: Boolean = true
-    ): Result<Unit> {
-        return try {
-
-            // 1. Input validation
-            if (clientId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
-            }
-
-            // 2. Client check
-            checkClientExists(clientId).onFailure { return Result.failure(it) }
-
-            // 3. Dependencies check
-            if (!cascade) {
-                // It would leave orphans behind
-                checkClientDependencies(clientId).onFailure { return Result.failure(it) }
-            }
-
-            // 4. Delete dependencies
-            if (cascade) {
-                deleteClientDependencies(clientId).onFailure { return Result.failure(it) }
-            }
-
-            // 5. Delete Client
-            clientRepository.deleteClient(clientId)
-
-        } catch (e: Exception) {
-            Result.failure(e)
+        cascade: Boolean = false
+    ): QrResult<Unit, QrError.ClientError> {
+        if (clientId.isBlank()) {
+            return QrResult.Error(QrError.ClientError.NotFound())
         }
+
+        // Verify client exists
+        when (val exists = checkClientExists(clientId)) {
+            is QrResult.Error -> return QrResult.Error(exists.error)
+            is QrResult.Success -> Unit
+        }
+
+        // If not cascading, block when dependencies are present
+        if (!cascade) {
+            when (val dependencies = checkClientDependencies(clientId)) {
+                is QrResult.Error -> return dependencies
+                is QrResult.Success -> Unit
+            }
+        }
+
+        // Cascade: remove dependencies first
+        if (cascade) {
+            when (val dependencies = deleteClientDependencies(clientId)) {
+                is QrResult.Error -> return dependencies
+                is QrResult.Success -> Unit
+            }
+        }
+
+        // Soft-delete the client itself
+        return clientRepository.deleteClient(clientId).fold(
+            onSuccess = { QrResult.Success(Unit) },
+            onFailure = { QrResult.Error(QrError.ClientError.DeleteError(it.message)) }
+        )
     }
 }

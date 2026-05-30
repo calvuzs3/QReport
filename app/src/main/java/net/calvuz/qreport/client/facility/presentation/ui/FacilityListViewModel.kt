@@ -9,7 +9,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
-import net.calvuz.qreport.client.client.domain.usecase.ObserveAllActiveClientsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.client.presentation.model.ClientOption
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
@@ -49,7 +49,7 @@ class FacilityListViewModel @Inject constructor(
     private val observeFacilitiesByClientUseCase: ObserveFacilitiesByClientUseCase,
     private val deleteFacilityUseCase: DeleteFacilityUseCase,
     private val getFacilityWithIslandsUseCase: GetFacilityWithIslandsUseCase,
-    private val observeAllActiveClientsUseCase: ObserveAllActiveClientsUseCase,
+    private val observeClientsUseCase: ObserveClientsUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
@@ -431,7 +431,7 @@ class FacilityListViewModel @Inject constructor(
     private fun loadClientsForDropdown() {
         viewModelScope.launch {
             try {
-                observeAllActiveClientsUseCase()
+                observeClientsUseCase()
                     .catch { e -> Timber.e(e, "Error loading clients for dropdown") }
                     .collect { clients ->
                         val options = listOf(ClientOption.ALL) + clients.map { client ->

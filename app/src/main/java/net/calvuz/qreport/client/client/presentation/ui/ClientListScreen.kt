@@ -19,7 +19,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.client.client.presentation.ui.components.ClientCard
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
@@ -31,18 +30,21 @@ import net.calvuz.qreport.client.client.presentation.model.ClientSortOrder
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
+import net.calvuz.qreport.R
+import androidx.compose.ui.res.stringResource
+import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 
 /**
- * Screen per la lista clienti - VERSIONE CON COMPONENTS RIUTILIZZABILI
+ * Client list screen
  *
  * Features:
- * - Lista clienti dal database con statistiche reali
- * - Ricerca avanzata con SearchClientsUseCase
- * - Filtri per stato e tipo
+ * - Client list from db with real statistics
+ * - Advanced search with SearchClientsUseCase
+ * - Filter for state and type
  * - Pull to refresh
- * - Stati loading/error/empty ottimizzati
- * - ClientCard riutilizzabili
- * - SearchBar component dedicato
+ * - Optimized loading/error/empty states
+ * - ClientCard reusable
+ * - Dedicated SearchBar component
  */
 @Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,7 +81,7 @@ fun ClientListScreen(
                 IconButton(onClick = { showSortOrderMenu = true }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Default.Sort,
-                        contentDescription = "Ordinamento"
+                        contentDescription = stringResource(R.string.client_screen_list_action_sort)
                     )
                 }
 
@@ -87,7 +89,7 @@ fun ClientListScreen(
                 IconButton(onClick = { showFilterMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.FilterList,
-                        contentDescription = "Filtri"
+                        contentDescription = stringResource(R.string.client_screen_list_action_filter)
                     )
                 }
 
@@ -111,11 +113,11 @@ fun ClientListScreen(
             }
         )
 
-        // Search bar usando component riutilizzabile
+        // Search bar
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Ricerca Clienti",
+            placeholder = stringResource(R.string.client_screen_list_search_placeholder),
             modifier = Modifier.padding(16.dp)
         )
 
@@ -164,7 +166,7 @@ fun ClientListScreen(
                 }
 
                 currentError != null -> {
-                    ErrorState(
+                    QReportErrorState(
                         error = currentError, // Smart cast works correctly
                         onRetry = viewModel::loadClients,
                         onDismiss = viewModel::dismissError
@@ -173,21 +175,24 @@ fun ClientListScreen(
 
                 uiState.filteredClients.isEmpty() -> {
                     val (title, message) = when {
-                        uiState.clients.isEmpty() -> "Nessun Cliente" to "Non ci sono ancora Clienti"
-                        uiState.selectedFilter != ClientFilter.ALL -> "Nessun risultato" to "Non ci sono Clienti che corrispondono al filtro '${
-                            uiState.selectedFilter.getDisplayName()
-                        }'"
-
-                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                        uiState.clients.isEmpty() ->
+                            stringResource(R.string.client_screen_list_empty_title) to
+                                    stringResource(R.string.client_screen_list_empty_message)
+                        uiState.selectedFilter != ClientFilter.ALL ->
+                            stringResource(R.string.client_screen_list_empty_filtered_title) to
+                                    stringResource(R.string.client_screen_list_empty_filtered_message, uiState.selectedFilter.getDisplayName())
+                        else ->
+                            stringResource(R.string.client_screen_list_empty_generic_title) to
+                                    stringResource(R.string.client_screen_list_empty_generic_message)
                     }
                     EmptyState(
                         textTitle = title,
                         textMessage = message,
                         iconImageVector = Icons.Outlined.Factory,
-                        iconContentDescription = "Nessun Cliente",
+                        iconContentDescription = stringResource(R.string.client_screen_list_empty_icon_description),
                         iconActionImageVector = Icons.Default.Add,
-                        iconActionContentDescription = "Nuovo cliente",
-                        textAction = "Nuovo Cliente",
+                        iconActionContentDescription = stringResource(R.string.client_screen_list_fab_new),
+                        textAction = stringResource(R.string.client_screen_list_empty_action),
                         onAction = onCreateNewClient
                     )
                 }
@@ -220,7 +225,7 @@ fun ClientListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Nuovo Cliente"
+                    contentDescription = stringResource(R.string.client_screen_list_fab_new)
                 )
             }
         }

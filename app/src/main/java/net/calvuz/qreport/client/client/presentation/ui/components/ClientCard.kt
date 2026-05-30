@@ -13,10 +13,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.client.domain.model.Client
-import net.calvuz.qreport.client.client.domain.model.ClientSingleStatistics
+import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
 import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.ListStatItem
 import net.calvuz.qreport.app.app.presentation.components.StatusIndicator
+import androidx.compose.ui.res.stringResource
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
@@ -30,7 +32,7 @@ import net.calvuz.qreport.settings.domain.model.ListViewMode
 fun ClientCard(
     modifier: Modifier = Modifier,
     client: Client,
-    stats: ClientSingleStatistics? = null,
+    stats: ClientStatistics? = null,
     onClick: () -> Unit,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
@@ -66,7 +68,7 @@ fun ClientCard(
     // Delete confirmation dialog
     if (showDeleteDialog && onDelete != null) {
         ConfirmDeleteDialog(
-            objectName = "Cliente",
+            objectName = stringResource(R.string.client_card_delete_object_name),
             objectDesc = client.companyName,
             onConfirm = {
                 onDelete()
@@ -80,7 +82,7 @@ fun ClientCard(
 @Composable
 private fun FullClientCard(
     client: Client,
-    stats: ClientSingleStatistics?,
+    stats: ClientStatistics?,
     showActions: Boolean,
     onDelete: (() -> Unit)?,
     onEdit: (() -> Unit)?
@@ -114,7 +116,7 @@ private fun FullClientCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
-                                contentDescription = "Modifica cliente",
+                                contentDescription = stringResource(R.string.client_card_action_edit),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -155,13 +157,13 @@ private fun FullClientCard(
                 ListStatItem(
                     icon = Icons.Default.Business,
                     value = stats.facilitiesCount.toString(),
-                    label = "Stabilim"
+                    label = stringResource(R.string.client_card_stat_facilities)
                 )
 
                 ListStatItem(
                     icon = Icons.Default.PrecisionManufacturing,
                     value = stats.islandsCount.toString(),
-                    label = "Isole"
+                    label = stringResource(R.string.client_card_stat_islands)
                 )
             }
             Row(
@@ -171,13 +173,13 @@ private fun FullClientCard(
                 ListStatItem(
                     icon = Icons.Default.AssignmentTurnedIn,
                     value = stats.contractsCount.toString(),
-                    label = "Contratti"
+                    label = stringResource(R.string.client_card_stat_contracts)
                 )
 
                 ListStatItem(
                     icon = Icons.AutoMirrored.Default.Assignment,
                     value = stats.totalCheckUps.toString(),
-                    label = "Check-up"
+                    label = stringResource(R.string.client_card_stat_checkups)
                 )
             }
             Row(
@@ -187,7 +189,7 @@ private fun FullClientCard(
                 ListStatItem(
                     icon = Icons.Default.People,
                     value = stats.contactsCount.toString(),
-                    label = "Contatti"
+                    label = stringResource(R.string.client_card_stat_contacts)
                 )
             }
         }
@@ -214,7 +216,7 @@ private fun FullClientCard(
 @Composable
 private fun CompactClientCard(
     client: Client,
-    stats: ClientSingleStatistics?
+    stats: ClientStatistics?
 ) {
     Column(
         modifier = Modifier.padding(12.dp),
@@ -295,9 +297,9 @@ private fun ClientStatusChip(
     modifier: Modifier = Modifier
 ) {
     val (text, containerColor) = if (isActive) {
-        "Attivo" to MaterialTheme.colorScheme.surfaceVariant
+        stringResource(R.string.client_card_status_active) to MaterialTheme.colorScheme.surfaceVariant
     } else {
-        "Inattivo" to MaterialTheme.colorScheme.errorContainer
+        stringResource(R.string.client_card_status_inactive) to MaterialTheme.colorScheme.errorContainer
     }
 
     AssistChip(

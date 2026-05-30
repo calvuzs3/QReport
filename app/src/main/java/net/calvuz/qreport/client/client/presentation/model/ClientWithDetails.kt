@@ -1,11 +1,12 @@
-package net.calvuz.qreport.client.client.domain.model
+package net.calvuz.qreport.client.client.presentation.model
 
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.facility.domain.model.Facility
-import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
+import net.calvuz.qreport.client.island.domain.model.Island
 
 /**
  * Data class che aggrega tutti i dati del cliente per la detail view
@@ -15,7 +16,7 @@ data class ClientWithDetails(
     val facilities: List<FacilityWithIslands>,
     val contacts: List<Contact>,
     val contracts: List<Contract>,
-    val statistics: ClientSingleStatistics,
+    val statistics: ClientStatistics,
 
     // Convenience fields per UI
     val primaryContact: Contact? = null,

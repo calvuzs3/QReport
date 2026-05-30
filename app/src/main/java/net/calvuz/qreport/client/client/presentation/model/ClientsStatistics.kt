@@ -1,6 +1,6 @@
-package net.calvuz.qreport.client.client.domain.model
+package net.calvuz.qreport.client.client.presentation.model
 
-data class ClientStatistics (
+data class ClientsStatistics (
 
     /**
      * Statistiche generali clienti

@@ -3,64 +3,55 @@ package net.calvuz.qreport.client.client.presentation.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.model.Client
-import net.calvuz.qreport.client.client.domain.model.ClientSingleStatistics
-import net.calvuz.qreport.client.client.domain.usecase.GetClientStatisticsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.DeleteClientUseCase
-import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsUseCase
-import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithContactsUseCase
-import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithContractsUseCase
-import net.calvuz.qreport.client.client.domain.usecase.ObserveAllActiveClientsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetActiveClientsWithContactsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetActiveClientsWithContractsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetActiveClientsWithFacilitiesUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetActiveClientsWithIslandsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetClientStatisticsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.GetClientsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.SearchClientsUseCase
-import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithFacilitiesUseCase
-import net.calvuz.qreport.client.client.domain.usecase.GetAllActiveClientsWithIslandsUseCase
 import net.calvuz.qreport.client.client.presentation.model.ClientFilter
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientSortOrder
+import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
 
-/**
- * ViewModel per ClientListScreen - VERSIONE OTTIMIZZATA CON METODI USE CASE REALI
- *
- * Features:
- * - Usa observeActiveClients() per Flow reattivo
- * - Usa getActiveClients() per refresh one-shot
- * - Sfrutta metodi specializzati (getClientsWithFacilities, etc.)
- * - Gestione filtri ottimizzata con backend queries
- * - Performance migliorate
- */
-
 data class ClientListUiState(
     val clients: List<ClientWithStats> = emptyList(),
     val filteredClients: List<ClientWithStats> = emptyList(),
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val searchQuery: String = "",
     val selectedFilter: ClientFilter = ClientPkg.selectedFilter,
     val selectedSortOrder: ClientSortOrder = ClientPkg.selectedSortOrder,
-    // Card display variant, persisted via AppSettingsDataStore
     val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
 @HiltViewModel
 class ClientListViewModel @Inject constructor(
-    private val getAllActiveClientsUseCase: GetAllActiveClientsUseCase,
-    private val getAllActiveClientsWithFacilitiesUseCase: GetAllActiveClientsWithFacilitiesUseCase,
-    private val getAllActiveClientWithContactsUseCase: GetAllActiveClientsWithContactsUseCase,
-    private val getAllActiveClientWithContractsUseCase: GetAllActiveClientsWithContractsUseCase,
-    private val getAllActiveClientsWithIslandsUseCase: GetAllActiveClientsWithIslandsUseCase,
-    private val observeAllActiveClientsUseCase: ObserveAllActiveClientsUseCase,
+    private val getClientsUseCase: GetClientsUseCase,
+    private val getActiveClientsWithFacilitiesUseCase: GetActiveClientsWithFacilitiesUseCase,
+    private val getAllActiveClientWithContactsUseCase: GetActiveClientsWithContactsUseCase,
+    private val getAllActiveClientWithContractsUseCase: GetActiveClientsWithContractsUseCase,
+    private val getActiveClientsWithIslandsUseCase: GetActiveClientsWithIslandsUseCase,
+    private val observeClientsUseCase: ObserveClientsUseCase,
     private val getClientStatisticsUseCase: GetClientStatisticsUseCase,
     private val deleteClientUseCase: DeleteClientUseCase,
     private val searchClientsUseCase: SearchClientsUseCase,
@@ -71,46 +62,35 @@ class ClientListViewModel @Inject constructor(
     val uiState: StateFlow<ClientListUiState> = _uiState.asStateFlow()
 
     init {
-        Timber.d("ClientListViewModel initialized with optimized use case calls")
+        Timber.d("ClientListViewModel initialized")
         observeCardVariant()
         loadClients()
     }
 
-    // ============================================================
+    // =========================================================================
     // PUBLIC METHODS
-    // ============================================================
+    // =========================================================================
 
     fun loadClients() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                error = null
-            )
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
 
             try {
-                Timber.d("Loading clients list with observeActiveClients()")
-
-                observeAllActiveClientsUseCase()
+                observeClientsUseCase()
                     .catch { exception ->
                         if (exception is CancellationException) throw exception
-                        Timber.e(exception, "Error in observeActiveClients flow")
+                        Timber.e(exception, "Error in observeClients flow")
                         if (currentCoroutineContext().isActive) {
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                error = "Errore caricamento clienti: ${exception.message}"
+                                error = UiText.StringResource(R.string.err_client_load_clients)
                             )
                         }
                     }
                     .collect { clients ->
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping clients processing - job cancelled")
-                            return@collect
-                        }
-
-                        // Enrich with REAL statistics
+                        if (!currentCoroutineContext().isActive) return@collect
                         val clientsWithStats = enrichWithStatistics(clients)
-
                         if (currentCoroutineContext().isActive) {
                             val currentState = _uiState.value
                             val filteredAndSorted = applyFiltersAndSort(
@@ -119,7 +99,6 @@ class ClientListViewModel @Inject constructor(
                                 currentState.selectedFilter,
                                 currentState.selectedSortOrder
                             )
-
                             _uiState.value = currentState.copy(
                                 clients = clientsWithStats,
                                 filteredClients = filteredAndSorted,
@@ -127,11 +106,9 @@ class ClientListViewModel @Inject constructor(
                                 isRefreshing = false,
                                 error = null
                             )
-
-                            Timber.d("Loaded ${clients.size} clients successfully")
+                            Timber.d("Loaded ${clients.size} clients")
                         }
                     }
-
             } catch (_: CancellationException) {
                 Timber.d("Clients loading cancelled (normal during navigation)")
             } catch (e: Exception) {
@@ -140,7 +117,7 @@ class ClientListViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = "Errore caricamento clienti: ${e.message}"
+                        error = UiText.StringResource(R.string.err_client_load_clients)
                     )
                 }
             }
@@ -149,65 +126,37 @@ class ClientListViewModel @Inject constructor(
 
     fun refresh() {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
+            _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
+            delay(500)
 
-                Timber.d("Refreshing clients list with getActiveClients()")
-                delay(500)
-
-                // Use getActiveClients() for one-shot refresh operation
-                getAllActiveClientsUseCase()
-                    .fold(
-                        onSuccess = { clients ->
-                            if (!currentCoroutineContext().isActive) {
-                                Timber.d("Skipping refresh processing - job cancelled")
-                                return@launch
-                            }
-
-                            val clientsWithStats = enrichWithStatistics(clients)
-
-                            if (currentCoroutineContext().isActive) {
-                                val currentState = _uiState.value
-                                val filteredAndSorted = applyFiltersAndSort(
-                                    clientsWithStats,
-                                    currentState.searchQuery,
-                                    currentState.selectedFilter,
-                                    currentState.selectedSortOrder
-                                )
-
-                                _uiState.value = currentState.copy(
-                                    clients = clientsWithStats,
-                                    filteredClients = filteredAndSorted,
-                                    isRefreshing = false,
-                                    error = null
-                                )
-
-                                Timber.d("Refresh completed successfully")
-                            }
-                        },
-                        onFailure = { error ->
-                            if (currentCoroutineContext().isActive) {
-                                Timber.e(error, "Failed to refresh clients")
-                                _uiState.value = _uiState.value.copy(
-                                    isRefreshing = false,
-                                    error = "Errore refresh: ${error.message}"
-                                )
-                            }
-                        }
-                    )
-
-            } catch (_: CancellationException) {
-                Timber.d("Refresh cancelled")
-                if (currentCoroutineContext().isActive) {
-                    _uiState.value = _uiState.value.copy(isRefreshing = false)
+            when (val result = getClientsUseCase()) {
+                is QrResult.Success -> {
+                    if (!currentCoroutineContext().isActive) return@launch
+                    val clientsWithStats = enrichWithStatistics(result.data)
+                    if (currentCoroutineContext().isActive) {
+                        val currentState = _uiState.value
+                        _uiState.value = currentState.copy(
+                            clients = clientsWithStats,
+                            filteredClients = applyFiltersAndSort(
+                                clientsWithStats,
+                                currentState.searchQuery,
+                                currentState.selectedFilter,
+                                currentState.selectedSortOrder
+                            ),
+                            isRefreshing = false,
+                            error = null
+                        )
+                        Timber.d("Refresh completed successfully")
+                    }
                 }
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to refresh clients")
-                    _uiState.value = _uiState.value.copy(
-                        isRefreshing = false,
-                        error = "Errore refresh: ${e.message}"
-                    )
+                is QrResult.Error -> {
+                    if (currentCoroutineContext().isActive) {
+                        Timber.e("Failed to refresh clients: ${result.error}")
+                        _uiState.value = _uiState.value.copy(
+                            isRefreshing = false,
+                            error = UiText.StringResource(R.string.err_client_refresh)
+                        )
+                    }
                 }
             }
         }
@@ -215,43 +164,29 @@ class ClientListViewModel @Inject constructor(
 
     fun inactivateClient(clientId: String) {
         viewModelScope.launch {
-            try {
-                Timber.d("Inactivating Client: $clientId")
+            Timber.d("Inactivating client: $clientId")
 
-                deleteClientUseCase(clientId).fold(
-                    onSuccess = {
-                        Timber.d("Client deleted successfully")
-                        // The list will be automatically updated via observeActiveClients() Flow
-                    },
-                    onFailure = { error ->
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e(error, "Failed to delete client")
-                            _uiState.value = _uiState.value.copy(
-                                error = "Errore eliminazione cliente: ${error.message}"
-                            )
-                        }
+            when (val result = deleteClientUseCase(clientId)) {
+                is QrResult.Success -> {
+                    Timber.d("Client inactivated successfully")
+                    // List updates automatically via observeClientsUseCase Flow
+                }
+                is QrResult.Error -> {
+                    if (currentCoroutineContext().isActive) {
+                        Timber.e("Failed to inactivate client: ${result.error}")
+                        _uiState.value = _uiState.value.copy(
+                            error = UiText.StringResource(R.string.err_client_inactivate)
+                        )
                     }
-                )
-
-            } catch (_: CancellationException) {
-                Timber.d("Delete operation cancelled")
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Exception deleting client")
-                    _uiState.value = _uiState.value.copy(
-                        error = "Errore imprevisto: ${e.message}"
-                    )
                 }
             }
         }
     }
 
     fun updateSearchQuery(query: String) {
-        // Se c'è una query significativa, usa SearchClientsUseCase
         if (query.isNotBlank() && query.length > 2) {
             performSearch(query)
         } else {
-            // Per query vuote o troppo corte, filtra la lista corrente
             val currentState = _uiState.value
             val filteredAndSorted = applyFiltersAndSort(
                 currentState.clients,
@@ -259,7 +194,6 @@ class ClientListViewModel @Inject constructor(
                 currentState.selectedFilter,
                 currentState.selectedSortOrder
             )
-
             _uiState.value = currentState.copy(
                 searchQuery = query,
                 filteredClients = filteredAndSorted
@@ -268,105 +202,54 @@ class ClientListViewModel @Inject constructor(
     }
 
     fun updateFilter(filter: ClientFilter) {
-        // Per alcuni filtri, usa metodi specializzati del use case per performance migliori
         when (filter) {
-            ClientFilter.WITH_FACILITIES -> loadClientsWithSpecialFilter { getAllActiveClientsWithFacilitiesUseCase() }
-            ClientFilter.WITH_ISLANDS -> loadClientsWithSpecialFilter { getAllActiveClientsWithIslandsUseCase() }
+            ClientFilter.WITH_FACILITIES -> loadClientsWithSpecialFilter { getActiveClientsWithFacilitiesUseCase() }
+            ClientFilter.WITH_ISLANDS -> loadClientsWithSpecialFilter { getActiveClientsWithIslandsUseCase() }
             ClientFilter.WITH_CONTACTS -> loadClientsWithSpecialFilter { getAllActiveClientWithContactsUseCase() }
             ClientFilter.WITH_CONTRACTS -> loadClientsWithSpecialFilter { getAllActiveClientWithContractsUseCase() }
             else -> {
-                // Per filtri semplici, usa filtro locale
                 val currentState = _uiState.value
-                val filteredAndSorted = applyFiltersAndSort(
-                    currentState.clients,
-                    currentState.searchQuery,
-                    filter,
-                    currentState.selectedSortOrder
-                )
-
                 _uiState.value = currentState.copy(
                     selectedFilter = filter,
-                    filteredClients = filteredAndSorted
-                )
-            }
-        }
-    }
-
-    private fun loadClientsWithSpecialFilter(filterCall: suspend () -> Result<List<Client>>) {
-        viewModelScope.launch {
-            try {
-                Timber.d("Loading clients with specialized filter")
-
-                filterCall().fold(
-                    onSuccess = { clients ->
-                        if (currentCoroutineContext().isActive) {
-                            val clientsWithStats = enrichWithStatistics(clients)
-                            val currentState = _uiState.value
-
-                            _uiState.value = currentState.copy(
-                                filteredClients = clientsWithStats,
-                                selectedFilter = currentState.selectedFilter
-                            )
-                        }
-                    },
-                    onFailure = { error ->
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e(error, "Failed to load clients with filter")
-                            _uiState.value = _uiState.value.copy(
-                                error = "Errore applicazione filtro: ${error.message}"
-                            )
-                        }
-                    }
-                )
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Exception applying filter")
-                    _uiState.value = _uiState.value.copy(
-                        error = "Errore imprevisto: ${e.message}"
+                    filteredClients = applyFiltersAndSort(
+                        currentState.clients,
+                        currentState.searchQuery,
+                        filter,
+                        currentState.selectedSortOrder
                     )
-                }
+                )
             }
         }
     }
 
     fun updateSortOrder(clientSortOrder: ClientSortOrder) {
         val currentState = _uiState.value
-        val filteredAndSorted = applyFiltersAndSort(
-            currentState.clients,
-            currentState.searchQuery,
-            currentState.selectedFilter,
-            clientSortOrder
-        )
-
         _uiState.value = currentState.copy(
             selectedSortOrder = clientSortOrder,
-            filteredClients = filteredAndSorted
+            filteredClients = applyFiltersAndSort(
+                currentState.clients,
+                currentState.searchQuery,
+                currentState.selectedFilter,
+                clientSortOrder
+            )
         )
     }
 
-
     /**
-     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
+     * Cycles through card display variants: FULL → COMPACT → MINIMAL → FULL.
      * The preference is persisted via [AppSettingsRepository].
      */
     fun cycleCardVariant() {
-        val current = _uiState.value.cardVariant
-        val next = when (current) {
+        val next = when (_uiState.value.cardVariant) {
             ListViewMode.FULL -> ListViewMode.COMPACT
             ListViewMode.COMPACT -> ListViewMode.MINIMAL
             ListViewMode.MINIMAL -> ListViewMode.FULL
         }
-
-        // Update UI immediately
         _uiState.value = _uiState.value.copy(cardVariant = next)
 
-        // Persist in background
         viewModelScope.launch {
             try {
-                appSettingsRepository.setListViewMode(
-                    AppSettingsDataStore.LIST_KEY_CLIENTS,
-                    next
-                )
+                appSettingsRepository.setListViewMode(AppSettingsDataStore.LIST_KEY_CLIENTS, next)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to persist card variant preference")
             }
@@ -377,84 +260,84 @@ class ClientListViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(error = null)
     }
 
-    // ============================================================
+    // =========================================================================
     // PRIVATE METHODS
-    // ============================================================
+    // =========================================================================
 
-    /**
-     * Observe the persisted card variant preference and apply it to UI state.
-     */
     private fun observeCardVariant() {
         viewModelScope.launch {
             appSettingsRepository.getListViewMode(AppSettingsDataStore.LIST_KEY_CLIENTS)
-                .catch { e ->
-                    Timber.e(e, "Error observing card variant preference")
-                }
-                .collect { viewMode ->
-                    _uiState.value = _uiState.value.copy(
-                        cardVariant = viewMode
-                    )
-                }
+                .catch { e -> Timber.e(e, "Error observing card variant preference") }
+                .collect { viewMode -> _uiState.value = _uiState.value.copy(cardVariant = viewMode) }
         }
     }
 
-    private suspend fun enrichWithStatistics(clients: List<Client>): List<ClientWithStats> {
-        return clients.map { client ->
-            val stats = try {
-                getClientStatisticsUseCase(client.id).getOrElse { error ->
-                    Timber.w("Failed to get stats for client ${client.id}: ${error.message}")
+    private suspend fun enrichWithStatistics(clients: List<Client>): List<ClientWithStats> =
+        clients.map { client ->
+            val stats = when (val result = getClientStatisticsUseCase(client.id)) {
+                is QrResult.Success -> result.data
+                is QrResult.Error -> {
+                    Timber.w("Failed to get stats for client ${client.id}: ${result.error}")
                     createEmptyStats()
                 }
-            } catch (e: Exception) {
-                Timber.e(e, "Exception getting stats for client ${client.id}")
-                createEmptyStats()
             }
-
             ClientWithStats(client = client, stats = stats)
         }
-    }
 
     private fun performSearch(query: String) {
         viewModelScope.launch {
-            try {
-                Timber.d("Performing search for: $query")
-
-                searchClientsUseCase(query).fold(
-                    onSuccess = { searchResults ->
-                        if (currentCoroutineContext().isActive) {
-                            val clientsWithStats = enrichWithStatistics(searchResults)
-
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
+            when (val result = searchClientsUseCase(query)) {
+                is QrResult.Success -> {
+                    if (currentCoroutineContext().isActive) {
+                        val clientsWithStats = enrichWithStatistics(result.data)
+                        val currentState = _uiState.value
+                        _uiState.value = currentState.copy(
+                            searchQuery = query,
+                            filteredClients = applyFiltersAndSort(
                                 clientsWithStats,
                                 query,
                                 currentState.selectedFilter,
                                 currentState.selectedSortOrder
                             )
-
-                            _uiState.value = currentState.copy(
-                                searchQuery = query,
-                                filteredClients = filteredAndSorted
-                            )
-
-                            Timber.d("Search completed with ${searchResults.size} results")
-                        }
-                    },
-                    onFailure = { error ->
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e(error, "Search failed")
-                            _uiState.value = _uiState.value.copy(
-                                error = "Errore ricerca: ${error.message}"
-                            )
-                        }
+                        )
+                        Timber.d("Search completed with ${result.data.size} results")
                     }
-                )
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Exception during search")
-                    _uiState.value = _uiState.value.copy(
-                        error = "Errore ricerca: ${e.message}"
-                    )
+                }
+                is QrResult.Error -> {
+                    if (currentCoroutineContext().isActive) {
+                        Timber.e("Search failed: ${result.error}")
+                        _uiState.value = _uiState.value.copy(
+                            error = UiText.StringResource(R.string.err_client_search)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    // Lambda signature updated to QrResult to match migrated use cases
+    private fun loadClientsWithSpecialFilter(
+        filterCall: suspend () -> QrResult<List<Client>, *>
+    ) {
+        viewModelScope.launch {
+            when (val result = filterCall()) {
+                is QrResult.Success -> {
+                    if (currentCoroutineContext().isActive) {
+                        val clientsWithStats = enrichWithStatistics(result.data)
+                        val currentState = _uiState.value
+                        _uiState.value = currentState.copy(
+                            filteredClients = clientsWithStats,
+                            selectedFilter = currentState.selectedFilter
+                        )
+                    }
+                }
+                is QrResult.Error -> {
+                    if (currentCoroutineContext().isActive) {
+                        Timber.e("Failed to load clients with filter: ${result.error}")
+                        _uiState.value = _uiState.value.copy(
+                            error = UiText.StringResource(R.string.err_client_filter)
+                        )
+                    }
                 }
             }
         }
@@ -466,21 +349,18 @@ class ClientListViewModel @Inject constructor(
         filter: ClientFilter,
         clientSortOrder: ClientSortOrder
     ): List<ClientWithStats> {
-        var filtered = clients
-
-        // Apply status filter (solo per filtri che non usano metodi specializzati)
-        filtered = when (filter) {
-            ClientFilter.ALL -> filtered
-            ClientFilter.ACTIVE -> filtered.filter { it.client.isActive }
-            ClientFilter.INACTIVE -> filtered.filter { !it.client.isActive }
-            // I filtri WITH_* sono gestiti dai metodi specializzati
+        var filtered = when (filter) {
+            ClientFilter.ALL -> clients
+            ClientFilter.ACTIVE -> clients.filter { it.client.isActive }
+            ClientFilter.INACTIVE -> clients.filter { !it.client.isActive }
+            // WITH_* filters handled upstream by specialized use cases
             ClientFilter.WITH_FACILITIES,
             ClientFilter.WITH_CONTACTS,
             ClientFilter.WITH_CONTRACTS,
-            ClientFilter.WITH_ISLANDS -> filtered
+            ClientFilter.WITH_ISLANDS -> clients
         }
 
-        // Apply local search query (solo per query corte)
+        // Local filter for short queries (≤2 chars); longer queries go through SearchClientsUseCase
         if (searchQuery.isNotBlank() && searchQuery.length <= 2) {
             filtered = filtered.filter { clientWithStats ->
                 val client = clientWithStats.client
@@ -489,19 +369,16 @@ class ClientListViewModel @Inject constructor(
             }
         }
 
-        // Apply sorting
-        filtered = when (clientSortOrder) {
+        return when (clientSortOrder) {
             ClientSortOrder.COMPANY_NAME -> filtered.sortedBy { it.client.companyName }
             ClientSortOrder.CREATED_RECENT -> filtered.sortedByDescending { it.client.createdAt }
             ClientSortOrder.CREATED_OLDEST -> filtered.sortedBy { it.client.createdAt }
             ClientSortOrder.FACILITIES_COUNT -> filtered.sortedByDescending { it.stats.facilitiesCount }
             ClientSortOrder.CHECKUPS_COUNT -> filtered.sortedByDescending { it.stats.totalCheckUps }
         }
-
-        return filtered
     }
 
-    private fun createEmptyStats() = ClientSingleStatistics(
+    private fun createEmptyStats() = ClientStatistics(
         facilitiesCount = 0,
         islandsCount = 0,
         contactsCount = 0,
@@ -512,10 +389,8 @@ class ClientListViewModel @Inject constructor(
     )
 }
 
-/**
- * Data class per cliente con statistiche
- */
+/** Client domain model paired with its computed display statistics. */
 data class ClientWithStats(
     val client: Client,
-    val stats: ClientSingleStatistics
+    val stats: ClientStatistics
 )

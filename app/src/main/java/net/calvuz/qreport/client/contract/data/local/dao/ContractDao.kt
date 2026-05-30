@@ -41,6 +41,9 @@ interface ContractDao {
     @Query("SELECT * FROM contracts WHERE client_id = :clientId ORDER BY start_date DESC, name ASC")
     suspend fun getContractsByClientId(clientId: String): List<ContractEntity>
 
+    @Query("SELECT COUNT(*) FROM contracts WHERE client_id = :clientId ORDER BY start_date DESC, name ASC")
+    suspend fun getContractCountByClientId(clientId: String): Int
+
     @Query("SELECT * FROM contracts WHERE client_id = :clientId AND end_date > CURRENT_TIMESTAMP ORDER BY end_date ASC, name ASC")
     suspend fun getAllActiveContractsByClientId(clientId: String): List<ContractEntity>
 

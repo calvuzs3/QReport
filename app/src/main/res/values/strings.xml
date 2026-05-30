@@ -259,6 +259,15 @@
 
 
 
+    <!-- ======================================================= -->
+    <!-- QReportErrorState                                        -->
+    <!-- ======================================================= -->
+
+    <string name="error_state_title">Errore</string>
+    <string name="error_state_action_dismiss">Chiudi</string>
+    <string name="error_state_action_retry">Riprova</string>
+
+
 
 
 </resources>

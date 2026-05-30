@@ -1,87 +1,48 @@
 package net.calvuz.qreport.client.client.domain.usecase
 
-import net.calvuz.qreport.client.client.domain.model.Client
-import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import net.calvuz.qreport.client.client.domain.validator.ClientDataValidator
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.client.domain.model.Client
+import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import javax.inject.Inject
 
 /**
- * Use Case per ricerca e filtro clienti
+ * Searches clients by text query across company name and city.
  *
- * Gestisce:
- * - Ricerca testuale su più campi
- * - Filtro per settore/industria
- * - Ricerca per partita IVA
- * - Flow reattivo per UI con ricerca dinamica
+ * Minimum query length: 2 characters.
+ * Results are sorted by match quality: exact → starts-with → alphabetical.
+ *
+ * The reactive [searchFlow] variant is kept for future real-time search UI;
+ * it does not return QrResult because Flow errors are handled via Flow.catch.
  */
 class SearchClientsUseCase @Inject constructor(
-    private val clientRepository: ClientRepository,
-    private val clientDataValidator: ClientDataValidator
+    private val clientRepository: ClientRepository
 ) {
+    suspend operator fun invoke(query: String): QrResult<List<Client>, QrError.ClientError> {
+        val trimmed = query.trim()
 
-    /**
-     * Ricerca clienti per query testuale
-     *
-     * Cerca in: ragione sociale, partita IVA, settore
-     *
-     * @param query Testo da cercare
-     * @return Result con lista clienti ordinata per relevanza
-     */
-    suspend operator fun invoke(query: String): Result<List<Client>> {
-        return try {
-            // Validazione input
-            if (query.isBlank()) {
-                return Result.failure(IllegalArgumentException("Query di ricerca non può essere vuota"))
-            }
-
-            if (query.length < 2) {
-                return Result.failure(IllegalArgumentException("Query di ricerca deve essere di almeno 2 caratteri"))
-            }
-
-            clientRepository.searchClients(query.trim())
-                .map { clients ->
-                    // Ordina per relevanza: prima risultati esatti, poi parziali
-                    clients.sortedWith(compareBy<Client> { client ->
-                        // Prima i match esatti sulla ragione sociale
-                        !client.companyName.equals(query.trim(), ignoreCase = true)
-                    }.thenBy { client ->
-                        // Poi i match che iniziano con la query
-                        !client.companyName.startsWith(query.trim(), ignoreCase = true)
-                    }.thenBy { client ->
-                        // Infine ordine alfabetico
-                        client.companyName.lowercase()
-                    })
-                }
-        } catch (e: Exception) {
-            Result.failure(e)
+        if (trimmed.length < 2) {
+            return QrResult.Error(QrError.ClientError.LoadError("Search query must be at least 2 characters"))
         }
+
+        return clientRepository.searchClients(trimmed).fold(
+            onSuccess = { clients -> QrResult.Success(clients.sortedByRelevance(trimmed)) },
+            onFailure = { QrResult.Error(QrError.ClientError.LoadError(it.message)) }
+        )
     }
 
-    /**
-     * Flow reattivo per ricerca dinamica
-     *
-     * @param query Testo da cercare
-     * @return Flow con lista clienti che si aggiorna in tempo reale
-     */
-    fun searchFlow(query: String): Flow<List<Client>> {
-        return clientRepository.searchClientsFlow(query.trim())
-            .map { clients ->
-                clients.sortedWith(compareBy<Client> { client ->
-                    !client.companyName.equals(query.trim(), ignoreCase = true)
-                }.thenBy { client ->
-                    !client.companyName.startsWith(query.trim(), ignoreCase = true)
-                }.thenBy { client ->
-                    client.companyName.lowercase()
-                })
-            }
-    }
+    fun searchFlow(query: String): Flow<List<Client>> =
+        clientRepository.searchClientsFlow(query.trim())
+            .map { clients -> clients.sortedByRelevance(query.trim()) }
 
-    /**
-     * Validazione formato partita IVA italiana (11 cifre)
-     */
-    private fun isValidVatNumber(vatNumber: String): Boolean {
-        return vatNumber.matches("\\d{11}".toRegex())
-    }
+    // -------------------------------------------------------------------------
+
+    private fun List<Client>.sortedByRelevance(query: String): List<Client> =
+        sortedWith(
+            compareBy<Client> { !it.companyName.equals(query, ignoreCase = true) }
+                .thenBy { !it.companyName.startsWith(query, ignoreCase = true) }
+                .thenBy { it.companyName.lowercase() }
+        )
 }

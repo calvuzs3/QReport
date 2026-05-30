@@ -56,7 +56,7 @@ fun ContactCard(
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
-    onEmail: () -> Unit = { },
+    onEmail: () -> Unit = {},
     onSetPrimary: (() -> Unit)? = null,
     isSettingPrimary: Boolean = false,
     isSelected: Boolean = false,

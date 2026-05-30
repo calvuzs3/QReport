@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ======================================================= -->
+    <!-- ClientListScreen                                         -->
+    <!-- ======================================================= -->
+
+    <!-- Top bar -->
+    <string name="client_screen_list_title">Clienti</string>
+    <string name="client_screen_list_action_sort">Ordinamento</string>
+    <string name="client_screen_list_action_filter">Filtri</string>
+    <string name="client_screen_list_action_view_mode">Modalità vista</string>
+
+    <!-- Search bar -->
+    <string name="client_screen_list_search_placeholder">Ricerca Clienti</string>
+
+    <!-- FAB -->
+    <string name="client_screen_list_fab_new">Nuovo Cliente</string>
+
+    <!-- Empty states -->
+    <string name="client_screen_list_empty_title">Nessun Cliente</string>
+    <string name="client_screen_list_empty_message">Non ci sono ancora Clienti</string>
+    <string name="client_screen_list_empty_filtered_title">Nessun risultato</string>
+    <string name="client_screen_list_empty_filtered_message">Non ci sono Clienti che corrispondono al filtro \'%1$s\'</string>
+    <string name="client_screen_list_empty_generic_title">Lista vuota</string>
+    <string name="client_screen_list_empty_generic_message">Errore nel caricamento dati</string>
+    <string name="client_screen_list_empty_action">Nuovo Cliente</string>
+    <string name="client_screen_list_empty_icon_description">Nessun Cliente</string>
+
+    <!-- ======================================================= -->
+    <!-- Errors — QrError.ClientError                            -->
+    <!-- ======================================================= -->
+
+    <string name="err_client_load">Errore nel caricamento dei clienti</string>
+    <string name="err_client_not_found">Cliente non trovato</string>
+    <string name="err_client_create">Errore durante la creazione del cliente</string>
+    <string name="err_client_update">Errore durante l\'aggiornamento del cliente</string>
+    <string name="err_client_delete">Errore durante l\'eliminazione del cliente</string>
+    <string name="err_client_fields_required">Il nome dell\'azienda è obbligatorio</string>
+    <string name="err_client_cannot_delete_has_active_facilities">Impossibile eliminare il cliente: ha stabilimenti attivi</string>
+
+    <!-- ======================================================= -->
+    <!-- Errors — ViewModel operation errors                     -->
+    <!-- ======================================================= -->
+
+    <string name="err_client_load_clients">Errore caricamento clienti</string>
+    <string name="err_client_refresh">Errore aggiornamento clienti</string>
+    <string name="err_client_inactivate">Errore eliminazione cliente</string>
+    <string name="err_client_search">Errore ricerca clienti</string>
+    <string name="err_client_filter">Errore applicazione filtro</string>
+    <string name="err_client_unexpected">Errore imprevisto</string>
+
+    <!-- ======================================================= -->
+    <!-- ClientCard                                               -->
+    <!-- ======================================================= -->
+
+    <!-- Actions -->
+    <string name="client_card_action_edit">Modifica cliente</string>
+
+    <!-- Delete dialog -->
+    <string name="client_card_delete_object_name">Cliente</string>
+
+    <!-- Stats labels -->
+    <string name="client_card_stat_facilities">Stabilim.</string>
+    <string name="client_card_stat_islands">Isole</string>
+    <string name="client_card_stat_contracts">Contratti</string>
+    <string name="client_card_stat_checkups">Check-up</string>
+    <string name="client_card_stat_contacts">Contatti</string>
+
+    <!-- Status chip -->
+    <string name="client_card_status_active">Attivo</string>
+    <string name="client_card_status_inactive">Inattivo</string>
+
+    <!-- ======================================================= -->
+    <!-- ClientFormScreen                                         -->
+    <!-- ======================================================= -->
+
+    <!-- Top bar -->
+    <string name="client_form_title_create">Nuovo Cliente</string>
+    <string name="client_form_title_edit">Modifica Cliente</string>
+    <string name="client_form_action_back">Indietro</string>
+    <string name="client_form_action_save">Salva</string>
+
+    <!-- Section headers -->
+    <string name="client_form_section_company">Dati Aziendali</string>
+    <string name="client_form_section_notes">Note</string>
+
+    <!-- Fields -->
+    <string name="client_form_field_company_name">Ragione Sociale *</string>
+    <string name="client_form_field_notes">Note</string>
+    <string name="client_form_field_notes_placeholder">note aggiuntive…</string>
+
+    <!-- Action buttons -->
+    <string name="client_form_button_cancel">Annulla</string>
+    <string name="client_form_button_create">Crea Cliente</string>
+    <string name="client_form_button_save_changes">Salva Modifiche</string>
+
+    <!-- Validation errors -->
+    <string name="client_form_error_company_name_required">Ragione sociale è obbligatoria</string>
+    <string name="client_form_error_company_name_min_length">Minimo %1$d caratteri</string>
+    <string name="client_form_error_company_name_max_length">Massimo %1$d caratteri</string>
+
+    <!-- Operation errors -->
+    <string name="client_form_error_fields_required">Compilare tutti i campi obbligatori</string>
+    <string name="client_form_error_load">Errore caricamento cliente</string>
+    <string name="client_form_error_save">Errore salvataggio cliente</string>
+    <string name="client_form_error_unexpected">Errore imprevisto</string>
+
+    <!-- ======================================================= -->
+    <!-- ClientDetailScreen                                       -->
+    <!-- ======================================================= -->
+
+    <!-- Top bar -->
+    <string name="client_detail_title_fallback">Cliente</string>
+    <string name="client_detail_action_back">Indietro</string>
+    <string name="client_detail_action_edit">Modifica cliente</string>
+    <string name="client_detail_action_delete">Elimina cliente</string>
+    <string name="client_detail_action_refresh">Aggiorna</string>
+
+    <!-- Delete dialog -->
+    <string name="client_detail_delete_title">Elimina Cliente</string>
+    <string name="client_detail_delete_message">Sei sicuro di voler eliminare %1$s? Questa azione non può essere annullata.</string>
+    <string name="client_detail_delete_confirm">Elimina</string>
+    <string name="client_detail_delete_cancel">Annulla</string>
+
+    <!-- Tabs -->
+    <string name="client_detail_tab_facilities">Stabilimenti</string>
+    <string name="client_detail_tab_contacts">Referenti</string>
+    <string name="client_detail_tab_contracts">Contratti</string>
+    <string name="client_detail_tab_info">Informazioni</string>
+
+    <!-- Empty state -->
+    <string name="client_detail_empty_title">Nessun cliente trovato</string>
+    <string name="client_detail_empty_message">Aggiungi un cliente per iniziare</string>
+
+    <!-- Tab headers / actions -->
+    <string name="client_detail_header_facilities">Stabilimenti (%1$d)</string>
+    <string name="client_detail_header_contacts">Contatti (%1$d)</string>
+    <string name="client_detail_header_contracts">Contratti (%1$d)</string>
+    <string name="client_detail_action_view_all">Vedi tutti</string>
+    <string name="client_detail_action_new">Nuovo</string>
+
+    <!-- Facilities tab -->
+    <string name="client_detail_facilities_empty_message">Nessuno Stabilimento</string>
+    <string name="client_detail_facilities_empty_sub">Aggiungi uno Stabilimento per questo Cliente</string>
+    <string name="client_detail_facilities_action_new">Nuovo Stabilimento</string>
+    <string name="client_detail_facility_primary">Primario</string>
+    <string name="client_detail_facility_action_edit">Modifica</string>
+    <string name="client_detail_facility_islands_count">Isole (%1$d)</string>
+    <string name="client_detail_facility_islands_more">Vedi altre %1$d isole</string>
+    <string name="client_detail_facility_islands_none">Nessuna isola associata</string>
+
+    <!-- Contacts tab -->
+    <string name="client_detail_contacts_empty_message">Nessun Contatto</string>
+    <string name="client_detail_contacts_empty_sub">Aggiungi un contatto per questo cliente</string>
+    <string name="client_detail_contacts_action_new">Nuovo Contatto</string>
+    <string name="client_detail_contact_primary">Primario</string>
+    <string name="client_detail_contact_action_call">Chiama</string>
+    <string name="client_detail_contact_action_edit">Modifica</string>
+    <string name="client_detail_contacts_more">… e altri %1$d contatti</string>
+    <string name="client_detail_contact_call_error">Errore di chiamata</string>
+
+    <!-- Contracts tab -->
+    <string name="client_detail_contracts_empty_message">Nessun Contratto</string>
+    <string name="client_detail_contracts_empty_sub">Aggiungi un contratto per questo cliente</string>
+    <string name="client_detail_contracts_action_new">Nuovo Contratto</string>
+    <string name="client_detail_contracts_more">… e altri %1$d contratti</string>
+
+    <!-- Info tab -->
+    <string name="client_detail_info_title">Informazioni</string>
+    <string name="client_detail_info_action_edit">Modifica</string>
+    <string name="client_detail_info_card_general">Informazioni Generali</string>
+    <string name="client_detail_info_card_headquarters">Sede Legale</string>
+    <string name="client_detail_info_card_metadata">Metadati</string>
+    <string name="client_detail_info_label_company_name">Ragione Sociale</string>
+    <string name="client_detail_info_label_notes">Note</string>
+    <string name="client_detail_info_label_address">Indirizzo</string>
+    <string name="client_detail_info_label_created">Creato</string>
+    <string name="client_detail_info_label_updated">Ultima modifica</string>
+    <string name="client_detail_info_label_status">Stato</string>
+    <string name="client_detail_info_status_active">Attivo</string>
+    <string name="client_detail_info_status_inactive">Inattivo</string>
+
+    <!-- Relative timestamps (formatTimestamp helper) -->
+    <string name="client_detail_time_just_now">Ora</string>
+    <string name="client_detail_time_minutes_ago">%1$d min fa</string>
+    <string name="client_detail_time_hours_ago">%1$dh fa</string>
+    <string name="client_detail_time_days_ago">%1$d giorni fa</string>
+
+    <!-- Operation errors -->
+    <string name="client_detail_error_invalid_id">ID cliente non valido</string>
+    <string name="client_detail_error_load">Errore caricamento cliente</string>
+    <string name="client_detail_error_delete">Errore eliminazione cliente</string>
+    <string name="client_detail_error_unexpected">Errore imprevisto</string>
+
+    <!-- ======================================================= -->
+    <!-- ClientDetailScreen                                       -->
+    <!-- ======================================================= -->
+
+    <!-- Top bar actions -->
+
+    <!-- Delete dialog -->
+    <string name="client_detail_delete_dialog_title">Elimina Cliente</string>
+    <string name="client_detail_delete_dialog_message">Sei sicuro di voler eliminare %1$s? Questa azione non può essere annullata.</string>
+    <string name="client_detail_delete_dialog_confirm">Elimina</string>
+    <string name="client_detail_delete_dialog_cancel">Annulla</string>
+
+    <!-- Tabs -->
+
+    <!-- Empty state (no client found) -->
+
+    <!-- Info tab -->
+    <string name="client_detail_info_field_company_name">Ragione Sociale</string>
+    <string name="client_detail_info_field_notes">Note</string>
+    <string name="client_detail_info_field_address">Indirizzo</string>
+    <string name="client_detail_info_field_created">Creato</string>
+    <string name="client_detail_info_field_updated">Ultima modifica</string>
+    <string name="client_detail_info_field_status">Stato</string>
+
+    <!-- Facilities tab -->
+    <string name="client_detail_facilities_header">Stabilimenti (%1$d)</string>
+    <string name="client_detail_facilities_view_all">Vedi tutti</string>
+    <string name="client_detail_facilities_new">Nuovo</string>
+    <string name="client_detail_facilities_empty_title">Nessuno Stabilimento</string>
+    <string name="client_detail_facilities_empty_action">Nuovo Stabilimento</string>
+    <string name="client_detail_facility_primary_badge">Primario</string>
+    <string name="client_detail_facility_islands_header">Isole (%1$d)</string>
+    <string name="client_detail_facility_no_islands">Nessuna isola associata</string>
+
+    <!-- Contacts tab -->
+    <string name="client_detail_contacts_header">Contatti (%1$d)</string>
+    <string name="client_detail_contacts_view_all">Vedi tutti</string>
+    <string name="client_detail_contacts_new">Nuovo</string>
+    <string name="client_detail_contacts_empty_title">Nessun Contatto</string>
+    <string name="client_detail_contacts_empty_action">Nuovo Contatto</string>
+    <string name="client_detail_contact_primary_badge">Primario</string>
+
+    <!-- Contracts tab -->
+    <string name="client_detail_contracts_header">Contratti (%1$d)</string>
+    <string name="client_detail_contracts_view_all">Vedi tutti</string>
+    <string name="client_detail_contracts_new">Nuovo</string>
+    <string name="client_detail_contracts_empty_title">Nessun Contratto</string>
+    <string name="client_detail_contracts_empty_action">Nuovo Contratto</string>
+
+    <!-- Timestamp formatting -->
+    <string name="client_detail_time_now">Ora</string>
+
+    <!-- Operation errors -->
+
+    <!-- ======================================================= -->
+    <!-- FormAddressSection                                       -->
+    <!-- ======================================================= -->
+
+    <string name="address_section_title">Indirizzo</string>
+    <string name="address_field_street">Via/Corso</string>
+    <string name="address_field_street_placeholder">Via Roma</string>
+    <string name="address_field_street_number">N.</string>
+    <string name="address_field_street_number_placeholder">123</string>
+    <string name="address_field_city">Città</string>
+    <string name="address_field_city_placeholder">Milano</string>
+    <string name="address_field_postal_code">CAP</string>
+    <string name="address_field_postal_code_placeholder">20100</string>
+    <string name="address_field_province">Provincia</string>
+    <string name="address_field_province_placeholder">MI</string>
+    <string name="address_field_country">Paese</string>
+    <string name="address_field_country_placeholder">Italia</string>
+
+</resources>

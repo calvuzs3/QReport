@@ -4,7 +4,7 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.repository.ContactRepository
-import net.calvuz.qreport.client.client.domain.usecase.MyCheckClientExistsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.CheckClientExistsUseCase
 import net.calvuz.qreport.client.contact.domain.validator.ContactDataValidator
 import timber.log.Timber
 import javax.inject.Inject
@@ -27,7 +27,7 @@ import javax.inject.Inject
 class CreateContactUseCase @Inject constructor(
     private val contactRepository: ContactRepository,
     private val validateContactData: ContactDataValidator,
-    private val checkClientExists: MyCheckClientExistsUseCase,
+    private val checkClientExists: CheckClientExistsUseCase,
     private val checkEmailUniqueness: CheckEmailUniquenessUseCase,
     private val checkPhoneUniqueness: CheckPhoneUniquenessUseCase,
     private val handlePrimaryContactLogic: HandlePrimaryContactLogicUseCase

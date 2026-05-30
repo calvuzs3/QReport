@@ -30,11 +30,11 @@ class GetContactStatisticsUseCase @Inject constructor(
         return try {
             // Validazione input
             if (clientId.isBlank()) {
-                Timber.w("GetContactStatisticsUseCase: clientId is blank")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                Timber.w("ClientId is blank")
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
-            Timber.d("GetContactStatisticsUseCase: Calculating statistics for client: $clientId")
+            Timber.d("Calculating statistics for client: $clientId")
 
             // Recupera tutti i contatti del cliente usando il use case specifico
             when (val contactsResult = getContactsByClientUseCase(clientId)) {
@@ -42,10 +42,10 @@ class GetContactStatisticsUseCase @Inject constructor(
                     val contacts = contactsResult.data
 
                     val statistics = if (contacts.isEmpty()) {
-                        Timber.d("GetContactStatisticsUseCase: No contacts found for client $clientId, returning empty statistics")
+                        Timber.d("No contacts found for client $clientId, returning empty statistics")
                         ContactStatistics.empty()
                     } else {
-                        Timber.d("GetContactStatisticsUseCase: Calculating statistics for ${contacts.size} contacts")
+                        Timber.d("Calculating statistics for ${contacts.size} contacts")
                         calculateStatistics(contacts)
                     }
 
@@ -53,12 +53,12 @@ class GetContactStatisticsUseCase @Inject constructor(
                 }
 
                 is QrResult.Error -> {
-                    Timber.e("GetContactStatisticsUseCase: Error getting contacts for client $clientId: ${contactsResult.error}")
+                    Timber.e("Error getting contacts for client $clientId: ${contactsResult.error}")
                     QrResult.Error(contactsResult.error)
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "GetContactStatisticsUseCase: Exception calculating statistics for client: $clientId")
+            Timber.e(e, "Exception calculating statistics for client: $clientId")
             QrResult.Error(QrError.SystemError.Unknown())
         }
     }

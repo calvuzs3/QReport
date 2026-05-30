@@ -12,11 +12,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-
+import net.calvuz.qreport.R
 
 @Composable
 fun FormAddressSection(
@@ -34,110 +35,96 @@ fun FormAddressSection(
     onCountryChange: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
+    Card(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Indirizzo",
+                text = stringResource(R.string.address_section_title),
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.SemiBold
             )
 
-            // Street and number row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // Street and number
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = street,
                     onValueChange = onStreetChange,
-                    label = { Text("Via/Corso") },
+                    label = { Text(stringResource(R.string.address_field_street)) },
+                    placeholder = { Text(stringResource(R.string.address_field_street_placeholder)) },
                     modifier = Modifier.weight(2f),
                     singleLine = true,
-                    placeholder = { Text("Via Roma") },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         capitalization = KeyboardCapitalization.Words
                     )
                 )
-
                 OutlinedTextField(
                     value = streetNumber,
                     onValueChange = onStreetNumberChange,
-                    label = { Text("N.") },
+                    label = { Text(stringResource(R.string.address_field_street_number)) },
+                    placeholder = { Text(stringResource(R.string.address_field_street_number_placeholder)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number),
-                    placeholder = { Text("123") }
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
 
-            // City and postal code row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // City and postal code
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = city,
                     onValueChange = onCityChange,
-                    label = { Text("Città") },
+                    label = { Text(stringResource(R.string.address_field_city)) },
+                    placeholder = { Text(stringResource(R.string.address_field_city_placeholder)) },
                     modifier = Modifier.weight(2f),
                     singleLine = true,
-                    placeholder = { Text("Milano") },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         capitalization = KeyboardCapitalization.Words
                     )
                 )
-
                 OutlinedTextField(
                     value = postalCode,
                     onValueChange = onPostalCodeChange,
-                    label = { Text("CAP") },
+                    label = { Text(stringResource(R.string.address_field_postal_code)) },
+                    placeholder = { Text(stringResource(R.string.address_field_postal_code_placeholder)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number),
-                    placeholder = { Text("20100") }
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
 
-            // Province and region row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            // Province
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = province,
                     onValueChange = onProvinceChange,
-                    label = { Text("Provincia") },
+                    label = { Text(stringResource(R.string.address_field_province)) },
+                    placeholder = { Text(stringResource(R.string.address_field_province_placeholder)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         capitalization = KeyboardCapitalization.Characters
-                    ),
-                    placeholder = { Text("MI") }
+                    )
                 )
             }
 
             // Country
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = country,
                     onValueChange = onCountryChange,
-                    label = { Text("Paese") },
+                    label = { Text(stringResource(R.string.address_field_country)) },
+                    placeholder = { Text(stringResource(R.string.address_field_country_placeholder)) },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         capitalization = KeyboardCapitalization.Words
-                    ),
-                    placeholder = { Text("Italia") }
+                    )
                 )
             }
         }

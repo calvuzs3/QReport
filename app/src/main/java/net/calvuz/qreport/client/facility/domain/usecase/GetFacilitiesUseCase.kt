@@ -1,60 +1,43 @@
 package net.calvuz.qreport.client.facility.domain.usecase
 
+import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.client.domain.usecase.CheckClientExistsUseCase
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import net.calvuz.qreport.client.client.domain.usecase.CheckClientExistsUseCase
 import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Get Facilities Use Case
+ * Returns a sorted list of facilities, optionally filtered by client.
+ *
+ * Sort order: primary first, then alphabetical by name.
  */
 class GetFacilitiesUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository,
     private val checkClientExists: CheckClientExistsUseCase
 ) {
-
-    /**
-     * Get all facilities
-     *
-     * @param clientId Client ID if any
-     * @return Ordered facility list, by primary set and name
-     */
     suspend operator fun invoke(clientId: String? = null): Result<List<Facility>> {
-        Timber.d("ClientId: ${clientId ?: "nullo"}")
+        Timber.d("GetFacilitiesUseCase clientId=${clientId ?: "none"}")
 
         return try {
-
-            // If we have a client
             if (clientId != null) {
+                // Verify client exists before querying
+                when (checkClientExists(clientId)) {
+                    is QrResult.Error -> return Result.failure(IllegalStateException("Client $clientId not found"))
+                    is QrResult.Success -> Unit
+                }
 
-                // Check if client exists
-                checkClientExists(clientId).onFailure { return Result.failure(it) }
-
-                // Get facilities by Client id
                 facilityRepository.getFacilitiesByClient(clientId)
-                    .map { facilities ->
-                        facilities.sortedWith(
-                            compareByDescending<Facility> { it.isPrimary } // Primary first
-                                .thenBy { it.name.lowercase() } // Then by name
-                        )
-                    }
+                    .map { it.sortedByPrimaryThenName() }
             } else {
-
-                // Get all facilities
                 facilityRepository.getAllFacilities()
-                    .map { facilities ->
-                        facilities.sortedWith(
-                            compareByDescending<Facility> { it.isPrimary } // Primary first
-                                .thenBy { it.name.lowercase() } // Then by name
-                        )
-                    }
+                    .map { it.sortedByPrimaryThenName() }
             }
-
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
+
+    private fun List<Facility>.sortedByPrimaryThenName(): List<Facility> =
+        sortedWith(compareByDescending<Facility> { it.isPrimary }.thenBy { it.name.lowercase() })
 }

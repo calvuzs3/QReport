@@ -1,13 +1,11 @@
-package net.calvuz.qreport.client.client.domain.model
+package net.calvuz.qreport.client.client.presentation.model
 
 import kotlinx.datetime.Instant
-import org.apache.poi.ss.formula.functions.Countif
-
 
 /**
  * Statistiche per singolo cliente (per UI liste e card)
  */
-data class ClientSingleStatistics(
+data class ClientStatistics(
     val facilitiesCount: Int,
     val islandsCount: Int,
     val contactsCount: Int,

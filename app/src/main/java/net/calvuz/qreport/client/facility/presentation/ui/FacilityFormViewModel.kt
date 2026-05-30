@@ -11,7 +11,6 @@ import kotlinx.coroutines.isActive
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 import net.calvuz.qreport.app.app.domain.model.Address
-import net.calvuz.qreport.client.facility.domain.usecase.CreateFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.UpdateFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilitiesByClientUseCase
 import kotlinx.datetime.Clock
@@ -87,7 +86,7 @@ sealed class FacilityFormEvent {
 
 @HiltViewModel
 class FacilityFormViewModel @Inject constructor(
-    private val createFacilityUseCase: CreateFacilityUseCase,
+//    private val createFacilityUseCase: CreateFacilityUseCase,
     private val newFacilityUseCase: NewFacilityUseCase,
     private val updateFacilityUseCase: UpdateFacilityUseCase,
     private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase
@@ -285,11 +284,6 @@ class FacilityFormViewModel @Inject constructor(
         validateForm()
     }
 
-    private fun updateActive(isActive: Boolean) {
-        _uiState.value = _uiState.value.copy(isActive = isActive)
-        validateForm()
-    }
-
     // ============================================================
     // PRIVATE METHODS - Validation
     // ============================================================
@@ -378,108 +372,6 @@ class FacilityFormViewModel @Inject constructor(
             isLoading = false
         )
         validateForm()
-    }
-
-    private suspend fun createNewFacility() {
-        val currentState = _uiState.value
-
-        createFacilityUseCase(
-            clientId = currentState.clientId,
-            name = currentState.name.trim(),
-            address = createAddress(currentState),
-            facilityType = currentState.facilityType,
-            code = currentState.code.trim().takeIf { it.isNotBlank() },
-            description = currentState.notes.trim().takeIf { it.isNotBlank() },
-            isPrimary = currentState.isPrimary
-        ).fold(
-            onSuccess = { facilityId ->
-                if (currentCoroutineContext().isActive) {
-                    Timber.d("Facility created successfully: $facilityId")
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        savedFacilityId = facilityId
-                    )
-                }
-            },
-            onFailure = { error ->
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(error, "Failed to create facility")
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        error = "Errore creazione: ${error.message}"
-                    )
-                }
-            }
-        )
-    }
-
-    private suspend fun updateExistingFacility() {
-        val currentState = _uiState.value
-        val facilityId = currentState.facilityId ?: return
-
-        // First get the original facility to preserve fields we don't edit
-        getFacilitiesByClientUseCase(currentState.clientId).fold(
-            onSuccess = { facilities ->
-                val originalFacility = facilities.find { it.id == facilityId }
-                if (originalFacility != null) {
-                    val updatedFacility = originalFacility.copy(
-                        name = currentState.name.trim(),
-                        code = currentState.code.trim().takeIf { it.isNotBlank() },
-                        facilityType = currentState.facilityType,
-                        notes = currentState.notes.trim().takeIf { it.isNotBlank() },
-                        address = createAddress(currentState),
-                        isPrimary = currentState.isPrimary,
-                        isActive = currentState.isActive,
-                        updatedAt = Clock.System.now()
-                    )
-
-                    updateFacilityUseCase(updatedFacility).fold(
-                        onSuccess = {
-                            if (currentCoroutineContext().isActive) {
-                                Timber.d("Facility updated successfully: $facilityId")
-                                _uiState.value = currentState.copy(
-                                    isLoading = false,
-                                    savedFacilityId = facilityId
-                                )
-                            }
-                        },
-                        onFailure = { error ->
-                            if (currentCoroutineContext().isActive) {
-                                Timber.e(error, "Failed to update facility")
-                                _uiState.value = currentState.copy(
-                                    isLoading = false,
-                                    error = "Errore aggiornamento: ${error.message}"
-                                )
-                            }
-                        }
-                    )
-                } else {
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        error = "Stabilimento non trovato"
-                    )
-                }
-            },
-            onFailure = { error ->
-                if (currentCoroutineContext().isActive) {
-                    _uiState.value = currentState.copy(
-                        isLoading = false,
-                        error = "Errore aggiornamento: ${error.message}"
-                    )
-                }
-            }
-        )
-    }
-
-    private fun createAddress(state: FacilityFormUiState): Address {
-        return Address(
-            street = state.street.trim().takeIf { it.isNotBlank() },
-            streetNumber = state.street.trim().takeIf { it.isNotBlank() },
-            postalCode = state.postalCode.trim().takeIf { it.isNotBlank() },
-            city = state.city.trim().takeIf { it.isNotBlank() },
-            province = state.province.trim().takeIf { it.isNotBlank() },
-            country = state.country.trim().takeIf { it.isNotBlank() } ?: "Italia"
-        )
     }
 
     // ============================================================

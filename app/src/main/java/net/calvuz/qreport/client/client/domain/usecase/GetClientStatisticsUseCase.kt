@@ -1,78 +1,56 @@
 package net.calvuz.qreport.client.client.domain.usecase
 
-import net.calvuz.qreport.client.client.domain.model.ClientSingleStatistics
-import net.calvuz.qreport.client.client.domain.repository.ClientRepository
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.checkup.domain.repository.CheckUpRepository
+import net.calvuz.qreport.client.client.domain.repository.ClientRepository
+import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
 import javax.inject.Inject
 
 /**
- * Use Case per statistiche di un singolo cliente
+ * Returns statistics for a single client (used in list cards and detail screen).
  *
- * Questo use case è specifico per ottenere le statistiche
- * di un cliente individuale da mostrare nelle liste e card.
- *
- * È diverso da GetAllClientsStatisticsUseCase che gestisce
- * le statistiche aggregate per dashboard.
+ * CheckUp statistics are optional: if [checkUpRepository] is null or the call
+ * fails, zeroed placeholders are used and the use case still succeeds.
  */
 class GetClientStatisticsUseCase @Inject constructor(
-    //private val getCheckupCountUseCase: GetCheckUpCountUseCase,
     private val clientRepository: ClientRepository,
-    private val checkUpRepository: CheckUpRepository? = null // Opzionale se non ancora disponibile
+    private val checkUpRepository: CheckUpRepository? = null
 ) {
+    suspend operator fun invoke(clientId: String): QrResult<ClientStatistics, QrError.ClientError> {
+        if (clientId.isBlank()) {
+            return QrResult.Error(QrError.ClientError.NotFound())
+        }
 
-    /**
-     * Ottiene statistiche per un singolo cliente
-     *
-     * @param clientId ID del cliente
-     * @return Result con statistiche del cliente per UI
-     */
-    suspend operator fun invoke(clientId: String): Result<ClientSingleStatistics> {
-        return try {
-            // Validazione input
-            if (clientId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
-            }
+        // Verify client exists
+        clientRepository.getClientById(clientId)
+            .getOrElse { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }
+            ?: return QrResult.Error(QrError.ClientError.NotFound())
 
-            // Verifica esistenza cliente
-            clientRepository.getClientById(clientId)
-                .getOrElse { return Result.failure(it) }
-                ?: return Result.failure(NoSuchElementException("Cliente non trovato"))
+        val facilitiesCount = clientRepository.getFacilitiesCount(clientId)
+            .getOrElse { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }
 
-            // Raccogli statistiche base
-            val facilitiesCount = clientRepository.getFacilitiesCount(clientId)
-                .getOrElse { return Result.failure(it) }
+        val contactsCount = clientRepository.getContactsCount(clientId)
+            .getOrElse { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }
 
-            val contactsCount = clientRepository.getContactsCount(clientId)
-                .getOrElse { return Result.failure(it) }
+        val contractsCount = clientRepository.getContractsCount(clientId)
+            .getOrElse { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }
 
-            val contractsCount = clientRepository.getContractsCount(clientId)
-                .getOrElse { return Result.failure(it) }
+        val islandsCount = clientRepository.getIslandsCount(clientId)
+            .getOrElse { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }
 
-            val islandsCount = clientRepository.getIslandsCount(clientId)
-                .getOrElse { return Result.failure(it) }
+        // CheckUp stats are optional — failures produce zeroed placeholders
+        val (totalCheckUps, completedCheckUps, lastCheckUpDate) = try {
+            // TODO: uncomment when CheckUpRepository.getCheckUpsByClient() is available
+            // val checkUps = checkUpRepository?.getCheckUpsByClient(clientId)?.getOrElse { emptyList() } ?: emptyList()
+            // Triple(checkUps.size, checkUps.count { it.status.isCompleted() }, checkUps.maxByOrNull { it.updatedAt }?.updatedAt)
+            Triple(0, 0, null)
+        } catch (_: Exception) {
+            Triple(0, 0, null)
+        }
 
-            // Statistiche CheckUp (opzionali se repository non disponibile)
-            val (totalCheckUps, completedCheckUps, lastCheckUpDate) = if (checkUpRepository != null) {
-                try {
-                    // TODO
-//                    val checkUps = checkUpRepository.getCheckUpsByClient(clientId)
-//                        .getOrElse { emptyList() }
-//
-//                    val completed = checkUps.count { it.status.isCompleted() }
-//                    val lastDate = checkUps.maxByOrNull { it.updatedAt }?.updatedAt
-//
-//                    Triple(checkUps.size, completed, lastDate)
-                    Triple(0, 0, null)
-                } catch (e: Exception) {
-                    // Se fallisce, usa valori di default
-                    Triple(0, 0, null)
-                }
-            } else {
-                // Repository non disponibile, usa placeholder
-                Triple(0, 0, null)
-            }
-
-            val stats = ClientSingleStatistics(
+        return QrResult.Success(
+            ClientStatistics(
                 facilitiesCount = facilitiesCount,
                 islandsCount = islandsCount,
                 contactsCount = contactsCount,
@@ -81,52 +59,6 @@ class GetClientStatisticsUseCase @Inject constructor(
                 completedCheckUps = completedCheckUps,
                 lastCheckUpDate = lastCheckUpDate
             )
-
-            Result.success(stats)
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Ottiene statistiche rapide senza CheckUp (versione veloce)
-     *
-     * Usa questa versione se le statistiche CheckUp non sono critiche
-     * e vuoi performance migliori.
-     */
-    suspend fun getBasicStats(clientId: String): Result<ClientSingleStatistics> {
-        return try {
-            if (clientId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID cliente non può essere vuoto"))
-            }
-
-            val facilitiesCount = clientRepository.getFacilitiesCount(clientId)
-                .getOrElse { return Result.failure(it) }
-
-            val contactsCount = clientRepository.getContactsCount(clientId)
-                .getOrElse { return Result.failure(it) }
-
-            val contractsCount = clientRepository.getContractsCount(clientId)
-                .getOrElse { return Result.failure(it) }
-
-            val islandsCount = clientRepository.getIslandsCount(clientId)
-                .getOrElse { return Result.failure(it) }
-
-            val stats = ClientSingleStatistics(
-                facilitiesCount = facilitiesCount,
-                islandsCount = islandsCount,
-                contactsCount = contactsCount,
-                contractsCount = contractsCount,     // Placeholder
-                totalCheckUps = 0,      // Placeholder getCheckupCountUseCase()
-                completedCheckUps = 0,  // Placeholder
-                lastCheckUpDate = null  // Placeholder
-            )
-
-            Result.success(stats)
-
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+        )
     }
 }

@@ -3,36 +3,35 @@ package net.calvuz.qreport.client.client.presentation.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.domain.model.Address
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.UiText.StringResources
+import net.calvuz.qreport.app.error.presentation.asUiText
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.usecase.CreateClientUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetClientByIdUseCase
 import net.calvuz.qreport.client.client.domain.usecase.UpdateClientUseCase
-import net.calvuz.qreport.client.contact.presentation.ui.ContactFormUiState
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
-/**
- * Client ViewModel
- *
- * Handles:
- * - ValidationError validation real-time
- * - State management
- * - Client creation/update
- * - Error handling
- */
+// =============================================================================
+// UI STATE
+// =============================================================================
+
 data class ClientFormUiState(
 
-    // Company data
+    // ===== FORM FIELDS =====
     val companyName: String = "",
     val notes: String = "",
-
-    // Address data
     val street: String = "",
     val streetNumber: String = "",
     val postalCode: String = "",
@@ -40,28 +39,52 @@ data class ClientFormUiState(
     val province: String = "",
     val country: String = "",
 
-    // State
+    // ===== VALIDATION =====
+    val companyNameError: UiText? = null,
+    val hasErrors: Boolean = false,
+
+    // ===== OPERATION STATE =====
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
-    val error: String? = null,
+    val isDirty: Boolean = false,
+    val error: UiText? = null,
     val saveCompleted: Boolean = false,
     val savedClientId: String? = null,
     val savedClientName: String? = null,
-    val fieldErrors: Map<String, String> = emptyMap(),
 
-    // Edit mode
+    // ===== EDIT MODE =====
     val clientId: String? = null,
     val isEditMode: Boolean = false
+
 ) {
     val canSave: Boolean
         get() = companyName.isNotBlank() &&
-                fieldErrors.isEmpty() &&
+                companyNameError == null &&
                 !isSaving &&
                 !isLoading
 
     val hasAddressData: Boolean
         get() = street.isNotBlank() || city.isNotBlank()
 }
+
+// =============================================================================
+// EVENTS
+// =============================================================================
+
+sealed class ClientFormEvent {
+    data class CompanyNameChanged(val value: String) : ClientFormEvent()
+    data class NotesChanged(val value: String) : ClientFormEvent()
+    data class StreetChanged(val value: String) : ClientFormEvent()
+    data class StreetNumberChanged(val value: String) : ClientFormEvent()
+    data class CityChanged(val value: String) : ClientFormEvent()
+    data class ProvinceChanged(val value: String) : ClientFormEvent()
+    data class PostalCodeChanged(val value: String) : ClientFormEvent()
+    data class CountryChanged(val value: String) : ClientFormEvent()
+}
+
+// =============================================================================
+// VIEW MODEL
+// =============================================================================
 
 @HiltViewModel
 class ClientFormViewModel @Inject constructor(
@@ -73,189 +96,164 @@ class ClientFormViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ClientFormUiState())
     val uiState: StateFlow<ClientFormUiState> = _uiState.asStateFlow()
 
+    companion object {
+        private const val COMPANY_NAME_MIN_CHAR = 2
+        private const val COMPANY_NAME_MAX_CHAR = 255
+    }
+
     init {
         Timber.d("ClientFormViewModel initialized")
     }
 
-    // ============================================================
+    // =========================================================================
     // INITIALIZATION
-    // ============================================================
+    // =========================================================================
 
-
-    fun initForCreate() {
-        Timber.d("ClientFormViewModel: Initializing for create mode")
-
-        _uiState.value = ClientFormUiState(
-            isEditMode = false,
-        )
-    }
     fun initForEdit(clientId: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isEditMode = true,
-                isLoading = true,
-                clientId = clientId
-            )
+            _uiState.update { it.copy(isEditMode = true, isLoading = true, clientId = clientId) }
 
-            try {
-                getClientByIdUseCase(clientId).fold(
-                    onSuccess = { client ->
-                        Timber.d("Client loaded for edit: ${client.companyName}")
-                        populateFormFromClient(client)
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to load client for edit")
-                        _uiState.value = _uiState.value.copy(
+            when (val result = getClientByIdUseCase(clientId)) {
+                is QrResult.Success -> {
+                    Timber.d("Client loaded for edit: ${result.data.companyName}")
+                    populateFormFromClient(result.data)
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to load client for edit: ${result.error}")
+                    _uiState.update {
+                        it.copy(
                             isLoading = false,
-                            error = "Errore caricamento cliente: ${error.message}"
+                            error = UiText.StringResource(R.string.client_form_error_load)
                         )
                     }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception loading client for edit")
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Errore imprevisto: ${e.message}"
-                )
+                }
             }
         }
     }
 
     private fun populateFormFromClient(client: Client) {
         val address = client.headquarters
-
-        _uiState.value = _uiState.value.copy(
-            isLoading = false,
-            companyName = client.companyName,
-            notes = client.notes ?: "",
-            street = address?.street ?: "",
-            streetNumber = address?.streetNumber ?: "",
-            city = address?.city ?: "",
-            province = address?.province ?: "",
-            postalCode = address?.postalCode ?: ""
-        )
-    }
-
-    // ============================================================
-    // COMPANY DATA UPDATES
-    // ============================================================
-
-    fun updateCompanyName(name: String) {
-        _uiState.value = _uiState.value.copy(companyName = name)
-        validateCompanyName(name)
-    }
-
-    fun updateNotes(notes: String) {
-        _uiState.value = _uiState.value.copy(notes = notes)
-    }
-
-    // ============================================================
-    // ADDRESS UPDATES
-    // ============================================================
-
-    fun updateStreet(street: String) {
-        _uiState.value = _uiState.value.copy(street = street)
-    }
-
-    fun updateStreetNumber(streetNumber: String) {
-        _uiState.value = _uiState.value.copy(streetNumber = streetNumber)
-    }
-
-    fun updateCity(city: String) {
-        _uiState.value = _uiState.value.copy(city = city)
-    }
-
-    fun updateProvince(province: String) {
-        _uiState.value = _uiState.value.copy(province = province.uppercase())
-    }
-
-    fun updatePostalCode(postalCode: String) {
-        val cleaned = postalCode.replace("\\s+".toRegex(), "")
-        _uiState.value = _uiState.value.copy(postalCode = cleaned)
-    }
-
-    fun updateCountry(country: String) {
-        _uiState.value = _uiState.value.copy(country = country)
-    }
-
-    // ============================================================
-    // VALIDATION
-    // ============================================================
-
-    private fun validateCompanyName(name: String) {
-        val errors = _uiState.value.fieldErrors.toMutableMap()
-
-        when {
-            name.isBlank() -> errors["companyName"] = "Ragione sociale è obbligatoria"
-            name.length < 2 -> errors["companyName"] = "Minimo 2 caratteri"
-            name.length > 255 -> errors["companyName"] = "Massimo 255 caratteri"
-            else -> errors.remove("companyName")
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                companyName = client.companyName,
+                notes = client.notes ?: "",
+                street = address?.street ?: "",
+                streetNumber = address?.streetNumber ?: "",
+                city = address?.city ?: "",
+                province = address?.province ?: "",
+                postalCode = address?.postalCode ?: ""
+            )
         }
-
-        _uiState.value = _uiState.value.copy(fieldErrors = errors)
     }
 
-    // ============================================================
-    // CLIENT SAVE
-    // ============================================================
+    // =========================================================================
+    // FORM EVENTS
+    // =========================================================================
+
+    fun onFormEvent(event: ClientFormEvent) {
+        when (event) {
+            is ClientFormEvent.CompanyNameChanged -> updateCompanyName(event.value)
+            is ClientFormEvent.NotesChanged -> _uiState.update { it.copy(notes = event.value, isDirty = true) }
+            is ClientFormEvent.StreetChanged -> _uiState.update { it.copy(street = event.value, isDirty = true) }
+            is ClientFormEvent.StreetNumberChanged -> _uiState.update { it.copy(streetNumber = event.value, isDirty = true) }
+            is ClientFormEvent.CityChanged -> _uiState.update { it.copy(city = event.value, isDirty = true) }
+            is ClientFormEvent.ProvinceChanged -> _uiState.update { it.copy(province = event.value.uppercase(), isDirty = true) }
+            is ClientFormEvent.PostalCodeChanged -> _uiState.update { it.copy(postalCode = event.value.replace("\\s+".toRegex(), ""), isDirty = true) }
+            is ClientFormEvent.CountryChanged -> _uiState.update { it.copy(country = event.value, isDirty = true) }
+        }
+    }
+
+    // =========================================================================
+    // VALIDATION
+    // =========================================================================
+
+    private fun updateCompanyName(value: String) {
+        _uiState.update {
+            it.copy(
+                companyName = value,
+                isDirty = true,
+                companyNameError = validateCompanyName(value)
+            )
+        }
+    }
+
+    private fun validateCompanyName(value: String): UiText? = when {
+        value.isBlank() -> UiText.StringResource(R.string.client_form_error_company_name_required)
+        value.length < COMPANY_NAME_MIN_CHAR -> StringResources(R.string.client_form_error_company_name_min_length, COMPANY_NAME_MIN_CHAR)
+        value.length > COMPANY_NAME_MAX_CHAR -> StringResources(R.string.client_form_error_company_name_max_length, COMPANY_NAME_MAX_CHAR)
+        else -> null
+    }
+
+    private fun validateAll(state: ClientFormUiState): List<UiText?> = listOf(
+        validateCompanyName(state.companyName)
+    )
+
+    // =========================================================================
+    // SAVE
+    // =========================================================================
 
     fun saveClient() {
         val currentState = _uiState.value
 
+        // Run full validation before attempting save
+        val allErrors = validateAll(currentState)
+        if (allErrors.any { it != null }) {
+            _uiState.update {
+                it.copy(
+                    hasErrors = true,
+                    companyNameError = validateCompanyName(it.companyName)
+                )
+            }
+            return
+        }
+
         if (!currentState.canSave) {
-            _uiState.value = currentState.copy(
-                error = "Compilare tutti i campi obbligatori"
-            )
+            _uiState.update {
+                it.copy(error = UiText.StringResource(R.string.client_form_error_fields_required))
+            }
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = currentState.copy(
-                isSaving = true,
-                error = null
-            )
+            _uiState.update { it.copy(isSaving = true, error = null) }
 
-            try {
-                val client = buildClientFromForm(currentState)
+            val client = buildClientFromState(currentState)
 
-                val result = if (currentState.isEditMode && currentState.clientId != null) {
-                    updateClientUseCase(client)
-                } else {
-                    createClientUseCase(client)
-                }
+            val result = if (currentState.isEditMode && currentState.clientId != null) {
+                updateClientUseCase(client)
+            } else {
+                createClientUseCase(client)
+            }
 
-                result.fold(
-                    onSuccess = {
-                        Timber.d("Client saved successfully: ${client.id} ${client.companyName }}")
-                        _uiState.value = _uiState.value.copy(
+            when (result) {
+                is QrResult.Success -> {
+                    Timber.d("Client saved: ${client.id} ${client.companyName}")
+                    _uiState.update {
+                        it.copy(
                             isSaving = false,
                             saveCompleted = true,
+                            isDirty = false,
                             savedClientId = client.id,
                             savedClientName = client.companyName,
                             error = null
                         )
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to save client")
-                        _uiState.value = _uiState.value.copy(
+                    }
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to save client: ${result.error}")
+                    _uiState.update {
+                        it.copy(
                             isSaving = false,
-                            error = "Errore salvataggio: ${error.message}"
+                            error = result.error.asUiText()
                         )
                     }
-                )
-            } catch (_: CancellationException) {
-                Timber.d("Save client cancelled")
-            } catch (e: Exception) {
-                Timber.e(e, "Exception during client save")
-                _uiState.value = currentState.copy(
-                    isSaving = false,
-                    error = "Errore imprevisto: ${e.message}"
-                )
+                }
             }
         }
     }
 
-    private fun buildClientFromForm(state: ClientFormUiState): Client {
+    private fun buildClientFromState(state: ClientFormUiState): Client {
         val address = if (state.hasAddressData) {
             Address(
                 street = state.street.takeIf { it.isNotBlank() },
@@ -268,27 +266,26 @@ class ClientFormViewModel @Inject constructor(
         } else null
 
         val now = Clock.System.now()
-
         return Client(
             id = state.clientId ?: UUID.randomUUID().toString(),
             companyName = state.companyName.trim(),
             notes = state.notes.takeIf { it.isNotBlank() },
             headquarters = address,
             isActive = true,
-            createdAt = now, // Will be preserved in update
+            createdAt = now,
             updatedAt = now
         )
     }
 
-    // ============================================================
-    // ERROR HANDLING
-    // ============================================================
+    // =========================================================================
+    // ERROR HANDLING / UTILITY
+    // =========================================================================
 
     fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 
     fun resetSaveCompleted() {
-        _uiState.value = _uiState.value.copy(saveCompleted = false)
+        _uiState.update { it.copy(saveCompleted = false) }
     }
 }
