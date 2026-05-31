@@ -8,37 +8,26 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * UI flow Observe islands
+ * Reactive Flow of active islands, optionally scoped to a facility.
+ *
+ * Flow use cases do not return QrResult — errors propagate via Flow.catch
+ * in the ViewModel.
  */
 class ObserveIslandsUseCase @Inject constructor(
-    private val islandRepository: IslandRepository,
+    private val islandRepository: IslandRepository
 ) {
-
-    /**
-     * Observe all facilities (reactive flow)
-     *
-     * @param facilityId Facility ID if any
-     * @return Island list Flow
-     */
     operator fun invoke(facilityId: String? = null): Flow<List<Island>> {
-        Timber.d("FacilityId: ${facilityId ?: "nullo"}")
-
-        if (facilityId.isNullOrBlank()) {
-            return islandRepository.getAllActiveIslandsFlow()
-                .map { islands ->
-                    islands.sortedWith(
-                        compareBy<Island> { it.islandType }
-                            .thenBy { it.serialNumber }
-                    )
-                }
+        Timber.d("ObserveIslandsUseCase facilityId=${facilityId ?: "none"}")
+        val flow = if (facilityId.isNullOrBlank()) {
+            islandRepository.getAllActiveIslandsFlow()
         } else {
-            return islandRepository.getAllActiveIslandsByFacilityFlow(facilityId)
-                .map { facilities ->
-                    facilities.sortedWith(
-                        compareBy<Island> { it.islandType }
-                            .thenBy { it.serialNumber }
-                    )
-                }
+            islandRepository.getAllActiveIslandsByFacilityFlow(facilityId)
+        }
+        return flow.map { islands ->
+            islands.sortedWith(
+                compareBy<Island> { it.islandType.name }
+                    .thenBy { it.serialNumber }
+            )
         }
     }
 }

@@ -1,9 +1,9 @@
-package net.calvuz.qreport.app.app.presentation.ui.home
+package net.calvuz.qreport.app.app.presentation.ui.home.model
 
 /**
- * Statistiche per la dashboard
+ * Dashboard Checkup statistics
  */
-data class DashboardStatistics(
+data class DashboardCheckupStatistics(
     val totalCheckUps: Int,
     val activeCheckUps: Int,
     val completedThisWeek: Int,

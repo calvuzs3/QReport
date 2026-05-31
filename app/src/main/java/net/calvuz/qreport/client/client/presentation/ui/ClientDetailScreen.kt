@@ -492,7 +492,7 @@ private fun FacilityItemWithActions(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${facility.facilityType.displayName} • ${facility.address?.city ?: ""}",
+                            text = stringResource(facility.facilityType.labelResId) + " • ${facility.address?.city ?: ""}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -566,7 +566,7 @@ private fun IslandItemCompact(island: Island, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = island.islandType.displayName,
+                    text = stringResource(island.islandType.labelResId) ,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.client.island.domain.model.IslandType
+import net.calvuz.qreport.client.island.presentation.model.icon
 
 /**
  * Screen per la creazione guidata di un nuovo check-up
@@ -263,7 +264,7 @@ private fun IslandTypeOption(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = islandType.icon,
+                imageVector = islandType.icon(),
                 contentDescription = null,
                 tint = if (isSelected) {
                     MaterialTheme.colorScheme.primary
@@ -274,12 +275,12 @@ private fun IslandTypeOption(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = islandType.displayName,
+                    text = stringResource(islandType.labelResId),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = islandType.description,
+                    text = stringResource(islandType.descriptionResId),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -1,29 +1,18 @@
 package net.calvuz.qreport.client.island.presentation.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 
@@ -31,40 +20,24 @@ import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 fun InfoTabContent(
     island: Island,
     statistics: SingleIslandStatistics?,
-    error: String?,
+    error: UiText?,              // UiText instead of String
     onEdit: () -> Unit,
     onDismissError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        // ✅ Header
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ✅ Title
             Text(
-                text = "Informazioni",
+                text = stringResource(R.string.island_detail_tab_info),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Empty
-                Button(onClick = onEdit) {
-//                        Icon(
-//                            imageVector = Icons.Default.Add,
-//                            contentDescription = null,
-//                            modifier = Modifier.size(18.dp)
-//                        )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Modifica")
-                }
+            Button(onClick = onEdit) {
+                Text(stringResource(R.string.island_detail_action_edit))
             }
         }
 
@@ -73,18 +46,17 @@ fun InfoTabContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            error?.let { msg ->
+            // Inline error card — dismissed without retrying (stats are supplementary)
+            error?.let { uiError ->
                 item {
                     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
+                            modifier = Modifier.fillMaxWidth().padding(16.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = msg,
+                                text = uiError.asString(),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 modifier = Modifier.weight(1f)
@@ -92,7 +64,7 @@ fun InfoTabContent(
                             IconButton(onClick = onDismissError) {
                                 Icon(
                                     Icons.Default.Close,
-                                    contentDescription = "Chiudi",
+                                    contentDescription = stringResource(R.string.action_dismiss),
                                     tint = MaterialTheme.colorScheme.onErrorContainer
                                 )
                             }
@@ -104,9 +76,7 @@ fun InfoTabContent(
             item { IslandBasicInfoCard(island = island) }
             statistics?.let { item { OperationalStatsCard(statistics = it) } }
             item { WarrantyStatusCard(island = island, statistics = statistics) }
-//        item { PerformanceMetricsCard(island = island, statistics = statistics) }
             item { PerformanceMetricsCard(statistics = statistics) }
         }
     }
 }
-

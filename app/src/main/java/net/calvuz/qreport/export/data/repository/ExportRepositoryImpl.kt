@@ -473,7 +473,7 @@ class ExportRepositoryImpl @Inject constructor(
                 appendLine()
                 appendLine("📅 Generato il: $timestamp")
                 appendLine("🏭 Cliente: ${exportData.checkup.header.clientInfo.companyName}")
-                appendLine("🏝️ Isola: ${exportData.checkup.islandType.displayName}")
+                appendLine("🏝️ Isola: ${exportData.checkup.islandType.labelResId}")
                 appendLine("👨‍🔧 Tecnico: ${exportData.checkup.header.technicianInfo.name}")
                 appendLine()
                 appendLine("📁 CONTENUTO PACKAGE:")
@@ -558,11 +558,6 @@ class ExportRepositoryImpl @Inject constructor(
 
     override suspend fun validateExportData(exportData: ExportData): List<String> {
         val errors = mutableListOf<String>()
-
-        // Validazioni checkup
-        if (exportData.checkup.islandType.displayName.isBlank()) {
-            errors.add("Tipo isola non specificato")
-        }
 
         // Validazioni sezioni
         if (exportData.itemsByModule.isEmpty()) {

@@ -3,19 +3,21 @@ package net.calvuz.qreport.client.facility.presentation.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.client.presentation.model.ClientOption
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilityWithIslandsUseCase
-import net.calvuz.qreport.client.facility.domain.usecase.ObserveFacilitiesByClientUseCase
-import net.calvuz.qreport.client.facility.domain.usecase.ObserveFacilitiesUseCase
+import net.calvuz.qreport.client.facility.domain.usecase.ObserveAllActiveFacilitiesUseCase
 import net.calvuz.qreport.client.facility.presentation.model.FacilityFilter
 import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
 import net.calvuz.qreport.client.facility.presentation.model.FacilitySortOrder
@@ -31,7 +33,7 @@ data class FacilityListUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val isDeletingFacility: String? = null,
-    val error: String? = null,
+    val error: UiText? = null,              // UiText instead of raw String
     val searchQuery: String = "",
     val selectedFilter: FacilityFilter = FacilityPkg.selectedFilter,
     val sortOrder: FacilitySortOrder = FacilityPkg.selectedSortOrder,
@@ -39,14 +41,11 @@ data class FacilityListUiState(
     val cardVariant: ListViewMode = ListViewMode.FULL,
     val availableClients: List<ClientOption> = listOf(ClientOption.ALL),
     val selectedClient: ClientOption = ClientOption.ALL
-
 )
-
 
 @HiltViewModel
 class FacilityListViewModel @Inject constructor(
-    private val observeFacilitiesUseCase: ObserveFacilitiesUseCase,
-    private val observeFacilitiesByClientUseCase: ObserveFacilitiesByClientUseCase,
+    private val observeAllActiveFacilitiesUseCase: ObserveAllActiveFacilitiesUseCase,
     private val deleteFacilityUseCase: DeleteFacilityUseCase,
     private val getFacilityWithIslandsUseCase: GetFacilityWithIslandsUseCase,
     private val observeClientsUseCase: ObserveClientsUseCase,
@@ -56,8 +55,7 @@ class FacilityListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(FacilityListUiState())
     val uiState: StateFlow<FacilityListUiState> = _uiState.asStateFlow()
 
-    // Tracks the active facility-loading coroutine so it can be cancelled
-    // before starting a new one (client switch, refresh, etc.).
+    // Tracks the active observation coroutine so switching clients never leaves stale collectors.
     private var loadJob: Job? = null
     private var currentClientId: String = ""
 
@@ -67,13 +65,13 @@ class FacilityListViewModel @Inject constructor(
 
     init {
         Timber.d("FacilityListViewModel init")
-        observeCardVariant() // Restore persisted card variant on startup
+        observeCardVariant()
         loadClientsForDropdown()
     }
 
-    // ============================================================
+    // =========================================================================
     // PUBLIC METHODS
-    // ============================================================
+    // =========================================================================
 
     fun initialize() {
         loadFacilities()
@@ -81,51 +79,34 @@ class FacilityListViewModel @Inject constructor(
 
     fun initializeForClient(clientId: String) {
         if (clientId == currentClientId) return
-
         currentClientId = clientId
-        _uiState.value = _uiState.value.copy(
-            clientId = clientId,
-            // Sync the dropdown selection with the client being loaded.
-            // Falls back to ALL if the client list hasn't loaded yet;
-            // it will be corrected once loadClients() delivers results.
-            selectedClient = _uiState.value.availableClients.find { it.id == clientId }
-                ?: ClientOption.ALL
-        )
+        _uiState.update {
+            it.copy(
+                clientId = clientId,
+                selectedClient = it.availableClients.find { opt -> opt.id == clientId }
+                    ?: ClientOption.ALL
+            )
+        }
         loadFacilities()
     }
 
-
     /**
-     * Loads facilities by observing a Room Flow.
-     *
-     * Cancels any previous observation before starting a new one, so switching
-     * clients or calling refresh never leaves stale collectors running in parallel.
-     *
-     * Room re-emits automatically on every DB change, so no manual re-fetch is
-     * needed for inserts, updates, or deletes.
+     * Observes facilities via Room Flow.
+     * Cancels any previous observation before starting a new one.
      */
     fun loadFacilities() {
         loadJob?.cancel()
 
-        val clientId = currentClientId
-        val flow = if (clientId.isEmpty()) {
-            Timber.d("Observing all facilities")
-            observeFacilitiesUseCase()
-        } else {
-            Timber.d("Observing facilities for client: $clientId")
-            observeFacilitiesByClientUseCase(clientId)
-        }
+        val clientId = currentClientId.takeIf { it.isNotEmpty() }
+        Timber.d("Observing facilities clientId=${clientId ?: "all"}")
 
         loadJob = viewModelScope.launch {
-            // If called from refresh(), keep isRefreshing=true visible until data arrives.
-            // If called fresh, show isLoading instead.
-            _uiState.update { it.copy(
-                isLoading = !it.isRefreshing,
-                error = null
-            ) }
+            _uiState.update {
+                it.copy(isLoading = !it.isRefreshing, error = null)
+            }
 
             try {
-                flow
+                observeAllActiveFacilitiesUseCase(clientId)
                     .catch { exception ->
                         if (exception is CancellationException) throw exception
                         Timber.e(exception, "Error in facilities flow")
@@ -134,169 +115,134 @@ class FacilityListViewModel @Inject constructor(
                                 it.copy(
                                     isLoading = false,
                                     isRefreshing = false,
-                                    error = "Errore caricamento stabilimenti: ${exception.message}")
+                                    error = UiText.StringResource(R.string.err_facility_load)
+                                )
                             }
                         }
                     }
                     .collect { facilities ->
                         if (!currentCoroutineContext().isActive) return@collect
-
-                        val facilitiesWithStats = enrichWithStatistics(facilities)
+                        val withStats = enrichWithStatistics(facilities)
                         val currentState = _uiState.value
-                        val filteredAndSorted = applyFiltersAndSort(
-                            facilitiesWithStats,
-                            currentState.searchQuery,
-                            currentState.selectedFilter,
-                            currentState.sortOrder
-                        )
-
-                        // Clear both loading states when data arrives
                         _uiState.value = currentState.copy(
-                            facilities = facilitiesWithStats,
-                            filteredFacilities = filteredAndSorted,
+                            facilities = withStats,
+                            filteredFacilities = applyFiltersAndSort(
+                                withStats,
+                                currentState.searchQuery,
+                                currentState.selectedFilter,
+                                currentState.sortOrder
+                            ),
                             isLoading = false,
                             isRefreshing = false,
                             error = null
                         )
-
                         Timber.d("Received ${facilities.size} facilities from Flow")
                     }
-
             } catch (_: CancellationException) {
                 Timber.d("Facilities observation cancelled")
             } catch (e: Exception) {
                 if (currentCoroutineContext().isActive) {
                     Timber.e(e, "Unexpected error loading facilities")
                     _uiState.update {
-                        it.copy(isLoading = false, isRefreshing = false,
-                            error = "Errore imprevisto: ${e.message}")
+                        it.copy(
+                            isLoading = false,
+                            isRefreshing = false,
+                            error = UiText.StringResource(R.string.err_facility_load)
+                        )
                     }
                 }
             }
         }
     }
 
-    /** Refresh data */
     fun refresh() {
         _uiState.update { it.copy(isRefreshing = true, error = null) }
-        loadFacilities() // cancels old job, restarts Flow observation
+        loadFacilities()
     }
 
-    /** Delete facility */
     fun softDeleteFacility(facilityId: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isDeletingFacility = facilityId)
+            _uiState.update { it.copy(isDeletingFacility = facilityId) }
 
-            try {
-                Timber.d("Deleting facility: $facilityId")
-
-                deleteFacilityUseCase(facilityId).fold(
-                    onSuccess = {
-                        Timber.d("Facility deleted successfully")
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to delete facility")
-                        _uiState.value = _uiState.value.copy(
-                            isDeletingFacility = null,
-                            error = "Errore eliminazione stabilimento: ${error.message}"
+            when (val result = deleteFacilityUseCase(facilityId)) {
+                is QrResult.Success -> {
+                    Timber.d("Facility deleted: $facilityId")
+                    // List updates automatically via Flow
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to delete facility: ${result.error}")
+                    _uiState.update {
+                        it.copy(
+                            error = UiText.StringResource(R.string.err_facility_delete)
                         )
                     }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception deleting facility")
-                _uiState.value = _uiState.value.copy(
-                    error = "Errore eliminazione stabilimento: ${e.message}"
-                )
-            } finally {
-                _uiState.value = _uiState.value.copy(isDeletingFacility = null)
+                }
             }
+
+            _uiState.update { it.copy(isDeletingFacility = null) }
         }
     }
 
     fun updateSearchQuery(query: String) {
         val currentState = _uiState.value
-
         if (query.length >= 3) {
             performSearch(query)
         } else {
-            val filteredAndSorted = applyFiltersAndSort(
-                currentState.facilities,
-                query,
-                currentState.selectedFilter,
-                currentState.sortOrder
-            )
-
             _uiState.value = currentState.copy(
                 searchQuery = query,
-                filteredFacilities = filteredAndSorted
+                filteredFacilities = applyFiltersAndSort(
+                    currentState.facilities,
+                    query,
+                    currentState.selectedFilter,
+                    currentState.sortOrder
+                )
             )
         }
     }
 
     fun updateFilter(filter: FacilityFilter) {
         val currentState = _uiState.value
-        val filteredAndSorted = applyFiltersAndSort(
-            currentState.facilities,
-            currentState.searchQuery,
-            filter,
-            currentState.sortOrder
-        )
-
         _uiState.value = currentState.copy(
             selectedFilter = filter,
-            filteredFacilities = filteredAndSorted
+            filteredFacilities = applyFiltersAndSort(
+                currentState.facilities,
+                currentState.searchQuery,
+                filter,
+                currentState.sortOrder
+            )
         )
     }
 
     fun updateSortOrder(sortOrder: FacilitySortOrder) {
         val currentState = _uiState.value
-        val filteredAndSorted = applyFiltersAndSort(
-            currentState.facilities,
-            currentState.searchQuery,
-            currentState.selectedFilter,
-            sortOrder
-        )
-
         _uiState.value = currentState.copy(
             sortOrder = sortOrder,
-            filteredFacilities = filteredAndSorted
+            filteredFacilities = applyFiltersAndSort(
+                currentState.facilities,
+                currentState.searchQuery,
+                currentState.selectedFilter,
+                sortOrder
+            )
         )
     }
 
-    /**
-     * Called when the user picks a client from the dropdown.
-     * Reloads facilities scoped to that client, or all facilities if ALL is selected.
-     */
     fun updateSelectedClient(client: ClientOption) {
         if (client == _uiState.value.selectedClient) return
-
         currentClientId = client.id
         _uiState.update { it.copy(selectedClient = client, clientId = client.id) }
         loadFacilities()
     }
 
-    /**
-     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
-     * The preference is persisted via [AppSettingsRepository].
-     */
     fun cycleCardVariant() {
-        val current = _uiState.value.cardVariant
-        val next = when (current) {
+        val next = when (_uiState.value.cardVariant) {
             ListViewMode.FULL -> ListViewMode.COMPACT
             ListViewMode.COMPACT -> ListViewMode.MINIMAL
             ListViewMode.MINIMAL -> ListViewMode.FULL
         }
-
-        // Update UI immediately
-        _uiState.value = _uiState.value.copy(cardVariant = next)
-
-        // Persist in background
+        _uiState.update { it.copy(cardVariant = next) }
         viewModelScope.launch {
             try {
-                appSettingsRepository.setListViewMode(
-                    KEY,
-                    next
-                )
+                appSettingsRepository.setListViewMode(KEY, next)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to persist card variant preference")
             }
@@ -304,70 +250,55 @@ class FacilityListViewModel @Inject constructor(
     }
 
     fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 
-    // ============================================================
+    // =========================================================================
     // PRIVATE METHODS
-    // ============================================================
+    // =========================================================================
 
-    /**
-     * Observe the persisted card variant preference and apply it to UI state.
-     */
     private fun observeCardVariant() {
         viewModelScope.launch {
             appSettingsRepository.getListViewMode(KEY)
-                .catch { e ->
-                    Timber.e(e, "Error observing card variant preference")
-                }
-                .collect { viewMode ->
-                    _uiState.value = _uiState.value.copy(
-                        cardVariant = viewMode
+                .catch { e -> Timber.e(e, "Error observing card variant preference") }
+                .collect { viewMode -> _uiState.update { it.copy(cardVariant = viewMode) } }
+        }
+    }
+
+    private suspend fun enrichWithStatistics(facilities: List<Facility>): List<FacilityWithStats> =
+        facilities.map { facility ->
+            val stats = when (val result = getFacilityWithIslandsUseCase(facility.id)) {
+                is QrResult.Success -> {
+                    val islands = result.data.islands
+                    FacilityStatistics(
+                        islandsCount = islands.size,
+                        activeIslandsCount = islands.count { it.isActive },
+                        maintenanceDueCount = islands.count { it.needsMaintenance() }
                     )
                 }
-        }
-    }
-
-    private suspend fun enrichWithStatistics(facilities: List<Facility>): List<FacilityWithStats> {
-        return facilities.map { facility ->
-            val stats = try {
-                val facilityWithIslands = getFacilityWithIslandsUseCase(facility.id).getOrNull()
-                FacilityStatistics(
-                    islandsCount = facilityWithIslands?.islands?.size ?: 0,
-                    activeIslandsCount = facilityWithIslands?.islands?.count { it.isActive } ?: 0,
-                    maintenanceDueCount = facilityWithIslands?.islands?.count { it.needsMaintenance() }
-                        ?: 0
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception getting stats for facility ${facility.id}")
-                createEmptyStats()
+                is QrResult.Error -> {
+                    Timber.w("Failed to get stats for facility ${facility.id}: ${result.error}")
+                    createEmptyStats()
+                }
             }
-
             FacilityWithStats(facility = facility, stats = stats)
         }
-    }
 
     private fun performSearch(query: String) {
         val currentState = _uiState.value
         val filtered = currentState.facilities.filter { facilityWithStats ->
-            val facility = facilityWithStats.facility
-            facility.name.contains(query, ignoreCase = true) ||
-                    facility.code?.contains(query, ignoreCase = true) == true ||
-                    facility.notes?.contains(query, ignoreCase = true) == true ||
-                    facility.facilityType.displayName.contains(query, ignoreCase = true) ||
-                    facility.address?.city?.contains(query, ignoreCase = true) == true
+            val f = facilityWithStats.facility
+            f.name.contains(query, ignoreCase = true) ||
+                    f.code?.contains(query, ignoreCase = true) == true ||
+                    f.notes?.contains(query, ignoreCase = true) == true ||
+                    f.address?.city?.contains(query, ignoreCase = true) == true
+            // facilityType.displayName removed — use labelResId for display, not for search
         }
-
-        val filteredAndSorted = applyFiltersAndSort(
-            filtered,
-            query,
-            currentState.selectedFilter,
-            currentState.sortOrder
-        )
-
         _uiState.value = currentState.copy(
             searchQuery = query,
-            filteredFacilities = filteredAndSorted
+            filteredFacilities = applyFiltersAndSort(
+                filtered, query, currentState.selectedFilter, currentState.sortOrder
+            )
         )
     }
 
@@ -379,33 +310,29 @@ class FacilityListViewModel @Inject constructor(
     ): List<FacilityWithStats> {
         var filtered = facilities
 
-        // Apply local search query (per query corte)
+        // Short query local filter (≤2 chars); longer queries go through performSearch
         if (searchQuery.isNotBlank() && searchQuery.length <= 2) {
-            filtered = filtered.filter { facilityWithStats ->
-                val facility = facilityWithStats.facility
-                facility.name.contains(searchQuery, ignoreCase = true) ||
-                        facility.code?.contains(searchQuery, ignoreCase = true) == true ||
-                        facility.facilityType.displayName.contains(searchQuery, ignoreCase = true)
+            filtered = filtered.filter { fws ->
+                fws.facility.name.contains(searchQuery, ignoreCase = true) ||
+                        fws.facility.code?.contains(searchQuery, ignoreCase = true) == true
+                // facilityType.displayName removed
             }
         }
 
-        // Apply status filter
         filtered = when (filter) {
             FacilityFilter.ALL -> filtered
             FacilityFilter.ACTIVE -> filtered.filter { it.facility.isActive }
             FacilityFilter.INACTIVE -> filtered.filter { !it.facility.isActive }
             FacilityFilter.PRIMARY_ONLY -> filtered.filter { it.facility.isPrimary }
             FacilityFilter.WITH_ISLANDS -> filtered.filter { it.stats.islandsCount > 0 }
-            FacilityFilter.BY_TYPE -> filtered // Gestito dalla UI con selezione tipo
+            FacilityFilter.BY_TYPE -> filtered
         }
 
-        // Apply sorting
-        filtered = when (sortOrder) {
+        return when (sortOrder) {
             FacilitySortOrder.NAME -> filtered.sortedWith(
                 compareByDescending<FacilityWithStats> { it.facility.isPrimary }
                     .thenBy { it.facility.name.lowercase() }
             )
-
             FacilitySortOrder.CREATED_RECENT -> filtered.sortedByDescending { it.facility.createdAt }
             FacilitySortOrder.CREATED_OLDEST -> filtered.sortedBy { it.facility.createdAt }
             FacilitySortOrder.ISLANDS_COUNT -> filtered.sortedByDescending { it.stats.islandsCount }
@@ -414,20 +341,10 @@ class FacilityListViewModel @Inject constructor(
                     .thenBy { it.facility.name }
             )
         }
-
-        return filtered
     }
 
-    private fun createEmptyStats() = FacilityStatistics(
-        islandsCount = 0,
-        activeIslandsCount = 0,
-        maintenanceDueCount = 0
-    )
+    private fun createEmptyStats() = FacilityStatistics()
 
-    /**
-     * Observes all clients and keeps [FacilityListUiState.availableClients] up to date.
-     * The ALL sentinel is always prepended so the user can clear the client filter.
-     */
     private fun loadClientsForDropdown() {
         viewModelScope.launch {
             try {
@@ -438,13 +355,9 @@ class FacilityListViewModel @Inject constructor(
                             ClientOption(id = client.id, companyName = client.companyName)
                         }
                         _uiState.update { state ->
-                            // Also fix selectedClient if it was set before clients loaded
                             val syncedSelection = options.find { it.id == state.clientId }
                                 ?: ClientOption.ALL
-                            state.copy(
-                                availableClients = options,
-                                selectedClient = syncedSelection
-                            )
+                            state.copy(availableClients = options, selectedClient = syncedSelection)
                         }
                     }
             } catch (e: Exception) {
@@ -452,25 +365,18 @@ class FacilityListViewModel @Inject constructor(
             }
         }
     }
-
 }
 
-/**
- * Data class per facility con statistiche
- */
 data class FacilityWithStats(
     val facility: Facility,
     val stats: FacilityStatistics
 )
 
-/**
- * Statistiche per facility
- */
 data class FacilityStatistics(
     val islandsCount: Int = 0,
     val activeIslandsCount: Int = 0,
     val maintenanceDueCount: Int = 0
 ) {
-    val hasIslands: Boolean = islandsCount > 0
-    val hasMaintenanceIssues: Boolean = maintenanceDueCount > 0
+    val hasIslands: Boolean get() = islandsCount > 0
+    val hasMaintenanceIssues: Boolean get() = maintenanceDueCount > 0
 }

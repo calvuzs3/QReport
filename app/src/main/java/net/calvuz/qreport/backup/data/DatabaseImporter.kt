@@ -171,7 +171,7 @@ class DatabaseImporter @Inject constructor(
             islandDao.deleteAll()
             Timber.v("Cleared facility_islands")
 
-            // 8. Facilities (dipende da clients)
+            // 8. FacilityError (dipende da clients)
             facilityDao.deleteAll()
             Timber.v("Cleared facilities")
 
@@ -201,19 +201,19 @@ class DatabaseImporter @Inject constructor(
                 Timber.v("Imported ${backup.clients.size} clients")
             }
 
-            // 2. Facilities (dipende da clients)
+            // 2. FacilityError (dipende da clients)
             if (backup.facilities.isNotEmpty()) {
                 facilityDao.insertAllFromBackup(backup.facilities.map { it.toEntity() })
                 Timber.v("Imported ${backup.facilities.size} facilities")
             }
 
-            // 3. Contacts (dipende da clients)
+            // 3. ContactsError (dipende da clients)
             if (backup.contacts.isNotEmpty()) {
                 contactDao.insertAllFromBackup(backup.contacts.map { it.toEntity() })
                 Timber.v("Imported ${backup.contacts.size} contacts")
             }
 
-            // 3.1. Contracts (depends on Client)
+            // 3.1. ContractsError (depends on Client)
             if (backup.contracts.isNotEmpty()) {
                 contractDao.insertAllFromBackup(backup.contracts.map { it.toEntity() })
                 Timber.v("Imported ${backup.contracts.size} contracts")
@@ -367,9 +367,9 @@ class DatabaseImporter @Inject constructor(
         try {
             val stats = mapOf(
                 "Clients" to clientDao.count(),
-                "Facilities" to facilityDao.count(),
-                "Contacts" to contactDao.count(),
-                "Contracts" to contractDao.count(),
+                "FacilityError" to facilityDao.count(),
+                "ContactsError" to contactDao.count(),
+                "ContractsError" to contractDao.count(),
                 "Facility Islands" to islandDao.count(),
                 "Mechanical Units" to mechanicalUnitDao.count(),
                 "Checkups" to checkUpDao.count(),

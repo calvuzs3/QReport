@@ -3,109 +3,97 @@ package net.calvuz.qreport.client.facility.presentation.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.model.Facility
-import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilityWithIslandsUseCase
-import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
+import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
-import net.calvuz.qreport.client.island.domain.usecase.UpdateMaintenanceUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
+import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
+import net.calvuz.qreport.client.island.domain.usecase.UpdateMaintenanceUseCase
 import timber.log.Timber
 import javax.inject.Inject
 
+// =============================================================================
+// TABS
+// =============================================================================
+
 /**
- * ViewModel per FacilityDetailScreen - seguendo pattern ClientDetailViewModel
- *
- * Gestisce:
- * - Caricamento dettagli facility completi con isole
- * - Navigation tra tab (Info, Islands, Maintenance)
- * - Stato loading/error/success
- * - Actions per gestione islands CRUD
- * - Statistiche operative facility
+ * Tab labels resolved via [labelResId] at runtime in the composable,
+ * following the same pattern as [ClientDetailTab].
  */
+enum class FacilityDetailTab(val labelResId: Int) {
+    ISLANDS(R.string.facility_detail_tab_islands),
+    MAINTENANCE(R.string.facility_detail_tab_maintenance),
+    INFO(R.string.facility_detail_tab_info),
+}
+
+enum class IslandFilter {
+    ALL, ACTIVE, INACTIVE, NEEDS_MAINTENANCE, UNDER_WARRANTY, BY_TYPE;
+
+    fun labelResId(): Int = when (this) {
+        ALL -> R.string.island_filter_all
+        ACTIVE -> R.string.island_filter_active
+        INACTIVE -> R.string.island_filter_inactive
+        NEEDS_MAINTENANCE -> R.string.island_filter_needs_maintenance
+        UNDER_WARRANTY -> R.string.island_filter_under_warranty
+        BY_TYPE -> R.string.island_filter_by_type
+    }
+}
+
+// =============================================================================
+// UI STATE
+// =============================================================================
 
 data class FacilityDetailUiState(
-    // Data loading
+
+    // ===== DATA =====
     val isLoading: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val facility: Facility? = null,
 
-    // UI State
-    val selectedTab: FacilityDetailTab = FacilityDetailTab.ISLANDS,
-
-    // Delete states
+    // ===== DELETE =====
     val isDeleting: Boolean = false,
     val deleteSuccess: Boolean = false,
-    val deleteError: String? = null,
+    val deleteError: UiText? = null,
     val showDeleteConfirmation: Boolean = false,
 
-    // Quick access data
-    val facilityName: String = "",
-    val facilityType: String = "",
-    val address: String = "",
-    val statusBadge: String = "",
-    val statusBadgeColor: String = "6C757D",
-    val statisticsSummary: String = "",
+    // ===== UI =====
+    val selectedTab: FacilityDetailTab = FacilityDetailTab.ISLANDS,
 
-    // Tab data
+    // ===== TAB DATA =====
     val islands: List<Island> = emptyList(),
     val filteredIslands: List<Island> = emptyList(),
     val operationalSummary: FacilityOperationalSummary? = null,
     val selectedIslandFilter: IslandFilter = IslandFilter.ALL,
-
-    // Maintenance data
     val islandsNeedingMaintenance: List<Island> = emptyList(),
     val islandsUnderWarranty: List<Island> = emptyList()
+
 ) {
-    val hasData: Boolean
-        get() = facility != null
-
-    val facilityId: String?
-        get() = facility?.id
-
-    val isEmpty: Boolean
-        get() = !isLoading && !hasData && error == null
-
-    val clientId: String?
-        get() = facility?.clientId
-
-    val isPrimaryFacility: Boolean
-        get() = facility?.isPrimary == true
-
-    // Tab counts per badge
-    val islandsCount: Int
-        get() = islands.size
-
-    val activeIslandsCount: Int
-        get() = islands.count { it.isActive }
-
-    val maintenanceIssuesCount: Int
-        get() = islandsNeedingMaintenance.size
+    val hasData: Boolean get() = facility != null
+    val isEmpty: Boolean get() = !isLoading && !hasData && error == null
+    val facilityId: String? get() = facility?.id
+    val clientId: String? get() = facility?.clientId
+    val facilityName: String get() = facility?.displayName ?: ""
+    val isPrimaryFacility: Boolean get() = facility?.isPrimary == true
+    val islandsCount: Int get() = islands.size
+    val activeIslandsCount: Int get() = islands.count { it.isActive }
+    val maintenanceIssuesCount: Int get() = islandsNeedingMaintenance.size
 }
 
-/**
- * Tab disponibili nella facility detail screen
- */
-enum class FacilityDetailTab(val title: String) {
-    ISLANDS("Isole"),
-    MAINTENANCE("Manutenzione"),
-    INFO("Informazioni"),
-}
-
-/**
- * Filtri per visualizzazione isole
- */
-enum class IslandFilter {
-    ALL, ACTIVE, INACTIVE, NEEDS_MAINTENANCE, UNDER_WARRANTY, BY_TYPE
-}
+// =============================================================================
+// VIEW MODEL
+// =============================================================================
 
 @HiltViewModel
 class FacilityDetailViewModel @Inject constructor(
@@ -123,83 +111,51 @@ class FacilityDetailViewModel @Inject constructor(
         Timber.d("FacilityDetailViewModel initialized")
     }
 
-    // ============================================================
-    // FACILITY LOADING
-    // ============================================================
+    // =========================================================================
+    // LOADING
+    // =========================================================================
 
     fun loadFacilityDetails(facilityId: String) {
         if (facilityId.isBlank()) {
-            Timber.e("FacilityId blank")
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = "ID facility non valido"
-            )
+            _uiState.update {
+                it.copy(isLoading = false, error = UiText.StringResource(R.string.err_facility_detail_invalid_id))
+            }
             return
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                error = null
-            )
+            _uiState.update { it.copy(isLoading = true, error = null) }
 
-            try {
-                // Load facility with islands
-                getFacilityWithIslandsUseCase(facilityId).fold(
-                    onSuccess = { facilityWithIslands ->
-                        Timber.d("Facility details loaded successfully: ${facilityWithIslands.facility.name}")
-                        populateUiState(facilityWithIslands.facility, facilityWithIslands.islands)
-
-                        // Load additional data
-                        loadOperationalSummary(facilityId)
-                        loadMaintenanceData(facilityId)
-                    },
-                    onFailure = { error ->
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e(error, "Failed to load facility details for ID: $facilityId")
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                error = "Errore caricamento stabilimento: ${error.message}"
-                            )
+            when (val result = getFacilityWithIslandsUseCase(facilityId)) {
+                is QrResult.Success -> {
+                    val fwi = result.data
+                    Timber.d("Facility details loaded: ${fwi.facility.name}")
+                    populateUiState(fwi.facility, fwi.islands)
+                    loadOperationalSummary(facilityId)
+                    loadMaintenanceData(facilityId)
+                }
+                is QrResult.Error -> {
+                    if (currentCoroutineContext().isActive) {
+                        Timber.e("Failed to load facility: ${result.error}")
+                        _uiState.update {
+                            it.copy(isLoading = false, error = UiText.StringResource(R.string.err_facility_detail_load))
                         }
                     }
-                )
-            } catch (_: CancellationException) {
-                Timber.d("Load facility details cancelled")
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Exception loading facility details")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "Errore imprevisto: ${e.message}"
-                    )
                 }
             }
         }
     }
 
     private fun populateUiState(facility: Facility, islands: List<Island>) {
-        val activeIslands = islands.filter { it.isActive }
-        val statusBadge = if (facility.isActive) "Attivo" else "Inattivo"
-        val statusColor = if (facility.isActive) "22C55E" else "6B7280"
-
-        _uiState.value = _uiState.value.copy(
-            isLoading = false,
-            error = null,
-            facility = facility,
-
-            // Quick access data
-            facilityName = facility.displayName,
-            facilityType = facility.facilityType.displayName,
-            address = facility.addressDisplay ?: "",
-            statusBadge = statusBadge,
-            statusBadgeColor = statusColor,
-            statisticsSummary = "${activeIslands.size} isole attive",
-
-            // Islands data
-            islands = islands,
-            filteredIslands = applyIslandFilter(islands, _uiState.value.selectedIslandFilter)
-        )
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                error = null,
+                facility = facility,
+                islands = islands,
+                filteredIslands = applyIslandFilter(islands, it.selectedIslandFilter)
+            )
+        }
     }
 
     private suspend fun loadOperationalSummary(facilityId: String) {
@@ -207,346 +163,193 @@ class FacilityDetailViewModel @Inject constructor(
             getIslandsByFacilityUseCase.getFacilityOperationalSummary(facilityId).fold(
                 onSuccess = { summary ->
                     if (currentCoroutineContext().isActive) {
-                        _uiState.value = _uiState.value.copy(
-                            operationalSummary = summary,
-                            statisticsSummary = "${summary.activeIslands}/${summary.totalIslands} isole attive"
-                        )
+                        _uiState.update { it.copy(operationalSummary = summary) }
                     }
                 },
-                onFailure = { error ->
-                    Timber.w(error, "Failed to load operational summary")
-                }
+                onFailure = { Timber.w("Failed to load operational summary") }
             )
-        } catch (_: CancellationException) {
-            // Ignore cancellation
-        } catch (e: Exception) {
-            Timber.e(e, "Exception loading operational summary")
-        }
+        } catch (_: CancellationException) { }
+        catch (e: Exception) { Timber.e(e, "Exception loading operational summary") }
     }
 
     private suspend fun loadMaintenanceData(facilityId: String) {
         try {
-            // Load islands needing maintenance
             getIslandsByFacilityUseCase.getIslandsDueMaintenance(facilityId).fold(
-                onSuccess = { maintenanceIslands ->
+                onSuccess = { maintenance ->
                     if (currentCoroutineContext().isActive) {
-                        _uiState.value = _uiState.value.copy(
-                            islandsNeedingMaintenance = maintenanceIslands
-                        )
+                        _uiState.update { it.copy(islandsNeedingMaintenance = maintenance) }
                     }
                 },
-                onFailure = { error ->
-                    Timber.w(error, "Failed to load maintenance data")
-                }
+                onFailure = { Timber.w("Failed to load maintenance data") }
             )
-
-            // Load islands under warranty
             getIslandsByFacilityUseCase.getIslandsUnderWarranty(facilityId).fold(
-                onSuccess = { warrantyIslands ->
+                onSuccess = { warranty ->
                     if (currentCoroutineContext().isActive) {
-                        _uiState.value = _uiState.value.copy(
-                            islandsUnderWarranty = warrantyIslands
-                        )
+                        _uiState.update { it.copy(islandsUnderWarranty = warranty) }
                     }
                 },
-                onFailure = { error ->
-                    Timber.w(error, "Failed to load warranty data")
-                }
+                onFailure = { Timber.w("Failed to load warranty data") }
             )
-        } catch (_: CancellationException) {
-            // Ignore cancellation
-        } catch (e: Exception) {
-            Timber.e(e, "Exception loading maintenance data")
-        }
+        } catch (_: CancellationException) { }
+        catch (e: Exception) { Timber.e(e, "Exception loading maintenance data") }
     }
 
-    // ============================================================
-    // DELETE OPERATIONS
-    // ============================================================
+    // =========================================================================
+    // DELETE FACILITY
+    // =========================================================================
 
-    /**
-     * Mostra dialog di conferma prima di eliminare
-     */
     fun showDeleteConfirmation() {
-        _uiState.value = _uiState.value.copy(
-            showDeleteConfirmation = true
-        )
+        _uiState.update { it.copy(showDeleteConfirmation = true) }
     }
 
-    /**
-     * Nasconde dialog di conferma
-     */
     fun hideDeleteConfirmation() {
-        _uiState.value = _uiState.value.copy(
-            showDeleteConfirmation = false
-        )
+        _uiState.update { it.copy(showDeleteConfirmation = false) }
     }
 
-    /**
-     * ✅ FUNZIONE PRINCIPALE per delete
-     */
     fun deleteFacility() {
         val facilityId = _uiState.value.facilityId ?: return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isDeleting = true,
-                deleteError = null,
-                showDeleteConfirmation = false
-            )
+            _uiState.update { it.copy(isDeleting = true, deleteError = null, showDeleteConfirmation = false) }
 
-            try {
-                deleteFacilityUseCase(facilityId).fold(
-                    onSuccess = {
-                        Timber.d("Facility deleted successfully: $facilityId")
-                        _uiState.value = _uiState.value.copy(
+            when (val result = deleteFacilityUseCase(facilityId)) {
+                is QrResult.Success -> {
+                    Timber.d("Facility deleted: $facilityId")
+                    _uiState.update { it.copy(isDeleting = false, deleteSuccess = true) }
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to delete facility: ${result.error}")
+                    _uiState.update {
+                        it.copy(
                             isDeleting = false,
-                            deleteSuccess = true  // ✅ Trigger navigation back
-                        )
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to delete facility: $facilityId")
-                        _uiState.value = _uiState.value.copy(
-                            isDeleting = false,
-                            deleteError = "Errore eliminazione: ${error.message}"
+                            deleteError = UiText.StringResource(R.string.err_facility_detail_delete)
                         )
                     }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception deleting facility")
-                _uiState.value = _uiState.value.copy(
-                    isDeleting = false,
-                    deleteError = "Errore imprevisto: ${e.message}"
-                )
+                }
             }
         }
     }
 
-    // ============================================================
-    // TAB NAVIGATION
-    // ============================================================
-
-    fun selectTab(tab: FacilityDetailTab) {
-        if (_uiState.value.selectedTab != tab) {
-            _uiState.value = _uiState.value.copy(selectedTab = tab)
-            Timber.d("Selected tab: ${tab.title}")
-        }
+    fun resetDeleteState() {
+        _uiState.update { it.copy(deleteSuccess = false, deleteError = null) }
     }
 
-    // ============================================================
-    // ISLANDS FILTERING
-    // ============================================================
-
-    fun updateIslandFilter(filter: IslandFilter) {
-        val currentState = _uiState.value
-        val filteredIslands = applyIslandFilter(currentState.islands, filter)
-
-        _uiState.value = currentState.copy(
-            selectedIslandFilter = filter,
-            filteredIslands = filteredIslands
-        )
-    }
-
-    private fun applyIslandFilter(islands: List<Island>, filter: IslandFilter): List<Island> {
-        return when (filter) {
-            IslandFilter.ALL -> islands
-            IslandFilter.ACTIVE -> islands.filter { it.isActive }
-            IslandFilter.INACTIVE -> islands.filter { !it.isActive }
-            IslandFilter.NEEDS_MAINTENANCE -> islands.filter { it.needsMaintenance() }
-            IslandFilter.UNDER_WARRANTY -> islands.filter { island ->
-                island.warrantyExpiration?.let {
-                    it > Clock.System.now()
-                } == true
-            }
-            IslandFilter.BY_TYPE -> islands // Gestito dalla UI con selezione tipo
-        }
-    }
-
-    // ============================================================
+    // =========================================================================
     // ISLAND ACTIONS
-    // ============================================================
+    // =========================================================================
 
     fun deleteIsland(islandId: String) {
         viewModelScope.launch {
-            try {
-                Timber.d("Deleting island: $islandId")
-
-                deleteIslandUseCase(islandId).fold(
-                    onSuccess = {
-                        Timber.d("Island deleted successfully")
-                        // Refresh data
-                        _uiState.value.facilityId?.let { facilityId ->
-                            loadFacilityDetails(facilityId)
-                        }
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to delete island")
-                        _uiState.value = _uiState.value.copy(
-                            error = "Errore eliminazione isola: ${error.message}"
-                        )
+            when (val result = deleteIslandUseCase(islandId)) {
+                is QrResult.Success -> {
+                    Timber.d("Island deleted: $islandId")
+                    _uiState.value.facilityId?.let { loadFacilityDetails(it) }
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to delete island: ${result.error}")
+                    _uiState.update {
+                        it.copy(error = UiText.StringResource(R.string.err_facility_detail_island_delete))
                     }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception deleting island")
-                _uiState.value = _uiState.value.copy(
-                    error = "Errore eliminazione isola: ${e.message}"
-                )
+                }
             }
         }
     }
 
     fun markMaintenanceComplete(islandId: String) {
         viewModelScope.launch {
-            try {
-                Timber.d("Marking maintenance complete for island: $islandId")
-
-                updateMaintenanceUseCase(
-                    islandId = islandId,
-                    notes = "Manutenzione completata da QReport"
-                ).fold(
-                    onSuccess = {
-                        Timber.d("Maintenance marked complete successfully")
-                        // Refresh data
-                        _uiState.value.facilityId?.let { facilityId ->
-                            loadFacilityDetails(facilityId)
-                        }
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to mark maintenance complete")
-                        _uiState.value = _uiState.value.copy(
-                            error = "Errore aggiornamento manutenzione: ${error.message}"
-                        )
+            when (val result = updateMaintenanceUseCase(islandId = islandId, notes = "Maintenance completed via QReport")) {
+                is QrResult.Success -> {
+                    Timber.d("Maintenance marked complete: $islandId")
+                    _uiState.value.facilityId?.let { loadFacilityDetails(it) }
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to mark maintenance: ${result.error}")
+                    _uiState.update {
+                        it.copy(error = UiText.StringResource(R.string.err_facility_detail_maintenance))
                     }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception marking maintenance complete")
-                _uiState.value = _uiState.value.copy(
-                    error = "Errore aggiornamento manutenzione: ${e.message}"
-                )
+                }
             }
         }
     }
 
-    // ============================================================
-    // ACTIONS
-    // ============================================================
+    // =========================================================================
+    // TAB & FILTER
+    // =========================================================================
+
+    fun selectTab(tab: FacilityDetailTab) {
+        if (_uiState.value.selectedTab != tab) {
+            _uiState.update { it.copy(selectedTab = tab) }
+        }
+    }
+
+    fun updateIslandFilter(filter: IslandFilter) {
+        val currentIslands = _uiState.value.islands
+        _uiState.update {
+            it.copy(
+                selectedIslandFilter = filter,
+                filteredIslands = applyIslandFilter(currentIslands, filter)
+            )
+        }
+    }
+
+    private fun applyIslandFilter(islands: List<Island>, filter: IslandFilter): List<Island> =
+        when (filter) {
+            IslandFilter.ALL -> islands
+            IslandFilter.ACTIVE -> islands.filter { it.isActive }
+            IslandFilter.INACTIVE -> islands.filter { !it.isActive }
+            IslandFilter.NEEDS_MAINTENANCE -> islands.filter { it.needsMaintenance() }
+            IslandFilter.UNDER_WARRANTY -> islands.filter { it.warrantyExpiration?.let { exp -> exp > Clock.System.now() } == true }
+            IslandFilter.BY_TYPE -> islands
+        }
+
+    // =========================================================================
+    // ACTIONS / NAVIGATION HELPERS
+    // =========================================================================
 
     fun refreshData() {
-        val currentFacilityId = _uiState.value.facilityId
-        if (currentFacilityId != null) {
-            loadFacilityDetails(currentFacilityId)
-        }
+        _uiState.value.facilityId?.let { loadFacilityDetails(it) }
     }
 
     fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 
-    /**
-     * Reset DELETE STATES
-     */
-    fun resetDeleteState() {
-        _uiState.value = _uiState.value.copy(
-            deleteSuccess = false,
-            deleteError = null
-        )
-    }
-
-    // ============================================================
-    // NAVIGATION HELPERS
-    // ============================================================
-
-    /**
-     * Ottieni facility ID per navigation
-     */
     fun getFacilityIdForNavigation(): String? = _uiState.value.facilityId
-
-    /**
-     * Ottieni client ID per navigation
-     */
     fun getClientIdForNavigation(): String? = _uiState.value.clientId
-
-    /**
-     * Ottieni facility name per navigation
-     */
     fun getFacilityNameForNavigation(): String = _uiState.value.facilityName
 
-    // ============================================================
-    // UTILITY METHODS per UI convenience
-    // ============================================================
+    // =========================================================================
+    // UTILITY
+    // =========================================================================
 
-    /**
-     * Get islands by type for statistics
-     */
     fun getIslandsByType(type: IslandType): List<Island> =
         _uiState.value.islands.filter { it.islandType == type }
 
-    /**
-     * Get operational islands count
-     */
     fun getOperationalIslandsCount(): Int =
         _uiState.value.islands.count { it.isActive && !it.needsMaintenance() }
 
-    /**
-     * Get total operating hours for facility
-     */
     fun getTotalOperatingHours(): Int =
         _uiState.value.islands.sumOf { it.operatingHours }
 
-    /**
-     * Get total cycles for facility
-     */
     fun getTotalCycles(): Long =
         _uiState.value.islands.sumOf { it.cycleCount }
 
-    /**
-     * Check if facility has complete setup
-     */
     fun hasCompleteSetup(): Boolean =
         _uiState.value.facility != null && _uiState.value.islands.isNotEmpty()
 
-    /**
-     * Get primary island (future feature)
-     */
-    fun getPrimaryIsland(): Island? =
-        _uiState.value.islands.find { it.isActive } // Temporary: primo attivo
-
-    /**
-     * Check if any island needs immediate attention
-     */
     fun hasUrgentIssues(): Boolean =
         _uiState.value.islandsNeedingMaintenance.isNotEmpty()
 
-    /**
-     * Get islands stats summary
-     */
-    fun getIslandsStatsSummary(): String {
+    fun getIslandsStatsSummary(noIslandsText: String, loadingText: String): String {
         val summary = _uiState.value.operationalSummary
         return when {
-            summary == null -> "Caricamento..."
-            summary.totalIslands == 0 -> "Nessuna isola"
-            else -> "${summary.activeIslands}/${summary.totalIslands} attive"
+            summary == null -> loadingText
+            summary.totalIslands == 0 -> noIslandsText
+            else -> "${summary.activeIslands}/${summary.totalIslands}"
         }
     }
 
-    // ============================================================
-    // FUTURE: Actions per navigazioni specifiche
-    // ============================================================
-
-    /**
-     * Azione per navigare al dettaglio island (futuro)
-     */
-    fun onIslandClick(islandId: String) {
-        Timber.d("TODO: Navigate to island detail: $islandId")
-        onIslandClick(islandId)
-    }
-
-    /**
-     * Azione per creare nuovo CheckUp per facility (futuro)
-     */
     fun onCreateFacilityCheckUpClick() {
-        val facilityId = _uiState.value.facilityId
-        Timber.d("TODO: Navigate to create CheckUp for facility: $facilityId")
-        // TODO: Implementare navigazione quando CheckUp creation sarà integrato
+        Timber.d("TODO: Navigate to create CheckUp for facility: ${_uiState.value.facilityId}")
     }
 }

@@ -1,259 +1,111 @@
 package net.calvuz.qreport.client.facility.domain.usecase
 
+import kotlinx.datetime.Clock
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
-import kotlinx.datetime.Clock
 import javax.inject.Inject
 
 /**
- * Use Case per aggiornamento di uno stabilimento esistente
+ * Updates an existing facility, refreshing its [Facility.updatedAt] timestamp.
  *
- * Gestisce:
- * - Validazione esistenza facility
- * - Validazione dati aggiornati
- * - Controllo duplicati nome escludendo facility corrente
- * - Gestione cambio facility primaria
- * - Aggiornamento timestamp
+ * Validates: existence, name, clientId immutability, name uniqueness, primary change.
  */
 class UpdateFacilityUseCase @Inject constructor(
-    private val facilityRepository: FacilityRepository
+    private val facilityRepository: FacilityRepository,
+    private val checkFacilityExists: CheckFacilityExistsUseCase,
+    private val checkFacilityNameUniqueness: CheckFacilityNameUniquenessUseCase
 ) {
+    suspend operator fun invoke(facility: Facility): QrResult<Unit, QrError.FacilityError> {
 
-    /**
-     * Aggiorna uno stabilimento esistente
-     *
-     * @param facility Facility con dati aggiornati (deve avere ID esistente)
-     * @return Result con Unit se successo, errore con dettagli se fallimento
-     */
-    suspend operator fun invoke(facility: Facility): Result<Unit> {
-        return try {
-            // 1. Validazione esistenza facility
-            val originalFacility = checkFacilityExists(facility.id)
-                .getOrElse { return Result.failure(it) }
-
-            // 2. Validazione dati aggiornati
-            validateFacilityData(facility).onFailure { return Result.failure(it) }
-
-            // 3. Controllo duplicati nome (se cambiato)
-            if (facility.name != originalFacility.name) {
-                checkFacilityNameUniqueness(facility.clientId, facility.name, facility.id)
-                    .onFailure { return Result.failure(it) }
-            }
-
-            // 4. Validazione che clientId non sia cambiato (business rule)
-            if (facility.clientId != originalFacility.clientId) {
-                return Result.failure(
-                    IllegalArgumentException("Non è possibile cambiare il cliente di uno stabilimento esistente")
-                )
-            }
-
-            // 5. Gestione cambio facility primaria
-            if (facility.isPrimary != originalFacility.isPrimary) {
-                handlePrimaryFacilityChange(facility, originalFacility)
-                    .onFailure { return Result.failure(it) }
-            }
-
-            // 6. Aggiornamento con timestamp corrente
-            val updatedFacility = facility.copy(updatedAt = Clock.System.now())
-            facilityRepository.updateFacility(updatedFacility)
-
-        } catch (e: Exception) {
-            Result.failure(e)
+        // 1. Verify exists — error type matches so we can propagate directly
+        val original = when (val result = checkFacilityExists(facility.id)) {
+            is QrResult.Error -> return QrResult.Error(result.error)
+            is QrResult.Success -> result.data
         }
-    }
 
-    /**
-     * Verifica che la facility esista e la restituisce
-     */
-    private suspend fun checkFacilityExists(facilityId: String): Result<Facility> {
-        return facilityRepository.getFacilityById(facilityId)
-            .mapCatching { facility ->
-                facility ?: throw NoSuchElementException("Stabilimento con ID '$facilityId' non trovato")
-            }
-    }
-
-    /**
-     * Validazione dati facility
-     */
-    private fun validateFacilityData(facility: Facility): Result<Unit> {
-        return when {
-            facility.id.isBlank() ->
-                Result.failure(IllegalArgumentException("ID facility è obbligatorio"))
-
-            facility.clientId.isBlank() ->
-                Result.failure(IllegalArgumentException("ID cliente è obbligatorio"))
-
-            facility.name.isBlank() ->
-                Result.failure(IllegalArgumentException("Nome stabilimento è obbligatorio"))
-
-            facility.name.length < 2 ->
-                Result.failure(IllegalArgumentException("Nome stabilimento deve essere di almeno 2 caratteri"))
-
-            facility.name.length > 100 ->
-                Result.failure(IllegalArgumentException("Nome stabilimento troppo lungo (max 100 caratteri)"))
-
-            (facility.code?.length ?: 0) > 50 ->
-                Result.failure(IllegalArgumentException("Codice interno troppo lungo (max 50 caratteri)"))
-
-            (facility.notes?.length ?: 0) > 500 ->
-                Result.failure(IllegalArgumentException("Descrizione troppo lunga (max 500 caratteri)"))
-
-            else -> Result.success(Unit)
+        // 2. clientId must not change
+        if (facility.clientId != original.clientId) {
+            return QrResult.Error(
+                QrError.FacilityError.UpdateError("Cannot change client of an existing facility")
+            )
         }
-    }
 
-    /**
-     * Controllo univocità nome facility escludendo facility corrente
-     */
-    private suspend fun checkFacilityNameUniqueness(
-        clientId: String,
-        name: String,
-        excludeId: String
-    ): Result<Unit> {
-        return facilityRepository.isFacilityNameTakenForClient(clientId, name, excludeId)
-            .mapCatching { isTaken ->
-                if (isTaken) {
-                    throw IllegalArgumentException("Nome stabilimento '$name' già utilizzato da un altro stabilimento")
-                }
+        // 3. Validate fields
+        val fieldError = validateFields(facility)
+        if (fieldError != null) return fieldError
+
+        // 4. Check name uniqueness if name changed
+        if (facility.name != original.name) {
+            when (val unique = checkFacilityNameUniqueness(facility.clientId, facility.name, facility.id)) {
+                is QrResult.Error -> return QrResult.Error(unique.error)
+                is QrResult.Success -> Unit
             }
-    }
-
-    /**
-     * Gestisce i cambiamenti dello stato primario
-     */
-    private suspend fun handlePrimaryFacilityChange(
-        newFacility: Facility,
-        originalFacility: Facility
-    ): Result<Unit> {
-        return when {
-            // Diventa primario
-            newFacility.isPrimary && !originalFacility.isPrimary -> {
-                facilityRepository.setPrimaryFacility(newFacility.clientId, newFacility.id)
-            }
-
-            // Non è più primario - verifica che ci sia almeno un altro stabilimento
-            !newFacility.isPrimary && originalFacility.isPrimary -> {
-                validateCanRemovePrimary(newFacility.clientId, newFacility.id)
-            }
-
-            else -> Result.success(Unit)
         }
-    }
 
-    /**
-     * Verifica che si possa rimuovere il flag primario
-     */
-    private suspend fun validateCanRemovePrimary(clientId: String, facilityId: String): Result<Unit> {
-        return facilityRepository.getFacilitiesByClient(clientId)
-            .mapCatching { facilities ->
-                val otherActiveFacilities = facilities.filter {
-                    it.id != facilityId && it.isActive
-                }
-
-                if (otherActiveFacilities.isEmpty()) {
-                    throw IllegalStateException(
-                        "Non è possibile rimuovere il flag primario: non ci sono altri stabilimenti attivi"
-                    )
-                }
-
-                // Automaticamente imposta il primo come primario
-                val newPrimary = otherActiveFacilities.first()
-                facilityRepository.setPrimaryFacility(clientId, newPrimary.id)
-                    .getOrThrow()
-            }
-    }
-
-    /**
-     * Aggiorna solo campi specifici di una facility
-     *
-     * @param facilityId ID della facility da aggiornare
-     * @param updates Mappa campo -> nuovo valore
-     * @return Result con Unit se successo
-     */
-    suspend fun updateFacilityFields(
-        facilityId: String,
-        updates: Map<String, Any?>
-    ): Result<Unit> {
-        return try {
-            val originalFacility = checkFacilityExists(facilityId)
-                .getOrElse { return Result.failure(it) }
-
-            var updatedFacility = originalFacility
-
-            updates.forEach { (field, value) ->
-                updatedFacility = when (field) {
-                    "name" -> updatedFacility.copy(name = value as String)
-                    "code" -> updatedFacility.copy(code = value as? String)
-                    "description" -> updatedFacility.copy(notes = value as? String)
-                    "isPrimary" -> updatedFacility.copy(isPrimary = value as Boolean)
-                    "isActive" -> updatedFacility.copy(isActive = value as Boolean)
-                    else -> throw IllegalArgumentException("Campo '$field' non supportato per aggiornamento")
-                }
-            }
-
-            invoke(updatedFacility)
-
-        } catch (e: Exception) {
-            Result.failure(e)
+        // 5. Handle primary change
+        if (facility.isPrimary != original.isPrimary) {
+            val primaryError = handlePrimaryChange(facility, original)
+            if (primaryError != null) return primaryError
         }
+
+        // 6. Persist with refreshed timestamp
+        val updated = facility.copy(updatedAt = Clock.System.now())
+        return facilityRepository.updateFacility(updated).fold(
+            onSuccess = { QrResult.Success(Unit) },
+            onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
+        )
     }
 
-    /**
-     * Attiva o disattiva una facility
-     *
-     * @param facilityId ID della facility
-     * @param isActive Nuovo stato attivo/inattivo
-     * @return Result con Unit se successo
-     */
-    suspend fun updateFacilityStatus(facilityId: String, isActive: Boolean): Result<Unit> {
-        return try {
-            val facility = checkFacilityExists(facilityId)
-                .getOrElse { return Result.failure(it) }
+    // -------------------------------------------------------------------------
 
-            if (facility.isActive == isActive) {
-                return Result.success(Unit) // Nessun cambio necessario
-            }
+    private fun validateFields(facility: Facility): QrResult<Unit, QrError.FacilityError>? = when {
+        facility.name.isBlank() ->
+            QrResult.Error(QrError.FacilityError.MissingName())
+        facility.name.length < 2 ->
+            QrResult.Error(QrError.FacilityError.UpdateError("Name too short (min 2 chars)"))
+        facility.name.length > 100 ->
+            QrResult.Error(QrError.FacilityError.UpdateError("Name too long (max 100 chars)"))
+        (facility.code?.length ?: 0) > 50 ->
+            QrResult.Error(QrError.FacilityError.UpdateError("Code too long (max 50 chars)"))
+        (facility.notes?.length ?: 0) > 500 ->
+            QrResult.Error(QrError.FacilityError.UpdateError("Notes too long (max 500 chars)"))
+        else -> null
+    }
 
-            // Se si disattiva la facility primaria, deve esserci un'altra facility attiva
-            if (!isActive && facility.isPrimary) {
-                validateCanDeactivatePrimary(facility.clientId, facilityId)
-                    .onFailure { return Result.failure(it) }
-            }
+    private suspend fun handlePrimaryChange(
+        facility: Facility,
+        original: Facility
+    ): QrResult<Unit, QrError.FacilityError>? = when {
 
-            val updatedFacility = facility.copy(
-                isActive = isActive,
-                // Se si disattiva, rimuovi anche il flag primario
-                isPrimary = if (!isActive) false else facility.isPrimary,
-                updatedAt = Clock.System.now()
+        // Promoting to primary: delegate to repository
+        facility.isPrimary && !original.isPrimary ->
+            facilityRepository.setPrimaryFacility(facility.clientId, facility.id).fold(
+                onSuccess = { null },
+                onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
             )
 
-            invoke(updatedFacility)
+        // Demoting from primary: another active facility must exist
+        !facility.isPrimary && original.isPrimary ->
+            facilityRepository.getActiveFacilitiesByClient(facility.clientId).fold(
+                onSuccess = { active ->
+                    val others = active.filter { it.id != facility.id }
+                    when {
+                        others.isEmpty() ->
+                            QrResult.Error(QrError.FacilityError.UpdateError(
+                                "Cannot remove primary flag: no other active facility"
+                            ))
+                        else ->
+                            facilityRepository.setPrimaryFacility(facility.clientId, others.first().id).fold(
+                                onSuccess = { null },
+                                onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
+                            )
+                    }
+                },
+                onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
+            )
 
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Verifica che si possa disattivare una facility primaria
-     */
-    private suspend fun validateCanDeactivatePrimary(clientId: String, facilityId: String): Result<Unit> {
-        return facilityRepository.getFacilitiesByClient(clientId)
-            .mapCatching { facilities ->
-                val otherActiveFacilities = facilities.filter {
-                    it.id != facilityId && it.isActive
-                }
-
-                if (otherActiveFacilities.isEmpty()) {
-                    throw IllegalStateException(
-                        "Non è possibile disattivare l'ultima facility attiva per questo cliente"
-                    )
-                }
-
-                // Automaticamente imposta la prima come primaria
-                val newPrimary = otherActiveFacilities.first()
-                facilityRepository.setPrimaryFacility(clientId, newPrimary.id)
-                    .getOrThrow()
-            }
+        else -> null
     }
 }

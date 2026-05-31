@@ -7,7 +7,8 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 
 object CheckupPkg {
-    val title = UiText.StringResource(R.string.route_checkups_title)
+    //val title = UiText.StringResource(R.string.route_checkups_title)
+    val title = "Check-up"
     val description = UiText.StringResource(R.string.route_checkups_subtitle)
     val icon = Icons.AutoMirrored.Filled.Assignment
     val icon_unselected = Icons.AutoMirrored.Outlined.Assignment

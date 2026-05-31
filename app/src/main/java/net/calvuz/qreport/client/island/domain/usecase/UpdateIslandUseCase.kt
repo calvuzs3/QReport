@@ -1,21 +1,18 @@
 package net.calvuz.qreport.client.island.domain.usecase
 
+import kotlinx.datetime.Clock
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
-import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.island.domain.validator.IslandDataValidator
 import javax.inject.Inject
 
 /**
- * Use Case per aggiornamento di un'isola robotizzata esistente
+ * Updates an existing island, refreshing its [Island.updatedAt] timestamp.
  *
- * Gestisce:
- * - Validazione esistenza isola
- * - Validazione dati aggiornati
- * - Controllo duplicati serial number escludendo l'isola corrente
- * - Validazione coerenza date manutenzione
- * - Aggiornamento timestamp
- * - Calcolo automatico ore operative
+ * Validates: existence, fields, serial number uniqueness, date consistency,
+ * facility immutability.
  */
 class UpdateIslandUseCase @Inject constructor(
     private val islandRepository: IslandRepository,
@@ -23,107 +20,87 @@ class UpdateIslandUseCase @Inject constructor(
     private val checkIslandExists: CheckIslandExistsUseCase,
     private val checkSerialNumberUniqueness: CheckSerialNumberUniquenessUseCase
 ) {
+    suspend operator fun invoke(island: Island): QrResult<Unit, QrError.IslandError> {
 
-    /**
-     * Aggiorna un'isola robotizzata esistente
-     *
-     * @param island Isola con dati aggiornati (deve avere ID esistente)
-     * @return Result con Unit se successo, errore con dettagli se fallimento
-     */
-    suspend operator fun invoke(island: Island): Result<Unit> {
-        return try {
-            // 1. Validazione esistenza isola
-            val originalIsland = checkIslandExists(island.id)
-                .getOrElse { return Result.failure(it) }
-
-            // 2. Validazione dati aggiornati
-            validateIslandData(island).onFailure { return Result.failure(it) }
-
-            // 3. Controllo duplicati serial number (se cambiato)
-            if (island.serialNumber != originalIsland.serialNumber) {
-                checkSerialNumberUniqueness(island.serialNumber)
-                    .onFailure { return Result.failure(it) }
-            }
-
-            // 4. Validazione coerenza date manutenzione
-            validateMaintenanceDates(island).onFailure { return Result.failure(it) }
-
-            // 5. Validazione che facility_id non sia cambiato (business rule)
-            if (island.facilityId != originalIsland.facilityId) {
-                return Result.failure(
-                    IllegalArgumentException("Non è possibile cambiare la facility di un'isola esistente")
-                )
-            }
-
-            // 6. Calcolo ore operative se necessario
-            val finalIsland = calculateOperatingHoursIfNeeded(originalIsland, island)
-
-            // 7. Aggiornamento con timestamp corrente
-            val updatedIsland = finalIsland.copy(updatedAt = Clock.System.now())
-            islandRepository.updateIsland(updatedIsland)
-
-        } catch (e: Exception) {
-            Result.failure(e)
+        // 1. Verify exists
+        val original = when (val r = checkIslandExists(island.id)) {
+            is QrResult.Error -> return QrResult.Error(r.error)
+            is QrResult.Success -> r.data
         }
+
+        // 2. Facility must not change
+        if (island.facilityId != original.facilityId) {
+            return QrResult.Error(QrError.IslandError.CannotChangeFacility())
+        }
+
+        // 3. Validate fields
+        when (val v = validateIslandData(island)) {
+            is QrResult.Error -> return v
+            is QrResult.Success -> Unit
+        }
+
+        // 4. Check serial number uniqueness if changed
+        if (island.serialNumber != original.serialNumber) {
+            when (val sn = checkSerialNumberUniqueness(island.serialNumber)) {
+                is QrResult.Error -> return sn
+                is QrResult.Success -> Unit
+            }
+        }
+
+        // 5. Validate date consistency
+        val dateError = validateMaintenanceDates(island)
+        if (dateError != null) return dateError
+
+        // 6. Guard operating hours decrease without new maintenance
+        val guardedIsland = guardOperatingHours(original, island)
+
+        // 7. Persist with updated timestamp
+        val updated = guardedIsland.copy(updatedAt = Clock.System.now())
+        return islandRepository.updateIsland(updated).fold(
+            onSuccess = { QrResult.Success(Unit) },
+            onFailure = { QrResult.Error(QrError.IslandError.UpdateError(it.message)) }
+        )
     }
 
+    // -------------------------------------------------------------------------
 
-    /**
-     * Validazione coerenza date manutenzione
-     */
-    private fun validateMaintenanceDates(island: Island): Result<Unit> {
+    private fun validateMaintenanceDates(island: Island): QrResult<Unit, QrError.IslandError>? {
         val now = Clock.System.now()
-
         return when {
-            // Data installazione non può essere nel futuro
             island.installationDate?.let { it > now } == true ->
-                Result.failure(IllegalArgumentException("Data installazione non può essere nel futuro"))
+                QrResult.Error(QrError.IslandError.InvalidInstallationDate("Installation date cannot be in the future"))
 
-            // Garanzia non può essere precedente all'installazione
-            island.warrantyExpiration?.let {
-                island.installationDate?.let { install -> it < install }
+            island.warrantyExpiration?.let { exp ->
+                island.installationDate?.let { install -> exp < install }
             } == true ->
-                Result.failure(IllegalArgumentException("Scadenza garanzia non può essere precedente all'installazione"))
+                QrResult.Error(QrError.IslandError.InvalidWarrantyDate("Warranty before installation"))
 
-            // Ultima manutenzione non può essere precedente all'installazione
-            island.lastMaintenanceDate?.let {
-                island.installationDate?.let { install -> it < install }
+            island.lastMaintenanceDate?.let { last ->
+                island.installationDate?.let { install -> last < install }
             } == true ->
-                Result.failure(IllegalArgumentException("Ultima manutenzione non può essere precedente all'installazione"))
+                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Last maintenance before installation"))
 
-            // Ultima manutenzione non può essere nel futuro
             island.lastMaintenanceDate?.let { it > now } == true ->
-                Result.failure(IllegalArgumentException("Ultima manutenzione non può essere nel futuro"))
+                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Last maintenance cannot be in the future"))
 
-            // Prossima manutenzione deve essere successiva all'ultima
             island.nextScheduledMaintenance?.let { next ->
                 island.lastMaintenanceDate?.let { last -> next <= last }
             } == true ->
-                Result.failure(IllegalArgumentException("Prossima manutenzione deve essere successiva all'ultima"))
+                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Next maintenance must be after last maintenance"))
 
-            else -> Result.success(Unit)
+            else -> null
         }
     }
 
     /**
-     * Calcola ore operative incrementali se necessario
+     * Prevents operating hours from being decreased unless a new maintenance
+     * record justifies the reset.
      */
-    private fun calculateOperatingHoursIfNeeded(
-        originalIsland: Island,
-        updatedIsland: Island
-    ): Island {
-        // Se le ore operative sono diminuite, potrebbe essere un reset dopo manutenzione
-        if (updatedIsland.operatingHours < originalIsland.operatingHours) {
-            // Consenti solo se c'è stata una nuova manutenzione
-            val hasNewMaintenance = updatedIsland.lastMaintenanceDate != null &&
-                    originalIsland.lastMaintenanceDate != updatedIsland.lastMaintenanceDate
-
-            if (!hasNewMaintenance) {
-                // Mantieni le ore originali se non è un reset legittimo
-                return updatedIsland.copy(operatingHours = originalIsland.operatingHours)
-            }
-        }
-
-        return updatedIsland
+    private fun guardOperatingHours(original: Island, updated: Island): Island {
+        if (updated.operatingHours >= original.operatingHours) return updated
+        val hasNewMaintenance = updated.lastMaintenanceDate != null &&
+                updated.lastMaintenanceDate != original.lastMaintenanceDate
+        return if (hasNewMaintenance) updated
+        else updated.copy(operatingHours = original.operatingHours)
     }
 }

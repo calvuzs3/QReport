@@ -910,22 +910,26 @@ class CheckUpDetailViewModel @Inject constructor(
     private fun loadFacilitiesForClient(clientId: String) {
         viewModelScope.launch {
             try {
-                getFacilitiesByClientUseCase(clientId).onSuccess { facilities ->
-                    _associationState.value = _associationState.value.copy(
-                        availableFacilities = facilities,
-                        isLoadingFacilities = false
-                    )
-                }.onFailure { e ->
-                    _associationState.value = _associationState.value.copy(
-                        isLoadingFacilities = false
-                    )
-                    _uiState.value = _uiState.value.copy(
-                        error =
-                            // "Errore caricamento stabilimenti: ${error.message}"
-                            QrError.Checkup.FACILITY_LOAD.asUiText()
-                    )
+                when (val result = getFacilitiesByClientUseCase(clientId)) {
+                    is QrResult.Success -> {
+                        val facilities = result.data
+                        _associationState.value = _associationState.value.copy(
+                            availableFacilities = facilities,
+                            isLoadingFacilities = false
+                        )
+                    }
+                    is QrResult.Error -> {
+                        _associationState.value = _associationState.value.copy(
+                            isLoadingFacilities = false
+                        )
+                        _uiState.value = _uiState.value.copy(
+                            error =
+                                // "Errore caricamento stabilimenti: ${error.message}"
+                                QrError.Checkup.FACILITY_LOAD.asUiText()
+                        )
+                    }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _associationState.value = _associationState.value.copy(
                     isLoadingFacilities = false
                 )
@@ -944,22 +948,25 @@ class CheckUpDetailViewModel @Inject constructor(
     private fun loadIslandsForFacility(facilityId: String) {
         viewModelScope.launch {
             try {
-                getIslandsByFacilityUseCase(facilityId).onSuccess { islands ->
-                    _associationState.value = _associationState.value.copy(
-                        availableIslands = islands,
-                        isLoadingIslands = false
-                    )
-                }.onFailure { e ->
-                    _associationState.value = _associationState.value.copy(
-                        isLoadingIslands = false
-                    )
-                    _uiState.value = _uiState.value.copy(
-                        error =
-                            // "Errore caricamento isole: ${error.message}"
-                            QrError.Checkup.ISLAND_LOAD.asUiText()
-                    )
+                when (val result = getIslandsByFacilityUseCase(facilityId)) {
+                    is QrResult.Success -> {
+                        _associationState.value = _associationState.value.copy(
+                            availableIslands = result.data,
+                            isLoadingIslands = false
+                        )
+                    }
+                    is QrResult.Error -> {
+                        _associationState.value = _associationState.value.copy(
+                            isLoadingIslands = false
+                        )
+                        _uiState.value = _uiState.value.copy(
+                            error =
+                                // "Errore caricamento isole: ${error.message}"
+                                QrError.Checkup.ISLAND_LOAD.asUiText()
+                        )
+                    }
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _associationState.value = _associationState.value.copy(
                     isLoadingIslands = false
                 )

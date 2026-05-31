@@ -1,11 +1,11 @@
-package net.calvuz.qreport.app.app.presentation.ui.home
+package net.calvuz.qreport.app.app.presentation.ui.home.model
 
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 
 /**
- * Dati aggregati per la dashboard
+ * Dashboard Checkup Data
  */
-data class DashboardData(
+data class DashboardCheckupData(
     val recentCheckUps: List<CheckUp>,
     val inProgressCheckUps: List<CheckUp>,
     val draftCheckUps: List<CheckUp>,

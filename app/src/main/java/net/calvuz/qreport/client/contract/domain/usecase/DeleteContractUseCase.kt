@@ -16,7 +16,7 @@ class DeleteContractUseCase @Inject constructor(
             return try {
 
                 if (contractId.isBlank()) {
-                    return QrResult.Error(QrError.Contracts.ClientIdEmpty("ID cliente non può essere vuoto"))
+                    return QrResult.Error(QrError.ContractsError.ClientIdEmpty("ID cliente non può essere vuoto"))
                 }
 
                 // 2. Verificare che il contatto esista
@@ -38,7 +38,7 @@ class DeleteContractUseCase @Inject constructor(
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error in delete contact")
-                QrResult.Error(QrError.Contracts.DeleteError(e))
+                QrResult.Error(QrError.ContractsError.DeleteError(e))
             }
     }
 

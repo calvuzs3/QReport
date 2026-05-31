@@ -4,27 +4,25 @@ import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import javax.inject.Inject
 
+/**
+ * Removes the primary flag from the current primary facility of a client
+ * before a new one is promoted.
+ *
+ * Kept on [Result] because it is an internal helper called only by
+ * [NewFacilityUseCase] and [UpdateFacilityUseCase], which handle the
+ * error wrapping themselves.
+ */
 class HandlePrimaryFacilityChangeUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository
-){
-
-    /**
-     * Gestisce il cambio di facility primaria prima della creazione
-     */
+) {
     suspend operator fun invoke(clientId: String): Result<Unit> {
         return try {
-            // Se esiste già una facility primaria, rimuovi il flag
-            val existingPrimary = facilityRepository.getPrimaryFacility(clientId)
-                .getOrElse { return Result.success(Unit) } // Non c'è facility primaria esistente
+            val existing = facilityRepository.getPrimaryFacility(clientId)
+                .getOrElse { return Result.success(Unit) } // No primary exists — nothing to do
 
-            if (existingPrimary != null) {
-                // Aggiorna la facility esistente rimuovendo il flag primario
-                val updatedPrimary = existingPrimary.copy(
-                    isPrimary = false,
-                    updatedAt = Clock.System.now()
-                )
-                facilityRepository.updateFacility(updatedPrimary)
-                    .onFailure { return Result.failure(it) }
+            if (existing != null) {
+                val updated = existing.copy(isPrimary = false, updatedAt = Clock.System.now())
+                facilityRepository.updateFacility(updated).onFailure { return Result.failure(it) }
             }
 
             Result.success(Unit)

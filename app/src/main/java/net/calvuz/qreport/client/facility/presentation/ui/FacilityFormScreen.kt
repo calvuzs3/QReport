@@ -21,42 +21,28 @@ import net.calvuz.qreport.client.client.presentation.ui.components.FormAddressSe
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 import timber.log.Timber
 
-/**
- * Screen per creazione/modifica stabilimento
- *
- * Features:
- * - ValidationError completo con validazioni
- * - Gestione create/edit mode
- * - Selezione tipo facility
- * - Input indirizzo strutturato
- * - Gestione facility primaria
- * - Save/cancel con conferma
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityFormScreen(
     modifier: Modifier = Modifier,
     clientId: String,
-    facilityId: String? = null, // null = create mode
+    facilityId: String? = null,
     onNavigateBack: () -> Unit,
     onFacilitySaved: (String) -> Unit,
     viewModel: FacilityFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Initialize form
     LaunchedEffect(clientId, facilityId) {
         viewModel.initialize(clientId, facilityId)
     }
 
-    // Handle success
     LaunchedEffect(uiState.saveCompleted, uiState.savedFacilityId) {
-        uiState.savedFacilityId?.let { savedId ->
-            Timber.d("Facility saved ID: ${uiState.savedFacilityId}")
-            Timber.d("Facility saved NAME: ${uiState.name}")
-
+        val savedId = uiState.savedFacilityId
+        if (uiState.saveCompleted && savedId != null) {
+            Timber.d("Facility saved ID: $savedId name: ${uiState.name}")
             onFacilitySaved(savedId)
-            viewModel::resetSaveCompleted
+            viewModel.resetSaveCompleted()
         }
     }
 
@@ -64,57 +50,54 @@ fun FacilityFormScreen(
         modifier = modifier
             .fillMaxSize()
             .imePadding()
-//            .verticalScroll(rememberScrollState())
     ) {
-        // Top App Bar
         TopAppBar(
             title = {
                 Text(
-                    if (facilityId == null) "Nuovo Stabilimento" else "Modifica Stabilimento"
+                    if (facilityId == null)
+                        stringResource(R.string.facility_form_title_create)
+                    else
+                        stringResource(R.string.facility_form_title_edit)
                 )
             },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Indietro")
+                    Icon(
+                        imageVector = Icons.Default.ArrowBackIosNew,
+                        contentDescription = stringResource(R.string.facility_form_action_back)
+                    )
                 }
             },
             actions = {
-                // Save button
                 IconButton(
-                    onClick = { viewModel::saveFacility },
+                    onClick = viewModel::saveFacility,
                     enabled = uiState.isFormValid && !uiState.isLoading
                 ) {
                     if (uiState.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                     } else {
                         Icon(
                             imageVector = if (uiState.isFormValid) Icons.Default.Save else Icons.Outlined.Save,
-                            contentDescription = stringResource(R.string.action_save),
-                            tint = if (uiState.isFormValid) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            contentDescription = stringResource(R.string.facility_form_action_save),
+                            tint = if (uiState.isFormValid)
+                                MaterialTheme.colorScheme.onPrimary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-
                 TextButton(
                     onClick = viewModel::saveFacility,
                     enabled = uiState.isFormValid && !uiState.isLoading
                 ) {
-                    Text("Salva")
+                    Text(stringResource(R.string.facility_form_button_save_text))
                 }
             }
         )
 
-        // ValidationError content
         Box(modifier = Modifier.fillMaxSize()) {
             if (uiState.isLoading && facilityId != null) {
-                // Loading existing facility
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
                 }
             } else {
@@ -124,12 +107,8 @@ fun FacilityFormScreen(
                 )
             }
 
-            // Error snackbar
-            uiState.error?.let { errorMessage ->
-                LaunchedEffect(errorMessage) {
-                    // Show snackbar or handle error
-                    viewModel.dismissError()
-                }
+            uiState.error?.let {
+                LaunchedEffect(it) { viewModel.dismissError() }
             }
         }
     }
@@ -147,26 +126,30 @@ private fun FacilityFormContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Nome stabilimento
+        // Name
         OutlinedTextField(
             value = uiState.name,
             onValueChange = { onFormEvent(FacilityFormEvent.NameChanged(it)) },
-            label = { Text("Nome Stabilimento *") },
-            placeholder = { Text("Es. Stabilimento Principale") },
+            label = { Text(stringResource(R.string.facility_form_field_name)) },
+            placeholder = { Text(stringResource(R.string.facility_form_field_name_placeholder)) },
             isError = uiState.nameError != null,
-            supportingText = uiState.nameError?.let { { Text(it) } },
+            supportingText = uiState.nameError?.let { error ->
+                { Text(error.asString()) }
+            },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Codice interno (opzionale)
+        // Code
         OutlinedTextField(
             value = uiState.code,
             onValueChange = { onFormEvent(FacilityFormEvent.CodeChanged(it)) },
-            label = { Text("Codice Interno") },
-            placeholder = { Text("Es. FAB01") },
+            label = { Text(stringResource(R.string.facility_form_field_code)) },
+            placeholder = { Text(stringResource(R.string.facility_form_field_code_placeholder)) },
             isError = uiState.codeError != null,
-            supportingText = uiState.codeError?.let { { Text(it) } },
+            supportingText = uiState.codeError?.let { error ->
+                { Text(error.asString()) }
+            },
             singleLine = true,
             modifier = Modifier.fillMaxWidth()
         )
@@ -175,34 +158,30 @@ private fun FacilityFormContent(
         OutlinedTextField(
             value = uiState.notes,
             onValueChange = { onFormEvent(FacilityFormEvent.NotesChanged(it)) },
-            label = { Text("Note") },
-            placeholder = { Text("note aggiuntive...") },
+            label = { Text(stringResource(R.string.facility_form_field_notes)) },
+            placeholder = { Text(stringResource(R.string.facility_form_field_notes_placeholder)) },
             maxLines = 3,
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Tipo stabilimento
+        // Facility Type dropdown
         var expanded by remember { mutableStateOf(false) }
-
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = it },
             modifier = Modifier.fillMaxWidth()
         ) {
-            // Name
             OutlinedTextField(
-                value = uiState.facilityType.displayName,
+                value = stringResource(uiState.facilityType.labelResId),
                 onValueChange = { },
                 readOnly = true,
-                label = { Text("Tipo Stabilimento *") },
+                label = { Text(stringResource(R.string.facility_form_field_type)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                 modifier = Modifier
                     .menuAnchor()
                     .fillMaxWidth()
             )
-
-            // Type
             ExposedDropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
@@ -211,9 +190,9 @@ private fun FacilityFormContent(
                     DropdownMenuItem(
                         text = {
                             Column {
-                                Text(type.displayName)
+                                Text(stringResource(type.labelResId))
                                 Text(
-                                    text = type.description,
+                                    text = stringResource(type.descriptionResId),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -229,7 +208,7 @@ private fun FacilityFormContent(
             }
         }
 
-        // Address Section
+        // Address
         FormAddressSection(
             street = uiState.street,
             streetNumber = uiState.streetNumber,
@@ -237,40 +216,37 @@ private fun FacilityFormContent(
             province = uiState.province,
             postalCode = uiState.postalCode,
             country = uiState.country,
-            onStreetChange = { onFormEvent(FacilityFormEvent.StreetChanged(it)) }, //viewModel::updateStreet,
-            onStreetNumberChange = { onFormEvent(FacilityFormEvent.StreetNumberChanged(it)) }, //viewModel::updateStreetNumber,
-            onCityChange = { onFormEvent(FacilityFormEvent.CityChanged(it)) }, //viewModel::updateCity,
-            onProvinceChange = { onFormEvent(FacilityFormEvent.ProvinceChanged(it)) }, //viewModel::updateProvince,
-            onPostalCodeChange = { onFormEvent(FacilityFormEvent.PostalCodeChanged(it)) }, //viewModel::updatePostalCode,
-            onCountryChange = { onFormEvent(FacilityFormEvent.CountryChanged(it)) }, //viewModel::updateCountry
+            onStreetChange = { onFormEvent(FacilityFormEvent.StreetChanged(it)) },
+            onStreetNumberChange = { onFormEvent(FacilityFormEvent.StreetNumberChanged(it)) },
+            onCityChange = { onFormEvent(FacilityFormEvent.CityChanged(it)) },
+            onProvinceChange = { onFormEvent(FacilityFormEvent.ProvinceChanged(it)) },
+            onPostalCodeChange = { onFormEvent(FacilityFormEvent.PostalCodeChanged(it)) },
+            onCountryChange = { onFormEvent(FacilityFormEvent.CountryChanged(it)) }
         )
 
-        // Meta
+        // Options
         Card {
             Column(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "Opzioni",
+                    text = stringResource(R.string.facility_form_section_options),
                     style = MaterialTheme.typography.titleSmall
                 )
-
-                // Primary Facility
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Stabilimento Primario")
+                        Text(stringResource(R.string.facility_form_option_primary_title))
                         Text(
-                            text = "Imposta come stabilimento principale per il cliente",
+                            text = stringResource(R.string.facility_form_option_primary_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-
                     Switch(
                         checked = uiState.isPrimary,
                         onCheckedChange = { onFormEvent(FacilityFormEvent.PrimaryChanged(it)) }
@@ -279,7 +255,6 @@ private fun FacilityFormContent(
             }
         }
 
-        // Spacer per FAB
         Spacer(modifier = Modifier.height(80.dp))
     }
 }

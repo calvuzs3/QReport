@@ -2,196 +2,100 @@ package net.calvuz.qreport.client.island.domain.usecase
 
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
-import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.island.domain.model.maintenanceIntervalFor
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
-import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.days
 
 /**
- * Use Case specifico per gestione manutenzione isole robotizzate
+ * Records a completed maintenance for a robotic island and schedules the next one.
  *
- * Gestisce:
- * - Registrazione manutenzione completata
- * - Calcolo automatico prossima manutenzione
- * - Reset ore operative dopo manutenzione
- * - Aggiornamento stato operativo
- * - Tracciamento cronologia manutenzioni
- *
- * Business Rules:
- * - Manutenzione completata resetta il contatore ore
- * - Prossima manutenzione calcolata in base al tipo isola
- * - Date manutenzione devono essere coerenti
- * - Solo isole attive possono ricevere manutenzione
+ * Note: maintenance notes are appended without localized strings — the caller
+ * supplies the [notes] text if needed, keeping the domain free of UI strings.
  */
 class UpdateMaintenanceUseCase @Inject constructor(
     private val islandRepository: IslandRepository,
     private val checkIslandExists: CheckIslandExistsUseCase
 ) {
-
-    /**
-     * Registra una manutenzione completata per un'isola
-     *
-     * @param islandId ID dell'isola
-     * @param maintenanceDate Data completamento manutenzione (default: ora corrente)
-     * @param resetOperatingHours Se resettare le ore operative (default: true)
-     * @param notes Note aggiuntive sulla manutenzione
-     * @return Result con Unit se successo, errore se fallimento
-     */
     suspend operator fun invoke(
         islandId: String,
         maintenanceDate: Instant = Clock.System.now(),
         resetOperatingHours: Boolean = true,
         notes: String? = null
-    ): Result<Unit> {
-        return try {
-            // 1. Validazione input
-            if (islandId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID isola non può essere vuoto"))
-            }
-
-            validateMaintenanceDate(maintenanceDate).onFailure { return Result.failure(it) }
-
-            // 2. Verifica esistenza e stato isola
-            val island = checkIslandExists(islandId)
-                .getOrElse { return Result.failure(it) }
-
-            // 3. Validazione che la manutenzione sia coerente
-            validateMaintenanceLogic(
-                island,
-                maintenanceDate
-            ).onFailure { return Result.failure(it) }
-
-            // 4. Calcola prossima manutenzione
-            val nextMaintenanceDate = calculateNextMaintenance(island.islandType, maintenanceDate)
-
-            // 5. Aggiorna dati manutenzione
-            islandRepository.updateMaintenanceDate(islandId, maintenanceDate)
-                .onFailure { return Result.failure(it) }
-
-            // 6. Aggiorna prossima manutenzione programmata
-            islandRepository.updateIsland(
-                island.copy(
-                    lastMaintenanceDate = maintenanceDate,
-                    nextScheduledMaintenance = nextMaintenanceDate,
-                    operatingHours = if (resetOperatingHours) 0 else island.operatingHours,
-                    notes = if (notes != null) {
-                        val timestamp = maintenanceDate.toItalianDate()
-                        val existingNotes =
-                            island.notes?.takeIf { it.isNotBlank() }?.plus("\n") ?: ""
-                        "${existingNotes}Manutenzione $timestamp: $notes"
-                    } else island.notes,
-                    updatedAt = Clock.System.now()
-                )
-            ).onFailure { return Result.failure(it) }
-
-            Result.success(Unit)
-
-        } catch (e: Exception) {
-            Result.failure(e)
+    ): QrResult<Unit, QrError.IslandError> {
+        if (islandId.isBlank()) {
+            return QrResult.Error(QrError.IslandError.NotFound())
         }
+
+        // Validate date range
+        val now = Clock.System.now()
+        if (maintenanceDate > now + 24.days) {
+            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Maintenance date too far in the future"))
+        }
+        if (maintenanceDate < now - 365.days) {
+            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Maintenance date more than 1 year in the past"))
+        }
+
+        // Verify island exists
+        val island = when (val r = checkIslandExists(islandId)) {
+            is QrResult.Error -> return QrResult.Error(r.error)
+            is QrResult.Success -> r.data
+        }
+
+        // Validate maintenance logic
+        if (island.lastMaintenanceDate?.let { it >= maintenanceDate } == true) {
+            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Maintenance date must be after previous maintenance"))
+        }
+        if (island.installationDate?.let { it > maintenanceDate } == true) {
+            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Maintenance date cannot be before installation"))
+        }
+
+        val nextMaintenanceDate = maintenanceDate + maintenanceIntervalFor(island.islandType).days
+
+        // Build updated notes — caller provides the text, domain only appends it
+        val updatedNotes = if (notes != null) {
+            val existing = island.notes?.takeIf { it.isNotBlank() }?.plus("\n") ?: ""
+            "$existing$notes"
+        } else {
+            island.notes
+        }
+
+        return islandRepository.updateIsland(
+            island.copy(
+                lastMaintenanceDate = maintenanceDate,
+                nextScheduledMaintenance = nextMaintenanceDate,
+                operatingHours = if (resetOperatingHours) 0 else island.operatingHours,
+                notes = updatedNotes,
+                updatedAt = Clock.System.now()
+            )
+        ).fold(
+            onSuccess = { QrResult.Success(Unit) },
+            onFailure = { QrResult.Error(QrError.IslandError.UpdateError(it.message)) }
+        )
     }
 
-    /**
-     * Aggiorna solo la data della prossima manutenzione programmata
-     *
-     * @param islandId ID dell'isola
-     * @param nextMaintenanceDate Data prossima manutenzione
-     * @return Result con Unit se successo
-     */
     suspend fun updateNextScheduledMaintenance(
         islandId: String,
         nextMaintenanceDate: Instant?
-    ): Result<Unit> {
-        return try {
-            if (islandId.isBlank()) {
-                return Result.failure(IllegalArgumentException("ID isola non può essere vuoto"))
-            }
+    ): QrResult<Unit, QrError.IslandError> {
+        if (islandId.isBlank()) return QrResult.Error(QrError.IslandError.NotFound())
 
-            nextMaintenanceDate?.let { date ->
-                validateMaintenanceDate(date).onFailure { return Result.failure(it) }
-
-                if (date <= Clock.System.now()) {
-                    return Result.failure(
-                        IllegalArgumentException("Prossima manutenzione deve essere nel futuro")
-                    )
-                }
-            }
-
-            val island = checkIslandExists(islandId)
-                .getOrElse { return Result.failure(it) }
-
-            islandRepository.updateIsland(
-                island.copy(
-                    nextScheduledMaintenance = nextMaintenanceDate,
-                    updatedAt = Clock.System.now()
-                )
-            )
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Validazione data manutenzione
-     */
-    private fun validateMaintenanceDate(maintenanceDate: Instant): Result<Unit> {
-        val now = Clock.System.now()
-        val maxFutureDate = now + (24.days) // Massimo 24 giorno nel futuro
-
-        return when {
-            maintenanceDate > maxFutureDate ->
-                Result.failure(IllegalArgumentException("Data manutenzione non può essere troppo nel futuro"))
-
-            maintenanceDate < (now - (365.days)) ->
-                Result.failure(IllegalArgumentException("Data manutenzione non può essere più di 1 anno nel passato"))
-
-            else -> Result.success(Unit)
-        }
-    }
-
-    /**
-     * Validazione logica manutenzione
-     */
-    private fun validateMaintenanceLogic(
-        island: Island,
-        maintenanceDate: Instant
-    ): Result<Unit> {
-        return when {
-            // La nuova manutenzione deve essere successiva alla precedente
-            island.lastMaintenanceDate?.let { it >= maintenanceDate } == true ->
-                Result.failure(
-                    IllegalArgumentException("Data manutenzione deve essere successiva all'ultima manutenzione")
-                )
-
-            // La manutenzione non può essere precedente all'installazione
-            island.installationDate?.let { it > maintenanceDate } == true ->
-                Result.failure(
-                    IllegalArgumentException("Data manutenzione non può essere precedente all'installazione")
-                )
-
-            else -> Result.success(Unit)
-        }
-    }
-
-    /**
-     * Calcola la data della prossima manutenzione in base al tipo di isola
-     */
-    private fun calculateNextMaintenance(
-        islandType: IslandType,
-        lastMaintenanceDate: Instant
-    ): Instant {
-        val interval = when (islandType) {
-            IslandType.POLY_MOVE -> 90.days
-            IslandType.POLY_CAST -> 120.days
-            IslandType.POLY_EBT -> 90.days
-            IslandType.POLY_TAG_BLE -> 180.days
-            IslandType.POLY_TAG_FC -> 180.days
-            IslandType.POLY_TAG_V -> 150.days
-            IslandType.POLY_SAMPLE -> 90.days
+        if (nextMaintenanceDate != null && nextMaintenanceDate <= Clock.System.now()) {
+            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Next maintenance must be in the future"))
         }
 
-        return lastMaintenanceDate + interval
+        val island = when (val r = checkIslandExists(islandId)) {
+            is QrResult.Error -> return QrResult.Error(r.error)
+            is QrResult.Success -> r.data
+        }
+
+        return islandRepository.updateIsland(
+            island.copy(nextScheduledMaintenance = nextMaintenanceDate, updatedAt = Clock.System.now())
+        ).fold(
+            onSuccess = { QrResult.Success(Unit) },
+            onFailure = { QrResult.Error(QrError.IslandError.UpdateError(it.message)) }
+        )
     }
 }

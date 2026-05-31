@@ -69,11 +69,11 @@ fun PerformanceMetricsCard(statistics: SingleIslandStatistics?) {
 
 
                     // Summary text
-                    Text(
-                        text = statistics.summaryText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+//                    Text(
+//                        text = statistics.summaryText,
+//                        style = MaterialTheme.typography.bodyMedium,
+//                        color = MaterialTheme.colorScheme.onSurfaceVariant
+//                    )
                 } ?: run {
                     // Summary text
                     Text(

@@ -16,7 +16,7 @@ class CreateContractUseCase @Inject constructor(
         return try {
             // 1. Verify client exists
             when (checkClientExists(contract.clientId)) {
-                is QrResult.Error -> return QrResult.Error(QrError.Contracts.ClientNotFound(contract.clientId))
+                is QrResult.Error -> return QrResult.Error(QrError.ContractsError.ClientNotFound(contract.clientId))
                 is QrResult.Success -> Unit
             }
 

@@ -14,7 +14,7 @@ class CheckContractExistsUseCase @Inject constructor(
         return try {
 
             if (contractId.isBlank()) {
-                return QrResult.Error(QrError.Contracts.ClientIdEmpty("ID cliente non può essere vuoto"))
+                return QrResult.Error(QrError.ContractsError.ClientIdEmpty("ID cliente non può essere vuoto"))
             }
 
             when (val result = contractRepository.getContractById(contractId)) {
@@ -30,7 +30,7 @@ class CheckContractExistsUseCase @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Error in check contract exists")
-            QrResult.Error(QrError.Contracts.ContractNotFound(e.message))
+            QrResult.Error(QrError.ContractsError.ContractNotFound(e.message))
         }
     }
 }

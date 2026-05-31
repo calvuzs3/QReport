@@ -165,8 +165,8 @@ class ClientDetailViewModel @Inject constructor(
                 clientDetails = clientDetails,
                 companyName = clientDetails.client.companyName,
                 facilitiesWithIslands = clientDetails.facilities,
-                activeContacts = clientDetails.activeContacts,
-                activeContracts = clientDetails.activeContracts,
+                activeContacts = clientDetails.activeContactsError,
+                activeContracts = clientDetails.activeContractsError,
                 allIslands = clientDetails.activeIslands,
                 statistics = clientDetails.statistics
             )

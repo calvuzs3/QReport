@@ -14,40 +14,40 @@ class ContactDataValidator @Inject constructor() {
     operator fun invoke(contact: Contact): QrResult<Unit, QrError> {
         return when {
             contact.clientId.isBlank() ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             contact.firstName.isBlank() ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             contact.firstName.length < 2 ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             contact.firstName.length > 100 ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             contact.lastName?.let { it.length > 100 } == true ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             contact.email?.isNotBlank() == true && !isValidEmail(contact.email) ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             contact.phone?.isNotBlank() == true && !isValidPhone(contact.phone) ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             contact.mobilePhone?.isNotBlank() == true && !isValidPhone(contact.mobilePhone) ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             (contact.title?.length ?: 0) > 100 ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             (contact.role?.length ?: 0) > 100 ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             (contact.department?.length ?: 0) > 100 ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             !hasAnyContactInfo(contact) ->
-                QrResult.Error(QrError.Contacts.ValidationError.IdClientMandatory())
+                QrResult.Error(QrError.ContactsError.ValidationError.IdClientMandatory())
 
             else -> QrResult.Success(Unit)
         }

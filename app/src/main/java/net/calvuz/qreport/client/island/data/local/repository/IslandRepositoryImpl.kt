@@ -11,15 +11,6 @@ import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import javax.inject.Inject
 
-/**
- * Implementazione del repository per gestione isole robotizzate per stabilimenti
- * Utilizza Room DAO per persistenza e mapper per conversioni domain ↔ entity
- *
- * ✅ FIXED: Tutti i metodi corretti per compilazione
- * ✅ FIXED: IslandMapper integrato
- * ✅ FIXED: Conversioni Instant/Long corrette
- * ✅ FIXED: Flow methods senza suspend
- */
 class IslandRepositoryImpl @Inject constructor(
     private val islandDao: IslandDao,
     private val islandMapper: IslandMapper
@@ -337,17 +328,6 @@ class IslandRepositoryImpl @Inject constructor(
             updates.forEach { (islandId, maintenanceDate) ->
                 islandDao.updateLastMaintenanceDate(islandId, maintenanceDate.toEpochMilliseconds())
             }
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    // ===== MAINTENANCE =====
-
-    override suspend fun touchIsland(id: String): Result<Unit> {
-        return try {
-            islandDao.touchIsland(id)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

@@ -14,30 +14,29 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.ListStatItem
-import kotlin.collections.sumOf
+import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
 
 /**
- * Componente per mostrare statistiche riassuntive degli Stabilimenti
- * Design semplificato uguale alla scheda Facilities
+ * Summary statistics card for a list of [FacilityWithIslands].
+ * Shown above the facility list in the client detail screen.
  */
 @Composable
 fun FacilityStatisticsSummary(
     statistics: List<FacilityWithIslands>,
     modifier: Modifier = Modifier
 ) {
+    val totalIslands = statistics.sumOf { it.islands.size }
+    val activeIslands = statistics.sumOf { it.islands.count { island -> island.isActive } }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
     ) {
-        val totalIslands = statistics.sumOf { it.islands.size }
-        val activeIslands = statistics.sumOf { facility ->
-            facility.islands.count { it.isActive }
-        }
-
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -47,17 +46,17 @@ fun FacilityStatisticsSummary(
             ListStatItem(
                 icon = Icons.Default.Business,
                 value = statistics.size.toString(),
-                label = "Stabilimenti"
+                label = stringResource(R.string.facility_stat_facilities)
             )
             ListStatItem(
                 icon = Icons.Default.PrecisionManufacturing,
                 value = totalIslands.toString(),
-                label = "Isole Totali"
+                label = stringResource(R.string.facility_stat_islands_total)
             )
             ListStatItem(
                 icon = Icons.Default.CheckCircle,
                 value = activeIslands.toString(),
-                label = "Isole Attive",
+                label = stringResource(R.string.facility_stat_islands_active),
                 color = MaterialTheme.colorScheme.primary
             )
         }

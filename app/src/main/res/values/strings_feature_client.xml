@@ -140,7 +140,7 @@
     <string name="client_detail_action_view_all">Vedi tutti</string>
     <string name="client_detail_action_new">Nuovo</string>
 
-    <!-- Facilities tab -->
+    <!-- FacilityError tab -->
     <string name="client_detail_facilities_empty_message">Nessuno Stabilimento</string>
     <string name="client_detail_facilities_empty_sub">Aggiungi uno Stabilimento per questo Cliente</string>
     <string name="client_detail_facilities_action_new">Nuovo Stabilimento</string>
@@ -150,7 +150,7 @@
     <string name="client_detail_facility_islands_more">Vedi altre %1$d isole</string>
     <string name="client_detail_facility_islands_none">Nessuna isola associata</string>
 
-    <!-- Contacts tab -->
+    <!-- ContactsError tab -->
     <string name="client_detail_contacts_empty_message">Nessun Contatto</string>
     <string name="client_detail_contacts_empty_sub">Aggiungi un contatto per questo cliente</string>
     <string name="client_detail_contacts_action_new">Nuovo Contatto</string>
@@ -160,7 +160,7 @@
     <string name="client_detail_contacts_more">… e altri %1$d contatti</string>
     <string name="client_detail_contact_call_error">Errore di chiamata</string>
 
-    <!-- Contracts tab -->
+    <!-- ContractsError tab -->
     <string name="client_detail_contracts_empty_message">Nessun Contratto</string>
     <string name="client_detail_contracts_empty_sub">Aggiungi un contratto per questo cliente</string>
     <string name="client_detail_contracts_action_new">Nuovo Contratto</string>
@@ -217,7 +217,7 @@
     <string name="client_detail_info_field_updated">Ultima modifica</string>
     <string name="client_detail_info_field_status">Stato</string>
 
-    <!-- Facilities tab -->
+    <!-- FacilityError tab -->
     <string name="client_detail_facilities_header">Stabilimenti (%1$d)</string>
     <string name="client_detail_facilities_view_all">Vedi tutti</string>
     <string name="client_detail_facilities_new">Nuovo</string>
@@ -227,7 +227,7 @@
     <string name="client_detail_facility_islands_header">Isole (%1$d)</string>
     <string name="client_detail_facility_no_islands">Nessuna isola associata</string>
 
-    <!-- Contacts tab -->
+    <!-- ContactsError tab -->
     <string name="client_detail_contacts_header">Contatti (%1$d)</string>
     <string name="client_detail_contacts_view_all">Vedi tutti</string>
     <string name="client_detail_contacts_new">Nuovo</string>
@@ -235,7 +235,7 @@
     <string name="client_detail_contacts_empty_action">Nuovo Contatto</string>
     <string name="client_detail_contact_primary_badge">Primario</string>
 
-    <!-- Contracts tab -->
+    <!-- ContractsError tab -->
     <string name="client_detail_contracts_header">Contratti (%1$d)</string>
     <string name="client_detail_contracts_view_all">Vedi tutti</string>
     <string name="client_detail_contracts_new">Nuovo</string>

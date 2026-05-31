@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Statistiche dettagliate per i contatti di un cliente
- * Utilizzate nella scheda Contacts del ClientDetailScreen
+ * Utilizzate nella scheda ContactsError del ClientDetailScreen
  */
 @Serializable
 data class ContactStatistics(

@@ -16,23 +16,23 @@ class GetContractsByClientUseCase @Inject constructor(
     suspend operator fun invoke(clientId: String): QrResult<List<Contract>, QrError> {
         return try {
             if (clientId.isBlank()) {
-                return QrResult.Error(QrError.Contracts.ClientIdEmpty("ID cliente non può essere vuoto"))
+                return QrResult.Error(QrError.ContractsError.ClientIdEmpty("ID cliente non può essere vuoto"))
             }
 
             // Verify client exists
             when (checkClientExists(clientId)) {
-                is QrResult.Error -> return QrResult.Error(QrError.Contracts.ClientNotFound(clientId))
+                is QrResult.Error -> return QrResult.Error(QrError.ContractsError.ClientNotFound(clientId))
                 is QrResult.Success -> Unit
             }
 
             // Fetch contracts
             when (val result = contractRepository.getContractsByClient(clientId)) {
                 is QrResult.Success -> QrResult.Success(result.data)
-                is QrResult.Error -> QrResult.Error(QrError.Contracts.ContractNotFound(result.error.toString()))
+                is QrResult.Error -> QrResult.Error(QrError.ContractsError.ContractNotFound(result.error.toString()))
             }
         } catch (e: Exception) {
             Timber.e(e, "Error getting contracts for client $clientId")
-            QrResult.Error(QrError.Contracts.ContractNotFound(e.message))
+            QrResult.Error(QrError.ContractsError.ContractNotFound(e.message))
         }
     }
 

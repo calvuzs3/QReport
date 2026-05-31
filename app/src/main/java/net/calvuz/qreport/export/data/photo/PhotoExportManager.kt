@@ -1,5 +1,6 @@
 package net.calvuz.qreport.export.data.photo
 
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.calvuz.qreport.checkup.domain.model.module.ModuleType
@@ -340,7 +341,7 @@ class PhotoExportManager @Inject constructor(
         val indexFile = File(photoFolder, "INDICE_FOTO.txt")
 
         val indexContent = buildString {
-            appendLine("# INDICE FOTO - ${exportData.checkup.islandType.displayName}")
+            appendLine("# INDICE FOTO - ${(exportData.checkup.islandType.labelResId)}")
             appendLine("# Generato: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))}")
             appendLine("# Cliente: ${exportData.checkup.header.clientInfo.companyName}")
             appendLine("# Tecnico: ${exportData.checkup.header.technicianInfo.name}")

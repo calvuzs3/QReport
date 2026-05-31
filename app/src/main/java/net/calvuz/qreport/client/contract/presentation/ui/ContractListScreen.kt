@@ -382,7 +382,7 @@ fun ContractListScreen(
                     }
 
                     else -> {
-                        // Contracts list - NO padding bottom because floating indicator doesn't cover the list
+                        // ContractsError list - NO padding bottom because floating indicator doesn't cover the list
                         ContractsListWithSelection(
                             contractsWithStats = uiState.filteredContracts,
                             variant = uiState.cardVariant,
@@ -440,7 +440,7 @@ fun ContractListScreen(
 }
 
 /**
- * Contracts list with selection support (unchanged)
+ * ContractsError list with selection support (unchanged)
  */
 @Composable
 private fun ContractsListWithSelection(

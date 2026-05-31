@@ -1,29 +1,26 @@
 package net.calvuz.qreport.client.island.domain.usecase
 
-import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
-import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.usecase.CheckFacilityExistsUseCase
+import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.maintenanceIntervalFor
+import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import net.calvuz.qreport.client.island.domain.validator.IslandDataValidator
-import kotlin.time.Duration.Companion.days
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.days
 
 /**
- * Use Case per creazione di una nuova isola robotizzata
+ * Creates a new robotic island.
  *
- * Gestisce:
- * - Validazione dati isola
- * - Verifica esistenza facility
- * - Controllo duplicati serial number
- * - Validazione date manutenzione e garanzia
- * - Calcolo automatico prossima manutenzione
- *
- * Business Rules:
- * - Serial number deve essere univoco globalmente
- * - Facility deve esistere ed essere attiva
- * - Date manutenzione devono essere coerenti
- * - Garanzia non può essere scaduta alla creazione
+ * Steps:
+ * 1. Validate fields via [IslandDataValidator]
+ * 2. Verify the facility exists
+ * 3. Check serial number uniqueness
+ * 4. Validate maintenance/warranty date consistency
+ * 5. Auto-compute next maintenance if not provided
+ * 6. Persist
  */
 class CreateIslandUseCase @Inject constructor(
     private val islandRepository: IslandRepository,
@@ -31,103 +28,73 @@ class CreateIslandUseCase @Inject constructor(
     private val checkFacilityExists: CheckFacilityExistsUseCase,
     private val checkSerialNumberUniqueness: CheckSerialNumberUniquenessUseCase
 ) {
+    suspend operator fun invoke(island: Island): QrResult<Unit, QrError.IslandError> {
 
-    /**
-     * Crea una nuova isola robotizzata
-     *
-     * @param island Isola da creare
-     * @return Result con Unit se successo, errore con dettagli se fallimento
-     */
-    suspend operator fun invoke(island: Island): Result<Unit> {
-        return try {
-            // 1. Validazione dati base
-            validateIslandData(island).onFailure { return Result.failure(it) }
-
-            // 2. Verifica che la facility esista ed è attiva
-            checkFacilityExists(island.facilityId).onFailure { return Result.failure(it) }
-
-            // 3. Controllo duplicati serial number
-            checkSerialNumberUniqueness(island.serialNumber).onFailure { return Result.failure(it) }
-
-            // 4. Validazione date manutenzione e garanzia
-            validateMaintenanceDates(island).onFailure { return Result.failure(it) }
-
-            // 5. Calcolo automatico prossima manutenzione se non specificata
-            val finalIsland = calculateNextMaintenanceIfNeeded(island)
-
-            // 6. Creazione nel repository
-            islandRepository.createIsland(finalIsland)
-
-        } catch (e: Exception) {
-            Result.failure(e)
+        // 1. Validate fields
+        when (val v = validateIslandData(island)) {
+            is QrResult.Error -> return v
+            is QrResult.Success -> Unit
         }
+
+        // 2. Verify facility exists
+        when (checkFacilityExists(island.facilityId)) {
+            is QrResult.Error -> return QrResult.Error(QrError.IslandError.FacilityNotFound())
+            is QrResult.Success -> Unit
+        }
+
+        // 3. Check serial number uniqueness
+        when (val sn = checkSerialNumberUniqueness(island.serialNumber)) {
+            is QrResult.Error -> return sn
+            is QrResult.Success -> Unit
+        }
+
+        // 4. Validate date consistency
+        val dateError = validateMaintenanceDates(island)
+        if (dateError != null) return dateError
+
+        // 5. Auto-compute next maintenance
+        val finalIsland = autoScheduleNextMaintenance(island)
+
+        // 6. Persist
+        return islandRepository.createIsland(finalIsland).fold(
+            onSuccess = { QrResult.Success(Unit) },
+            onFailure = { QrResult.Error(QrError.IslandError.CreateError(it.message)) }
+        )
     }
 
-    /**
-     * Validazione date manutenzione e garanzia
-     */
-    private fun validateMaintenanceDates(island: Island): Result<Unit> {
+    // -------------------------------------------------------------------------
+
+    private fun validateMaintenanceDates(island: Island): QrResult<Unit, QrError.IslandError>? {
         val now = Clock.System.now()
-
         return when {
-            // Validazione data installazione
             island.installationDate?.let { it > now } == true ->
-                Result.failure(IllegalArgumentException("Data installazione non può essere nel futuro"))
+                QrResult.Error(QrError.IslandError.InvalidInstallationDate("Installation date cannot be in the future"))
 
-            // Validazione garanzia
-            island.warrantyExpiration?.let {
-                island.installationDate?.let { install -> it < install }
+            island.warrantyExpiration?.let { exp ->
+                island.installationDate?.let { install -> exp < install }
             } == true ->
-                Result.failure(IllegalArgumentException("Data scadenza garanzia non può essere precedente all'installazione"))
+                QrResult.Error(QrError.IslandError.InvalidWarrantyDate("Warranty expiration before installation date"))
 
-            // Validazione ultima manutenzione
-            island.lastMaintenanceDate?.let {
-                island.installationDate?.let { install -> it < install }
+            island.lastMaintenanceDate?.let { last ->
+                island.installationDate?.let { install -> last < install }
             } == true ->
-                Result.failure(IllegalArgumentException("Data ultima manutenzione non può essere precedente all'installazione"))
+                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Last maintenance before installation date"))
 
             island.lastMaintenanceDate?.let { it > now } == true ->
-                Result.failure(IllegalArgumentException("Data ultima manutenzione non può essere nel futuro"))
+                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Last maintenance date cannot be in the future"))
 
-            // Validazione prossima manutenzione
             island.nextScheduledMaintenance?.let { next ->
                 island.lastMaintenanceDate?.let { last -> next <= last }
             } == true ->
-                Result.failure(IllegalArgumentException("Prossima manutenzione deve essere successiva all'ultima manutenzione"))
+                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Next maintenance must be after last maintenance"))
 
-            else -> Result.success(Unit)
+            else -> null
         }
     }
 
-    /**
-     * Calcola automaticamente la prossima manutenzione se non specificata
-     */
-    private fun calculateNextMaintenanceIfNeeded(island: Island): Island {
-        // Se non è specificata la prossima manutenzione, calcolala automaticamente
-        if (island.nextScheduledMaintenance == null) {
-            val baseDate = island.lastMaintenanceDate ?: island.installationDate ?: Clock.System.now()
-            val maintenanceInterval = getMaintenanceIntervalForType(island.islandType)
-
-            return island.copy(
-                nextScheduledMaintenance = baseDate + maintenanceInterval.days
-            )
-        }
-
-        return island
-    }
-
-    /**
-     * Ottiene l'intervallo di manutenzione standard per tipo di isola (in giorni)
-     */
-    private fun getMaintenanceIntervalForType(islandType: IslandType): Int {
-        return when (islandType) {
-            IslandType.POLY_MOVE -> 90 // 90 giorni
-            IslandType.POLY_CAST -> 120 // 120 giorni
-            IslandType.POLY_EBT -> 60 // 60 giorni
-            IslandType.POLY_TAG_BLE -> 180 // 180 giorni
-            IslandType.POLY_TAG_FC -> 180 // 180 giorni
-            IslandType.POLY_TAG_V -> 150 // 150 giorni
-            IslandType.POLY_SAMPLE -> 30 // 30 giorni (più frequente)
-        }
+    private fun autoScheduleNextMaintenance(island: Island): Island {
+        if (island.nextScheduledMaintenance != null) return island
+        val base = island.lastMaintenanceDate ?: island.installationDate ?: Clock.System.now()
+        return island.copy(nextScheduledMaintenance = base + maintenanceIntervalFor(island.islandType).days)
     }
 }

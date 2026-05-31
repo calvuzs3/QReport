@@ -39,9 +39,15 @@ class GetClientWithDetailsUseCase @Inject constructor(
         Timber.v("Client found: ${client.companyName}")
 
         // 2. Load facilities — degrade gracefully
-        val facilities = getFacilitiesByClient(clientId).getOrElse {
-            Timber.w("Failed to load facilities for client $clientId: $it")
-            emptyList()
+        val facilities = when (val result = getFacilitiesByClient(clientId)) {
+            is QrResult.Success -> {
+                result.data
+            }
+
+            is QrResult.Error -> {
+                Timber.w("Failed to load facilities for client $clientId")
+                emptyList()
+            }
         }
 
         // 3. Load contacts — degrade gracefully
@@ -64,9 +70,12 @@ class GetClientWithDetailsUseCase @Inject constructor(
 
         // 5. Load islands per facility — degrade gracefully
         val facilitiesWithIslands = facilities.map { facility ->
-            val islands = getIslandsByFacility(facility.id).getOrElse {
-                Timber.w("Failed to load islands for facility ${facility.id}: $it")
-                emptyList()
+            val islands = when (val result = getIslandsByFacility(facility.id)) {
+                is QrResult.Success -> result.data
+                is QrResult.Error -> {
+                    Timber.w("Failed to load islands for facility ${facility.id}")
+                    emptyList()
+                }
             }
             FacilityWithIslands(facility = facility, islands = islands)
         }

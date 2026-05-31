@@ -34,7 +34,7 @@ fun ContractsStatisticsSummary(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // Contracts
+            // ContractsError
             ListStatItem(
                 icon = Icons.Default.AssignmentTurnedIn,
                 value = statistics.totalContracts.toString(),

@@ -7,7 +7,7 @@ import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import javax.inject.Inject
 
 /**
- * Returns active clients that have at least one Facilities associated.
+ * Returns active clients that have at least one FacilityError associated.
  */
 class GetActiveClientsWithFacilitiesUseCase @Inject constructor(
     private val clientRepository: ClientRepository

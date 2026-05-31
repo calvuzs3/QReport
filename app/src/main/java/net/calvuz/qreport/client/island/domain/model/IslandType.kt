@@ -1,63 +1,57 @@
 package net.calvuz.qreport.client.island.domain.model
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
-import androidx.compose.material.icons.filled.*
-import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.serialization.Serializable
-import timber.log.Timber
+import net.calvuz.qreport.R
 
 /**
- * Tipi di isola robotizzata supportati - FAMIGLIA POLY
+ * Supported robotic island types — POLY family.
+ *
+ * Display strings and icons are NOT stored here:
+ *  - [labelResId] / [descriptionResId] are resolved via stringResource() in the UI
+ *  - Icons are mapped in the presentation layer (IslandTypeIcons.kt or similar)
+ *
+ * [code] is the short technical identifier used in documents and DB values.
  */
 @Serializable
 enum class IslandType(
-    val displayName: String,
     val code: String,
-    val description: String,
-    val icon: ImageVector
+    val labelResId: Int,
+    val descriptionResId: Int
 ) {
     POLY_MOVE(
-        displayName = "POLY Move",
         code = "MOVE",
-        description = "Sistema robotizzato per movimentazione automatizzata",
-        icon = Icons.Default.DirectionsCar
+        labelResId = R.string.island_type_poly_move,
+        descriptionResId = R.string.island_type_poly_move_desc
     ),
     POLY_CAST(
-        displayName = "POLY Cast",
         code = "CAST",
-        description = "Sistema robotizzato per casting e lavorazioni di precisione",
-        icon = Icons.Default.Build
+        labelResId = R.string.island_type_poly_cast,
+        descriptionResId = R.string.island_type_poly_cast_desc
     ),
     POLY_EBT(
-        displayName = "POLY EBT",
         code = "EBT",
-        description = "Sistema robotizzato con tecnologia EBT e gestione lance",
-        icon = Icons.Default.ElectricBolt
+        labelResId = R.string.island_type_poly_ebt,
+        descriptionResId = R.string.island_type_poly_ebt_desc
     ),
     POLY_TAG_BLE(
-        displayName = "POLY Tag BLE",
         code = "TAG_BLE",
-        description = "Sistema robotizzato per etichettatura con tecnologia BLE",
-        icon = Icons.AutoMirrored.Default.Label
+        labelResId = R.string.island_type_poly_tag_ble,
+        descriptionResId = R.string.island_type_poly_tag_ble_desc
     ),
     POLY_TAG_FC(
-        displayName = "POLY Tag FC",
         code = "TAG_FC",
-        description = "Sistema robotizzato per etichettatura FC con QR Code",
-        icon = Icons.Default.QrCode
+        labelResId = R.string.island_type_poly_tag_fc,
+        descriptionResId = R.string.island_type_poly_tag_fc_desc
     ),
     POLY_TAG_V(
-        displayName = "POLY Tag V",
         code = "TAG_V",
-        description = "Sistema robotizzato per etichettatura con visione artificiale",
-        icon = Icons.Default.CameraAlt
+        labelResId = R.string.island_type_poly_tag_v,
+        descriptionResId = R.string.island_type_poly_tag_v_desc
     ),
     POLY_SAMPLE(
-        displayName = "POLY Sample",
         code = "SAMPLE",
-        description = "Sistema robotizzato per campionamento e analisi",
-        icon = Icons.Default.Science
+        labelResId = R.string.island_type_poly_sample,
+        descriptionResId = R.string.island_type_poly_sample_desc
     );
 
     companion object

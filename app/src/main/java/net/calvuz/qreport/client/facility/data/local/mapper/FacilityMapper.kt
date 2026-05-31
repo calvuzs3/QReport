@@ -1,124 +1,81 @@
 package net.calvuz.qreport.client.facility.data.local.mapper
 
+import kotlinx.datetime.Instant
 import net.calvuz.qreport.app.app.data.converter.AddressConverter
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
-import kotlinx.datetime.Instant
 import javax.inject.Inject
 
 /**
- * Mapper per convertire tra FacilityEntity (data layer) e Facility (domain layer)
- * Gestisce la conversione di Address tramite JSON serialization e FacilityType enum
+ * Maps between [FacilityEntity] (data layer) and [Facility] (domain layer).
+ *
+ * Address JSON serialization is delegated to [AddressConverter].
+ * FacilityType is stored as its enum name string in the DB.
+ *
+ * [FacilityEntity.isDeleted] is a data-layer concern: the repository filters
+ * deleted rows before calling this mapper, so [Facility] never sees them.
+ *
+ * Island relationships are NOT part of [Facility]; they are assembled by the
+ * repository into [FacilityWithIslands] when needed.
  */
 class FacilityMapper @Inject constructor(
     private val addressConverter: AddressConverter
 ) {
+    fun toDomain(entity: FacilityEntity): Facility = Facility(
+        id = entity.id,
+        clientId = entity.clientId,
+        name = entity.name,
+        code = entity.code,
+        notes = entity.notes,
+        facilityType = parseFacilityType(entity.facilityType),
+        address = addressConverter.toAddress(entity.addressJson),
+        isPrimary = entity.isPrimary,
+        isActive = entity.isActive,
+        createdAt = Instant.fromEpochMilliseconds(entity.createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(entity.updatedAt)
+    )
 
     /**
-     * Converte da FacilityEntity a Facility domain model
+     * [isDeleted] is always false here; soft-delete is managed by the repository,
+     * never written directly from a domain model.
      */
-    fun toDomain(entity: FacilityEntity): Facility {
-        return Facility(
-            id = entity.id,
-            clientId = entity.clientId,
-            name = entity.name,
-            code = entity.code,
-            notes = entity.notes,
-            facilityType = parseFacilityType(entity.facilityType),
-            address = addressConverter.toAddress(entity.addressJson),
-            isPrimary = entity.isPrimary,
-            isActive = entity.isActive,
-            islands = emptyList(), // Le islands vengono caricate separatamente
-            createdAt = Instant.fromEpochMilliseconds(entity.createdAt),
-            updatedAt = Instant.fromEpochMilliseconds(entity.updatedAt)
-        )
-    }
+    fun toEntity(domain: Facility): FacilityEntity = FacilityEntity(
+        id = domain.id,
+        clientId = domain.clientId,
+        name = domain.name,
+        code = domain.code,
+        notes = domain.notes,
+        facilityType = domain.facilityType.name,
+        addressJson = addressConverter.fromAddress(domain.address),
+        isPrimary = domain.isPrimary,
+        isActive = domain.isActive,
+        createdAt = domain.createdAt.toEpochMilliseconds(),
+        updatedAt = domain.updatedAt.toEpochMilliseconds(),
+        syncedAt = null,    // Managed by the sync layer, not by the mapper
+        isDeleted = false
+    )
 
-    /**
-     * Converte da Facility domain model a FacilityEntity
-     */
-    fun toEntity(domain: Facility): FacilityEntity {
-        return FacilityEntity(
-            id = domain.id,
-            clientId = domain.clientId,
-            name = domain.name,
-            code = domain.code,
-            notes = domain.notes,
-            facilityType = domain.facilityType.name,
-            addressJson = addressConverter.fromAddress(domain.address),
-            isPrimary = domain.isPrimary,
-            isActive = domain.isActive,
-            createdAt = domain.createdAt.toEpochMilliseconds(),
-            updatedAt = domain.updatedAt.toEpochMilliseconds()
-        )
-    }
+    fun toDomainList(entities: List<FacilityEntity>): List<Facility> =
+        entities.map { toDomain(it) }
 
-    /**
-     * Converte lista di FacilityEntity a lista di Facility domain models
-     */
-    fun toDomainList(entities: List<FacilityEntity>): List<Facility> {
-        return entities.map { toDomain(it) }
-    }
+    fun toEntityList(domains: List<Facility>): List<FacilityEntity> =
+        domains.map { toEntity(it) }
 
-    /**
-     * Converte lista di Facility domain models a lista di FacilityEntity
-     */
-    fun toEntityList(domains: List<Facility>): List<FacilityEntity> {
-        return domains.map { toEntity(it) }
-    }
+    // -------------------------------------------------------------------------
 
-    /**
-     * Converte FacilityEntity con IDs delle islands associate
-     * Utility per query complesse con JOIN
-     */
-    fun toDomainWithIslands(
-        entity: FacilityEntity,
-        islandIds: List<String> = emptyList()
-    ): Facility {
-        return Facility(
-            id = entity.id,
-            clientId = entity.clientId,
-            name = entity.name,
-            code = entity.code,
-            notes = entity.notes,
-            facilityType = parseFacilityType(entity.facilityType),
-            address = addressConverter.toAddress(entity.addressJson)
-                ?: throw IllegalStateException("Facility must have a valid address"),
-            isPrimary = entity.isPrimary,
-            isActive = entity.isActive,
-            islands = islandIds, // IDs delle islands associate
-            createdAt = Instant.fromEpochMilliseconds(entity.createdAt),
-            updatedAt = Instant.fromEpochMilliseconds(entity.updatedAt)
-        )
-    }
-
-    /**
-     * Parse FacilityType da stringa con fallback
-     */
-    private fun parseFacilityType(typeString: String): FacilityType {
-        return try {
+    private fun parseFacilityType(typeString: String): FacilityType =
+        try {
             FacilityType.valueOf(typeString)
-        } catch (e: IllegalArgumentException) {
-            FacilityType.OTHER // Fallback per dati legacy
+        } catch (_: IllegalArgumentException) {
+            FacilityType.OTHER // Fallback for legacy data
         }
-    }
 }
 
-/**
- * Extension functions per conversioni dirette
- */
+// ─── Extension functions ──────────────────────────────────────────────────────
 
-/**
- * Converte FacilityEntity a Facility
- */
-fun FacilityEntity.toDomain(addressConverter: AddressConverter): Facility {
-    return FacilityMapper(addressConverter).toDomain(this)
-}
+fun FacilityEntity.toDomain(addressConverter: AddressConverter): Facility =
+    FacilityMapper(addressConverter).toDomain(this)
 
-/**
- * Converte Facility a FacilityEntity
- */
-fun Facility.toEntity(addressConverter: AddressConverter): FacilityEntity {
-    return FacilityMapper(addressConverter).toEntity(this)
-}
+fun Facility.toEntity(addressConverter: AddressConverter): FacilityEntity =
+    FacilityMapper(addressConverter).toEntity(this)

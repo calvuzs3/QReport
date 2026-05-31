@@ -421,7 +421,7 @@ class ContactRepositoryImpl @Inject constructor(
 
             Timber.d("ContactRepository: Getting contacts count for client: $clientId")
             val count = contactDao.getContactsCountForClient(clientId) // Correct DAO method name
-            Timber.d("ContactRepository: Contacts count for client $clientId: $count")
+            Timber.d("ContactRepository: ContactsError count for client $clientId: $count")
             QrResult.Success(count)
         } catch (e: Exception) {
             Timber.e(e, "ContactRepository: Exception getting contacts count for client: $clientId")

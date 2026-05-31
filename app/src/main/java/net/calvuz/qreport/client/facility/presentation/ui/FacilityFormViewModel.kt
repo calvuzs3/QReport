@@ -3,72 +3,66 @@ package net.calvuz.qreport.client.facility.presentation.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.app.domain.model.Address
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
-import net.calvuz.qreport.app.app.domain.model.Address
-import net.calvuz.qreport.client.facility.domain.usecase.UpdateFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilitiesByClientUseCase
-import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.facility.domain.usecase.NewFacilityUseCase
+import net.calvuz.qreport.client.facility.domain.usecase.UpdateFacilityUseCase
 import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
-import kotlin.fold
-import kotlin.text.trim
 
-/**
- * ViewModel per FacilityFormScreen - Create/Edit facility
- *
- * Features:
- * - Gestione create/edit mode
- * - Validazioni complete form
- * - State management con eventi
- * - Gestione facility primaria
- * - Error handling
- */
+// =============================================================================
+// UI STATE
+// =============================================================================
 
 data class FacilityFormUiState(
-    // ValidationError fields
+    // ===== FORM FIELDS =====
     val name: String = "",
     val code: String = "",
     val facilityType: FacilityType = FacilityType.PRODUCTION,
     val notes: String = "",
-
-    // Address fields
     val street: String = "",
     val streetNumber: String = "",
     val city: String = "",
     val postalCode: String = "",
     val province: String = "",
     val country: String = "Italia",
-
-    // Options
     val isPrimary: Boolean = false,
     val isActive: Boolean = true,
 
-    // Validation errors
-    val nameError: String? = null,
-    val codeError: String? = null,
+    // ===== VALIDATION =====
+    val nameError: UiText? = null,
+    val codeError: UiText? = null,
+    val isFormValid: Boolean = false,
 
-    // State
+    // ===== OPERATION STATE =====
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val saveCompleted: Boolean = false,
     val savedFacilityId: String? = null,
+
+    // ===== MODE =====
     val clientId: String = "",
-    val facilityId: String? = null, // null = create mode
-    val isFormValid: Boolean = false
+    val facilityId: String? = null   // null = create mode
 ) {
-    val isEditMode: Boolean = facilityId != null
-    val hasAddressData: Boolean
-        get() = street.isNotBlank() || city.isNotBlank()
+    val isEditMode: Boolean get() = facilityId != null
+    val hasAddressData: Boolean get() = street.isNotBlank() || city.isNotBlank()
 }
+
+// =============================================================================
+// EVENTS
+// =============================================================================
 
 sealed class FacilityFormEvent {
     data class NameChanged(val name: String) : FacilityFormEvent()
@@ -84,9 +78,12 @@ sealed class FacilityFormEvent {
     data class PrimaryChanged(val isPrimary: Boolean) : FacilityFormEvent()
 }
 
+// =============================================================================
+// VIEW MODEL
+// =============================================================================
+
 @HiltViewModel
 class FacilityFormViewModel @Inject constructor(
-//    private val createFacilityUseCase: CreateFacilityUseCase,
     private val newFacilityUseCase: NewFacilityUseCase,
     private val updateFacilityUseCase: UpdateFacilityUseCase,
     private val getFacilitiesByClientUseCase: GetFacilitiesByClientUseCase
@@ -95,102 +92,183 @@ class FacilityFormViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(FacilityFormUiState())
     val uiState: StateFlow<FacilityFormUiState> = _uiState.asStateFlow()
 
-    // ============================================================
-    // PUBLIC METHODS
-    // ============================================================
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
 
     fun initialize(clientId: String, facilityId: String?) {
         if (clientId == _uiState.value.clientId && facilityId == _uiState.value.facilityId) return
-
-        _uiState.value = _uiState.value.copy(
-            clientId = clientId,
-            facilityId = facilityId
-        )
-
-        if (facilityId != null) {
-            loadFacilityForEdit(facilityId)
-        } else {
-            // Set defaults for new facility
-            validateForm()
-        }
+        _uiState.update { it.copy(clientId = clientId, facilityId = facilityId) }
+        if (facilityId != null) loadFacilityForEdit(facilityId)
+        else validateForm()
     }
+
+    // =========================================================================
+    // FORM EVENTS
+    // =========================================================================
 
     fun onFormEvent(event: FacilityFormEvent) {
         when (event) {
             is FacilityFormEvent.NameChanged -> updateName(event.name)
             is FacilityFormEvent.CodeChanged -> updateCode(event.code)
-            is FacilityFormEvent.TypeChanged -> updateType(event.type)
-            is FacilityFormEvent.NotesChanged -> updateDescription(event.notes)
-            is FacilityFormEvent.StreetChanged -> updateStreet(event.street)
-            is FacilityFormEvent.StreetNumberChanged -> updateStreetNumber(event.streetNumber)
-            is FacilityFormEvent.CityChanged -> updateCity(event.city)
-            is FacilityFormEvent.PostalCodeChanged -> updatePostalCode(event.postalCode)
-            is FacilityFormEvent.ProvinceChanged -> updateProvince(event.province)
-            is FacilityFormEvent.CountryChanged -> updateCountry(event.country)
-            is FacilityFormEvent.PrimaryChanged -> updatePrimary(event.isPrimary)
+            is FacilityFormEvent.TypeChanged -> _uiState.update { it.copy(facilityType = event.type) }.also { validateForm() }
+            is FacilityFormEvent.NotesChanged -> _uiState.update { it.copy(notes = event.notes) }.also { validateForm() }
+            is FacilityFormEvent.StreetChanged -> _uiState.update { it.copy(street = event.street) }.also { validateForm() }
+            is FacilityFormEvent.StreetNumberChanged -> _uiState.update { it.copy(streetNumber = event.streetNumber) }.also { validateForm() }
+            is FacilityFormEvent.CityChanged -> _uiState.update { it.copy(city = event.city) }.also { validateForm() }
+            is FacilityFormEvent.PostalCodeChanged -> _uiState.update { it.copy(postalCode = event.postalCode) }.also { validateForm() }
+            is FacilityFormEvent.ProvinceChanged -> _uiState.update { it.copy(province = event.province) }.also { validateForm() }
+            is FacilityFormEvent.CountryChanged -> _uiState.update { it.copy(country = event.country) }.also { validateForm() }
+            is FacilityFormEvent.PrimaryChanged -> _uiState.update { it.copy(isPrimary = event.isPrimary) }.also { validateForm() }
         }
     }
 
+    // =========================================================================
+    // SAVE
+    // =========================================================================
+
     fun saveFacility() {
         val currentState = _uiState.value
-        if (!currentState.isFormValid) return
-        if (currentState.isSaving) return
+        if (!currentState.isFormValid || currentState.isSaving) return
 
         viewModelScope.launch {
-            _uiState.value = currentState.copy(isLoading = true, isSaving = true, error = null)
+            _uiState.update { it.copy(isLoading = true, isSaving = true, error = null) }
 
-            try {
-                val facility = buildFacilityFromForm(currentState)
+            val facility = buildFacilityFromState(currentState)
 
-                val result = if (currentState.isEditMode && currentState.facilityId != null) {
-                    updateFacilityUseCase(facility)
-//                updateExistingFacility()
-                } else {
-//                createFacilityUseCase(facility)
-                    newFacilityUseCase(facility)
-                }
+            val result = if (currentState.isEditMode && currentState.facilityId != null) {
+                updateFacilityUseCase(facility)
+            } else {
+                newFacilityUseCase(facility)
+            }
 
-                result.fold(
-                    onSuccess = {
-                        Timber.d("Facility saved successfully: ${facility.id} ${facility.displayName}}")
-                        _uiState.value = _uiState.value.copy(
+            when (result) {
+                is QrResult.Success -> {
+                    Timber.d("Facility saved: ${facility.id} ${facility.displayName}")
+                    _uiState.update {
+                        it.copy(
                             isSaving = false,
+                            isLoading = false,
                             saveCompleted = true,
                             savedFacilityId = facility.id,
                             error = null
                         )
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to save facility")
-                        _uiState.value = _uiState.value.copy(
+                    }
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to save facility: ${result.error}")
+                    _uiState.update {
+                        it.copy(
                             isSaving = false,
-                            error = "Errore salvataggio: ${error.message}"
+                            isLoading = false,
+                            error = UiText.StringResource(R.string.err_facility_create)
                         )
                     }
-                )
-
-            } catch (_: CancellationException) {
-                Timber.d("Save facility cancelled")
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to save facility")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "Errore salvataggio: ${e.message}"
-                    )
                 }
-            } finally {
-                _uiState.value = currentState.copy(isSaving = false)
             }
         }
     }
 
-    // ============================================================
-    // PRIVATE METHODS - ValidationError Updates
-    // ============================================================
+    // =========================================================================
+    // VALIDATION
+    // =========================================================================
 
+    private fun updateName(name: String) {
+        _uiState.update { it.copy(name = name, nameError = null) }
+        validateForm()
+    }
 
-    private fun buildFacilityFromForm(state: FacilityFormUiState): Facility {
+    private fun updateCode(code: String) {
+        _uiState.update { it.copy(code = code, codeError = null) }
+        validateForm()
+    }
+
+    private fun validateForm() {
+        val state = _uiState.value
+
+        val nameError: UiText? = when {
+            state.name.isBlank() ->
+                UiText.StringResource(R.string.facility_form_error_name_required)
+            state.name.length < 2 ->
+                UiText.StringResources(R.string.facility_form_error_name_min_length, 2)
+            state.name.length > 100 ->
+                UiText.StringResources(R.string.facility_form_error_name_max_length, 100)
+            else -> null
+        }
+
+        val codeError: UiText? = when {
+            state.code.length > 50 ->
+                UiText.StringResources(R.string.facility_form_error_code_max_length, 50)
+            else -> null
+        }
+
+        _uiState.update {
+            it.copy(
+                nameError = nameError,
+                codeError = codeError,
+                isFormValid = nameError == null && codeError == null
+            )
+        }
+    }
+
+    // =========================================================================
+    // LOAD FOR EDIT
+    // =========================================================================
+
+    private fun loadFacilityForEdit(facilityId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+
+            when (val result = getFacilitiesByClientUseCase(_uiState.value.clientId)) {
+                is QrResult.Success -> {
+                    val facility = result.data.find { it.id == facilityId }
+                    if (facility != null && currentCoroutineContext().isActive) {
+                        populateFormWithFacility(facility)
+                    } else {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = UiText.StringResource(R.string.err_facility_not_found)
+                            )
+                        }
+                    }
+                }
+                is QrResult.Error -> {
+                    if (currentCoroutineContext().isActive) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                error = UiText.StringResource(R.string.err_facility_load)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun populateFormWithFacility(facility: Facility) {
+        _uiState.update {
+            it.copy(
+                name = facility.name,
+                code = facility.code ?: "",
+                facilityType = facility.facilityType,
+                notes = facility.notes ?: "",
+                street = facility.address?.street ?: "",
+                streetNumber = facility.address?.streetNumber ?: "",
+                city = facility.address?.city ?: "",
+                postalCode = facility.address?.postalCode ?: "",
+                province = facility.address?.province ?: "",
+                country = facility.address?.country ?: "Italia",
+                isPrimary = facility.isPrimary,
+                isActive = facility.isActive,
+                isLoading = false
+            )
+        }
+        validateForm()
+    }
+
+    private fun buildFacilityFromState(state: FacilityFormUiState): Facility {
         val address = if (state.hasAddressData) {
             Address(
                 street = state.street.takeIf { it.isNotBlank() },
@@ -203,186 +281,30 @@ class FacilityFormViewModel @Inject constructor(
         } else null
 
         val now = Clock.System.now()
-
         return Facility(
             id = state.facilityId ?: UUID.randomUUID().toString(),
             clientId = state.clientId,
             name = state.name.trim(),
-            address = address,
-            facilityType = state.facilityType,
             code = state.code.trim().takeIf { it.isNotBlank() },
             notes = state.notes.takeIf { it.isNotBlank() },
+            facilityType = state.facilityType,
+            address = address,
             isPrimary = state.isPrimary,
             isActive = true,
-            createdAt = now, // Will be preserved in update
+            createdAt = now,    // Preserved in update by the use case
             updatedAt = now
         )
     }
 
-    private fun updateName(name: String) {
-        _uiState.value = _uiState.value.copy(
-            name = name,
-            nameError = null
-        )
-        validateForm()
-    }
-
-    private fun updateCode(code: String) {
-        _uiState.value = _uiState.value.copy(
-            code = code,
-            codeError = null
-        )
-        validateForm()
-    }
-
-    private fun updateType(type: FacilityType) {
-        _uiState.value = _uiState.value.copy(facilityType = type)
-        validateForm()
-    }
-
-    private fun updateDescription(description: String) {
-        _uiState.value = _uiState.value.copy(notes = description)
-        validateForm()
-    }
-
-    private fun updateStreet(street: String) {
-        _uiState.value = _uiState.value.copy(
-            street = street,
-        )
-        validateForm()
-    }
-
-    private fun updateStreetNumber(streetNumber: String) {
-        _uiState.value = _uiState.value.copy(streetNumber = streetNumber)
-        validateForm()
-    }
-
-    private fun updateCity(city: String) {
-        _uiState.value = _uiState.value.copy(
-            city = city,
-        )
-        validateForm()
-    }
-
-    private fun updatePostalCode(postalCode: String) {
-        _uiState.value = _uiState.value.copy(postalCode = postalCode)
-        validateForm()
-    }
-
-    private fun updateProvince(province: String) {
-        _uiState.value = _uiState.value.copy(province = province)
-        validateForm()
-    }
-
-    private fun updateCountry(country: String) {
-        _uiState.value = _uiState.value.copy(country = country)
-        validateForm()
-    }
-
-    private fun updatePrimary(isPrimary: Boolean) {
-        _uiState.value = _uiState.value.copy(isPrimary = isPrimary)
-        validateForm()
-    }
-
-    // ============================================================
-    // PRIVATE METHODS - Validation
-    // ============================================================
-
-    private fun validateForm() {
-        val currentState = _uiState.value
-
-        // Validate name
-        val nameError = when {
-            currentState.name.isBlank() -> "Nome stabilimento è obbligatorio"
-            currentState.name.length < 2 -> "Nome troppo corto (minimo 2 caratteri)"
-            currentState.name.length > 100 -> "Nome troppo lungo (massimo 100 caratteri)"
-            else -> null
-        }
-
-        // Validate code (optional but if provided must be valid)
-        val codeError = when {
-            currentState.code.length > 50 -> "Codice troppo lungo (massimo 50 caratteri)"
-            else -> null
-        }
-
-        val isValid = nameError == null && codeError == null
-
-        _uiState.value = currentState.copy(
-            nameError = nameError,
-            codeError = codeError,
-            isFormValid = isValid
-        )
-    }
-
-    // ============================================================
-    // PRIVATE METHODS - Data Operations
-    // ============================================================
-
-    private fun loadFacilityForEdit(facilityId: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-
-            try {
-                getFacilitiesByClientUseCase(_uiState.value.clientId).fold(
-                    onSuccess = { facilities ->
-                        val facility = facilities.find { it.id == facilityId }
-                        if (facility != null && currentCoroutineContext().isActive) {
-                            populateFormWithFacility(facility)
-                        } else {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                error = "Stabilimento non trovato"
-                            )
-                        }
-                    },
-                    onFailure = { error ->
-                        if (currentCoroutineContext().isActive) {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                error = "Errore caricamento: ${error.message}"
-                            )
-                        }
-                    }
-                )
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to load facility for edit")
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = "Errore caricamento stabilimento"
-                    )
-                }
-            }
-        }
-    }
-
-    private fun populateFormWithFacility(facility: Facility) {
-        _uiState.value = _uiState.value.copy(
-            name = facility.name,
-            code = facility.code ?: "",
-            facilityType = facility.facilityType,
-            notes = facility.notes ?: "",
-            street = facility.address?.street ?: "",
-            city = facility.address?.city ?: "",
-            postalCode = facility.address?.postalCode ?: "",
-            province = facility.address?.province ?: "",
-            country = facility.address?.country ?: "Italia",
-            isPrimary = facility.isPrimary,
-            isActive = facility.isActive,
-            isLoading = false
-        )
-        validateForm()
-    }
-
-    // ============================================================
-    // ERROR HANDLING
-    // ============================================================
+    // =========================================================================
+    // ERROR / UTILITY
+    // =========================================================================
 
     fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 
     fun resetSaveCompleted() {
-        _uiState.value = _uiState.value.copy(saveCompleted = false)
+        _uiState.update { it.copy(saveCompleted = false) }
     }
 }

@@ -7,7 +7,7 @@ import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import javax.inject.Inject
 
 /**
- * Returns active clients that have at least one Contacts associated.
+ * Returns active clients that have at least one ContactsError associated.
  */
 class GetActiveClientsWithContactsUseCase @Inject constructor(
     private val clientRepository: ClientRepository

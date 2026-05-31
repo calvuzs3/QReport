@@ -15,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.island.domain.model.IslandType
 
@@ -36,7 +37,7 @@ fun IslandTypeIcon(islandType: IslandType) {
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = islandType.displayName,
+            contentDescription = stringResource( islandType.labelResId),
             modifier = Modifier
                 .padding(8.dp)
                 .size(24.dp),

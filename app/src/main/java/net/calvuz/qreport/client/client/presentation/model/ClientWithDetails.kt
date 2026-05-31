@@ -26,21 +26,21 @@ data class ClientWithDetails(
 ) {
 
     /**
-     * Facilities attive
+     * FacilityError attive
      */
-    val activeFacilities: List<FacilityWithIslands>
+    val activeFacilityError: List<FacilityWithIslands>
         get() = facilities.filter { it.facility.isActive }
 
     /**
-     * Contacts attivi
+     * ContactsError attivi
      */
-    val activeContacts: List<Contact>
+    val activeContactsError: List<Contact>
         get() = contacts.filter { it.isActive }
 
     /**
-     * Contracts
+     * ContractsError
      */
-    val activeContracts: List<Contract>
+    val activeContractsError: List<Contract>
         get() = contracts.filter { it.isActive }
 
     /**
@@ -56,9 +56,9 @@ data class ClientWithDetails(
      */
     fun isFullyOperational(): Boolean =
         client.isActive &&
-                activeFacilities.isNotEmpty() &&
-                activeContacts.isNotEmpty() &&
-                activeContracts.isNotEmpty() &&
+                activeFacilityError.isNotEmpty() &&
+                activeContactsError.isNotEmpty() &&
+                activeContractsError.isNotEmpty() &&
                 activeIslands.isNotEmpty()
 
     /**
@@ -67,9 +67,9 @@ data class ClientWithDetails(
     val statusMessage: String
         get() = when {
             !client.isActive -> "Cliente inattivo"
-            activeFacilities.isEmpty() -> "Nessun stabilimento configurato"
-            activeContacts.isEmpty() -> "Nessun referente attivo"
-            activeContracts.isEmpty() -> "Nessun contratto attivo"
+            activeFacilityError.isEmpty() -> "Nessun stabilimento configurato"
+            activeContactsError.isEmpty() -> "Nessun referente attivo"
+            activeContractsError.isEmpty() -> "Nessun contratto attivo"
             activeIslands.isEmpty() -> "Nessuna isola robotizzata cattivo"
             else -> "Cliente operativo"
         }

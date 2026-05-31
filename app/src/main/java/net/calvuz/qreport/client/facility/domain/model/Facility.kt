@@ -5,7 +5,12 @@ import kotlinx.serialization.Serializable
 import net.calvuz.qreport.app.app.domain.model.Address
 
 /**
- * Facility
+ * Domain model for a Facility (production site belonging to a [Client]).
+ *
+ * Pure domain: no UI strings, no color codes, no badge models.
+ * Presentation concerns (labels, colors) live in the presentation layer.
+ *
+ * Child relationships (islands) are loaded separately by the repository
  */
 @Serializable
 data class Facility(
@@ -14,74 +19,27 @@ data class Facility(
 
     // ===== DATA =====
     val name: String,
-    val code: String? = null,              // Codice interno cliente
+    val code: String? = null,
     val notes: String? = null,
     val facilityType: FacilityType = FacilityType.PRODUCTION,
 
     // ===== ADDRESS =====
     val address: Address? = null,
 
-    // ===== RELATIONSHIPS =====
-    val islands: List<String> = emptyList(), // IDs delle isole POLY
-
     // ===== META =====
-    val isPrimary: Boolean = false,        // Stabilimento principale
-    val isActive: Boolean = true,
+    val isPrimary: Boolean = false,     // Main facility for the client
+    val isActive: Boolean = true,       // false = soft-deleted
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
-
-    /**
-     * Verifica se ha isole associate
-     */
-    fun hasIslands(): Boolean = islands.isNotEmpty()
-
-    /**
-     * Genera descrizione completa
-     */
+    /** Display name shown in lists and headers. */
     val displayName: String
         get() = if (code.isNullOrBlank()) name else "$name ($code)"
 
-    /**
-     * Descrizione completa con tipo
-     */
-    val fullDescription: String
-        get() = buildString {
-            append(displayName)
-            if (!notes.isNullOrBlank()) {
-                append(" - $notes")
-            }
-            append(" [${facilityType.displayName}]")
-        }
-
-    /**
-     * Indirizzo formattato per display
-     */
+    /** Formatted address string for display, null if no address is set. */
     val addressDisplay: String?
         get() = address?.toDisplayString()
 
-    /**
-     * Verifica se lo stabilimento ha dati completi
-     */
+    /** Returns true if the minimum required data is present. */
     fun isComplete(): Boolean = name.isNotBlank()
-
-    /**
-     * Badge per UI (primario/secondario)
-     */
-    val badgeText: String?
-        get() = when {
-            isPrimary -> "Principale"
-            !isActive -> ""
-            else -> null
-        }
-
-    /**
-     * Colore badge per UI
-     */
-    val badgeColor: String
-        get() = when {
-            isPrimary -> "00B050"      // Verde
-            !isActive -> "FF0000"      // Rosso
-            else -> "6C757D"           // Grigio neutro
-        }
 }

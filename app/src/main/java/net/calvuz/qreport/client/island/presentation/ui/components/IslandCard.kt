@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -19,6 +20,7 @@ import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
+import net.calvuz.qreport.client.island.presentation.model.icon
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
@@ -213,20 +215,10 @@ private fun IslandMainInfo(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            island.model?.let { model ->
-                Text(
-                    text = "Modello: $model",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
 
             if (variant == ListViewMode.FULL || variant == ListViewMode.COMPACT) {
                 Text(
-                    text = island.islandType.displayName,
+                    text = stringResource(island.islandType.labelResId),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium
@@ -263,7 +255,7 @@ private fun IslandMainInfo(
 
 @Composable
 private fun IslandMaintenanceStatus(island: Island) {
-    val maintenanceText = island.maintenanceStatusText
+//    val maintenanceText = island.maintenanceStatusText
     val isDue = island.needsMaintenance()
     val daysToMaintenance = island.daysToNextMaintenance()
 
@@ -297,18 +289,18 @@ private fun IslandMaintenanceStatus(island: Island) {
                 }
             )
 
-            Text(
-                text = maintenanceText,
-                style = MaterialTheme.typography.bodyMedium,
-                color = when {
-                    isDue -> MaterialTheme.colorScheme.onErrorContainer
-                    daysToMaintenance != null && daysToMaintenance <= 7 -> MaterialTheme.colorScheme.onWarningContainer
-                    else -> MaterialTheme.colorScheme.onSecondaryContainer
-                },
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
+//            Text(
+//                text = maintenanceText,
+//                style = MaterialTheme.typography.bodyMedium,
+//                color = when {
+//                    isDue -> MaterialTheme.colorScheme.onErrorContainer
+//                    daysToMaintenance != null && daysToMaintenance <= 7 -> MaterialTheme.colorScheme.onWarningContainer
+//                    else -> MaterialTheme.colorScheme.onSecondaryContainer
+//                },
+//                maxLines = 1,
+//                overflow = TextOverflow.Ellipsis,
+//                modifier = Modifier.weight(1f)
+//            )
         }
     }
 }
@@ -410,7 +402,7 @@ private fun OperationalStatusBadge(status: IslandOperationalStatus) {
             )
 
             Text(
-                text = status.displayName,
+                text = stringResource(status.labelResId),
                 style = MaterialTheme.typography.labelSmall,
                 color = color,
                 fontWeight = FontWeight.Medium
@@ -424,19 +416,10 @@ private fun IslandTypeIcon(
     islandType: IslandType,
     modifier: Modifier = Modifier
 ) {
-    val icon = when (islandType) {
-        IslandType.POLY_MOVE -> Icons.Default.OpenWith
-        IslandType.POLY_CAST -> Icons.Default.Opacity
-        IslandType.POLY_EBT -> Icons.Default.ElectricalServices
-        IslandType.POLY_TAG_BLE -> Icons.Default.Bluetooth
-        IslandType.POLY_TAG_FC -> Icons.Default.CenterFocusWeak
-        IslandType.POLY_TAG_V -> Icons.Default.Visibility
-        IslandType.POLY_SAMPLE -> Icons.Default.Science
-    }
 
     Icon(
-        imageVector = icon,
-        contentDescription = islandType.displayName,
+        imageVector = islandType.icon(),
+        contentDescription =stringResource( islandType.labelResId),
         modifier = modifier,
         tint = MaterialTheme.colorScheme.primary
     )

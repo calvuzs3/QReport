@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -19,83 +20,73 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.app.presentation.components.EmptyState
+import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
+import net.calvuz.qreport.app.util.SizeUtils.getFormattedCycleCount
+import net.calvuz.qreport.app.util.SizeUtils.getFormattedHours
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
-import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.ErrorState
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
-import net.calvuz.qreport.app.util.SizeUtils.getFormattedCycleCount
-import net.calvuz.qreport.app.util.SizeUtils.getFormattedHours
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityDetailScreen(
     modifier: Modifier = Modifier,
-
     facilityId: String,
     onNavigateBack: () -> Unit,
-    onNavigateToEdit: (String) -> Unit, // Edit facility
-
-    // Island navigation callbacks
-    onNavigateToCreateIsland: (String) -> Unit, // Create island
-    onNavigateToEditIsland: (String) -> Unit, // Edit island
-    onNavigateToIslandDetail: (String) -> Unit, // View Island
-    onNavigateToIslandsList: (String) -> Unit,   // View all Islands
+    onNavigateToEdit: (String) -> Unit,
+    onNavigateToCreateIsland: (String) -> Unit,
+    onNavigateToEditIsland: (String) -> Unit,
+    onNavigateToIslandDetail: (String) -> Unit,
+    onNavigateToIslandsList: (String) -> Unit,
     onDeleted: () -> Unit,
-
     viewModel: FacilityDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // ✅ Handle delete success - Navigate back automatically
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) {
             viewModel.resetDeleteState()
-            onDeleted()  // Navigate back to client list
+            onDeleted()
         }
     }
 
-    // ✅ Delete confirmation dialog
+    LaunchedEffect(facilityId) {
+        viewModel.loadFacilityDetails(facilityId)
+    }
+
+    // Delete confirmation dialog
     if (uiState.showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = viewModel::hideDeleteConfirmation,
-            title = { Text("Elimina Stabilimento") },
-            text = {
-                Text("Sei sicuro di voler eliminare lo stabilimento? Questa azione non può essere annullata.")
-            },
+            title = { Text(stringResource(R.string.facility_detail_delete_dialog_title)) },
+            text = { Text(stringResource(R.string.facility_detail_delete_dialog_message)) },
             confirmButton = {
                 TextButton(
                     onClick = viewModel::deleteFacility,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Elimina")
+                    Text(stringResource(R.string.facility_detail_delete_dialog_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = viewModel::hideDeleteConfirmation) {
-                    Text("Annulla")
+                    Text(stringResource(R.string.facility_detail_delete_dialog_cancel))
                 }
             }
         )
     }
 
-    // Load facility details when screen opens
-    LaunchedEffect(facilityId) {
-        viewModel.loadFacilityDetails(facilityId)
-    }
+    Column(modifier = modifier.fillMaxSize()) {
 
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        // Top App Bar
         TopAppBar(
             title = {
                 Text(
-                    text = uiState.facilityName.takeIf { it.isNotBlank() } ?: "Stabilimento",
+                    text = uiState.facilityName.takeIf { it.isNotBlank() }
+                        ?: stringResource(R.string.facility_detail_title_fallback),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -104,15 +95,14 @@ fun FacilityDetailScreen(
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = "Indietro"
+                        contentDescription = stringResource(R.string.facility_detail_action_back)
                     )
                 }
             },
             actions = {
-                // Delete button
                 if (uiState.hasData) {
                     IconButton(
-                        onClick = viewModel::showDeleteConfirmation,  // Show confirmation dialog
+                        onClick = viewModel::showDeleteConfirmation,
                         enabled = !uiState.isDeleting
                     ) {
                         if (uiState.isDeleting) {
@@ -121,87 +111,76 @@ fun FacilityDetailScreen(
                             Icon(
                                 imageVector = Icons.Default.Delete,
                                 tint = MaterialTheme.colorScheme.error,
-                                contentDescription = "Elimina contatto"
+                                contentDescription = stringResource(R.string.facility_detail_action_delete)
                             )
                         }
                     }
-                }
-
-                // Edit button (solo se dati caricati)
-                if (uiState.hasData) {
                     IconButton(onClick = { onNavigateToEdit(facilityId) }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Modifica stabilimento"
+                            contentDescription = stringResource(R.string.facility_detail_action_edit)
                         )
                     }
                 }
-
-                // Refresh button
                 IconButton(onClick = viewModel::refreshData) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Aggiorna"
+                        contentDescription = stringResource(R.string.facility_detail_action_refresh)
                     )
                 }
             }
         )
 
         when {
-            uiState.isLoading -> {
-                LoadingState()
-            }
+            uiState.isLoading -> LoadingState()
 
-            uiState.error != null -> {
-                ErrorState(
-                    error = uiState.error!!,
-                    onRetry = viewModel::refreshData,
-                    onDismiss = viewModel::dismissError
-                )
-            }
+            uiState.error != null -> QReportErrorState(
+                error = uiState.error!!,
+                onRetry = viewModel::refreshData,
+                onDismiss = viewModel::dismissError
+            )
 
-            uiState.hasData -> {
-                FacilityDetailContent(
-                    uiState = uiState,
-                    onTabSelected = viewModel::selectTab,
-                    onIslandFilterSelected = viewModel::updateIslandFilter,
-                    onIslandClick = onNavigateToIslandDetail,
-                    onEdit = { onNavigateToEdit(facilityId) },
-                    onViewAll = { onNavigateToIslandsList(facilityId) },
-                    onCreateIsland = { onNavigateToCreateIsland(facilityId) },
-                    onEditIsland = { onNavigateToEditIsland },
-                    onDeleteIsland = viewModel::deleteIsland,
-                    onMarkMaintenanceComplete = viewModel::markMaintenanceComplete
-                )
-            }
+            uiState.hasData -> FacilityDetailContent(
+                uiState = uiState,
+                onTabSelected = viewModel::selectTab,
+                onIslandFilterSelected = viewModel::updateIslandFilter,
+                onIslandClick = onNavigateToIslandDetail,
+                onEdit = { onNavigateToEdit(facilityId) },
+                onViewAll = { onNavigateToIslandsList(facilityId) },
+                onCreateIsland = { onNavigateToCreateIsland(facilityId) },
+                onEditIsland = onNavigateToEditIsland,
+                onDeleteIsland = viewModel::deleteIsland,
+                onMarkMaintenanceComplete = viewModel::markMaintenanceComplete
+            )
 
             else -> {
                 val (title, message) = when {
-                    uiState.islands.isEmpty() -> "Nessuna Isola" to "Non ci sono ancora isole per questo stabilimento"
-                    uiState.selectedIslandFilter != IslandFilter.ALL -> "Nessun risultato" to "Non ci sono isole che corrispondono al filtro '${getIslandFilterDisplayName(uiState.selectedIslandFilter)}'"
-                    else -> "Lista vuota" to "Errore nel caricamento dati"
+                    uiState.selectedIslandFilter != IslandFilter.ALL ->
+                        stringResource(R.string.facility_detail_empty_filtered_title) to
+                                stringResource(R.string.facility_detail_empty_filtered_message,
+                                    stringResource(uiState.selectedIslandFilter.labelResId()))
+                    else ->
+                        stringResource(R.string.facility_detail_empty_title) to
+                                stringResource(R.string.facility_detail_empty_message)
                 }
                 EmptyState(
                     textTitle = title,
                     textMessage = message,
                     iconImageVector = Icons.Outlined.PrecisionManufacturing,
-                    iconContentDescription = "Isole robotizzate",
+                    iconContentDescription = stringResource(R.string.facility_detail_empty_icon_description),
                     iconActionImageVector = Icons.Default.Add,
-                    iconActionContentDescription = "Aggiungi Isola",
-                    textAction = "Nuova Isola",
-                    onAction ={ onNavigateToCreateIsland }
+                    iconActionContentDescription = stringResource(R.string.facility_detail_fab_new_island),
+                    textAction = stringResource(R.string.facility_detail_empty_action),
+                    onAction = { onNavigateToCreateIsland(facilityId) }
                 )
             }
         }
     }
-
-    // Error handling
-    uiState.error?.let { error ->
-        LaunchedEffect(error) {
-            // Could show snackbar or other error handling
-        }
-    }
 }
+
+// =============================================================================
+// DETAIL CONTENT
+// =============================================================================
 
 @Composable
 private fun FacilityDetailContent(
@@ -217,18 +196,6 @@ private fun FacilityDetailContent(
     onMarkMaintenanceComplete: (String) -> Unit
 ) {
     Column {
-        // Header con badge status e statistics
-//        if (uiState.statusBadge.isNotBlank() || uiState.isPrimaryFacility) {
-//            HeaderSection(
-//                facility = uiState.facility!!,
-//                statusBadge = uiState.statusBadge,
-//                statusColor = uiState.statusBadgeColor.toLongOrNull() ?: 0xFF22C55EL,
-//                statisticsSummary = uiState.statisticsSummary,
-//                operationalSummary = uiState.operationalSummary
-//            )
-//        }
-
-        // Tab Row
         TabRow(
             selectedTabIndex = uiState.selectedTab.ordinal,
             containerColor = MaterialTheme.colorScheme.surface
@@ -239,7 +206,6 @@ private fun FacilityDetailContent(
                     FacilityDetailTab.ISLANDS -> uiState.islandsCount.takeIf { it > 0 }
                     FacilityDetailTab.MAINTENANCE -> uiState.maintenanceIssuesCount.takeIf { it > 0 }
                 }
-
                 Tab(
                     selected = uiState.selectedTab == tab,
                     onClick = { onTabSelected(tab) },
@@ -248,7 +214,7 @@ private fun FacilityDetailContent(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Text(tab.title)
+                            Text(stringResource(tab.labelResId))
                             count?.let {
                                 Badge {
                                     Text(
@@ -265,161 +231,39 @@ private fun FacilityDetailContent(
             }
         }
 
-        // Tab Content
         when (uiState.selectedTab) {
-            FacilityDetailTab.INFO -> {
-                InfoTabContent(
-                    facility = uiState.facility!!,
-                    operationalSummary = uiState.operationalSummary,
-                    modifier = Modifier.weight(1f),
-                    onEdit = onEdit
-                )
-            }
-
-            FacilityDetailTab.ISLANDS -> {
-                IslandsTabContent(
-                    islands = uiState.filteredIslands,
-                    allIslands = uiState.islands,
-                    selectedFilter = uiState.selectedIslandFilter,
-                    onFilterSelected = onIslandFilterSelected,
-                    onIslandClick = onIslandClick,
-                    onViewAll = onViewAll,
-                    onCreateIsland = onCreateIsland,
-                    onEditIsland = onEditIsland,
-                    onDeleteIsland = onDeleteIsland,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            FacilityDetailTab.MAINTENANCE -> {
-                MaintenanceTabContent(
-                    islandsNeedingMaintenance = uiState.islandsNeedingMaintenance,
-                    islandsUnderWarranty = uiState.islandsUnderWarranty,
-                    onMarkMaintenanceComplete = onMarkMaintenanceComplete,
-                    onIslandClick = onIslandClick,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            FacilityDetailTab.INFO -> InfoTabContent(
+                facility = uiState.facility!!,
+                operationalSummary = uiState.operationalSummary,
+                modifier = Modifier.weight(1f),
+                onEdit = onEdit
+            )
+            FacilityDetailTab.ISLANDS -> IslandsTabContent(
+                islands = uiState.filteredIslands,
+                allIslands = uiState.islands,
+                selectedFilter = uiState.selectedIslandFilter,
+                onFilterSelected = onIslandFilterSelected,
+                onIslandClick = onIslandClick,
+                onViewAll = onViewAll,
+                onCreateIsland = onCreateIsland,
+                onEditIsland = onEditIsland,
+                onDeleteIsland = onDeleteIsland,
+                modifier = Modifier.weight(1f)
+            )
+            FacilityDetailTab.MAINTENANCE -> MaintenanceTabContent(
+                islandsNeedingMaintenance = uiState.islandsNeedingMaintenance,
+                islandsUnderWarranty = uiState.islandsUnderWarranty,
+                onMarkMaintenanceComplete = onMarkMaintenanceComplete,
+                onIslandClick = onIslandClick,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
 
-@Composable
-private fun HeaderSection(
-    facility: Facility,
-    statusBadge: String,
-    statusColor: Long,
-    statisticsSummary: String,
-    operationalSummary: FacilityOperationalSummary?
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-//            // Top row: Status and primary badge
-//            Row(
-//                modifier = Modifier.fillMaxWidth(),
-//                horizontalArrangement = Arrangement.SpaceBetween,
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//                Row(
-//                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    // Status badge
-//                    if (statusBadge.isNotBlank()) {
-//                        AssistChip(
-//                            onClick = { },
-//                            label = { Text(statusBadge) },
-//                            colors = AssistChipDefaults.assistChipColors(
-//                                containerColor = Color(statusColor)
-//                            )
-//                        )
-//                    }
-//
-//                    // Primary facility badge
-//                    if (facility.isPrimary) {
-//                        AssistChip(
-//                            onClick = { },
-//                            label = {
-//                                Row(
-//                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-//                                    verticalAlignment = Alignment.CenterVertically
-//                                ) {
-//                                    Icon(
-//                                        Icons.Default.Star,
-//                                        contentDescription = null,
-//                                        modifier = Modifier.size(14.dp)
-//                                    )
-//                                    Text("Primario")
-//                                }
-//                            },
-//                            colors = AssistChipDefaults.assistChipColors(
-//                                containerColor = MaterialTheme.colorScheme.primary
-//                            )
-//                        )
-//                    }
-//                }
-
-//                // Statistics summary
-//                Column(
-//                    horizontalAlignment = Alignment.End
-//                ) {
-//                    Text(
-//                        text = facility.facilityType.displayName,
-//                        style = MaterialTheme.typography.bodySmall,
-//                        color = MaterialTheme.colorScheme.onSurfaceVariant
-//                    )
-//                    Text(
-//                        text = statisticsSummary,
-//                        style = MaterialTheme.typography.bodySmall,
-//                        fontWeight = FontWeight.Medium
-//                    )
-//                }
-//            }
-
-            // Operational statistics (se disponibili)
-            operationalSummary?.let { summary ->
-                if (summary.totalIslands > 0) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatItem(
-                            icon = Icons.Default.PrecisionManufacturing,
-                            value = summary.totalIslands.toString(),
-                            label = "Isole Totali"
-                        )
-                        StatItem(
-                            icon = Icons.Default.CheckCircle,
-                            value = summary.activeIslands.toString(),
-                            label = "Attive",
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        StatItem(
-                            icon = Icons.Default.Warning,
-                            value = summary.islandsDueMaintenance.toString(),
-                            label = "Manutenzione",
-                            color = if (summary.islandsDueMaintenance > 0)
-                                MaterialTheme.colorScheme.error
-                            else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        StatItem(
-                            icon = Icons.Default.Security,
-                            value = summary.islandsUnderWarranty.toString(),
-                            label = "Garanzia"
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+// =============================================================================
+// TAB: INFO
+// =============================================================================
 
 @Composable
 private fun InfoTabContent(
@@ -428,144 +272,64 @@ private fun InfoTabContent(
     onEdit: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        // ✅ Header
+    Column(modifier = modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // ✅ Title
             Text(
-                text = "Informazioni",
+                text = stringResource(R.string.facility_detail_tab_info),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-
-                // ✅ Action Buttons
-                Button(onClick = { onEdit }) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Modifica")
-                }
+            Button(onClick = { onEdit(facility.id) }) {
+                Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.facility_detail_action_edit))
             }
         }
+
         LazyColumn(
             modifier = modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Info
             item {
-                InfoCard(
-                    title = "Informazioni Generali",
-                    icon = Icons.Default.Business
-                ) {
+                InfoCard(title = stringResource(R.string.facility_detail_info_card_general), icon = Icons.Default.Business) {
+                    InfoItem(stringResource(R.string.facility_detail_info_field_name), facility.displayName)
+                    facility.code?.let { InfoItem(stringResource(R.string.facility_detail_info_field_code), it) }
+                    InfoItem(stringResource(R.string.facility_detail_info_field_type), stringResource(facility.facilityType.labelResId))
+                    facility.notes?.let { InfoItem(stringResource(R.string.facility_detail_info_field_notes), it) }
                     InfoItem(
-                        label = "Nome Stabilimento",
-                        value = facility.displayName
-                    )
-
-                    facility.code?.let {
-                        InfoItem(
-                            label = "Codice Interno",
-                            value = it
-                        )
-                    }
-
-                    InfoItem(
-                        label = "Tipo Stabilimento",
-                        value = facility.facilityType.displayName
-                    )
-
-                    facility.notes?.let {
-                        InfoItem(
-                            label = "Descrizione",
-                            value = it
-                        )
-                    }
-                }
-            }
-
-            // Address
-            item {
-                InfoCard(
-                    title = "Sede Stabilimento",
-                    icon = Icons.Default.LocationOn
-                ) {
-                    InfoItem(
-                        label = "Indirizzo Completo",
-                        value = facility.address?.toDisplayString() ?: ""
+                        stringResource(R.string.facility_detail_info_field_primary),
+                        stringResource(if (facility.isPrimary) R.string.facility_detail_info_primary_yes else R.string.facility_detail_info_primary_no)
                     )
                 }
             }
-
-            // Statistiche operative
-//        operationalSummary?.let { summary ->
-//            item {
-//                InfoCard(
-//                    title = "Statistiche Operative",
-//                    icon = Icons.Default.Analytics
-//                ) {
-//                    Row(
-//                        modifier = Modifier.fillMaxWidth(),
-//                        horizontalArrangement = Arrangement.SpaceBetween
-//                    ) {
-//                        Column {
-//                            InfoItem(
-//                                label = "Ore Totali",
-//                                value = formatOperatingHours(summary.totalOperatingHours)
-//                            )
-//                            InfoItem(
-//                                label = "Cicli Totali",
-//                                value = formatNumber(summary.totalCycles)
-//                            )
-//                        }
-//
-//                        Column {
-//                            InfoItem(
-//                                label = "Media Ore/Isola",
-//                                value = formatOperatingHours(summary.averageOperatingHours)
-//                            )
-//                            InfoItem(
-//                                label = "Efficienza",
-//                                value = "${(summary.activeIslands * 100 / summary.totalIslands.coerceAtLeast(1))}%"
-//                            )
-//                        }
-//                    }
-//                }
-//            }
-//        }
-
             item {
-                InfoCard(
-                    title = "Metadati",
-                    icon = Icons.Default.Info
-                ) {
+                InfoCard(title = stringResource(R.string.facility_detail_info_card_address), icon = Icons.Default.LocationOn) {
+                    facility.address?.let {
+                        InfoItem(stringResource(R.string.facility_detail_info_field_address), it.toDisplayString())
+                    }
+                }
+            }
+            item {
+                InfoCard(title = stringResource(R.string.facility_detail_info_card_metadata), icon = Icons.Default.Info) {
+                    InfoItem(stringResource(R.string.facility_detail_info_field_created), formatTimestamp(facility.createdAt))
+                    InfoItem(stringResource(R.string.facility_detail_info_field_updated), formatTimestamp(facility.updatedAt))
                     InfoItem(
-                        label = "Creato",
-                        value = formatTimestamp(facility.createdAt)
-                    )
-                    InfoItem(
-                        label = "Ultima modifica",
-                        value = formatTimestamp(facility.updatedAt)
+                        stringResource(R.string.facility_detail_info_field_status),
+                        stringResource(if (facility.isActive) R.string.facility_detail_info_status_active else R.string.facility_detail_info_status_inactive)
                     )
                 }
             }
         }
     }
 }
+
+// =============================================================================
+// TAB: ISLANDS
+// =============================================================================
 
 @Composable
 private fun IslandsTabContent(
@@ -581,196 +345,53 @@ private fun IslandsTabContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-            // Actions row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Isole (${islands.size}/${allIslands.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    // Vedi tutti
-                    if (islands.isNotEmpty()) {
-                        OutlinedButton(onClick = onViewAll) {
-                            Text("Vedi tutte")
-                        }
-                    }
-
-                    Button(onClick = onCreateIsland) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Nuova")
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Isole (${islands.size}/${allIslands.size})",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (islands.isNotEmpty()) {
+                    OutlinedButton(onClick = onViewAll) {
+                        Text(stringResource(R.string.facility_detail_empty_action))
                     }
                 }
+                Button(onClick = onCreateIsland) {
+                    Icon(Icons.Default.Add, contentDescription = null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.facility_detail_fab_new_island))
+                }
             }
+        }
 
-        // Content
         if (islands.isEmpty()) {
             EmptyState(
-                textTitle = "Nessuna Isola",
-                textMessage = "Non ci sono ancora isole per questo stabilimento",
+                textTitle = stringResource(R.string.facility_detail_empty_title),
+                textMessage = stringResource(R.string.facility_detail_empty_message),
                 iconImageVector = Icons.Outlined.PrecisionManufacturing,
-                iconContentDescription = "Isole robotizzate",
+                iconContentDescription = stringResource(R.string.facility_detail_empty_icon_description),
                 iconActionImageVector = Icons.Default.Add,
-                iconActionContentDescription = "Aggiungi Isola",
-                textAction = "Nuova Isola",
+                iconActionContentDescription = stringResource(R.string.facility_detail_fab_new_island),
+                textAction = stringResource(R.string.facility_detail_empty_action),
                 onAction = onCreateIsland
             )
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(
-                    items = islands,
-                    key = { it.id }
-                ) { island ->
+                items(items = islands, key = { it.id }) { island ->
                     IslandItem(
                         island = island,
                         onIslandClick = onIslandClick,
                         onEditIsland = onEditIsland,
                         onDeleteIsland = onDeleteIsland
                     )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun MaintenanceTabContent(
-    islandsNeedingMaintenance: List<Island>,
-    islandsUnderWarranty: List<Island>,
-    onMarkMaintenanceComplete: (String) -> Unit,
-    onIslandClick: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxSize()) {
-        // ✅ Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // ✅ Title
-            Text(
-                text = "Manutenzioni",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Empty
-                Button(onClick = {}) {
-//                        Icon(
-//                            imageVector = Icons.Default.Add,
-//                            contentDescription = null,
-//                            modifier = Modifier.size(18.dp)
-//                        )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(" ")
-                }
-            }
-        }
-
-        LazyColumn(
-            modifier = modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // Manutenzioni richieste
-            item {
-                Card {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                text = "Manutenzioni Richieste (${islandsNeedingMaintenance.size})",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        if (islandsNeedingMaintenance.isEmpty()) {
-                            Text(
-                                text = "Tutte le isole sono in regola con le manutenzioni",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else {
-                            islandsNeedingMaintenance.forEach { island ->
-                                MaintenanceIslandItem(
-                                    island = island,
-                                    onMarkComplete = onMarkMaintenanceComplete,
-                                    onIslandClick = onIslandClick
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Isole sotto garanzia
-            item {
-                Card {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Security,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "Isole in Garanzia (${islandsUnderWarranty.size})",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-
-                        if (islandsUnderWarranty.isEmpty()) {
-                            Text(
-                                text = "Nessuna isola attualmente in garanzia",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        } else {
-                            islandsUnderWarranty.forEach { island ->
-                                WarrantyIslandItem(
-                                    island = island,
-                                    onIslandClick = onIslandClick
-                                )
-                            }
-                        }
-                    }
                 }
             }
         }
@@ -786,10 +407,7 @@ private fun IslandItem(
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { onIslandClick(island.id) }
-    ) {
+    Card(modifier = Modifier.fillMaxWidth(), onClick = { onIslandClick(island.id) }) {
         Row(
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -797,35 +415,21 @@ private fun IslandItem(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = island.islandType.displayName,
+                    text = stringResource(island.islandType.labelResId) ,
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
-                Text(
-                    text = island.displayName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "S/N: ${island.serialNumber}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
+                Text(text = island.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                Text(text = "S/N: ${island.serialNumber}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 if (island.operatingHours > 0 || island.cycleCount > 0) {
                     Text(
-                        text = "${(island.operatingHours.getFormattedHours())} • ${island.cycleCount.getFormattedCycleCount()} cicli",
+                        text = "${island.operatingHours.getFormattedHours()} • ${island.cycleCount.getFormattedCycleCount()} cicli",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Status indicator
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = when (island.islandOperationalStatus) {
                         IslandOperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
@@ -840,29 +444,11 @@ private fun IslandItem(
                     },
                     modifier = Modifier.size(20.dp)
                 )
-
-                IconButton(
-                    onClick = { showDeleteDialog = true },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Elimina",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.island_delete_dialog_confirm), modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
                 }
-
-                IconButton(
-                    onClick = { onEditIsland(island.id) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Modifica",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
+                IconButton(onClick = { onEditIsland(island.id) }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.facility_detail_action_edit), modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -871,57 +457,82 @@ private fun IslandItem(
     if (showDeleteDialog) {
         IslandDeleteDialog(
             islandName = island.displayName,
-            onConfirm = {
-                onDeleteIsland(island.id)
-                showDeleteDialog = false
-            },
+            onConfirm = { onDeleteIsland(island.id); showDeleteDialog = false },
             onDismiss = { showDeleteDialog = false }
         )
     }
 }
 
+// =============================================================================
+// TAB: MAINTENANCE
+// =============================================================================
+
 @Composable
-private fun MaintenanceIslandItem(
-    island: Island,
-    onMarkComplete: (String) -> Unit,
-    onIslandClick: (String) -> Unit
+private fun MaintenanceTabContent(
+    islandsNeedingMaintenance: List<Island>,
+    islandsUnderWarranty: List<Island>,
+    onMarkMaintenanceComplete: (String) -> Unit,
+    onIslandClick: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.errorContainer
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    LazyColumn(modifier = modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        item {
+            Card {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                        Text("${stringResource(R.string.island_filter_needs_maintenance)} (${islandsNeedingMaintenance.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    }
+                    if (islandsNeedingMaintenance.isEmpty()) {
+                        Text("Tutte le isole sono in regola", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        islandsNeedingMaintenance.forEach { island ->
+                            MaintenanceIslandItem(island = island, onMarkComplete = onMarkMaintenanceComplete, onIslandClick = onIslandClick)
+                        }
+                    }
+                }
+            }
+        }
+        item {
+            Card {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(Icons.Default.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Text("${stringResource(R.string.island_filter_under_warranty)} (${islandsUnderWarranty.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    }
+                    if (islandsUnderWarranty.isEmpty()) {
+                        Text("Nessuna isola attualmente in garanzia", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    } else {
+                        islandsUnderWarranty.forEach { island ->
+                            WarrantyIslandItem(island = island, onIslandClick = onIslandClick)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MaintenanceIslandItem(island: Island, onMarkComplete: (String) -> Unit, onIslandClick: (String) -> Unit) {
+    Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.errorContainer) {
+        Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
+                Text(island.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 Text(
-                    text = island.displayName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "Scadenza: ${island.nextScheduledMaintenance?.let { formatTimestamp(it) } ?: "Non programmata"}",
+                    text = island.nextScheduledMaintenance?.let {
+                        stringResource(R.string.facility_detail_maintenance_expiry, formatTimestamp(it))
+                    } ?: stringResource(R.string.facility_detail_maintenance_not_scheduled),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                OutlinedButton(
-                    onClick = { onMarkComplete(island.id) }
-                ) {
-                    Text("Completata")
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                OutlinedButton(onClick = { onMarkComplete(island.id) }) {
+                    Text(stringResource(R.string.facility_detail_maintenance_complete))
                 }
-
-                IconButton(
-                    onClick = { onIslandClick(island.id) }
-                ) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "Dettagli")
+                IconButton(onClick = { onIslandClick(island.id) }) {
+                    Icon(Icons.Default.ChevronRight, contentDescription = null)
                 }
             }
         }
@@ -929,177 +540,90 @@ private fun MaintenanceIslandItem(
 }
 
 @Composable
-private fun WarrantyIslandItem(
-    island: Island,
-    onIslandClick: (String) -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { onIslandClick(island.id) },
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.primaryContainer
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+private fun WarrantyIslandItem(island: Island, onIslandClick: (String) -> Unit) {
+    Surface(modifier = Modifier.fillMaxWidth(), onClick = { onIslandClick(island.id) }, shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer) {
+        Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
+                Text(island.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 Text(
-                    text = island.displayName,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "Scadenza garanzia: ${island.warrantyExpiration?.let { formatTimestamp(it) } ?: "Non specificata"}",
+                    text = island.warrantyExpiration?.let {
+                        stringResource(R.string.facility_detail_warranty_expiry, formatTimestamp(it))
+                    } ?: stringResource(R.string.facility_detail_warranty_not_set),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
-
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = "Dettagli",
-                tint = MaterialTheme.colorScheme.onPrimaryContainer
-            )
+            Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
         }
     }
 }
 
+// =============================================================================
+// DIALOGS
+// =============================================================================
+
 @Composable
-private fun IslandDeleteDialog(
-    islandName: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
+private fun IslandDeleteDialog(islandName: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Elimina Isola") },
-        text = {
-            Text("Sei sicuro di voler eliminare l'isola '$islandName'? Questa operazione non può essere annullata.")
-        },
+        title = { Text(stringResource(R.string.island_delete_dialog_title)) },
+        text = { Text(stringResource(R.string.island_delete_dialog_message, islandName)) },
         confirmButton = {
-            Button(
-                onClick = onConfirm,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text("Elimina")
+            Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
+                Text(stringResource(R.string.island_delete_dialog_confirm))
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
-            }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.island_delete_dialog_cancel)) }
         }
     )
 }
 
-// Helper composables e funzioni già definite prima...
-@Composable
-private fun StatItem(
-    icon: ImageVector,
-    value: String,
-    label: String,
-    color: Color = MaterialTheme.colorScheme.onSurfaceVariant
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            modifier = Modifier.size(16.dp),
-            tint = color
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Medium,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = color
-        )
-    }
-}
+// =============================================================================
+// SHARED COMPOSABLES
+// =============================================================================
 
 @Composable
-private fun InfoCard(
-    title: String,
-    icon: ImageVector,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+private fun InfoCard(title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             }
-
             content()
         }
     }
 }
 
 @Composable
-private fun InfoItem(
-    label: String,
-    value: String
-) {
+private fun InfoItem(label: String, value: String) {
     Column {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
-// Helper functions
-private fun getIslandFilterDisplayName(filter: IslandFilter): String {
-    return when (filter) {
-        IslandFilter.ALL -> "Tutte"
-        IslandFilter.ACTIVE -> "Attive"
-        IslandFilter.INACTIVE -> "Inattive"
-        IslandFilter.NEEDS_MAINTENANCE -> "Da manutenere"
-        IslandFilter.UNDER_WARRANTY -> "In garanzia"
-        IslandFilter.BY_TYPE -> "Per tipo"
+@Composable
+private fun StatItem(icon: ImageVector, value: String, label: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = color)
+        Text(text = value, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium, color = color)
+        Text(text = label, style = MaterialTheme.typography.labelSmall, color = color)
     }
 }
 
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+@Composable
 private fun formatTimestamp(timestamp: Instant): String {
-    val now = Clock.System.now()
-    val diffMillis = (now - timestamp).inWholeMilliseconds
-
+    val diffMillis = (Clock.System.now() - timestamp).inWholeMilliseconds
     return when {
-        diffMillis < 60000 -> "Ora"
-        diffMillis < 3600000 -> "${diffMillis / 60000} min fa"
-        diffMillis < 86400000 -> "${diffMillis / 3600000}h fa"
-        else -> "${diffMillis / 86400000} giorni fa"
+        diffMillis < 60_000L -> stringResource(R.string.facility_time_now)
+        diffMillis < 3_600_000L -> stringResource(R.string.facility_time_minutes_ago, diffMillis / 60_000)
+        diffMillis < 86_400_000L -> stringResource(R.string.facility_time_hours_ago, diffMillis / 3_600_000)
+        else -> stringResource(R.string.facility_time_days_ago, diffMillis / 86_400_000)
     }
 }

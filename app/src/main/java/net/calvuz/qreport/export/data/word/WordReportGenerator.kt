@@ -128,7 +128,7 @@ class WordReportGenerator @Inject constructor(
         }
 
         titleParagraph.createRun().apply {
-            setText("REPORT CHECKUP ${exportData.checkup.islandType.displayName.uppercase()}")
+            setText("REPORT CHECKUP ${exportData.checkup.islandType.labelResId}")
             isBold = true
             fontSize = 18
         }

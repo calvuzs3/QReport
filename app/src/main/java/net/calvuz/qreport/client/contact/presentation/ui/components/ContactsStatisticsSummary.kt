@@ -14,7 +14,7 @@ import net.calvuz.qreport.R
 
 /**
  * Componente per mostrare statistiche riassuntive dei contatti
- * Design semplificato uguale alla scheda Facilities
+ * Design semplificato uguale alla scheda FacilityError
  */
 @Composable
 fun ContactsStatisticsSummary(

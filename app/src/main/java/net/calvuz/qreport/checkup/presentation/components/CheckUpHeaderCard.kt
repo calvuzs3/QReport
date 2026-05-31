@@ -54,7 +54,7 @@ fun CheckUpHeaderCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = checkUp.islandType.displayName,
+                        text = stringResource(checkUp.islandType.labelResId),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -257,16 +257,16 @@ private fun IslandSelectionStep(
         } else {
             islands.forEach { island ->
                 SelectionItem(
-                    title = "${island.islandType.displayName} • ${island.serialNumber}",
-                    subtitle =
-                        if (island.model != null) {
-                            stringResource(
-                                R.string.checkup_component_association_dialog_model_prefix,
-                                island.model
-                            )
-                        } else {
-                            stringResource(R.string.checkup_component_association_dialog_model_not_specified)
-                        },
+                    title = stringResource(island.islandType.labelResId),
+                    subtitle = island.serialNumber,
+//                        if (island.model != null) {
+//                            stringResource(
+//                                R.string.checkup_component_association_dialog_model_prefix,
+//                                island.model
+//                            )
+//                        } else {
+//                            stringResource(R.string.checkup_component_association_dialog_model_not_specified)
+//                        },
                     isSelected = false,
                     onClick = { onIslandSelected(island.id) },
                     isClickable = true

@@ -13,22 +13,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
 import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
+import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityOption
 import net.calvuz.qreport.client.island.presentation.model.IslandFilter
 import net.calvuz.qreport.client.island.presentation.model.IslandPkg
 import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
-import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityOption
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandListContent
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandStatisticsHeader
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
@@ -49,23 +51,18 @@ fun IslandListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Initialize for specific facility
     LaunchedEffect(facilityId) {
         Timber.d("IslandListScreen facilityId=$facilityId")
         viewModel.initializeForFacility(facilityId)
     }
 
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        // Top App Bar con navigazione back
+    Column(modifier = modifier.fillMaxSize()) {
+
         TopAppBar(
             title = {
                 Column {
-                    Text("Isole Robotizzate")
+                    Text(stringResource(R.string.island_screen_list_title))
                     Text(
-                        // Shows the selected facility name; falls back to the nav param
-                        // until the dropdown list is loaded.
                         text = uiState.selectedFacility
                             .takeIf { it != FacilityOption.ALL }
                             ?.getDisplayName() ?: facilityName,
@@ -74,41 +71,36 @@ fun IslandListScreen(
                     )
                 }
             },
-
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Indietro")
+                    Icon(
+                        imageVector = Icons.Default.ArrowBackIosNew,
+                        contentDescription = stringResource(R.string.island_screen_list_action_back)
+                    )
                 }
             },
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
 
-                // View mode toggle button
                 IconButton(onClick = viewModel::cycleCardVariant) {
                     Icon(
                         imageVector = uiState.cardVariant.getCardVariantIcon(),
                         contentDescription = uiState.cardVariant.getCardVariantDescription()
                     )
                 }
-
-                // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Default.Sort,
-                        contentDescription = "Ordinamento"
+                        contentDescription = stringResource(R.string.island_screen_list_action_sort)
                     )
                 }
-
-                // Filter button
                 IconButton(onClick = { showFilterMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.FilterList,
-                        contentDescription = "Filtri"
+                        contentDescription = stringResource(R.string.island_screen_list_action_filter)
                     )
                 }
-
-                // Sort menu
                 QReportSortOrderMenu(
                     expanded = showSortMenu,
                     entries = IslandSortOrder.entries,
@@ -116,8 +108,6 @@ fun IslandListScreen(
                     onSortOrderSelected = viewModel::updateSortOrder,
                     onDismiss = { showSortMenu = false }
                 )
-
-                // Filter menu
                 QReportFilterMenu(
                     expanded = showFilterMenu,
                     entries = IslandFilter.entries,
@@ -128,7 +118,6 @@ fun IslandListScreen(
             }
         )
 
-        // Statistiche header (se disponibili)
         uiState.statistics?.let { stats ->
             IslandStatisticsHeader(
                 statistics = stats,
@@ -136,14 +125,12 @@ fun IslandListScreen(
             )
         }
 
-        // Search bar
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca per serial, nome o modello...",
+            placeholder = stringResource(R.string.island_screen_list_search_placeholder)
         )
 
-        // Facility selector
         QReportSelectorRow(
             entries = uiState.availableFacilities,
             selectedItem = uiState.selectedFacility,
@@ -152,7 +139,6 @@ fun IslandListScreen(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        // Filter chips
         if (uiState.selectedFilter != IslandPkg.selectedFilter || uiState.sortOrder != IslandPkg.selectedSortOrder) {
             QReportFiltersChipRow(
                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -165,21 +151,15 @@ fun IslandListScreen(
             )
         }
 
-        // Content with Pull to Refresh
         val pullToRefreshState = rememberPullToRefreshState()
 
-        // Reset refresh state when not refreshing
         LaunchedEffect(uiState.isRefreshing) {
             if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
                 pullToRefreshState.endRefresh()
             }
         }
-
-        // Handle pull to refresh
         LaunchedEffect(pullToRefreshState.isRefreshing) {
-            if (pullToRefreshState.isRefreshing) {
-                viewModel.refresh()
-            }
+            if (pullToRefreshState.isRefreshing) viewModel.refresh()
         }
 
         Box(
@@ -190,47 +170,46 @@ fun IslandListScreen(
             val currentError = uiState.error
 
             when {
-                uiState.isLoading -> {
-                    LoadingState()
-                }
+                uiState.isLoading -> LoadingState()
 
-                currentError != null -> {
-                    ErrorState(
-                        error = currentError,
-                        onRetry = viewModel::loadIslands,
-                        onDismiss = viewModel::dismissError
-                    )
-                }
+                currentError != null -> QReportErrorState(
+                    error = currentError,
+                    onRetry = viewModel::loadIslands,
+                    onDismiss = viewModel::dismissError
+                )
 
                 uiState.filteredIslands.isEmpty() -> {
                     val (title, message) = when {
-                        uiState.allIslands.isEmpty() -> "Nessuna Isola" to "Non ci sono ancora Isole per questo Stabilimento"
-                        uiState.selectedFilter != IslandPkg.selectedFilter -> "Nessun risultato" to "Non ci sono Isole che corrispondono al filtro '${uiState.selectedFilter.getDisplayName()}'"
-                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                        uiState.allIslands.isEmpty() ->
+                            stringResource(R.string.island_screen_list_empty_title) to
+                                    stringResource(R.string.island_screen_list_empty_message)
+                        uiState.selectedFilter != IslandPkg.selectedFilter ->
+                            stringResource(R.string.island_screen_list_empty_filtered_title) to
+                                    stringResource(R.string.island_screen_list_empty_filtered_message, uiState.selectedFilter.getDisplayName())
+                        else ->
+                            stringResource(R.string.island_screen_list_empty_generic_title) to
+                                    stringResource(R.string.island_screen_list_empty_generic_message)
                     }
                     EmptyState(
                         textTitle = title,
                         textMessage = message,
                         iconImageVector = Icons.Default.Analytics,
-                        iconContentDescription = "Isole non trovate",
+                        iconContentDescription = stringResource(R.string.island_screen_list_empty_icon_description),
                         iconActionImageVector = Icons.Default.Add,
-                        iconActionContentDescription = "Nuova Isola",
-                        textAction = "Nuova Isola",
+                        iconActionContentDescription = stringResource(R.string.island_screen_list_fab_new),
+                        textAction = stringResource(R.string.island_screen_list_empty_action),
                         onAction = onCreateNewIsland
                     )
                 }
 
-                else -> {
-                    IslandListContent(
-                        islands = uiState.filteredIslands,
-                        variant = uiState.cardVariant,
-                        onIslandClick = onNavigateToIslandDetail,
-                        onIslandDelete = viewModel::deleteIsland
-                    )
-                }
+                else -> IslandListContent(
+                    islands = uiState.filteredIslands,
+                    variant = uiState.cardVariant,
+                    onIslandClick = onNavigateToIslandDetail,
+                    onIslandDelete = viewModel::deleteIsland
+                )
             }
 
-            // Pull to refresh indicator
             if (pullToRefreshState.isRefreshing || uiState.isRefreshing) {
                 PullToRefreshContainer(
                     state = pullToRefreshState,
@@ -238,7 +217,6 @@ fun IslandListScreen(
                 )
             }
 
-            // FAB per nuova isola
             FloatingActionButton(
                 onClick = onCreateNewIsland,
                 modifier = Modifier
@@ -247,7 +225,7 @@ fun IslandListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Nuova Isola"
+                    contentDescription = stringResource(R.string.island_screen_list_fab_new)
                 )
             }
         }

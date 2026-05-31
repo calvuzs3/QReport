@@ -12,12 +12,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
@@ -31,17 +33,6 @@ import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityLis
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 
-/**
- * Screen per la lista stabilimenti di un cliente - seguendo pattern ClientListScreen
- *
- * Features:
- * - Lista stabilimenti dal database con statistiche reali
- * - Ricerca e filtri per tipo/stato facility
- * - Pull to refresh
- * - Stati loading/error/empty ottimizzati
- * - FacilityCard riutilizzabili
- * - Gestione facility primaria
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FacilityListScreen(
@@ -55,65 +46,54 @@ fun FacilityListScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Initialize for specific client
     LaunchedEffect(clientId) {
-        if (clientId != null)  {
-            viewModel.initializeForClient(clientId)
-        } else {
-            viewModel.initialize()
-        }
+        if (clientId != null) viewModel.initializeForClient(clientId)
+        else viewModel.initialize()
     }
 
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
-        // Top App Bar con navigazione back
+    Column(modifier = modifier.fillMaxSize()) {
+
         TopAppBar(
-            title = { Text("Stabilimenti") },
+            title = { Text(stringResource(R.string.facility_screen_list_title)) },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Indietro")
+                    Icon(
+                        imageVector = Icons.Default.ArrowBackIosNew,
+                        contentDescription = stringResource(R.string.facility_screen_list_action_back)
+                    )
                 }
             },
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
 
-                // View mode toggle button
                 IconButton(onClick = viewModel::cycleCardVariant) {
                     Icon(
                         imageVector = uiState.cardVariant.getCardVariantIcon(),
                         contentDescription = uiState.cardVariant.getCardVariantDescription()
                     )
                 }
-
-                // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Default.Sort,
-                        contentDescription = "Ordinamento"
+                        contentDescription = stringResource(R.string.facility_screen_list_action_sort)
                     )
                 }
-
-                // Filter button
                 IconButton(onClick = { showFilterMenu = true }) {
                     Icon(
                         imageVector = Icons.Default.FilterList,
-                        contentDescription = "Filtri"
+                        contentDescription = stringResource(R.string.facility_screen_list_action_filter)
                     )
                 }
 
-                // Filter menu
-                QReportFilterMenu (
+                QReportFilterMenu(
                     expanded = showFilterMenu,
                     entries = FacilityFilter.entries,
                     selectedFilter = uiState.selectedFilter,
                     onFilterSelected = viewModel::updateFilter,
                     onDismiss = { showFilterMenu = false }
                 )
-
-                // Sort menu
-                QReportSortOrderMenu (
+                QReportSortOrderMenu(
                     expanded = showSortMenu,
                     entries = FacilitySortOrder.entries,
                     selectedSortOrder = uiState.sortOrder,
@@ -123,11 +103,10 @@ fun FacilityListScreen(
             }
         )
 
-        // Search bar
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca per nome, codice o tipo...",
+            placeholder = stringResource(R.string.facility_screen_list_search_placeholder)
         )
 
         QReportSelectorRow(
@@ -138,10 +117,8 @@ fun FacilityListScreen(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-
-        // Filter chips
         if (uiState.selectedFilter != FacilityPkg.selectedFilter || uiState.sortOrder != FacilityPkg.selectedSortOrder) {
-            QReportFiltersChipRow (
+            QReportFiltersChipRow(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 selectedFilter = uiState.selectedFilter,
                 avoidFilter = FacilityPkg.selectedFilter,
@@ -152,21 +129,15 @@ fun FacilityListScreen(
             )
         }
 
-        // Content with Pull to Refresh
         val pullToRefreshState = rememberPullToRefreshState()
 
-        // Reset refresh state when not refreshing
         LaunchedEffect(uiState.isRefreshing) {
             if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
                 pullToRefreshState.endRefresh()
             }
         }
-
-        // Handle pull to refresh
         LaunchedEffect(pullToRefreshState.isRefreshing) {
-            if (pullToRefreshState.isRefreshing) {
-                viewModel.refresh()
-            }
+            if (pullToRefreshState.isRefreshing) viewModel.refresh()
         }
 
         Box(
@@ -177,48 +148,47 @@ fun FacilityListScreen(
             val currentError = uiState.error
 
             when {
-                uiState.isLoading -> {
-                    LoadingState()
-                }
+                uiState.isLoading -> LoadingState()
 
-                currentError != null -> {
-                    ErrorState(
-                        error = currentError,
-                        onRetry = viewModel::loadFacilities,
-                        onDismiss = viewModel::dismissError
-                    )
-                }
+                currentError != null -> QReportErrorState(
+                    error = currentError,
+                    onRetry = viewModel::loadFacilities,
+                    onDismiss = viewModel::dismissError
+                )
 
                 uiState.filteredFacilities.isEmpty() -> {
                     val (title, message) = when {
-                        uiState.facilities.isEmpty() -> "Nessuno Stabilimento" to "Non ci sono ancora Stabilimenti per questo Cliente"
-                        uiState.selectedFilter != FacilityPkg.selectedFilter -> "Nessun risultato" to "Non ci sono Stabilimenti che corrispondono al filtro '${uiState.selectedFilter.getDisplayName()}'"
-                        else -> "Lista vuota" to "Errore nel caricamento dati"
+                        uiState.facilities.isEmpty() ->
+                            stringResource(R.string.facility_screen_list_empty_title) to
+                                    stringResource(R.string.facility_screen_list_empty_message)
+                        uiState.selectedFilter != FacilityPkg.selectedFilter ->
+                            stringResource(R.string.facility_screen_list_empty_filtered_title) to
+                                    stringResource(R.string.facility_screen_list_empty_filtered_message, uiState.selectedFilter.getDisplayName())
+                        else ->
+                            stringResource(R.string.facility_screen_list_empty_generic_title) to
+                                    stringResource(R.string.facility_screen_list_empty_generic_message)
                     }
                     EmptyState(
                         textTitle = title,
                         textMessage = message,
                         iconImageVector = Icons.Outlined.Factory,
-                        iconContentDescription = "Nessuno stabilimento",
+                        iconContentDescription = stringResource(R.string.facility_screen_list_empty_icon_description),
                         iconActionImageVector = Icons.Default.Add,
-                        iconActionContentDescription = "Nuovo stabilimento",
-                        textAction = "Nuovo Stabilimento",
+                        iconActionContentDescription = stringResource(R.string.facility_screen_list_fab_new),
+                        textAction = stringResource(R.string.facility_screen_list_empty_action),
                         onAction = onCreateNewFacility
                     )
                 }
 
-                else -> {
-                    FacilityListContent(
-                        variant = uiState.cardVariant,
-                        facilities = uiState.filteredFacilities,
-                        onFacilityClick = onNavigateToFacilityDetail,
-                        onFacilityEdit = onEditFacility,
-                        onFacilityDelete = null  // We Don't want to delete from the list
-                    )
-                }
+                else -> FacilityListContent(
+                    variant = uiState.cardVariant,
+                    facilities = uiState.filteredFacilities,
+                    onFacilityClick = onNavigateToFacilityDetail,
+                    onFacilityEdit = onEditFacility,
+                    onFacilityDelete = null
+                )
             }
 
-            // Pull to refresh indicator
             if (pullToRefreshState.isRefreshing || uiState.isRefreshing) {
                 PullToRefreshContainer(
                     state = pullToRefreshState,
@@ -226,7 +196,6 @@ fun FacilityListScreen(
                 )
             }
 
-            // FAB per nuovo stabilimento
             FloatingActionButton(
                 onClick = onCreateNewFacility,
                 modifier = Modifier
@@ -235,7 +204,7 @@ fun FacilityListScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Nuovo stabilimento"
+                    contentDescription = stringResource(R.string.facility_screen_list_fab_new)
                 )
             }
         }

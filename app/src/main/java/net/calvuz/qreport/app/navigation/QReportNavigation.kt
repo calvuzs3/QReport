@@ -1148,9 +1148,9 @@ fun QReportNavigation(
                                 )
                             )
                         },
-                        onNavigateToMaintenance = { islandId ->
-                            // TODO: Navigate to maintenance screen when implemented
-                        },
+//                        onNavigateToMaintenance = { islandId ->
+//                            // TODO: Navigate to maintenance screen when implemented
+//                        },
                         onNavigateToCreateUnit = { islandId ->
                             navController.navigate(
                                 QReportRoutes.unitAdd(

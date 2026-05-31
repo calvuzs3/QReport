@@ -107,7 +107,7 @@ class MechanicalUnitListViewModel @Inject constructor(
 
         val islandId = currentIslandId
         val flow = if (islandId.isEmpty()) {
-            Timber.d("Observing all Facilities")
+            Timber.d("Observing all FacilityError")
             observeMechanicalUnitsUseCase(null)
         } else {
             Timber.d("Observing islands for facility: $islandId")

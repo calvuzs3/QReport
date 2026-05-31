@@ -13,7 +13,7 @@ data class AssociationDialogState(
     val availableClients: List<Client> = emptyList(),
     val isLoadingClients: Boolean = false,
 
-    // Facilities
+    // FacilityError
     val selectedClientId: String? = null,
     val availableFacilities: List<Facility> = emptyList(),
     val isLoadingFacilities: Boolean = false,

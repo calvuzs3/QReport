@@ -5,31 +5,31 @@ import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
 /**
- * Robotic Island
+ * Robotic Island belonging to a [net.calvuz.qreport.client.facility.domain.model.Facility].
+ *
+ * Pure domain: no UI strings, no color codes, no Compose dependencies.
+ * Maintenance status text is a presentation concern — the UI resolves
+ * [islandOperationalStatus] and [daysToNextMaintenance] into localized strings.
  */
 @Serializable
 data class Island(
     val id: String,
     val facilityId: String,
 
-    // ===== COMMISSIONING & NAME =====
-    val commissioningNumber: String? = null,    // Commissioning phase Number or Code *
+    // ===== COMMISSIONING =====
+    val commissioningNumber: String? = null,
     val customName: String? = null,
 
     // ===== ISLAND TYPE =====
     val islandType: IslandType,
 
     // ===== TECHNICAL DETAILS =====
-    val modelNumber:String? = null,
+    val modelNumber: String? = null,
     val serialNumber: String,
-
-    //DEPRECATED ---
-    val model: String? = null,
     val installationDate: Instant? = null,
     val warrantyExpiration: Instant? = null,
-    // ---
 
-    // ===== MAINTENANCE STATUS =====
+    // ===== MAINTENANCE =====
     val operatingHours: Int = 0,
     val cycleCount: Long = 0L,
     val lastMaintenanceDate: Instant? = null,
@@ -44,33 +44,29 @@ data class Island(
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
-
     /**
-     * Nome display dell'isola
+     * Display name shown in lists and headers.
+     * Uses [customName] if set; falls back to serial number only —
+     * the island type label is resolved by the UI via [islandType.labelResId].
      */
     val displayName: String
-        get() = customName ?: "${islandType.displayName} (${serialNumber})"
+        get() = customName ?: serialNumber
 
     /**
-     * Verifica se isola ha bisogno di manutenzione
+     * Returns true if scheduled maintenance is overdue or due today.
      */
-    fun needsMaintenance(): Boolean {
-        return nextScheduledMaintenance?.let { next ->
-            next <= Clock.System.now()
-        } ?: false
-    }
+    fun needsMaintenance(): Boolean =
+        nextScheduledMaintenance?.let { it <= Clock.System.now() } ?: false
 
     /**
-     * Verifica se isola è sotto garanzia
+     * Returns true if the island is currently under warranty.
      */
-    fun isUnderWarranty(): Boolean {
-        return warrantyExpiration?.let { expiry ->
-            expiry > Clock.System.now()
-        } ?: false
-    }
+    fun isUnderWarranty(): Boolean =
+        warrantyExpiration?.let { it > Clock.System.now() } ?: false
 
     /**
-     * Stato operativo descrittivo
+     * Computed operational status — pure domain logic, no strings.
+     * The UI resolves [IslandOperationalStatus.labelResId] for display.
      */
     val islandOperationalStatus: IslandOperationalStatus
         get() = when {
@@ -80,34 +76,9 @@ data class Island(
         }
 
     /**
-     * Calcola giorni dalla prossima manutenzione (positivo se in anticipo, negativo se in ritardo)
+     * Days until the next scheduled maintenance.
+     * Positive = days remaining, negative = days overdue, null = not scheduled.
      */
-    fun daysToNextMaintenance(): Long? {
-        return nextScheduledMaintenance?.let { next ->
-            val now = Clock.System.now()
-            val duration = next - now
-            duration.inWholeDays
-        }
-    }
-
-    /**
-     * Formattazione per display dello stato manutenzione
-     */
-    val maintenanceStatusText: String
-        get() {
-            return when {
-                !isActive -> "Inattiva"
-                nextScheduledMaintenance == null -> "Nessuna manutenzione programmata"
-                else -> {
-                    val days = daysToNextMaintenance() ?: return "Data manutenzione non valida"
-                    when {
-                        days > 30 -> "Manutenzione tra ${days} giorni"
-                        days > 0 -> "Manutenzione tra ${days} giorni ⚠️"
-                        days == 0L -> "Manutenzione oggi! 🔴"
-                        days > -7 -> "Manutenzione in ritardo di ${-days} giorni 🔴"
-                        else -> "Manutenzione in grave ritardo (${-days} giorni) 🚨"
-                    }
-                }
-            }
-        }
+    fun daysToNextMaintenance(): Long? =
+        nextScheduledMaintenance?.let { (it - Clock.System.now()).inWholeDays }
 }

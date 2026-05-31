@@ -1,23 +1,33 @@
 package net.calvuz.qreport.client.facility.presentation.ui.components
 
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.model.QReportFilter
 
 /**
  * Wrapper for Facility data used in the island list selector dropdown.
- * Implements [net.calvuz.qreport.app.app.presentation.model.QReportFilter] so it works with [QReportSelectorRow].
+ * Implements [QReportFilter] so it works with [QReportSelectorRow].
  *
- * @param id Facility ID, empty string for the "no facility selected" sentinel.
- * @param name Display name shown in the dropdown.
+ * [labelResId] is resolved at runtime via stringResource() in the composable,
+ * following the same pattern as [FacilityDetailTab] and [ClientDetailTab].
+ *
+ * @param id    Facility ID, empty string for the ALL sentinel.
+ * @param name  Display name for real facilities (ignored for ALL sentinel).
  */
 data class FacilityOption(
     val id: String,
-    val name: String
+    val name: String,
+    val labelResId: Int? = null   // non-null only for sentinel values
 ) : QReportFilter {
 
+    // For real facilities the name comes from DB; for sentinels it is resolved via labelResId.
     override fun getDisplayName(): String = name
 
     companion object {
-        /** Shown before a facility is selected, or when no islands are scoped. */
-        val ALL = FacilityOption(id = "", name = "Tutti gli Stabilimenti")
+        /** Sentinel shown before a facility is selected, or when all are in scope. */
+        val ALL = FacilityOption(
+            id = "",
+            name = "",                              // resolved via labelResId in UI
+            labelResId = R.string.facility_option_all
+        )
     }
 }

@@ -3,6 +3,7 @@
 package net.calvuz.qreport.app.app.presentation.ui.home
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -14,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -24,8 +26,12 @@ import kotlinx.datetime.toLocalDateTime
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardCheckupStatistics
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.checkup.presentation.components.CheckupStatusChip
+import net.calvuz.qreport.checkup.presentation.model.CheckupPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
+import net.calvuz.qreport.client.island.presentation.model.icon
 
 /**
  * Home Screen - QReport Dashboard
@@ -98,28 +104,9 @@ fun HomeScreen(
             ) {
                 // stats Cards
                 item {
-                    DashboardStatsSection(
-                        stats = uiState.dashboardStats,
+                    CheckupStatsSection(
+                        stats = uiState.checkupStats,
                         onNavigateToCheckUps = onNavigateToCheckUps
-                    )
-                }
-
-                // Navigation Actions
-                item {
-                    NavigationActionsSection(
-                        onNavigateToClients = onNavigateToClients,
-                        onNavigateToCheckUps = onNavigateToCheckUps,
-                        onNavigateToTechnicalInterventions = onNavigateToTechnicalInterventions
-                    )
-                }
-
-                // Quick Actions
-                item {
-                    QuickActionsSection(
-                        onCreateCheckUp = { islandType, clientName ->
-                            viewModel.createQuickCheckUp(islandType, clientName)
-                        },
-                        isCreating = uiState.isCreatingCheckUp
                     )
                 }
 
@@ -132,6 +119,26 @@ fun HomeScreen(
                         }
                     )
                 }
+
+                // Navigation Actions
+                item {
+                    NavigationActionsSection(
+                        onNavigateToClients = onNavigateToClients,
+                        onNavigateToCheckUps = onNavigateToCheckUps,
+                        onNavigateToTechnicalInterventions = onNavigateToTechnicalInterventions
+                    )
+                }
+
+//                // Quick Actions
+//                item {
+//                    QuickActionsSection(
+//                        onCreateCheckUp = { islandType, clientName ->
+////                            viewModel.createQuickCheckUp(islandType, clientName)
+//                        },
+//                        isCreating = uiState.isCreatingCheckUp
+//                    )
+//                }
+
 
                 // In Progress Check-ups
                 item {
@@ -158,8 +165,7 @@ private fun HomeHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top= 20.dp)
-        ,
+            .padding(top = 20.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -192,12 +198,12 @@ private fun HomeHeader(
  * Dashboard stats
  */
 @Composable
-private fun DashboardStatsSection(
-    stats: DashboardStatistics?,
+private fun CheckupStatsSection(
+    stats: DashboardCheckupStatistics?,
     onNavigateToCheckUps: () -> Unit
 ) {
     Text(
-        text = "Panoramica",
+        text = "Check-up",
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.SemiBold
     )
@@ -345,7 +351,7 @@ private fun QuickActionCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Icon(
-                imageVector = islandType.icon,
+                imageVector = islandType.icon(),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp)
             )
@@ -353,7 +359,7 @@ private fun QuickActionCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = islandType.displayName,
+                text = stringResource(islandType.labelResId),
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -403,7 +409,7 @@ private fun QuickCreateDialog(
                     onExpandedChange = { expanded = !expanded }
                 ) {
                     OutlinedTextField(
-                        value = selectedIslandType.displayName,
+                        value = stringResource(selectedIslandType.labelResId),
                         onValueChange = { },
                         readOnly = true,
                         trailingIcon = {
@@ -426,11 +432,11 @@ private fun QuickCreateDialog(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Icon(
-                                            imageVector = islandType.icon,
+                                            imageVector = islandType.icon(),
                                             contentDescription = null,
                                             modifier = Modifier.size(20.dp)
                                         )
-                                        Text(islandType.displayName)
+                                        Text(stringResource(islandType.labelResId))
                                     }
                                 },
                                 onClick = {
@@ -472,7 +478,7 @@ private fun RecentCheckUpsSection(
     onCheckUpClick: (String) -> Unit
 ) {
     Text(
-        text = "Recenti",
+        text = "Check-up Recenti",
         style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.SemiBold
     )
@@ -613,32 +619,38 @@ private fun NavigationActionsSection(
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Client Management - Featured
-        item { NavigationActionCard(
-            title = ClientPkg.title, // "Clienti",
-            description = ClientPkg.description, //"Gestisci aziende",
-            icon = ClientPkg.icon, // Icons.Default.Business,
-            onClick = onNavigateToClients,
-            isHighlighted = true
-        )}
+        item {
+            NavigationActionCard(
+                title = ClientPkg.title, // "Clienti",
+                description = ClientPkg.description, //"Gestisci aziende",
+                icon = ClientPkg.icon, // Icons.Default.Business,
+                onClick = onNavigateToClients,
+                isHighlighted = true
+            )
+        }
 
         // Check-ups Management
-        item {NavigationActionCard(
-            title = "Check-up",
-            description = "Controlli attivi",
-            icon = Icons.AutoMirrored.Filled.Assignment,
-            onClick = onNavigateToCheckUps,
-            isHighlighted = false
-        )}
+        item {
+            NavigationActionCard(
+                title = "Check-up",
+                description = "Controlli attivi",
+                icon = Icons.AutoMirrored.Filled.Assignment,
+                onClick = onNavigateToCheckUps,
+                isHighlighted = false
+            )
+        }
 
         // Tecnical Intervention Management
-        item{NavigationActionCard(
+        item {
+            NavigationActionCard(
 //            modifier = Modifier.weight(1f),
-            title = "Interventi",
-            description = "Interventi tecnici",
-            icon = Icons.Default.Workspaces,
-            onClick = onNavigateToTechnicalInterventions,
-            isHighlighted = false
-        )}
+                title = "Interventi",
+                description = "Interventi tecnici",
+                icon = Icons.Default.Workspaces,
+                onClick = onNavigateToTechnicalInterventions,
+                isHighlighted = false
+            )
+        }
     }
 }
 
@@ -705,6 +717,122 @@ private fun NavigationActionCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+
+@Composable
+private fun CheckupSection(
+    modifier: Modifier = Modifier,
+    title: String,
+    stats: DashboardCheckupStatistics?,
+    onNavigateTo: () -> Unit,
+    onNavigateToCheckUps: () -> Unit
+) {
+    Column(
+        modifier = modifier
+    ) {
+        Column() {
+            // Check-ups Management
+            NavigationActionCard(
+                title = CheckupPkg.title,
+                description = "Controlli attivi",
+                icon = CheckupPkg.icon, // Icons.AutoMirrored.Filled.Assignment,
+                onClick = onNavigateToCheckUps,
+                isHighlighted = false
+            )
+        }
+        Column(
+            modifier = modifier.fillMaxWidth()
+        ) {
+
+        }
+    }
+}
+
+/**
+ * Dashboard stats
+ */
+@Composable
+private fun DashboardCheckupStatsSection(
+    modifier: Modifier = Modifier,
+    title: String,
+    stats: DashboardCheckupStatistics?,
+    onNavigateTo: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Total Check-ups
+        DashboardRowStatCard(
+            modifier = Modifier.weight(1f),
+            title = "Totali",
+            value = stats?.totalCheckUps?.toString() ?: "0",
+            icon = Icons.AutoMirrored.Filled.Assignment,
+            onClick = onNavigateTo
+        )
+
+        // Active Check-ups
+        DashboardRowStatCard(
+            modifier = Modifier.weight(1f),
+            title = "Attivi",
+            value = stats?.activeCheckUps?.toString() ?: "0",
+            icon = Icons.Default.PlayArrow,
+            onClick = onNavigateTo
+        )
+
+        // Completed This Week
+        DashboardRowStatCard(
+            modifier = Modifier.weight(1f),
+            title = "Settimana",
+            value = stats?.completedThisWeek?.toString() ?: "0",
+            icon = Icons.Default.CheckCircle,
+            onClick = onNavigateTo
+        )
+    }
+}
+
+@Composable
+private fun DashboardRowStatCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    value: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+
         }
     }
 }

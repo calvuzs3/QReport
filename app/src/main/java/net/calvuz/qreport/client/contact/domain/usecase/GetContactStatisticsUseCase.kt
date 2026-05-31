@@ -10,7 +10,7 @@ import javax.inject.Inject
 
 /**
  * Use case per calcolare statistiche dettagliate sui contatti di un cliente
- * Utilizzato dal ClientDetailScreen per la scheda Contacts
+ * Utilizzato dal ClientDetailScreen per la scheda ContactsError
  *
  * Usa GetContactsByClientUseCase per seguire i principi Clean Architecture
  *

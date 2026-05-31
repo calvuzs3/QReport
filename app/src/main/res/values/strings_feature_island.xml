@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ======================================================= -->
+    <!-- IslandType labels and descriptions                       -->
+    <!-- ======================================================= -->
+
+    <string name="island_type_poly_move">POLY Move</string>
+    <string name="island_type_poly_move_desc">Sistema robotizzato per movimentazione automatizzata</string>
+    <string name="island_type_poly_cast">POLY Cast</string>
+    <string name="island_type_poly_cast_desc">Sistema robotizzato per casting e lavorazioni di precisione</string>
+    <string name="island_type_poly_ebt">POLY EBT</string>
+    <string name="island_type_poly_ebt_desc">Sistema robotizzato con tecnologia EBT e gestione lance</string>
+    <string name="island_type_poly_tag_ble">POLY Tag BLE</string>
+    <string name="island_type_poly_tag_ble_desc">Sistema robotizzato per etichettatura con tecnologia BLE</string>
+    <string name="island_type_poly_tag_fc">POLY Tag FC</string>
+    <string name="island_type_poly_tag_fc_desc">Sistema robotizzato per etichettatura FC con QR Code</string>
+    <string name="island_type_poly_tag_v">POLY Tag V</string>
+    <string name="island_type_poly_tag_v_desc">Sistema robotizzato per etichettatura con visione artificiale</string>
+    <string name="island_type_poly_sample">POLY Sample</string>
+    <string name="island_type_poly_sample_desc">Sistema robotizzato per campionamento e analisi</string>
+
+    <!-- ======================================================= -->
+    <!-- IslandOperationalStatus labels                           -->
+    <!-- ======================================================= -->
+
+    <string name="island_status_operational">Operativa</string>
+    <string name="island_status_maintenance_due">Manutenzione dovuta</string>
+    <string name="island_status_inactive">Non attiva</string>
+
+    <!-- ======================================================= -->
+    <!-- Island maintenance status text (presentation layer)      -->
+    <!-- ======================================================= -->
+
+    <string name="island_maintenance_inactive">Inattiva</string>
+    <string name="island_maintenance_not_scheduled">Nessuna manutenzione programmata</string>
+    <string name="island_maintenance_days_ahead">Manutenzione tra %1$d giorni</string>
+    <string name="island_maintenance_days_soon">Manutenzione tra %1$d giorni ⚠️</string>
+    <string name="island_maintenance_today">Manutenzione oggi! 🔴</string>
+    <string name="island_maintenance_overdue">Manutenzione in ritardo di %1$d giorni 🔴</string>
+    <string name="island_maintenance_critical">Manutenzione in grave ritardo (%1$d giorni) 🚨</string>
+
+    <!-- ======================================================= -->
+    <!-- MaintenanceStatus labels                                 -->
+    <!-- ======================================================= -->
+
+    <string name="island_maint_status_up_to_date">Aggiornata</string>
+    <string name="island_maint_status_scheduled">Programmata</string>
+    <string name="island_maint_status_due_soon">Imminente</string>
+    <string name="island_maint_status_overdue">Scaduta</string>
+    <string name="island_maint_status_no_history">Nessuna cronologia</string>
+
+    <!-- ======================================================= -->
+    <!-- WarrantyStatus labels                                    -->
+    <!-- ======================================================= -->
+
+    <string name="island_warranty_active">Attiva</string>
+    <string name="island_warranty_expiring_quarter">In scadenza</string>
+    <string name="island_warranty_expiring_soon">Scade presto</string>
+    <string name="island_warranty_expired">Scaduta</string>
+    <string name="island_warranty_no_info">Non specificata</string>
+
+    <!-- ======================================================= -->
+    <!-- Errors — QrError.IslandError                            -->
+    <!-- ======================================================= -->
+
+    <string name="err_island_not_found">Isola non trovata</string>
+    <string name="err_island_load">Errore nel caricamento dell\'isola</string>
+    <string name="err_island_create">Errore durante la creazione dell\'isola</string>
+    <string name="err_island_update">Errore durante l\'aggiornamento dell\'isola</string>
+    <string name="err_island_delete">Errore durante l\'eliminazione dell\'isola</string>
+    <string name="err_island_missing_serial">Il serial number è obbligatorio</string>
+    <string name="err_island_invalid_serial">Serial number non valido (solo lettere, numeri, trattini)</string>
+    <string name="err_island_duplicate_serial">Serial number già esistente</string>
+    <string name="err_island_missing_facility">ID stabilimento obbligatorio</string>
+    <string name="err_island_invalid_field">Dati isola non validi</string>
+    <string name="err_island_invalid_installation_date">Data installazione non valida</string>
+    <string name="err_island_invalid_maintenance_date">Data manutenzione non valida</string>
+    <string name="err_island_invalid_warranty_date">Data garanzia non valida</string>
+    <string name="err_island_facility_not_found">Stabilimento associato non trovato</string>
+    <string name="err_island_already_deleted">Isola già eliminata</string>
+    <string name="err_island_cannot_delete_maintenance">Impossibile eliminare: manutenzione scaduta</string>
+    <string name="err_island_cannot_change_facility">Impossibile cambiare lo stabilimento di un\'isola esistente</string>
+
+
+    <!-- ======================================================= -->
+    <!-- IslandListScreen                                         -->
+    <!-- ======================================================= -->
+
+    <string name="island_screen_list_title">Isole Robotizzate</string>
+    <string name="island_screen_list_action_back">Indietro</string>
+    <string name="island_screen_list_action_sort">Ordinamento</string>
+    <string name="island_screen_list_action_filter">Filtri</string>
+    <string name="island_screen_list_search_placeholder">Cerca per serial, nome, ubicazione…</string>
+    <string name="island_screen_list_fab_new">Nuova Isola</string>
+    <string name="island_screen_list_empty_title">Nessuna Isola</string>
+    <string name="island_screen_list_empty_message">Non ci sono ancora Isole per questo Stabilimento</string>
+    <string name="island_screen_list_empty_filtered_title">Nessun risultato</string>
+    <string name="island_screen_list_empty_filtered_message">Nessuna isola corrisponde al filtro \'%1$s\'</string>
+    <string name="island_screen_list_empty_generic_title">Lista vuota</string>
+    <string name="island_screen_list_empty_generic_message">Errore nel caricamento dati</string>
+    <string name="island_screen_list_empty_action">Nuova Isola</string>
+    <string name="island_screen_list_empty_icon_description">Isole non trovate</string>
+
+    <!-- ======================================================= -->
+    <!-- IslandFormScreen                                         -->
+    <!-- ======================================================= -->
+
+    <string name="island_form_title_create">Nuova Isola</string>
+    <string name="island_form_title_edit">Modifica Isola</string>
+    <string name="island_form_action_back">Indietro</string>
+    <string name="island_form_action_save">Salva</string>
+
+    <string name="island_form_section_basic">Informazioni Base</string>
+    <string name="island_form_section_technical">Informazioni Tecniche</string>
+    <string name="island_form_section_maintenance">Manutenzione</string>
+    <string name="island_form_section_configuration">Configurazione</string>
+    <string name="island_form_section_notes">Note</string>
+
+    <string name="island_form_field_serial">Serial Number *</string>
+    <string name="island_form_field_serial_placeholder">Es. POL-MV-001</string>
+    <string name="island_form_field_type">Tipo Isola *</string>
+    <string name="island_form_field_model">Numero Modello</string>
+    <string name="island_form_field_model_placeholder">Es. POLY-MOVE-2024</string>
+    <string name="island_form_field_custom_name">Nome Personalizzato</string>
+    <string name="island_form_field_custom_name_placeholder">Es. Isola Produzione A</string>
+    <string name="island_form_field_installation_date">Data Installazione</string>
+    <string name="island_form_field_warranty_expiry">Scadenza Garanzia</string>
+    <string name="island_form_field_operating_hours">Ore Operative</string>
+    <string name="island_form_field_cycle_count">Cicli</string>
+    <string name="island_form_field_last_maintenance">Ultima Manutenzione</string>
+    <string name="island_form_field_next_maintenance">Prossima Manutenzione</string>
+    <string name="island_form_option_active_title">Isola Attiva</string>
+    <string name="island_form_option_active_desc">Se disabilitata, l\'isola non apparirà nelle liste operative</string>
+    <string name="island_form_field_notes">Note Aggiuntive</string>
+    <string name="island_form_field_notes_placeholder">Note tecniche, configurazioni speciali, avvertenze…</string>
+    <string name="island_form_field_notes_counter">%1$d/1000 caratteri</string>
+
+    <!-- Form validation errors -->
+    <string name="island_form_error_serial_min_length">Minimo %1$d caratteri</string>
+    <string name="island_form_error_serial_max_length">Massimo %1$d caratteri</string>
+    <string name="island_form_error_model_max_length">Massimo %1$d caratteri</string>
+    <string name="island_form_error_custom_name_max_length">Massimo %1$d caratteri</string>
+    <string name="island_form_error_location_max_length">Massimo %1$d caratteri</string>
+    <string name="island_form_error_notes_max_length">Massimo %1$d caratteri</string>
+    <string name="island_form_error_installation_future">La data di installazione non può essere nel futuro</string>
+    <string name="island_form_error_warranty_before_installation">La scadenza garanzia non può essere precedente all\'installazione</string>
+    <string name="island_form_error_maintenance_future">La data manutenzione non può essere nel futuro</string>
+    <string name="island_form_error_maintenance_before_installation">La manutenzione non può essere precedente all\'installazione</string>
+    <string name="island_form_error_next_before_last">La prossima manutenzione deve essere successiva all\'ultima</string>
+    <string name="island_form_error_numeric">Inserire un numero valido</string>
+    <string name="island_form_error_negative">Il valore non può essere negativo</string>
+
+
+    <!-- ======================================================= -->
+    <!-- IslandDetailScreen & ViewModel                           -->
+    <!-- ======================================================= -->
+
+    <string name="island_detail_title_fallback">Isola</string>
+    <string name="island_detail_action_back">Indietro</string>
+    <string name="island_detail_action_edit">Modifica isola</string>
+    <string name="island_detail_action_delete">Elimina isola</string>
+    <string name="island_detail_action_maintenance">Manutenzione</string>
+    <string name="island_detail_action_more">Altre azioni</string>
+    <string name="island_detail_action_refresh">Aggiorna</string>
+    <string name="island_detail_menu_record_maintenance">Registra Manutenzione</string>
+    <string name="island_detail_loading">Caricamento dettagli isola…</string>
+    <string name="island_detail_object_name">isola</string>
+    <string name="island_detail_empty_title">Nessuna Isola</string>
+    <string name="island_detail_empty_message">Aggiungi nuova Isola</string>
+
+    <string name="island_detail_tab_units">Unità</string>
+    <string name="island_detail_tab_maintenance">Manutenzione</string>
+    <string name="island_detail_tab_info">Informazioni</string>
+
+    <!-- IslandBasicInfoCard -->
+    <string name="island_detail_info_card_general">Informazioni Generali</string>
+    <string name="island_detail_info_field_serial">Serial Number</string>
+    <string name="island_detail_info_field_type">Tipo Isola</string>
+    <string name="island_detail_info_field_custom_name">Nome Personalizzato</string>
+    <string name="island_detail_info_field_model">Numero Modello</string>
+    <string name="island_detail_info_field_location">Ubicazione</string>
+    <string name="island_detail_info_field_installation">Data Installazione</string>
+    <string name="island_detail_info_field_notes">Note</string>
+
+    <!-- MaintenanceTabContent -->
+    <string name="island_maintenance_status_title">Stato Manutenzione</string>
+    <string name="island_maintenance_urgent">Urgente</string>
+    <string name="island_maintenance_register">Registra</string>
+    <string name="island_maintenance_last_date">Ultima Manutenzione</string>
+    <string name="island_maintenance_next_date">Prossima Programmata</string>
+
+    <!-- WarrantyStatusCard -->
+    <string name="island_warranty_title">Stato Garanzia</string>
+    <string name="island_warranty_expiry_label">Scadenza Garanzia</string>
+    <string name="island_warranty_days_remaining_label">Giorni Rimanenti</string>
+    <string name="island_warranty_days_remaining_value">%1$d giorni</string>
+    <string name="island_warranty_not_available">Nessuna informazione sulla garanzia disponibile</string>
+
+    <!-- IslandStatisticsHeader -->
+    <string name="island_stats_header_title">Riepilogo Isole</string>
+    <string name="island_stats_total">Totali</string>
+    <string name="island_stats_active">Attive</string>
+    <string name="island_stats_maintenance">Manutenzione</string>
+    <string name="island_stats_warranty">In Garanzia</string>
+    <string name="island_stats_total_hours">Ore Totali: %1$dh</string>
+    <string name="island_stats_avg_hours">Media: %1$dh per isola</string>
+    <string name="island_stats_cycles">Cicli: %1$s</string>
+    <string name="island_stats_global_performance">Performance globale</string>
+
+    <!-- MaintenanceDialog -->
+    <string name="maintenance_dialog_title">Registra Manutenzione</string>
+    <string name="maintenance_dialog_message">Confermi di aver completato la manutenzione dell\'isola %1$s?</string>
+    <string name="maintenance_dialog_reset_hours">Resetta ore operative</string>
+    <string name="maintenance_dialog_notes_label">Note (opzionale)</string>
+    <string name="maintenance_dialog_confirm">Conferma</string>
+
+    <!-- UnitsTabContent -->
+    <string name="island_units_tab_title">Unità (%1$d)</string>
+    <string name="island_units_view_all">Vedi tutti</string>
+    <string name="island_units_new">Nuova Unità</string>
+    <string name="island_units_empty_title">Nessuna unità meccanica</string>
+    <string name="island_units_empty_message">Aggiungi robot, assi, rack e altri componenti dell\'isola</string>
+    <string name="island_units_empty_icon_description">Unità meccaniche</string>
+    <string name="island_units_object_name">unità meccanica</string>
+
+    <!-- IslandOption sentinel -->
+    <string name="island_option_all">Tutte le Isole</string>
+
+    <!-- Error strings -->
+    <string name="err_island_detail_invalid_id">ID isola non valido</string>
+    <string name="err_island_detail_load">Errore caricamento isola</string>
+    <string name="err_island_detail_stats">Statistiche non disponibili</string>
+    <string name="err_island_detail_delete">Errore eliminazione isola</string>
+    <string name="err_island_detail_maintenance">Errore aggiornamento manutenzione</string>
+    <string name="err_island_detail_unit_delete">Errore eliminazione unità</string>
+
+    <!-- Shared actions -->
+<!--    <string name="action_dismiss">Chiudi</string>-->
+<!--    <string name="action_cancel">Annulla</string>-->
+<!--    <string name="action_edit">Modifica</string>-->
+<!--    <string name="action_delete">Elimina</string>-->
+<!--    <string name="action_save">Salva</string>-->
+
+</resources>

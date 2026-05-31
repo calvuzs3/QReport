@@ -154,9 +154,9 @@ class DatabaseExporter @Inject constructor(
             Timber.i(buildString {
                 append("Breakdown: CheckUps=${checkUps.size}, CheckItems=${checkItems.size}, ")
                 append("Photos=${photos.size}, SpareParts=${spareParts.size}, ")
-                append("Clients=${clients.size}, Contacts=${contacts.size}, ")
-                append("Contracts=${contracts.size}, ")
-                append("Facilities=${facilities.size}, Islands=${facilityIslands.size}, ")
+                append("Clients=${clients.size}, ContactsError=${contacts.size}, ")
+                append("ContractsError=${contracts.size}, ")
+                append("FacilityError=${facilities.size}, Islands=${facilityIslands.size}, ")
                 append("Associations=${associations.size}")
                 append("TechnicalInterventions=${technicalInterventions.size}, ")
             })

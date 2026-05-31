@@ -144,7 +144,7 @@ class ContractListViewModel @Inject constructor(
                         }
                     }
             } catch (_: CancellationException) {
-                Timber.d("Contacts loading cancelled")
+                Timber.d("ContactsError loading cancelled")
             } catch (e: Exception) {
                 Timber.e(e, "Exception loading contracts")
                 _uiState.value = _uiState.value.copy(
@@ -194,7 +194,7 @@ class ContractListViewModel @Inject constructor(
                                 error = null
                             )
 
-                            Timber.d("Contracts refresh completed successfully")
+                            Timber.d("ContractsError refresh completed successfully")
                         }
                     }
 

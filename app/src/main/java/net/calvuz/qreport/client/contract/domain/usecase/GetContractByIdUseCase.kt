@@ -14,7 +14,7 @@ class GetContractByIdUseCase @Inject constructor(
     suspend operator fun invoke(contractId: String): QrResult<Contract, QrError> {
         return try {
             if (contractId.isBlank()) {
-                return QrResult.Error(QrError.Contracts.ContractIdEmpty(null))
+                return QrResult.Error(QrError.ContractsError.ContractIdEmpty(null))
             }
 
             when (val result = repo.getContractById(contractId)) {
@@ -23,7 +23,7 @@ class GetContractByIdUseCase @Inject constructor(
                         QrResult.Success(result.data)
                     } else {
                         Timber.w("Contatto non trovato {id=$contractId}")
-                        QrResult.Error(QrError.Contracts.ContractNotFound("Contatto non trovato"))
+                        QrResult.Error(QrError.ContractsError.ContractNotFound("Contatto non trovato"))
                     }
 
                 }
@@ -34,7 +34,7 @@ class GetContractByIdUseCase @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Errore in getContractById {id=$contractId}")
-            QrResult.Error(QrError.Contracts.ContractNotFound(e.message))
+            QrResult.Error(QrError.ContractsError.ContractNotFound(e.message))
         }
     }
 }

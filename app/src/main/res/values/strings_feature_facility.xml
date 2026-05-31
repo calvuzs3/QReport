@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ======================================================= -->
+    <!-- FacilityType labels and descriptions                     -->
+    <!-- ======================================================= -->
+
+    <string name="facility_type_production">Produzione</string>
+    <string name="facility_type_production_desc">Stabilimento produttivo principale</string>
+    <string name="facility_type_warehouse">Magazzino</string>
+    <string name="facility_type_warehouse_desc">Deposito e stoccaggio merci</string>
+    <string name="facility_type_assembly">Assemblaggio</string>
+    <string name="facility_type_assembly_desc">Linea di assemblaggio e montaggio</string>
+    <string name="facility_type_testing">Test e Collaudi</string>
+    <string name="facility_type_testing_desc">Laboratorio prove e certificazioni</string>
+    <string name="facility_type_logistics">Logistica</string>
+    <string name="facility_type_logistics_desc">Hub distributivo e spedizioni</string>
+    <string name="facility_type_office">Uffici</string>
+    <string name="facility_type_office_desc">Sede amministrativa e direzionale</string>
+    <string name="facility_type_maintenance">Manutenzione</string>
+    <string name="facility_type_maintenance_desc">Centro assistenza e riparazioni</string>
+    <string name="facility_type_r_and_d">Ricerca e Sviluppo</string>
+    <string name="facility_type_r_and_d_desc">Laboratorio ricerca e prototipazione</string>
+    <string name="facility_type_other">Altro</string>
+    <string name="facility_type_other_desc">Tipologia personalizzata</string>
+
+    <!-- ======================================================= -->
+    <!-- Errors — QrError.FacilityError                          -->
+    <!-- ======================================================= -->
+
+    <string name="err_facility_not_found">Stabilimento non trovato</string>
+    <string name="err_facility_load">Errore nel caricamento dello stabilimento</string>
+    <string name="err_facility_create">Errore durante la creazione dello stabilimento</string>
+    <string name="err_facility_create_duplicate_name">Nome stabilimento già esistente per questo cliente</string>
+    <string name="err_facility_update">Errore durante l\'aggiornamento dello stabilimento</string>
+    <string name="err_facility_delete">Errore durante l\'eliminazione dello stabilimento</string>
+    <string name="err_facility_missing_name">Il nome dello stabilimento è obbligatorio</string>
+    <string name="err_facility_client_not_found">Cliente associato non trovato</string>
+    <string name="err_facility_cannot_delete_last">Impossibile eliminare l\'unico stabilimento attivo del cliente</string>
+    <string name="err_facility_cannot_delete_has_islands">Impossibile eliminare lo stabilimento: ha isole attive associate</string>
+
+    <!-- ======================================================= -->
+    <!-- FacilityListScreen                                       -->
+    <!-- ======================================================= -->
+
+    <string name="facility_screen_list_title">Stabilimenti</string>
+    <string name="facility_screen_list_action_back">Indietro</string>
+    <string name="facility_screen_list_action_sort">Ordinamento</string>
+    <string name="facility_screen_list_action_filter">Filtri</string>
+    <string name="facility_screen_list_search_placeholder">Cerca per nome, codice…</string>
+    <string name="facility_screen_list_fab_new">Nuovo Stabilimento</string>
+    <string name="facility_screen_list_empty_title">Nessuno Stabilimento</string>
+    <string name="facility_screen_list_empty_message">Non ci sono ancora Stabilimenti per questo Cliente</string>
+    <string name="facility_screen_list_empty_filtered_title">Nessun risultato</string>
+    <string name="facility_screen_list_empty_filtered_message">Nessuno stabilimento corrisponde al filtro \'%1$s\'</string>
+    <string name="facility_screen_list_empty_generic_title">Lista vuota</string>
+    <string name="facility_screen_list_empty_generic_message">Errore nel caricamento dati</string>
+    <string name="facility_screen_list_empty_action">Nuovo Stabilimento</string>
+    <string name="facility_screen_list_empty_icon_description">Nessuno stabilimento</string>
+
+    <!-- ======================================================= -->
+    <!-- FacilityFormScreen                                       -->
+    <!-- ======================================================= -->
+
+    <string name="facility_form_title_create">Nuovo Stabilimento</string>
+    <string name="facility_form_title_edit">Modifica Stabilimento</string>
+    <string name="facility_form_action_back">Indietro</string>
+    <string name="facility_form_action_save">Salva</string>
+    <string name="facility_form_field_name">Nome Stabilimento *</string>
+    <string name="facility_form_field_name_placeholder">Es. Stabilimento Principale</string>
+    <string name="facility_form_field_code">Codice Interno</string>
+    <string name="facility_form_field_code_placeholder">Es. FAB01</string>
+    <string name="facility_form_field_notes">Note</string>
+    <string name="facility_form_field_notes_placeholder">note aggiuntive…</string>
+    <string name="facility_form_field_type">Tipo Stabilimento *</string>
+    <string name="facility_form_section_options">Opzioni</string>
+    <string name="facility_form_option_primary_title">Stabilimento Primario</string>
+    <string name="facility_form_option_primary_desc">Imposta come stabilimento principale per il cliente</string>
+    <string name="facility_form_button_save_text">Salva</string>
+    <string name="facility_form_error_name_required">Il nome dello stabilimento è obbligatorio</string>
+    <string name="facility_form_error_name_min_length">Minimo %1$d caratteri</string>
+    <string name="facility_form_error_name_max_length">Massimo %1$d caratteri</string>
+    <string name="facility_form_error_code_max_length">Massimo %1$d caratteri</string>
+
+    <!-- ======================================================= -->
+    <!-- FacilityDetailScreen                                     -->
+    <!-- ======================================================= -->
+
+    <string name="facility_detail_action_back">Indietro</string>
+    <string name="facility_detail_action_edit">Modifica stabilimento</string>
+    <string name="facility_detail_action_delete">Elimina stabilimento</string>
+    <string name="facility_detail_action_refresh">Aggiorna</string>
+    <string name="facility_detail_title_fallback">Stabilimento</string>
+
+    <string name="facility_detail_delete_dialog_title">Elimina Stabilimento</string>
+    <string name="facility_detail_delete_dialog_message">Sei sicuro di voler eliminare lo stabilimento? Questa azione non può essere annullata.</string>
+    <string name="facility_detail_delete_dialog_confirm">Elimina</string>
+    <string name="facility_detail_delete_dialog_cancel">Annulla</string>
+
+    <string name="facility_detail_tab_islands">Isole</string>
+    <string name="facility_detail_tab_maintenance">Manutenzione</string>
+    <string name="facility_detail_tab_info">Informazioni</string>
+
+    <string name="facility_detail_empty_title">Nessuna Isola</string>
+    <string name="facility_detail_empty_message">Non ci sono ancora isole per questo stabilimento</string>
+    <string name="facility_detail_empty_filtered_title">Nessun risultato</string>
+    <string name="facility_detail_empty_filtered_message">Nessuna isola corrisponde al filtro \'%1$s\'</string>
+    <string name="facility_detail_empty_action">Nuova Isola</string>
+    <string name="facility_detail_empty_icon_description">Isole robotizzate</string>
+    <string name="facility_detail_fab_new_island">Aggiungi Isola</string>
+
+    <!-- Island filter display names -->
+    <string name="island_filter_all">Tutte</string>
+    <string name="island_filter_active">Attive</string>
+    <string name="island_filter_inactive">Inattive</string>
+    <string name="island_filter_needs_maintenance">Da manutenere</string>
+    <string name="island_filter_under_warranty">In garanzia</string>
+    <string name="island_filter_by_type">Per tipo</string>
+
+    <!-- Island delete dialog -->
+    <string name="island_delete_dialog_title">Elimina Isola</string>
+    <string name="island_delete_dialog_message">Sei sicuro di voler eliminare l\'isola \'%1$s\'? Questa operazione non può essere annullata.</string>
+    <string name="island_delete_dialog_confirm">Elimina</string>
+    <string name="island_delete_dialog_cancel">Annulla</string>
+
+    <!-- Maintenance -->
+    <string name="facility_detail_maintenance_complete">Completata</string>
+    <string name="facility_detail_maintenance_expiry">Scadenza: %1$s</string>
+    <string name="facility_detail_maintenance_not_scheduled">Non programmata</string>
+    <string name="facility_detail_warranty_expiry">Scadenza garanzia: %1$s</string>
+    <string name="facility_detail_warranty_not_set">Non specificata</string>
+
+    <!-- Info tab -->
+    <string name="facility_detail_info_card_general">Informazioni Generali</string>
+    <string name="facility_detail_info_card_address">Indirizzo</string>
+    <string name="facility_detail_info_card_metadata">Metadati</string>
+    <string name="facility_detail_info_field_name">Nome</string>
+    <string name="facility_detail_info_field_code">Codice</string>
+    <string name="facility_detail_info_field_type">Tipo</string>
+    <string name="facility_detail_info_field_notes">Note</string>
+    <string name="facility_detail_info_field_address">Indirizzo</string>
+    <string name="facility_detail_info_field_created">Creato</string>
+    <string name="facility_detail_info_field_updated">Ultima modifica</string>
+    <string name="facility_detail_info_field_status">Stato</string>
+    <string name="facility_detail_info_status_active">Attivo</string>
+    <string name="facility_detail_info_status_inactive">Inattivo</string>
+    <string name="facility_detail_info_field_primary">Stabilimento primario</string>
+    <string name="facility_detail_info_primary_yes">Sì</string>
+    <string name="facility_detail_info_primary_no">No</string>
+
+    <!-- FacilityCard -->
+    <string name="facility_card_action_edit">Modifica stabilimento</string>
+    <string name="facility_card_action_delete">Elimina stabilimento</string>
+    <string name="facility_card_action_open_maps">Apri in Mappe</string>
+    <string name="facility_card_primary_badge">Primario</string>
+    <string name="facility_card_stat_islands">Isole</string>
+    <string name="facility_card_stat_active">Attive</string>
+    <string name="facility_card_stat_maintenance">Manutenzione</string>
+    <string name="facility_card_status_active">Attivo</string>
+    <string name="facility_card_status_inactive">Inattivo</string>
+    <string name="facility_card_delete_dialog_title">Elimina Stabilimento</string>
+    <string name="facility_card_delete_dialog_message">Sei sicuro di voler eliminare lo stabilimento \'%1$s\'? Questa operazione eliminerà anche tutte le isole associate e non può essere annullata.</string>
+    <string name="facility_card_delete_dialog_confirm">Elimina</string>
+    <string name="facility_card_delete_dialog_cancel">Annulla</string>
+
+    <!-- Timestamp -->
+    <string name="facility_time_now">Ora</string>
+    <string name="facility_time_minutes_ago">%1$d min fa</string>
+    <string name="facility_time_hours_ago">%1$dh fa</string>
+    <string name="facility_time_days_ago">%1$d giorni fa</string>
+
+    <!-- Error messages (ViewModel) -->
+    <string name="err_facility_detail_invalid_id">ID stabilimento non valido</string>
+    <string name="err_facility_detail_load">Errore caricamento stabilimento</string>
+    <string name="err_facility_detail_delete">Errore eliminazione stabilimento</string>
+    <string name="err_facility_detail_island_delete">Errore eliminazione isola</string>
+    <string name="err_facility_detail_maintenance">Errore aggiornamento manutenzione</string>
+    <string name="err_facility_detail_unexpected">Errore imprevisto</string>
+
+    <!-- ======================================================= -->
+    <!-- FacilityOption sentinel                                  -->
+    <!-- ======================================================= -->
+
+    <string name="facility_option_all">Tutti gli Stabilimenti</string>
+
+    <!-- ======================================================= -->
+    <!-- FacilityStatisticsSummary                                -->
+    <!-- ======================================================= -->
+
+    <string name="facility_stat_facilities">Stabilimenti</string>
+    <string name="facility_stat_islands_total">Isole Totali</string>
+    <string name="facility_stat_islands_active">Isole Attive</string>
+
+</resources>

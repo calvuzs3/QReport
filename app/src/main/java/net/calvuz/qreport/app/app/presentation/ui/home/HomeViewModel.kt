@@ -5,18 +5,26 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardCheckupData
+import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardCheckupStatistics
 import net.calvuz.qreport.checkup.domain.model.CheckUp
-import net.calvuz.qreport.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.domain.usecase.CreateCheckUpUseCase
 import net.calvuz.qreport.checkup.domain.usecase.GetCheckUpsUseCase
-import net.calvuz.qreport.client.client.domain.model.ClientInfo
-import net.calvuz.qreport.client.island.domain.model.IslandInfo
-import net.calvuz.qreport.client.island.domain.model.IslandType
-import net.calvuz.qreport.settings.domain.model.TechnicianInfo
 import timber.log.Timber
 import javax.inject.Inject
+
+data class HomeUiState(
+    val isLoading: Boolean = false,
+    val isCreatingCheckUp: Boolean = false,
+    val checkupStats: DashboardCheckupStatistics? = null,
+    val recentCheckUps: List<CheckUp> = emptyList(),
+    val inProgressCheckUps: List<CheckUp> = emptyList(),
+    val selectedCheckUpId: String? = null,
+    val quickCreatedCheckUpId: String? = null,
+    val showQuickCreateSuccess: Boolean = false,
+    val error: String? = null
+)
 
 /**
  * ViewModel per la Home Screen
@@ -61,52 +69,6 @@ class HomeViewModel @Inject constructor(
     fun refresh() {
         Timber.d("Refreshing dashboard data")
         loadDashboardData()
-    }
-
-    /**
-     * Quick action: Crea nuovo check-up
-     */
-    fun createQuickCheckUp(islandType: IslandType, clientName: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isCreatingCheckUp = true)
-
-            try {
-                // Header basic per quick creation
-                val quickHeader = createQuickHeader(clientName)
-
-                val result = createCheckUpUseCase(
-                    header = quickHeader,
-                    islandType = islandType,
-                    includeTemplateItems = true
-                )
-
-                result.fold(
-                    onSuccess = { checkUpId ->
-                        Timber.d("Quick check-up created: $checkUpId")
-                        _uiState.value = _uiState.value.copy(
-                            isCreatingCheckUp = false,
-                            quickCreatedCheckUpId = checkUpId,
-                            showQuickCreateSuccess = true
-                        )
-                        // Refresh data to show new check-up
-                        loadDashboardData()
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to create quick check-up")
-                        _uiState.value = _uiState.value.copy(
-                            isCreatingCheckUp = false,
-                            error = "Errore creazione check-up: ${error.message}"
-                        )
-                    }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception during quick check-up creation")
-                _uiState.value = _uiState.value.copy(
-                    isCreatingCheckUp = false,
-                    error = "Errore imprevisto: ${e.message}"
-                )
-            }
-        }
     }
 
     /**
@@ -159,7 +121,7 @@ class HomeViewModel @Inject constructor(
                     loadDraftCheckUps(),
                     loadCompletedCheckUps()
                 ) { recent, inProgress, drafts, completed ->
-                    DashboardData(
+                    DashboardCheckupData(
                         recentCheckUps = recent,
                         inProgressCheckUps = inProgress,
                         draftCheckUps = drafts,
@@ -172,7 +134,7 @@ class HomeViewModel @Inject constructor(
                     val activeCheckUps = dashboardData.inProgressCheckUps.size + dashboardData.draftCheckUps.size
                     val completedThisWeek = dashboardData.completedCheckUps.take(10).size // Approximation
 
-                    val stats = DashboardStatistics(
+                    val stats = DashboardCheckupStatistics(
                         totalCheckUps = totalCheckUps,
                         activeCheckUps = activeCheckUps,
                         completedThisWeek = completedThisWeek,
@@ -181,7 +143,7 @@ class HomeViewModel @Inject constructor(
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        dashboardStats = stats,
+                        checkupStats = stats,
                         recentCheckUps = dashboardData.recentCheckUps,
                         inProgressCheckUps = dashboardData.inProgressCheckUps,
                         error = null
@@ -198,7 +160,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private suspend fun loadRecentCheckUps(): Flow<List<CheckUp>> {
+    private fun loadRecentCheckUps(): Flow<List<CheckUp>> {
         return getCheckUpsUseCase()
             .map { checkUps -> checkUps.take(5) } // Most recent 5
             .catch { e ->
@@ -207,7 +169,7 @@ class HomeViewModel @Inject constructor(
             }
     }
 
-    private suspend fun loadInProgressCheckUps(): Flow<List<CheckUp>> {
+    private fun loadInProgressCheckUps(): Flow<List<CheckUp>> {
         return getCheckUpsUseCase(status = CheckUpStatus.IN_PROGRESS)
             .catch { e ->
                 Timber.e(e, "Failed to load in-progress check-ups")
@@ -215,7 +177,7 @@ class HomeViewModel @Inject constructor(
             }
     }
 
-    private suspend fun loadDraftCheckUps(): Flow<List<CheckUp>> {
+    private fun loadDraftCheckUps(): Flow<List<CheckUp>> {
         return getCheckUpsUseCase(status = CheckUpStatus.DRAFT)
             .catch { e ->
                 Timber.e(e, "Failed to load draft check-ups")
@@ -223,44 +185,11 @@ class HomeViewModel @Inject constructor(
             }
     }
 
-    private suspend fun loadCompletedCheckUps(): Flow<List<CheckUp>> {
+    private fun loadCompletedCheckUps(): Flow<List<CheckUp>> {
         return getCheckUpsUseCase(status = CheckUpStatus.COMPLETED)
             .catch { e ->
                 Timber.e(e, "Failed to load completed check-ups")
                 emit(emptyList())
             }
-    }
-
-    /**
-     * Crea header rapido per quick actions
-     */
-    private fun createQuickHeader(clientName: String): CheckUpHeader {
-        return CheckUpHeader(
-            clientInfo = ClientInfo(
-                companyName = clientName,
-                contactPerson = "",
-                site = "",
-                address = "",
-                phone = "",
-                email = ""
-            ),
-            islandInfo = IslandInfo(
-                serialNumber = "",
-                model = "",
-                installationDate = "",
-                lastMaintenanceDate = "",
-                operatingHours = 0,
-                cycleCount = 0L
-            ),
-            technicianInfo = TechnicianInfo(
-                name = "",
-                company = "QReport",
-                certification = "",
-                phone = "",
-                email = ""
-            ),
-            checkUpDate = Clock.System.now(),
-            notes = "Check-up creato tramite quick action"
-        )
     }
 }
