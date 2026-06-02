@@ -5,7 +5,8 @@ import net.calvuz.qreport.ti.domain.model.InterventionStatus
 interface QrError {
 
     sealed interface SystemError : QrError {
-        data class Unknown(val exception: Exception? = null) : SystemError
+        data class UnknownError(val exception: Exception? = null) : SystemError
+        data class ExceptionError(val exception: Exception? = null) : SystemError
     }
 
     sealed interface InterventionError : QrError {
@@ -83,10 +84,12 @@ interface QrError {
     }
 
     sealed interface ValidationError : QrError {
+        data class IdsDoesntMatch(val message :String? = null): ValidationError
         data class EmptyField(val message: String? = null) : ValidationError
         data class IsNotActive(val message: String? = null) : ValidationError
         data class IsNotPrimary(val message: String? = null) : ValidationError
-        data class DuplicateEntry(val message: String? = null) : ValidationError
+        data class EmailAlreadyTaken(val message: String? = null) : ValidationError
+        data class PhoneAlreadyTaken(val message: String? = null) : ValidationError
         data class InvalidOperation(val e: QrError? = null) : ValidationError
 
     }
@@ -103,46 +106,100 @@ interface QrError {
 
         // ── Validation ───────────────────────────────────────────────────────
 
+        /** Company name is missing */
         data class MissingCompanyName(val message: String? = null) : ClientError
+
+        /** Company name is too short (< 2) or too long (> 255 characters). */
+        data class InvalidCompanyName(val message: String? = null) : ClientError
 
         // ── Business rules ───────────────────────────────────────────────────
 
         /** Client still owns active facilities; deactivate them before deleting. */
         data class CannotDeleteHasActiveFacilities(val message: String? = null) : ClientError
+        data class CannotDeleteHasDependencies(
+            val facilitiesCount: Int = 0,
+            val contactsCount: Int = 0,
+            val contractsCount: Int = 0,
+            val islandsCount: Int = 0
+        ) : ClientError
     }
 
 
     sealed interface ContractsError : QrError {
-        data class ClientIdEmpty(val message: String?) : ContractsError
-        data class ClientNotFound(val message: String?) : ContractsError
-        data class ContractIdEmpty(val message: String?) : ContractsError
-        data class ContractNotFound(val message: String?) : ContractsError
-        data class DeleteError(val exception: Exception) : ContractsError
 
+        // ── CRUD ─────────────────────────────────────────────────────────────
+
+        data class LoadError(val message: String? = null) : ContractsError
+        data class NotFound(val message: String? = null) : ContractsError
+        data class CreateError(val message: String? = null) : ContractsError
+        data class UpdateError(val message: String? = null) : ContractsError
+        data class DeleteError(val message: String? = null) : ContractsError
+
+        // ── Business rules ───────────────────────────────────────────────────
+
+        data class MissingClientId(val message: String? = null) : ContractsError
+        data class MissingContractId(val message: String? = null) : ContractsError
+        data class ClientNotFound(val message: String? = null) : ContractsError
     }
 
     sealed interface ContactsError : QrError {
+        // ── CRUD ─────────────────────────────────────────────────────────────
+
+        data class LoadError(val message: String? = null) : ContactsError
+        data class NotFound(val message: String? = null) : ContactsError
+        data class CreateError(val message: String? = null) : ContactsError
+        data class UpdateError(val message: String? = null) : ContactsError
+        data class DeleteError(val message: String? = null) : ContactsError
+
+        // ── Business rules ───────────────────────────────────────────────────
+
+        data class MissingClientId(val message: String? = null) : ContactsError
+        data class MissingContactId(val message: String? = null) : ContactsError
+        data class ClientNotFound(val message: String? = null) : ContactsError
+        data class UnknownContactMethodOnDB(val message: String? = null) : ContactsError
+        data class ContactIsNotActive(val message: String? = null) : ContactsError
+        data class ContactDoesntBelongToClient(val message: String? = null) : ContactsError
+        data class IsNotPrimary(val message: String? = null) : ContactsError
+        data class CannotChangeClientAssociation(val message: String? = null) : ContactsError
+        data class CannotRemovePrimaryFlag(val message: String? = null) : ContactsError
+
         sealed interface ValidationError : ContactsError {
-            data class IdClientMandatory(val message: String? = null) : ValidationError
-            data class IdContractMandatory(val message: String? = null) : ValidationError
-            data class IdMandatory(val message: String? = null) : ValidationError
-            object CannotChangeClientAssociation : ValidationError
-            object CannotRemovePrimaryFlag : ValidationError
-            object IsNotPrimary : ValidationError
-            object ContactDoesntBelongToClient : ValidationError
+            data class InvalidContactNameLength(val message: String? = null) : ValidationError
+            data class InvalidContactLastNameLength(val message: String? = null) : ValidationError
+            data class InvalidEmail(val message: String? = null) : ValidationError
+            data class InvalidPhone(val message: String? = null) : ValidationError
+            data class InvalidMobile(val message: String? = null) : ValidationError
+            data class InvalidTitleLength(val message: String? = null) : ValidationError
+            data class InvalidRoleLength(val message: String? = null) : ValidationError
+            data class InvalidDepartmentLength(val message: String? = null) : ValidationError
+            data class InvalidContactInfo(val message: String? = null) : ValidationError
+            data class InvalidIdClient(val message: String? = null) : ValidationError
         }
     }
 
-    sealed interface FacilityError: QrError {
-        data class NotFound(val message: String? = null): FacilityError
-        data class LoadError(val message: String? = null): FacilityError
-        data class CreateError(val message: String? = null): FacilityError
-        data class UpdateError(val message: String? = null): FacilityError
-        data class DeleteError(val message: String? = null): FacilityError
-        data class MissingName(val message: String? = null): FacilityError
-        data class ClientNotFound(val message: String? = null): FacilityError
+    sealed interface FacilityError : QrError {
+
+        // ── CRUD ─────────────────────────────────────────────────────────────────
+
+        data class NotFound(val message: String? = null) : FacilityError
+        data class LoadError(val message: String? = null) : FacilityError
+        data class CreateError(val message: String? = null) : FacilityError
+        data class UpdateError(val message: String? = null) : FacilityError
+        data class DeleteError(val message: String? = null) : FacilityError
+
+        // ── Validation ───────────────────────────────────────────────────────────
+
+        data class MissingName(val message: String? = null) : FacilityError
+        data class MissingClientId(val message: String? = null) : FacilityError
+
+        // ── Business rules ───────────────────────────────────────────────────────
+
         data class CannotDeleteLastFacility(val message: String? = null): FacilityError
         data class CannotDeleteHasActiveIslands(val message: String? = null): FacilityError
+
+        sealed interface ValidationError : FacilityError {
+            data class InvalidFacilityNameLength(val message: String? = null): ValidationError
+        }
     }
 
 
@@ -159,16 +216,24 @@ interface QrError {
         // ── Validation ───────────────────────────────────────────────────────────
 
         data class MissingSerialNumber(val message: String? = null) : IslandError
-        data class InvalidSerialNumber(val message: String? = null) : IslandError
-        data class DuplicateSerialNumber(val message: String? = null) : IslandError
         data class MissingFacilityId(val message: String? = null) : IslandError
         data class InvalidField(val message: String? = null) : IslandError
+        data class InvalidQueryLength(val message: String? = null): IslandError
 
-        // ── Date validation ──────────────────────────────────────────────────────
-
-        data class InvalidInstallationDate(val message: String? = null) : IslandError
-        data class InvalidMaintenanceDate(val message: String? = null) : IslandError
-        data class InvalidWarrantyDate(val message: String? = null) : IslandError
+        sealed interface ValidationError : IslandError {
+            data class DuplicateSerialNumber(val message: String? = null) : IslandError
+            data class InvalidModelNumber(val message: String? = null) : IslandError
+            data class InvalidCommissioningNumber(val message: String? = null) : IslandError
+            data class InvalidSerialNumber(val message: String? = null) : IslandError
+            data class InvalidSerialNumberLength(val message: String? = null) : IslandError
+            data class InvalidCustomNameLength(val message: String? = null) : IslandError
+            data class InvalidLocationLength(val message: String? = null) : IslandError
+            data class InvalidOperatingHours(val message: String? = null) : IslandError
+            data class InvalidCycleCount(val message: String? = null) : IslandError
+            data class InvalidInstallationDate(val message: String? = null) : IslandError
+            data class InvalidMaintenanceDate(val message: String? = null) : IslandError
+            data class InvalidWarrantyDate(val message: String? = null) : IslandError
+        }
 
         // ── Business rules ───────────────────────────────────────────────────────
 
@@ -184,6 +249,30 @@ interface QrError {
         data class CannotChangeFacility(val message: String? = null) : IslandError
     }
 
+    sealed interface UnitError : QrError {
+
+        // ── CRUD ─────────────────────────────────────────────────────────────────
+
+        data class LoadError(val message: String? = null) : UnitError
+        data class NotFound(val message: String? = null) : UnitError
+        data class CreateError(val message: String? = null) : UnitError
+        data class UpdateError(val message: String? = null) : UnitError
+        data class DeleteError(val message: String? = null) : UnitError
+
+        // ── Validation ───────────────────────────────────────────────────────────
+
+        data class MissingName(val message: String? = null) : UnitError
+        data class InvalidField(val message: String? = null) : UnitError
+
+        // ── Business rules ───────────────────────────────────────────────────────
+
+        /** Unit already deleted or inactive. */
+        data class AlreadyDeleted(val message: String? = null) : UnitError
+
+        /** Parent island not found or inactive. */
+        data class IslandNotFound(val message: String? = null) : UnitError
+    }
+
     sealed interface DatabaseError : QrError {
         data class OperationFailed(val message: String? = null) : DatabaseError
         data class InsertFailed(val message: String? = null) : DatabaseError
@@ -192,7 +281,7 @@ interface QrError {
         data class NotFound(val message: String? = null) : DatabaseError
     }
 
-    sealed interface Export: QrError{
+    sealed interface Export : QrError {
         sealed interface Validation : Export {
             object CannotExportDraft : Validation
         }
@@ -523,7 +612,6 @@ interface QrError {
         STATS_CALCULATION,         // Failed to calculate backup stats
         SUMMARY_GENERATION         // Failed to generate backup summary
     }
-
 
 
     enum class File : QrError {

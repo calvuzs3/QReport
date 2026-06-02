@@ -1,6 +1,5 @@
 package net.calvuz.qreport.client.client.presentation.ui
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -25,10 +23,10 @@ import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.EmptyTabContent
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
-import net.calvuz.qreport.app.util.callContact
 import net.calvuz.qreport.client.client.presentation.model.ClientWithDetails
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
+import net.calvuz.qreport.client.contact.presentation.ui.components.ContactCard
 import net.calvuz.qreport.client.contact.presentation.ui.components.ContactsStatisticsSummary
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.model.ContractStatistics
@@ -36,8 +34,9 @@ import net.calvuz.qreport.client.contract.presentation.ui.components.ContractLis
 import net.calvuz.qreport.client.contract.presentation.ui.components.ContractsStatisticsSummary
 import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
 import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityStatisticsSummary
-import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
+import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityCard
+import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -436,155 +435,52 @@ private fun FacilitiesTabContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(facilitiesWithIslands) { facilityWithIslands ->
-                    FacilityItemWithActions(
-                        facilityWithIslands = facilityWithIslands,
-                        onFacilityClick = onFacilityClick,
-                        onIslandClick = onIslandClick,
-                        onEditFacility = onEditFacility
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FacilityItemWithActions(
-    facilityWithIslands: FacilityWithIslands,
-    onFacilityClick: (String) -> Unit,
-    onIslandClick: (String, String) -> Unit,
-    onEditFacility: (String) -> Unit
-) {
-    val facility = facilityWithIslands.facility
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = { onFacilityClick(facility.id) }
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    if (facility.isPrimary) {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = stringResource(R.string.client_detail_facility_primary_badge),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
+                    val facility = facilityWithIslands.facility
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        // Facility — COMPACT with edit action
+                        FacilityCard(
+                            facility = facility,
+                            variant = ListViewMode.COMPACT,
+                            onClick = { onFacilityClick(facility.id) },
+                            onEdit = { onEditFacility(facility.id) },
+                            showActions = true
                         )
-                    }
-                    Column {
-                        Text(
-                            text = facility.displayName,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = stringResource(facility.facilityType.labelResId) + " • ${facility.address?.city ?: ""}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                IconButton(
-                    onClick = { onEditFacility(facility.id) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.client_detail_facility_action_edit),
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-
-            if (facilityWithIslands.islands.isNotEmpty()) {
-                Text(
-                    text = stringResource(R.string.client_detail_facility_islands_header, facilityWithIslands.islands.size),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                facilityWithIslands.islands.take(3).forEach { island ->
-                    IslandItemCompact(
-                        island = island,
-                        onClick = { onIslandClick(facilityWithIslands.facility.id, island.id) }
-                    )
-                }
-                if (facilityWithIslands.islands.size > 3) {
-                    TextButton(onClick = { onFacilityClick(facility.id) }) {
-                        Text(
-                            stringResource(
-                                R.string.client_detail_facility_islands_more,
-                                facilityWithIslands.islands.size - 3
+                        // Islands preview — MINIMAL, max 5, indented
+                        if (facilityWithIslands.islands.isNotEmpty()) {
+                            Text(
+                                text = stringResource(R.string.client_detail_facility_islands_header, facilityWithIslands.islands.size),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 12.dp, top = 4.dp)
                             )
-                        )
+                            facilityWithIslands.islands.take(5).forEach { island ->
+                                IslandCard(
+                                    island = island,
+                                    variant = ListViewMode.MINIMAL,
+                                    onClick = { onIslandClick(facility.id, island.id) },
+                                    showActions = false,
+                                    modifier = Modifier.padding(start = 12.dp)
+                                )
+                            }
+                            if (facilityWithIslands.islands.size > 5) {
+                                TextButton(
+                                    onClick = { onFacilityClick(facility.id) },
+                                    modifier = Modifier.padding(start = 8.dp)
+                                ) {
+                                    Text(stringResource(R.string.client_detail_facility_islands_more, facilityWithIslands.islands.size - 5))
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = stringResource(R.string.client_detail_facility_no_islands),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(start = 12.dp, bottom = 4.dp)
+                            )
+                        }
                     }
                 }
-            } else {
-                Text(
-                    text = stringResource(R.string.client_detail_facility_no_islands),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
-        }
-    }
-}
-
-@Composable
-private fun IslandItemCompact(island: Island, onClick: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth().padding(start = 12.dp),
-        onClick = onClick,
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceVariant
-    ) {
-        Row(
-            modifier = Modifier.padding(8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = island.displayName,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = stringResource(island.islandType.labelResId) ,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Icon(
-                imageVector = when (island.islandOperationalStatus) {
-                    IslandOperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
-                    IslandOperationalStatus.MAINTENANCE_DUE -> Icons.Default.Warning
-                    IslandOperationalStatus.INACTIVE -> Icons.Default.Cancel
-                },
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-                tint = when (island.islandOperationalStatus) {
-                    IslandOperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
-                    IslandOperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
-                    IslandOperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
-                }
-            )
         }
     }
 }
@@ -646,10 +542,12 @@ private fun ContactsTabContent(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(contacts.take(5)) { contact ->
-                    ContactItem(
+                    ContactCard(
                         contact = contact,
-                        onContactClick = onContactClick,
-                        onEditContact = onEditContact
+                        variant = ListViewMode.COMPACT,
+                        onClick = { onContactClick(contact.id) },
+                        onEdit = { onEditContact(contact.id) },
+                        showActions = true
                     )
                 }
                 if (contacts.size > 5) {
@@ -672,91 +570,6 @@ private fun ContactsTabContent(
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun ContactItem(
-    contact: Contact,
-    onContactClick: (String) -> Unit,
-    onEditContact: (String) -> Unit,
-) {
-    val context = LocalContext.current
-
-    Card(
-        onClick = { onContactClick(contact.id) },
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (contact.isPrimary) {
-                        Icon(
-                            Icons.Default.Star,
-                            contentDescription = stringResource(R.string.client_detail_contact_primary_badge),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Text(
-                        text = contact.fullName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-                contact.role?.let {
-                    Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                contact.email?.let {
-                    Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-            }
-
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                contact.phone?.let { phone ->
-                    val callErrorMsg = stringResource(R.string.client_detail_contact_call_error)
-                    IconButton(
-                        onClick = {
-                            if (!callContact(context, phone)) {
-                                Toast.makeText(context, callErrorMsg, Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier.size(32.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Call,
-                            contentDescription = stringResource(R.string.client_detail_contact_action_call),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = phone,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                IconButton(
-                    onClick = { onEditContact(contact.id) },
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = stringResource(R.string.client_detail_contact_action_edit),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
                 }
             }
         }

@@ -70,17 +70,26 @@
     <string name="err_island_update">Errore durante l\'aggiornamento dell\'isola</string>
     <string name="err_island_delete">Errore durante l\'eliminazione dell\'isola</string>
     <string name="err_island_missing_serial">Il serial number è obbligatorio</string>
-    <string name="err_island_invalid_serial">Serial number non valido (solo lettere, numeri, trattini)</string>
-    <string name="err_island_duplicate_serial">Serial number già esistente</string>
     <string name="err_island_missing_facility">ID stabilimento obbligatorio</string>
+    <string name="err_island_invalid_query_length">Lunghezza query non valida (2–100)</string>
     <string name="err_island_invalid_field">Dati isola non validi</string>
-    <string name="err_island_invalid_installation_date">Data installazione non valida</string>
-    <string name="err_island_invalid_maintenance_date">Data manutenzione non valida</string>
-    <string name="err_island_invalid_warranty_date">Data garanzia non valida</string>
+    <string name="err_island_validation_invalid_installation_date">Data installazione non valida</string>
+    <string name="err_island_validation_invalid_maintenance_date">Data manutenzione non valida</string>
+    <string name="err_island_validation_invalid_warranty_date">Data garanzia non valida</string>
     <string name="err_island_facility_not_found">Stabilimento associato non trovato</string>
     <string name="err_island_already_deleted">Isola già eliminata</string>
     <string name="err_island_cannot_delete_maintenance">Impossibile eliminare: manutenzione scaduta</string>
     <string name="err_island_cannot_change_facility">Impossibile cambiare lo stabilimento di un\'isola esistente</string>
+
+    <string name="err_island_validation_invalid_serial_number">Serial number non valido)</string>
+    <string name="err_island_validation_duplicate_serial">Serial number già esistente</string>
+    <string name="err_island_validation_invalid_commissioning_number">Commissioning number non valido</string>
+    <string name="err_island_validation_invalid_model_number">Model number non valido</string>
+    <string name="err_island_validation_invalid_location_length">Lunghezza location non valida (-200)</string>
+    <string name="err_island_validation_invalid_custom_name_length">Lunghezza nome custom non valida (-100)</string>
+    <string name="err_island_validation_invalid_cycle_count">Conteggio cicli negativo</string>
+    <string name="err_island_validation_invalid_operating_hours">Ore operatività negativo</string>
+    <string name="err_island_validation_invalid_serial_number_length">Lunghezza serial number non valida (3–50)</string>
 
 
     <!-- ======================================================= -->
@@ -241,5 +250,81 @@
 <!--    <string name="action_edit">Modifica</string>-->
 <!--    <string name="action_delete">Elimina</string>-->
 <!--    <string name="action_save">Salva</string>-->
+
+    <!-- IslandCard -->
+    <string name="island_card_delete_dialog_title">Elimina Isola</string>
+    <string name="island_card_delete_dialog_message">Sei sicuro di voler eliminare l\'isola \'%1$s\'?</string>
+    <string name="island_card_delete_dialog_confirm">Elimina</string>
+    <string name="island_card_field_location">Ubicazione</string>
+    <string name="island_card_field_model">Modello</string>
+    <string name="island_card_field_installation">Installata</string>
+    <string name="island_card_stat_hours">Ore</string>
+    <string name="island_card_stat_cycles">Cicli</string>
+    <string name="island_card_stat_installed">Installata</string>
+    <string name="island_card_commissioning_number">Commessa: %1$s</string>
+
+    <!-- FacilityDetailScreen islands tab -->
+    <string name="island_tab_count">Isole (%1$d/%2$d)</string>
+    <string name="island_facility_detail_maintenance_all_ok">Tutte le isole sono in regola</string>
+    <string name="island_facility_detail_warranty_none">Nessuna isola attualmente in garanzia</string>
+
+
+    <!-- Island delete dialog -->
+    <string name="island_delete_dialog_title">Elimina Isola</string>
+    <string name="island_delete_dialog_message">Sei sicuro di voler eliminare l\'isola \'%1$s\'? Questa operazione non può essere annullata.</string>
+    <string name="island_delete_dialog_confirm">Elimina</string>
+    <string name="island_delete_dialog_cancel">Annulla</string>
+
+    <!-- IslandPkg -->
+    <string name="island_pkg_title">Isole</string>
+    <string name="island_pkg_description">Gestisci Isole</string>
+
+    <!-- ======================================================= -->
+    <!-- IslandFilter                                             -->
+    <!-- ======================================================= -->
+
+    <string name="island_filter_all">Tutti</string>
+    <string name="island_filter_active">Attivi</string>
+    <string name="island_filter_inactive">Inattivi</string>
+    <string name="island_filter_maintenance_due">Manutenzione richiesta</string>
+    <string name="island_filter_under_warranty">In garanzia</string>
+    <string name="island_filter_high_operating_hours">Ore di funzionamento</string>
+    <string name="island_filter_by_type">Per tipo</string>
+
+    <!-- ======================================================= -->
+    <!-- IslandSortOrder                                          -->
+    <!-- ======================================================= -->
+
+    <string name="island_sort_custom_name">Nome custom</string>
+    <string name="island_sort_created_recent">Pi\u00f9 Recenti</string>
+    <string name="island_sort_created_oldest">Meno Recenti</string>
+    <string name="island_sort_serial_number">Numero seriale</string>
+    <string name="island_sort_by_type">Per tipo</string>
+    <string name="island_sort_by_status">Per stato</string>
+    <string name="island_sort_by_operating_hours">Per tipo</string>
+    <string name="island_sort_by_maintenance_date">Per data manutenzionetipo</string>
+
+    <!-- ======================================================= -->
+    <!-- OperationalStatsCard                                     -->
+    <!-- ======================================================= -->
+
+    <string name="island_stats_card_title">Statistiche Operative</string>
+    <string name="island_stats_hours_label">Ore Totali</string>
+    <string name="island_stats_hours_value">%1$dh</string>
+    <string name="island_stats_hours_avg">Media: %1$dh/giorno</string>
+    <string name="island_stats_cycles_label">Cicli</string>
+    <string name="island_stats_cycles_avg">Media: %1$d/ora</string>
+    <string name="island_stats_uptime_label">Uptime</string>
+    <string name="island_stats_uptime_value">%1$d%%</string>
+    <string name="island_stats_age_days">%1$d giorni attivi</string>
+
+    <!-- ======================================================= -->
+    <!-- PerformanceMetricsCard                                   -->
+    <!-- ======================================================= -->
+
+    <string name="island_performance_card_title">Performance</string>
+    <string name="island_performance_health_label">Salute Generale</string>
+    <string name="island_performance_health_value">%1$d%%</string>
+    <string name="island_performance_no_data">Nessuna informazione sulla performance disponibile</string>
 
 </resources>

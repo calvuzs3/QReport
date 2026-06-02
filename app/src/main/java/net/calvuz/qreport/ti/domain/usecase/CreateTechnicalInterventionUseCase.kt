@@ -224,7 +224,7 @@ class CreateTechnicalInterventionUseCase @Inject constructor(
  * Specific errors for TechnicalIntervention creation following QrError pattern
  */
 //sealed interface CreateInterventionError : QrError {
-//    data object ClientNotFound : CreateInterventionError
+//    data object MissingClientId : CreateInterventionError
 //    data object IslandNotFound : CreateInterventionError
 //    data object MissingCustomerName : CreateInterventionError
 //    data object MissingSerialNumber : CreateInterventionError

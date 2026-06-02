@@ -10,6 +10,7 @@ import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -23,7 +24,13 @@ class GetIslandStatisticsUseCase @Inject constructor(
     private val checkUpRepository: CheckUpRepository? = null
 ) {
     suspend operator fun invoke(islandId: String): QrResult<SingleIslandStatistics, QrError.IslandError> {
-        if (islandId.isBlank()) return QrResult.Error(QrError.IslandError.NotFound())
+
+        Timber.d("Get island statistics")
+
+        if (islandId.isBlank()) {
+            Timber.d("Island id is blank")
+            return QrResult.Error(QrError.IslandError.NotFound())
+        }
 
         val island = islandRepository.getIslandById(islandId).fold(
             onSuccess = { it ?: return QrResult.Error(QrError.IslandError.NotFound()) },

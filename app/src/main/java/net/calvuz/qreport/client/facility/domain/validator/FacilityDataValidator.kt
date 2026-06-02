@@ -23,16 +23,16 @@ class FacilityDataValidator @Inject constructor() {
         address: Address
     ): QrResult<Unit, QrError.FacilityError> = when {
         clientId.isBlank() ->
-            QrResult.Error(QrError.FacilityError.ClientNotFound("Client ID is required"))
+            QrResult.Error(QrError.FacilityError.MissingClientId())
 
         name.isBlank() ->
-            QrResult.Error(QrError.FacilityError.MissingName("Name is required"))
+            QrResult.Error(QrError.FacilityError.MissingName())
 
         name.length < 2 ->
-            QrResult.Error(QrError.FacilityError.UpdateError("Name too short (min 2 chars)"))
+            QrResult.Error(QrError.FacilityError.ValidationError.InvalidFacilityNameLength())
 
         name.length > 100 ->
-            QrResult.Error(QrError.FacilityError.UpdateError("Name too long (max 100 chars)"))
+            QrResult.Error(QrError.FacilityError.ValidationError.InvalidFacilityNameLength())
 
         else -> QrResult.Success(Unit)
     }

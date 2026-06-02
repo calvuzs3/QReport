@@ -1,11 +1,6 @@
 package net.calvuz.qreport.app.navigation
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.automirrored.outlined.Assignment
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -93,7 +88,7 @@ sealed class QReportDestination(
         route = QReportRoutes.CLIENTS,
         title = UiText.StringResource(R.string.route_clients_title),
         selectedIcon = ClientPkg.icon,
-        unselectedIcon = ClientPkg.icon_unselected
+        unselectedIcon = ClientPkg.iconUnselected
     )
 
     object CheckUps : QReportDestination(
@@ -163,6 +158,7 @@ object QReportRoutes {
 
     // Island routes
     const val ISLAND_LIST = "islands/{facilityId}"
+    const val ISLAND_LIST_ALL = "islands_all"   // No facility filter — shows all islands
     const val ISLAND_DETAIL = "island_detail/{facilityId}/{islandId}"
     const val ISLAND_CREATE = "island_form/{facilityId}"
     const val ISLAND_EDIT = "island_form/{facilityId}/{islandId}"
@@ -298,6 +294,9 @@ fun QReportNavigation(
                         },
                         onNavigateToClients = {
                             navController.navigate(QReportRoutes.CLIENTS)
+                        },
+                        onNavigateToIslands = {
+                            navController.navigate(QReportRoutes.ISLAND_LIST_ALL)
                         },
                         onNavigateToNewCheckUp = {
                             navController.navigate(QReportRoutes.CHECKUP_CREATE)
@@ -1196,6 +1195,23 @@ fun QReportNavigation(
                         },
                         onCreateNewIsland = {
                             navController.navigate(QReportRoutes.islandCreateRoute(facilityId))
+                        },
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                // 4b. LIST ALL — no facility filter, navigated from HomeScreen
+                composable(QReportRoutes.ISLAND_LIST_ALL) {
+                    IslandListScreen(
+                        facilityId = "",        // blank = load all islands
+                        facilityName = "",
+                        onNavigateToIslandDetail = { islandId ->
+                            navController.navigate(
+                                QReportRoutes.islandDetailRoute("", islandId)
+                            )
+                        },
+                        onCreateNewIsland = {
+                            navController.navigate(QReportRoutes.islandCreateRoute(""))
                         },
                         onNavigateBack = { navController.popBackStack() }
                     )

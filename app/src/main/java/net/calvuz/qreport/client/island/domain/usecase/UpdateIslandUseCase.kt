@@ -6,6 +6,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import net.calvuz.qreport.client.island.domain.validator.IslandDataValidator
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -22,24 +23,26 @@ class UpdateIslandUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(island: Island): QrResult<Unit, QrError.IslandError> {
 
-        // 1. Verify exists
+        Timber.d("Update island")
+
+        // Check island exists
         val original = when (val r = checkIslandExists(island.id)) {
             is QrResult.Error -> return QrResult.Error(r.error)
             is QrResult.Success -> r.data
         }
 
-        // 2. Facility must not change
+        // Check facility ids
         if (island.facilityId != original.facilityId) {
             return QrResult.Error(QrError.IslandError.CannotChangeFacility())
         }
 
-        // 3. Validate fields
+        // Validation
         when (val v = validateIslandData(island)) {
             is QrResult.Error -> return v
             is QrResult.Success -> Unit
         }
 
-        // 4. Check serial number uniqueness if changed
+        // Check serial number uniqueness
         if (island.serialNumber != original.serialNumber) {
             when (val sn = checkSerialNumberUniqueness(island.serialNumber)) {
                 is QrResult.Error -> return sn
@@ -47,14 +50,14 @@ class UpdateIslandUseCase @Inject constructor(
             }
         }
 
-        // 5. Validate date consistency
+        // Validate date consistency
         val dateError = validateMaintenanceDates(island)
         if (dateError != null) return dateError
 
-        // 6. Guard operating hours decrease without new maintenance
+        // Guard operating hours decrease without new maintenance
         val guardedIsland = guardOperatingHours(original, island)
 
-        // 7. Persist with updated timestamp
+        // Persist with updated timestamp
         val updated = guardedIsland.copy(updatedAt = Clock.System.now())
         return islandRepository.updateIsland(updated).fold(
             onSuccess = { QrResult.Success(Unit) },
@@ -68,25 +71,25 @@ class UpdateIslandUseCase @Inject constructor(
         val now = Clock.System.now()
         return when {
             island.installationDate?.let { it > now } == true ->
-                QrResult.Error(QrError.IslandError.InvalidInstallationDate("Installation date cannot be in the future"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidInstallationDate())
 
             island.warrantyExpiration?.let { exp ->
                 island.installationDate?.let { install -> exp < install }
             } == true ->
-                QrResult.Error(QrError.IslandError.InvalidWarrantyDate("Warranty before installation"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidWarrantyDate())
 
             island.lastMaintenanceDate?.let { last ->
                 island.installationDate?.let { install -> last < install }
             } == true ->
-                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Last maintenance before installation"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
 
             island.lastMaintenanceDate?.let { it > now } == true ->
-                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Last maintenance cannot be in the future"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
 
             island.nextScheduledMaintenance?.let { next ->
                 island.lastMaintenanceDate?.let { last -> next <= last }
             } == true ->
-                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Next maintenance must be after last maintenance"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
 
             else -> null
         }

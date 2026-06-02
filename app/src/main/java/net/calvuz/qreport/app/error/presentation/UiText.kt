@@ -4,36 +4,48 @@ import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import net.calvuz.qreport.R
 
-sealed class UiText() {
+sealed class UiText {
 
-    data class DynStr(val str: String): UiText()
-    data class StringResource(@StringRes val resId: Int): UiText()
+    /** A runtime string — use only when the text is not known at compile time. */
+    data class DynStr(val str: String) : UiText()
 
-    class StringResources(@StringRes val resId: Int, vararg val args: Any) : UiText()
+    /** A string resource without format arguments. */
+    data class StringResource(@StringRes val resId: Int) : UiText()
 
-    fun asString(context: Context): String {
-        return when(this) {
-            is StringResource -> context.getString(resId)
-            is StringResources -> context.getString(resId, *args)
-            is DynStr -> str
+    /**
+     * A string resource with format arguments (e.g. "%1$d items").
+     *
+     * Not a data class because vararg prevents auto-generated equals/hashCode.
+     * Implemented manually so Compose recomposition and tests work correctly.
+     */
+    class StringResources(@StringRes val resId: Int, vararg val args: Any) : UiText() {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is StringResources) return false
+            return resId == other.resId && args.contentEquals(other.args)
         }
+        override fun hashCode(): Int = 31 * resId + args.contentHashCode()
+        override fun toString(): String = "StringResources(resId=$resId, args=${args.contentToString()})"
     }
-    @Composable
-    fun asString(): String {
-        return when(this) {
-            is StringResource -> stringResource(resId)
-            is StringResources -> stringResource(resId, *args)
-            is DynStr -> str
-        }
+
+    // =========================================================================
+    // Conversion
+    // =========================================================================
+
+    /** Resolve to a plain string outside a Composable (e.g. in a ViewModel or Service). */
+    fun asString(context: Context): String = when (this) {
+        is DynStr -> str
+        is StringResource -> context.getString(resId)
+        is StringResources -> context.getString(resId, *args)
     }
 
+    /** Resolve to a plain string inside a Composable. */
     @Composable
-    fun asStringArgs(): String {
-        return when(this) {
-            is StringResource -> ""
-            is StringResources -> ""
-            is DynStr -> str
-        }
+    fun asString(): String = when (this) {
+        is DynStr -> str
+        is StringResource -> stringResource(resId)
+        is StringResources -> stringResource(resId, *args)
     }
 }

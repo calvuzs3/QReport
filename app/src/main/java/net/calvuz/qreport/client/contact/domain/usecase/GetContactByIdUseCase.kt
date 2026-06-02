@@ -8,12 +8,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Use Case per recuperare un contatto per ID
- *
- * Gestisce:
- * - Validazione ID input
- * - Recupero dal repository
- * - Gestione contatto non trovato
+ * Get a contact by Id
  */
 class GetContactByIdUseCase @Inject constructor(
     private val contactRepository: ContactRepository
@@ -21,34 +16,37 @@ class GetContactByIdUseCase @Inject constructor(
 
     suspend operator fun invoke(contactId: String): QrResult<Contact, QrError> {
         return try {
-            // 1. Validazione ID
+            
+            Timber.d("Get a contact by id")
+            
+            // Check input
             if (contactId.isBlank()) {
-                Timber.w("GetContactByIdUseCase: contactId is blank")
-                return QrResult.Error(QrError.ValidationError.EmptyField(contactId.toString()))
+                Timber.w("ContactId is blank")
+                return QrResult.Error(QrError.ContactsError.MissingContactId())
             }
 
-            // 2. Recupero dal repository
+            // Get
             when (val result = contactRepository.getContactById(contactId)) {
                 is QrResult.Success -> {
                     val contact = result.data
                     if (contact != null) {
-                        Timber.d("GetContactByIdUseCase: Contact found successfully: $contactId")
+                        Timber.d("Contact found successfully: $contactId")
                         QrResult.Success(contact)
                     } else {
-                        Timber.w("GetContactByIdUseCase: Contact not found: $contactId")
-                        QrResult.Error(QrError.DatabaseError.NotFound(contactId))
+                        Timber.w("Contact not found: $contactId")
+                        QrResult.Error(QrError.ContactsError.NotFound())
                     }
                 }
 
                 is QrResult.Error -> {
-                    Timber.e("GetContactByIdUseCase: Repository error for contactId $contactId: ${result.error}")
+                    Timber.e("Repository error for contactId $contactId: ${result.error}")
                     QrResult.Error(result.error)
                 }
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "GetContactByIdUseCase: Exception getting contact: $contactId")
-            QrResult.Error(QrError.SystemError.Unknown(e))
+            Timber.e(e, contactId)
+            QrResult.Error(QrError.SystemError.UnknownError(e))
         }
     }
 }

@@ -58,15 +58,4 @@ data class Contact(
             !department.isNullOrBlank() -> department
             else -> ""
         }
-
-    /**
-     * Contatto primario disponibile
-     */
-    val primaryContact: String?
-        get() = when (preferredContactMethod) {
-            ContactMethod.PHONE -> phone
-            ContactMethod.MOBILE -> mobilePhone
-            ContactMethod.EMAIL -> email
-            null -> phone ?: mobilePhone ?: email
-        }
 }

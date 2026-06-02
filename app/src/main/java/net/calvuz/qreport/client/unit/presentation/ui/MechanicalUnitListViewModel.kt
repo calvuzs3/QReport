@@ -8,6 +8,8 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandOption
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
@@ -24,9 +26,6 @@ import timber.log.Timber
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 
-/**
- * UI State for [MechanicalUnitListScreen].
- */
 data class MechanicalUnitListUiState(
     val allUnits: List<MechanicalUnit> = emptyList(),
     val filteredUnits: List<MechanicalUnit> = emptyList(),
@@ -37,7 +36,7 @@ data class MechanicalUnitListUiState(
     val searchQuery: String = "",
     val selectedFilter: MechanicalUnitFilter = MechanicalUnitPkg.selectedFilter,
     val sortOrder: MechanicalUnitSortOrder = MechanicalUnitPkg.selectedSortOrder,
-    val error: String? = null,
+    val error: UiText? = null,                  // UiText instead of raw String
     val cardVariant: ListViewMode = ListViewMode.FULL,
     val availableIslands: List<IslandOption> = listOf(IslandOption.ALL),
     val selectedIsland: IslandOption = IslandOption.ALL
@@ -63,202 +62,128 @@ class MechanicalUnitListViewModel @Inject constructor(
 
     init {
         Timber.d("MechanicalUnitListViewModel init")
-        observeCardVariant()        // Restore persisted card variant
-        loadIslandsForDropdown()    // Populate island selector
+        observeCardVariant()
+        loadIslandsForDropdown()
     }
 
-    // ============================================================
-    // PUBLIC METHODS
-    // ============================================================
+    // =========================================================================
+    // PUBLIC
+    // =========================================================================
 
-    fun initialize() {
-        loadUnits()
-    }
+    fun initialize() = loadUnits()
 
-    /**
-     * Init for a specific island
-     */
     fun initializeForIsland(islandId: String) {
         if (islandId == currentIslandId) return
-
         currentIslandId = islandId
         _uiState.update { state ->
             state.copy(
                 islandId = islandId,
-                // Sync dropdown; corrected once loadIslandsForDropdown() delivers results.
-                selectedIsland = state.availableIslands.find { it.id == islandId }
-                    ?: IslandOption.ALL
+                selectedIsland = state.availableIslands.find { it.id == islandId } ?: IslandOption.ALL
             )
         }
         loadUnits()
     }
 
-    /**
-     * Loads units by observing a Room Flow.
-     *
-     * Cancels any previous observation before starting a new one, so switching
-     * clients or calling refresh never leaves stale collectors running in parallel.
-     *
-     * Room re-emits automatically on every DB change, so no manual re-fetch is
-     * needed for inserts, updates, or deletes.
-     */
     fun loadUnits() {
         loadJob?.cancel()
-
-        val islandId = currentIslandId
-        val flow = if (islandId.isEmpty()) {
-            Timber.d("Observing all FacilityError")
-            observeMechanicalUnitsUseCase(null)
-        } else {
-            Timber.d("Observing islands for facility: $islandId")
-            observeMechanicalUnitsUseCase(islandId)
-        }
+        val islandId = currentIslandId.takeIf { it.isNotEmpty() }
+        Timber.d("Observing units islandId=${islandId ?: "all"}")
 
         loadJob = viewModelScope.launch {
-            // If called from refresh(), keep isRefreshing=true visible until data arrives.
-            // If called fresh, show isLoading instead.
-            _uiState.update { it.copy(
-                isLoading = !it.isRefreshing,
-                error = null
-            ) }
-
+            _uiState.update { it.copy(isLoading = !it.isRefreshing, error = null) }
             try {
-                Timber.d("Loading units for island: $islandId")
-
-                flow
+                observeMechanicalUnitsUseCase(islandId)
                     .catch { exception ->
                         if (exception is CancellationException) throw exception
-                        Timber.e(exception, "Error in units flow")
+                        Timber.e(exception)
                         if (currentCoroutineContext().isActive) {
                             _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    isRefreshing = false,
-                                    error = "Errore caricamento unità: ${exception.message}"
-                                )
+                                it.copy(isLoading = false, isRefreshing = false,
+                                    error = UiText.StringResource(R.string.err_unit_load))
                             }
                         }
                     }
                     .collect { units ->
                         if (!currentCoroutineContext().isActive) return@collect
-
-                        val currentState = _uiState.value
-                        val filteredAndSorted = applyFiltersAndSort(
-                            units,
-                            currentState.searchQuery,
-                            currentState.selectedFilter,
-                            currentState.sortOrder
-                        )
-
-                        _uiState.value = currentState.copy(
+                        val current = _uiState.value
+                        _uiState.value = current.copy(
                             allUnits = units,
-                            filteredUnits = filteredAndSorted,
+                            filteredUnits = applyFiltersAndSort(units, current.searchQuery, current.selectedFilter, current.sortOrder),
                             isLoading = false,
                             isRefreshing = false,
                             error = null
                         )
-
-                        Timber.d("Loaded ${units.size} units successfully")
+                        Timber.d("Loaded ${units.size} units from Flow")
                     }
-
             } catch (_: CancellationException) {
-                Timber.d("Units loading cancelled")
+                Timber.d("Units observation cancelled")
             } catch (e: Exception) {
                 if (currentCoroutineContext().isActive) {
+                    Timber.e(e)
                     _uiState.update {
-                        it.copy(
-                            isLoading = false, isRefreshing = false,
-                            error = "Errore imprevisto: ${e.message}"
-                        )
+                        it.copy(isLoading = false, isRefreshing = false,
+                            error = UiText.StringResource(R.string.err_unit_load))
                     }
                 }
             }
         }
     }
 
-    /** Refresh data */
     fun refresh() {
-        if (currentIslandId.isBlank()) return
         _uiState.update { it.copy(isRefreshing = true, error = null) }
-        loadUnits() // cancels old job, restarts Flow; isRefreshing cleared when data arrives
+        loadUnits()
     }
 
     fun deleteUnit(unitId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isDeletingUnit = unitId) }
-
-            try {
-                Timber.d("Deleting unit: $unitId")
-
-                repository.delete(unitId).fold(
-                    onSuccess = {
-                        Timber.d("Unit deleted successfully")
-                    },
-                    onFailure = { error ->
-                        Timber.e(error, "Failed to delete unit")
-                        _uiState.update {
-                            it.copy(error = "Errore eliminazione unità: ${error.message}")
-                        }
-                    }
-                )
-            } catch (e: Exception) {
-                Timber.e(e, "Exception deleting unit")
-                _uiState.update { it.copy(error = "Errore eliminazione unità: ${e.message}") }
-            } finally {
-                _uiState.update { it.copy(isDeletingUnit = null) }
-            }
+            repository.delete(unitId).fold(
+                onSuccess = { Timber.d("Unit deleted: $unitId") },
+                onFailure = { error ->
+                    Timber.e(error)
+                    _uiState.update { it.copy(error = UiText.StringResource(R.string.err_unit_delete)) }
+                }
+            )
+            _uiState.update { it.copy(isDeletingUnit = null) }
         }
     }
 
     fun updateSearchQuery(query: String) {
+        val current = _uiState.value
         if (query.length >= 3) {
             performSearch(query)
         } else {
-            val currentState = _uiState.value
-            val filteredAndSorted = applyFiltersAndSort(
-                units = currentState.allUnits,
-                searchQuery =  query,
-                filter = currentState.selectedFilter,
-                sortOrder = currentState.sortOrder
-            )
-            _uiState.update { it.copy(
-                searchQuery = query,
-                filteredUnits = filteredAndSorted)
+            _uiState.update {
+                it.copy(
+                    searchQuery = query,
+                    filteredUnits = applyFiltersAndSort(current.allUnits, query, current.selectedFilter, current.sortOrder)
+                )
             }
         }
     }
 
     fun updateFilter(filter: MechanicalUnitFilter) {
-        val currentState = _uiState.value
-        val filteredAndSorted = applyFiltersAndSort(
-            currentState.allUnits, currentState.searchQuery,
-            filter, currentState.sortOrder
-        )
-        _uiState.update { it.copy(
-            selectedFilter = filter,
-            filteredUnits = filteredAndSorted)
+        val current = _uiState.value
+        _uiState.update {
+            it.copy(
+                selectedFilter = filter,
+                filteredUnits = applyFiltersAndSort(current.allUnits, current.searchQuery, filter, current.sortOrder)
+            )
         }
     }
 
     fun updateSortOrder(sortOrder: MechanicalUnitSortOrder) {
-        val currentState = _uiState.value
-        val filteredAndSorted = applyFiltersAndSort(
-            currentState.allUnits, currentState.searchQuery,
-            currentState.selectedFilter, sortOrder
-        )
-        _uiState.update { it.copy(
-            sortOrder = sortOrder,
-            filteredUnits = filteredAndSorted)
+        val current = _uiState.value
+        _uiState.update {
+            it.copy(
+                sortOrder = sortOrder,
+                filteredUnits = applyFiltersAndSort(current.allUnits, current.searchQuery, current.selectedFilter, sortOrder)
+            )
         }
     }
 
-    /**
-     * Called when the user picks an island from the dropdown.
-     * Reloads mechanical units scoped to that facility.
-     */
     fun updateSelectedIsland(island: IslandOption) {
         if (island == _uiState.value.selectedIsland) return
-
         currentIslandId = island.id
         _uiState.update { it.copy(selectedIsland = island, islandId = island.id) }
         loadUnits()
@@ -270,55 +195,41 @@ class MechanicalUnitListViewModel @Inject constructor(
             ListViewMode.COMPACT -> ListViewMode.MINIMAL
             ListViewMode.MINIMAL -> ListViewMode.FULL
         }
-
-        // Update UI immediately
-        _uiState.value = _uiState.value.copy(cardVariant = next)
-
-        // Persist in background
+        _uiState.update { it.copy(cardVariant = next) }
         viewModelScope.launch {
-            try {
-                appSettingsRepository.setListViewMode(KEY, next)
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to persist card variant preference")
-            }
+            try { appSettingsRepository.setListViewMode(KEY, next) }
+            catch (e: Exception) { Timber.e(e) }
         }
     }
 
-    fun dismissError() {
-        _uiState.update { it.copy(error = null) }
-    }
+    fun dismissError() = _uiState.update { it.copy(error = null) }
 
-    // ============================================================
-    // PRIVATE METHODS
-    // ============================================================
+    // =========================================================================
+    // PRIVATE
+    // =========================================================================
 
     private fun observeCardVariant() {
         viewModelScope.launch {
             appSettingsRepository.getListViewMode(KEY)
-                .catch { e -> Timber.e(e, "Error observing card variant preference") }
-                .collect { viewMode ->
-                    _uiState.value = _uiState.value.copy(cardVariant = viewMode)
-                }
+                .catch { e -> Timber.e(e) }
+                .collect { viewMode -> _uiState.update { it.copy(cardVariant = viewMode) } }
         }
     }
 
     private fun performSearch(query: String) {
-        val currentState = _uiState.value
-        val filtered = currentState.allUnits.filter { unit ->
+        val current = _uiState.value
+        // unitType.displayName removed — search only on domain fields
+        val filtered = current.allUnits.filter { unit ->
             unit.name.contains(query, ignoreCase = true) ||
                     unit.serialNumber?.contains(query, ignoreCase = true) == true ||
-                    unit.model?.contains(query, ignoreCase = true) == true ||
-                    unit.unitType.displayName.contains(query, ignoreCase = true)
+                    unit.model?.contains(query, ignoreCase = true) == true
         }
-
-        val filteredAndSorted = applyFiltersAndSort(
-            filtered, query, currentState.selectedFilter, currentState.sortOrder
-        )
-
-        _uiState.value = currentState.copy(
-            searchQuery = query,
-            filteredUnits = filteredAndSorted
-        )
+        _uiState.update {
+            it.copy(
+                searchQuery = query,
+                filteredUnits = applyFiltersAndSort(filtered, query, current.selectedFilter, current.sortOrder)
+            )
+        }
     }
 
     private fun applyFiltersAndSort(
@@ -329,15 +240,15 @@ class MechanicalUnitListViewModel @Inject constructor(
     ): List<MechanicalUnit> {
         var result = units
 
-        // Apply text search for short queries (longer ones handled by performSearch)
+        // Short query local filter (≤2 chars)
         if (searchQuery.isNotBlank() && searchQuery.length < 3) {
             result = result.filter { unit ->
                 unit.name.contains(searchQuery, ignoreCase = true) ||
-                        unit.unitType.displayName.contains(searchQuery, ignoreCase = true)
+                        unit.serialNumber?.contains(searchQuery, ignoreCase = true) == true
+                // unitType.displayName removed
             }
         }
 
-        // Apply status / type filter
         result = when (filter) {
             MechanicalUnitFilter.ALL -> result
             MechanicalUnitFilter.ACTIVE -> result.filter { it.isActive }
@@ -345,54 +256,37 @@ class MechanicalUnitListViewModel @Inject constructor(
             MechanicalUnitFilter.ROBOT -> result.filter { it.unitType == UnitType.ROBOT }
         }
 
-        // Apply sorting
-        result = when (sortOrder) {
+        return when (sortOrder) {
             MechanicalUnitSortOrder.CREATED_RECENT -> result.sortedByDescending { it.createdAt }
             MechanicalUnitSortOrder.NAME -> result.sortedBy { it.name.lowercase() }
             MechanicalUnitSortOrder.BY_TYPE -> result.sortedWith(
                 compareBy<MechanicalUnit> { it.unitType.name }.thenBy { it.name.lowercase() }
             )
-            MechanicalUnitSortOrder.BY_SERIAL -> result.sortedWith(
-                compareBy<MechanicalUnit> { it.serialNumber }.thenBy { it.serialNumber }
-            )
+            MechanicalUnitSortOrder.BY_SERIAL -> result.sortedBy { it.serialNumber }
         }
-
-        return result
     }
 
-    /**
-     * Observes all islands and keeps [MechanicalUnitListUiState.availableIslands] up to date.
-     * Syncs [selectedIsland] once the list arrives so the dropdown shows the correct name
-     * even if navigation set the id before the list loaded.
-     */
     private fun loadIslandsForDropdown() {
         viewModelScope.launch {
             try {
                 observeIslandsUseCase()
-                    .catch { e -> Timber.e(e, "Error loading islands for dropdown") }
+                    .catch { e -> Timber.e(e) }
                     .collect { islands ->
                         val options = listOf(IslandOption.ALL) + islands.map { island ->
-                            IslandOption(id = island.id, name = island.serialNumber)
+                            IslandOption(id = island.id, name = island.displayName)
                         }
                         _uiState.update { state ->
-                            val syncedSelection = options.find { it.id == state.islandId }
-                                ?: IslandOption.ALL
-                            state.copy(
-                                availableIslands = options,
-                                selectedIsland = syncedSelection
-                            )
+                            val synced = options.find { it.id == state.islandId } ?: IslandOption.ALL
+                            state.copy(availableIslands = options, selectedIsland = synced)
                         }
                     }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to start islands observation for dropdown")
+                Timber.e(e)
             }
         }
     }
 }
 
-/**
- * UI events for [MechanicalUnitListScreen].
- */
 sealed class MechanicalUnitListEvent {
     data class SearchQueryChanged(val query: String) : MechanicalUnitListEvent()
     data class FilterChanged(val filter: MechanicalUnitFilter) : MechanicalUnitListEvent()
@@ -401,5 +295,3 @@ sealed class MechanicalUnitListEvent {
     object Refresh : MechanicalUnitListEvent()
     object DismissError : MechanicalUnitListEvent()
 }
-
-

@@ -7,6 +7,7 @@ import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.model.UnitType
 import net.calvuz.qreport.client.unit.domain.repository.MechanicalUnitRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -20,10 +21,16 @@ class GetIslandWithUnitsUseCase @Inject constructor(
     private val unitRepository: MechanicalUnitRepository
 ) {
     suspend operator fun invoke(islandId: String): QrResult<IslandWithUnits, QrError.IslandError> {
+
+        Timber.d("Get island with units")
+
+        // Check input
         if (islandId.isBlank()) {
+            Timber.d("Island id is blank")
             return QrResult.Error(QrError.IslandError.NotFound())
         }
 
+        // Get
         val island = repository.getIslandById(islandId).fold(
             onSuccess = { it ?: return QrResult.Error(QrError.IslandError.NotFound()) },
             onFailure = { return QrResult.Error(QrError.IslandError.LoadError(it.message)) }

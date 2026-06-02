@@ -6,6 +6,7 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.maintenanceIntervalFor
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.days
 
@@ -25,17 +26,21 @@ class UpdateMaintenanceUseCase @Inject constructor(
         resetOperatingHours: Boolean = true,
         notes: String? = null
     ): QrResult<Unit, QrError.IslandError> {
+
+        Timber.d("Update maintanance")
+
         if (islandId.isBlank()) {
+            Timber.d("Island id is blank")
             return QrResult.Error(QrError.IslandError.NotFound())
         }
 
         // Validate date range
         val now = Clock.System.now()
         if (maintenanceDate > now + 24.days) {
-            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Maintenance date too far in the future"))
+            return QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
         }
         if (maintenanceDate < now - 365.days) {
-            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Maintenance date more than 1 year in the past"))
+            return QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
         }
 
         // Verify island exists
@@ -46,10 +51,10 @@ class UpdateMaintenanceUseCase @Inject constructor(
 
         // Validate maintenance logic
         if (island.lastMaintenanceDate?.let { it >= maintenanceDate } == true) {
-            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Maintenance date must be after previous maintenance"))
+            return QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
         }
         if (island.installationDate?.let { it > maintenanceDate } == true) {
-            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Maintenance date cannot be before installation"))
+            return QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
         }
 
         val nextMaintenanceDate = maintenanceDate + maintenanceIntervalFor(island.islandType).days
@@ -83,7 +88,7 @@ class UpdateMaintenanceUseCase @Inject constructor(
         if (islandId.isBlank()) return QrResult.Error(QrError.IslandError.NotFound())
 
         if (nextMaintenanceDate != null && nextMaintenanceDate <= Clock.System.now()) {
-            return QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Next maintenance must be in the future"))
+            return QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
         }
 
         val island = when (val r = checkIslandExists(islandId)) {

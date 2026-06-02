@@ -68,6 +68,18 @@
     <string name="contact_reachable_title">Raggiungibili</string>
 
     <!-- Errors -->
+    is QrError.ContactsError.UnknownContactMethodOnDB -> TODO()
+    <string name="err_contacts_client_not_found">Nessun Cliente trovato</string>
+    <string name="err_contacts_create">Errore creazione contatto</string>
+    <string name="err_contacts_load">Errore caricamento contatto</string>
+    <string name="err_contacts_update">Errore aggiornamento contatto</string>
+    <string name="err_contacts_delete">Errore eliminazione Contatto</string>
+    <string name="err_contacts_missing_client_id">Nessun ID Cliente specificato</string>
+    <string name="err_contacts_missing_contact_id">Nessun ID Contatto specificato</string>
+    <string name="err_contacts_not_found">Nessun Contatto trovato</string>
+    <string name="err_contacts_unknown_contact_method">Unknown Contact method value in DB {%s} falling back to null</string>
+    <string name="err_contacts_contact_is_not_active">Il Contatto non è attivo</string>
+
     <string name="err_contact_client_id_empty">Nessun ID Cliente specificato</string>
     <string name="err_contact_client_not_found">Nessun Cliente trovato</string>
     <string name="err_contact_contact_not_found">Nessun Contatto trovato</string>
@@ -78,6 +90,16 @@
     <string name="err_contact_cannot_remove_primary_flag">Non si puo rimuovere il flag primario - è l\'unico contatto</string>
     <string name="err_contact_is_not_primary">Non è un contatto primario</string>
     <string name="err_contact_contact_does_not_belong_to_client">Il contatto non appartiene al cliente</string>
+
+    <string name="err_contact_validation_invalid_contact_name_length">Nome contatto troppo corto o lungo (2–100)</string>
+    <string name="err_contact_validation_invalid_contact_last_name_length">Cognome contatto troppo lungo (-100)</string>
+    <string name="err_contact_validation_invalid_department_length">Dipartimento troppo lungo (-100)</string>
+    <string name="err_contact_validation_invalid_role_length">Ruolo troppo lungo (-100)</string>
+    <string name="err_contact_validation_invalid_title_length">Titolo troppo lungo (-100)</string>
+    <string name="err_contact_validation_invalid_email">Email non valida</string>
+    <string name="err_contact_validation_invalid_mobile">Mobile non valido</string>
+    <string name="err_contact_validation_invalid_phone">Phone non valido</string>
+    <string name="err_contact_validation_invalid_contact_info">Informazioni di contatto non valide</string>
 
     <string name="err_contact_list_load_contacts">Errore caricamento Contratti: %s</string>
     <string name="err_contact_list_contract_not_found_for_renewal">Contatto non trovato per il rinnovo</string>
@@ -143,7 +165,7 @@
     <string name="contact_form_field_phone_placeholder">+39..</string>
     <string name="contact_form_field_mobile">Cellulare</string>
     <string name="contact_form_field_notes">Note</string>
-    <string name="contact_form_field_notes_placeholder">informazioni aggiuntive sul contatto...</string>
+    <string name="contact_form_field_notes_placeholder">informazioni aggiuntive sul contatto…</string>
     <string name="contact_form_field_preferred_contact_method">Metodo di contatto preferito</string>
     <string name="contact_form_field_preferred_contact_method_placholder">seleziona metodo preferito</string>
     <string name="contact_form_field_preferred_contact_method_empty">Nessuna preferenza</string>"

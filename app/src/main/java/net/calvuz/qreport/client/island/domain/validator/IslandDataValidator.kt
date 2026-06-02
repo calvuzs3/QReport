@@ -14,41 +14,42 @@ import javax.inject.Inject
  *
  * Error messages are English technical descriptions for logging only.
  */
-class IslandDataValidator @Inject constructor() {
+class
+IslandDataValidator @Inject constructor() {
 
     operator fun invoke(island: Island): QrResult<Unit, QrError.IslandError> = when {
         island.facilityId.isBlank() ->
-            QrResult.Error(QrError.IslandError.MissingFacilityId("Facility ID is required"))
+            QrResult.Error(QrError.IslandError.MissingFacilityId())
 
         island.serialNumber.isBlank() ->
-            QrResult.Error(QrError.IslandError.MissingSerialNumber("Serial number is required"))
+            QrResult.Error(QrError.IslandError.MissingSerialNumber())
 
         island.serialNumber.length < 3 ->
-            QrResult.Error(QrError.IslandError.InvalidSerialNumber("Serial number too short (min 3 chars)"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidSerialNumberLength())
 
         island.serialNumber.length > 50 ->
-            QrResult.Error(QrError.IslandError.InvalidSerialNumber("Serial number too long (max 50 chars)"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidSerialNumberLength())
 
         !isValidCode(island.serialNumber) ->
-            QrResult.Error(QrError.IslandError.InvalidSerialNumber("Invalid characters in serial number"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidSerialNumber())
 
         island.commissioningNumber != null && !isValidCode(island.commissioningNumber) ->
-            QrResult.Error(QrError.IslandError.InvalidField("Invalid characters in commissioning number"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidCommissioningNumber())
 
         island.modelNumber != null && !isValidCode(island.modelNumber) ->
-            QrResult.Error(QrError.IslandError.InvalidField("Invalid characters in model number"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidModelNumber())
 
         (island.customName?.length ?: 0) > 100 ->
-            QrResult.Error(QrError.IslandError.InvalidField("Custom name too long (max 100 chars)"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidCustomNameLength())
 
         (island.location?.length ?: 0) > 200 ->
-            QrResult.Error(QrError.IslandError.InvalidField("Location too long (max 200 chars)"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidLocationLength())
 
         island.operatingHours < 0 ->
-            QrResult.Error(QrError.IslandError.InvalidField("Operating hours cannot be negative"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidOperatingHours())
 
         island.cycleCount < 0 ->
-            QrResult.Error(QrError.IslandError.InvalidField("Cycle count cannot be negative"))
+            QrResult.Error(QrError.IslandError.ValidationError.InvalidCycleCount())
 
         else -> QrResult.Success(Unit)
     }

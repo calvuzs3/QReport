@@ -206,7 +206,7 @@ fun CheckUpDetailScreen(
 
                 ErrorDialog(
                     title = error!!.asString(),
-                    message = error.asStringArgs(),
+                    message = error.asString(),
                     onDismiss = { viewModel.loadCheckUp(checkUpId) }
                 )
             }

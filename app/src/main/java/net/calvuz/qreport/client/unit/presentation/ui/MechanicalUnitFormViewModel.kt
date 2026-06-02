@@ -10,10 +10,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.model.UnitType
-import net.calvuz.qreport.client.unit.domain.repository.MechanicalUnitRepository
+import net.calvuz.qreport.client.unit.domain.usecase.CheckMechanicalUnitExistsUseCase
+import net.calvuz.qreport.client.unit.domain.usecase.CreateMechanicalUnitUseCase
+import net.calvuz.qreport.client.unit.domain.usecase.UpdateMechanicalUnitUseCase
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitFormState
+import timber.log.Timber
 import java.util.UUID
 import javax.inject.Inject
 
@@ -27,7 +33,9 @@ import javax.inject.Inject
 @HiltViewModel
 class MechanicalUnitFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val repository: MechanicalUnitRepository
+    private val createMechanicalUnitUseCase: CreateMechanicalUnitUseCase,
+    private val updateMechanicalUnitUseCase: UpdateMechanicalUnitUseCase,
+    private val checkMechanicalUnitExists: CheckMechanicalUnitExistsUseCase
 ) : ViewModel() {
 
     private val islandId: String = checkNotNull(savedStateHandle["islandId"])
@@ -41,27 +49,49 @@ class MechanicalUnitFormViewModel @Inject constructor(
         if (isEditing) loadExisting()
     }
 
+    // =========================================================================
+    // INITIALIZATION
+    // =========================================================================
+
     private fun loadExisting() {
         viewModelScope.launch {
-            val unit = repository.getById(unitId!!) ?: return@launch
-            _state.update {
-                it.copy(
-                    name         = unit.name,
-                    unitType     = unit.unitType,
-                    serialNumber = unit.serialNumber ?: "",
-                    model        = unit.model ?: "",
-                    notes        = unit.notes ?: ""
-                )
+            when (val result = checkMechanicalUnitExists(unitId!!)) {
+                is QrResult.Success -> {
+                    val unit = result.data
+                    _state.update {
+                        it.copy(
+                            name = unit.name,
+                            unitType = unit.unitType,
+                            serialNumber = unit.serialNumber ?: "",
+                            model = unit.model ?: "",
+                            notes = unit.notes ?: ""
+                        )
+                    }
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to load unit for edit $unitId: ${result.error}")
+                    _state.update {
+                        it.copy(error = UiText.StringResource(R.string.err_unit_not_found))
+                    }
+                }
             }
         }
     }
 
-    fun onNameChange(v: String)         = _state.update { it.copy(name = v) }
-    fun onUnitTypeChange(v: UnitType)   = _state.update { it.copy(unitType = v) }
+    // =========================================================================
+    // FORM EVENTS
+    // =========================================================================
+
+    fun onNameChange(v: String) = _state.update { it.copy(name = v) }
+    fun onUnitTypeChange(v: UnitType) = _state.update { it.copy(unitType = v) }
     fun onSerialNumberChange(v: String) = _state.update { it.copy(serialNumber = v) }
-    fun onModelChange(v: String)        = _state.update { it.copy(model = v) }
-    fun onNotesChange(v: String)        = _state.update { it.copy(notes = v) }
-    fun clearError()                    = _state.update { it.copy(error = null) }
+    fun onModelChange(v: String) = _state.update { it.copy(model = v) }
+    fun onNotesChange(v: String) = _state.update { it.copy(notes = v) }
+    fun clearError() = _state.update { it.copy(error = null) }
+
+    // =========================================================================
+    // SAVE
+    // =========================================================================
 
     fun save(onSuccess: () -> Unit) {
         _state.update { it.copy(showValidation = true) }
@@ -81,17 +111,30 @@ class MechanicalUnitFormViewModel @Inject constructor(
                 serialNumber = s.serialNumber.trim().ifBlank { null },
                 model = s.model.trim().ifBlank { null },
                 notes = s.notes.trim().ifBlank { null },
-                createdAt = now,
+                createdAt = now,    // Preserved in update by the use case
                 updatedAt = now
             )
 
-            val result = if (isEditing) repository.update(unit)
-            else          repository.create(unit)
+            val result = if (isEditing) updateMechanicalUnitUseCase(unit)
+            else createMechanicalUnitUseCase(unit)
 
-            result.fold(
-                onSuccess = { onSuccess() },
-                onFailure = { e -> _state.update { it.copy(isSaving = false, error = e.message) } }
-            )
+            when (result) {
+                is QrResult.Success -> {
+                    Timber.d("Unit saved: ${unit.id}")
+                    onSuccess()
+                }
+                is QrResult.Error -> {
+                    Timber.e("Failed to save unit: ${result.error}")
+                    _state.update {
+                        it.copy(
+                            isSaving = false,
+                            error = UiText.StringResource(
+                                if (isEditing) R.string.err_unit_update else R.string.err_unit_create
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
 }

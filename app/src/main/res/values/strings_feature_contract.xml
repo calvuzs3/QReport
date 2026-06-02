@@ -2,6 +2,9 @@
 <resources>
 
     <!-- Errori contracts -->
+    <string name="err_contracts_create">Errore creazione contratto</string>
+    <string name="err_contracts_load">Errore caricamento contratto</string>
+    <string name="err_contracts_update">Errore aggiornamento contratto</string>
     <string name="err_contracts_client_id_empty">Nessun ID Cliente specificato</string>
     <string name="err_contracts_client_not_found">Nessun Cliente trovato</string>
     <string name="err_contracts_contract_not_found">Nessun Contratto trovato</string>

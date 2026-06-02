@@ -20,7 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.checkup.domain.model.CheckUpHeader
-import net.calvuz.qreport.client.client.domain.model.ClientInfo
+import net.calvuz.qreport.checkup.domain.model.ClientInfo
 import net.calvuz.qreport.client.island.domain.model.IslandInfo
 import net.calvuz.qreport.settings.domain.model.TechnicianInfo
 import net.calvuz.qreport.app.app.presentation.components.SectionCard

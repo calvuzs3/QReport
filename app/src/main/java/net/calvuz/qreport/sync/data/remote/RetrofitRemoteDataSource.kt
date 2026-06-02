@@ -48,7 +48,7 @@ class RetrofitRemoteDataSource @Inject constructor(
             QrResult.Error(QrError.NetworkError.ServerError(e.code()))
         } catch (e: Exception) {
             Timber.e(e, "RemoteDataSource: unexpected error during login")
-            QrResult.Error(QrError.SystemError.Unknown(e))
+            QrResult.Error(QrError.SystemError.UnknownError(e))
         }
     }
 
@@ -86,7 +86,7 @@ class RetrofitRemoteDataSource @Inject constructor(
             QrResult.Error(QrError.NetworkError.NoConnection())
         } catch (e: Exception) {
             Timber.e(e, "RemoteDataSource: unexpected error during push")
-            QrResult.Error(QrError.SystemError.Unknown(e))
+            QrResult.Error(QrError.SystemError.UnknownError(e))
         }
     }
 
@@ -118,7 +118,7 @@ class RetrofitRemoteDataSource @Inject constructor(
             QrResult.Error(QrError.NetworkError.NoConnection())
         } catch (e: Exception) {
             Timber.e(e, "RemoteDataSource: unexpected error during pull")
-            QrResult.Error(QrError.SystemError.Unknown(e))
+            QrResult.Error(QrError.SystemError.UnknownError(e))
         }
     }
 }

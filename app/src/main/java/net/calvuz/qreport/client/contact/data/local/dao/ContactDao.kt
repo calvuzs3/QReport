@@ -2,6 +2,7 @@ package net.calvuz.qreport.client.contact.data.local.dao
 
 import androidx.room.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 
 /**
@@ -57,22 +58,20 @@ interface ContactDao {
     @Query("SELECT * FROM contacts WHERE client_id = :clientId AND is_primary = 1 AND is_active = 1 LIMIT 1")
     suspend fun getPrimaryContact(clientId: String): ContactEntity?
 
-    @Query("SELECT EXISTS(SELECT 1 FROM contacts WHERE client_id = :clientId AND is_primary = 1 AND is_active = 1 AND id != :excludeId)")
-    suspend fun hasPrimaryContact(clientId: String, excludeId: String = ""): Boolean
-
     @Transaction
-    suspend fun setPrimaryContact(clientId: String, contactId: String) {
+    suspend fun setPrimaryContact(clientId: String, contactId: String, now: Long = Clock.System.now().toEpochMilliseconds()) {
         // Remove primary flag from all contacts of this client
-        clearPrimaryContacts(clientId)
+        clearPrimaryContacts(clientId, now)
         // Set new primary contact
-        setPrimaryContactFlag(contactId, true)
+        setPrimaryContactFlag(contactId, true, now)
     }
 
-    @Query("UPDATE contacts SET is_primary = 0 WHERE client_id = :clientId")
-    suspend fun clearPrimaryContacts(clientId: String)
+    @Query("UPDATE contacts SET is_primary = 0, updated_at = :now WHERE client_id = :clientId AND is_primary = 1")
+//        "UPDATE contacts SET is_primary = 0 WHERE client_id = :clientId")
+    suspend fun clearPrimaryContacts(clientId: String, now:Long)
 
-    @Query("UPDATE contacts SET is_primary = :isPrimary WHERE id = :contactId")
-    suspend fun setPrimaryContactFlag(contactId: String, isPrimary: Boolean)
+    @Query("UPDATE contacts SET is_primary = :isPrimary, updated_at = :now WHERE id = :contactId")
+    suspend fun setPrimaryContactFlag(contactId: String, isPrimary: Boolean, now: Long)
 
     // ===== SEARCH & FILTER =====
 
@@ -89,32 +88,6 @@ interface ContactDao {
         ORDER BY is_primary DESC, first_name ASC
     """)
     suspend fun searchContacts(query: String): List<ContactEntity>
-
-    @Query("""
-        SELECT * FROM contacts 
-        WHERE client_id = :clientId 
-        AND is_active = 1 
-        AND (first_name LIKE '%' || :query || '%' 
-             OR last_name LIKE '%' || :query || '%'
-             OR phone LIKE '%' || :query || '%'
-             OR email LIKE '%' || :query || '%')
-        ORDER BY is_primary DESC, first_name ASC
-    """)
-    suspend fun searchContactsForClient(clientId: String, query: String): List<ContactEntity>
-
-    @Query("""
-        SELECT c.* FROM contacts c
-        INNER JOIN clients cl ON c.client_id = cl.id
-        WHERE c.is_active = 1 
-        AND cl.is_active = 1
-        AND (c.first_name LIKE '%' || :query || '%' 
-             OR c.last_name LIKE '%' || :query || '%'
-             OR c.phone LIKE '%' || :query || '%'
-             OR c.email LIKE '%' || :query || '%'
-             OR cl.company_name LIKE '%' || :query || '%')
-        ORDER BY c.is_primary DESC, cl.company_name ASC, c.first_name ASC
-    """)
-    suspend fun searchAllContacts(query: String): List<ContactEntity>
 
     @Query("SELECT * FROM contacts WHERE role = :role AND is_active = 1 ORDER BY first_name ASC")
     suspend fun getContactsByRole(role: String): List<ContactEntity>
@@ -139,12 +112,6 @@ interface ContactDao {
     @Query("SELECT EXISTS(SELECT 1 FROM contacts WHERE (phone = :phone OR mobile_phone = :phone) AND id != :excludeId AND is_active = 1)")
     suspend fun isPhoneTaken(phone: String, excludeId: String = ""): Boolean
 
-    @Query("SELECT EXISTS(SELECT 1 FROM contacts WHERE email = :email AND client_id = :clientId AND id != :excludeId)")
-    suspend fun isEmailExistsForClient(email: String, clientId: String, excludeId: String = ""): Boolean
-
-    @Query("SELECT EXISTS(SELECT 1 FROM contacts WHERE phone = :phone AND client_id = :clientId AND id != :excludeId)")
-    suspend fun isPhoneExistsForClient(phone: String, clientId: String, excludeId: String = ""): Boolean
-
     // ===== STATISTICS =====
 
     @Query("SELECT COUNT(*) FROM contacts WHERE client_id = :clientId AND is_active = 1")
@@ -152,12 +119,6 @@ interface ContactDao {
 
     @Query("SELECT COUNT(*) FROM contacts WHERE is_active = 1")
     suspend fun getActiveContactsCount(): Int
-
-    @Query("SELECT COUNT(*) FROM contacts WHERE is_active = 1")
-    suspend fun getTotalContactsCount(): Int
-
-    @Query("SELECT COUNT(*) FROM contacts WHERE is_primary = 1 AND is_active = 1")
-    suspend fun getPrimaryContactsCount(): Int
 
     @Query("SELECT DISTINCT role FROM contacts WHERE role IS NOT NULL AND role != '' AND is_active = 1 ORDER BY role ASC")
     suspend fun getAllRoles(): List<String>

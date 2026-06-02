@@ -312,7 +312,7 @@ class TechnicianSettingsRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.Forest.e(e, "Errore ottenendo summary technician settings")
-            mapOf("error" to (e.message ?: "Unknown error"))
+            mapOf("error" to (e.message ?: "UnknownError error"))
         }
     }
 }

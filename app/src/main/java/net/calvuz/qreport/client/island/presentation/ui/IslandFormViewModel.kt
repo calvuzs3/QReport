@@ -242,7 +242,7 @@ class IslandFormViewModel @Inject constructor(
         value.isBlank() -> UiText.StringResource(R.string.err_island_missing_serial)
         value.length < 3 -> UiText.StringResources(R.string.island_form_error_serial_min_length, 3)
         value.length > 50 -> UiText.StringResources(R.string.island_form_error_serial_max_length, 50)
-        !value.matches("[A-Za-z0-9\\-_]+".toRegex()) -> UiText.StringResource(R.string.err_island_invalid_serial)
+        !value.matches("[A-Za-z0-9\\-_]+".toRegex()) -> UiText.StringResource(R.string.err_island_validation_invalid_serial_number)
         else -> null
     }
 

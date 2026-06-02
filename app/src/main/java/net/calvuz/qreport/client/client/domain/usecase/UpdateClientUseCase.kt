@@ -18,6 +18,7 @@ class UpdateClientUseCase @Inject constructor(
     private val validateClientData: ClientDataValidator
 ) {
     suspend operator fun invoke(client: Client): QrResult<Unit, QrError.ClientError> {
+
         // Verify client exists
         when (val exists = checkClientExists(client.id)) {
             is QrResult.Error -> return QrResult.Error(exists.error)
@@ -25,8 +26,9 @@ class UpdateClientUseCase @Inject constructor(
         }
 
         // Validate fields
-        validateClientData(client).onFailure {
-            return QrResult.Error(QrError.ClientError.MissingCompanyName(it.message))
+        when (val valid = validateClientData(client)) {
+            is QrResult.Error -> return valid
+            is QrResult.Success -> Unit
         }
 
         // Check name uniqueness (excluding this client)
@@ -35,6 +37,7 @@ class UpdateClientUseCase @Inject constructor(
             is QrResult.Success -> Unit
         }
 
+        // Update client
         val updated = client.copy(updatedAt = Clock.System.now())
         return clientRepository.updateClient(updated).fold(
             onSuccess = { QrResult.Success(Unit) },

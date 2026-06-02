@@ -37,7 +37,9 @@
     <string name="err_client_update">Errore durante l\'aggiornamento del cliente</string>
     <string name="err_client_delete">Errore durante l\'eliminazione del cliente</string>
     <string name="err_client_fields_required">Il nome dell\'azienda è obbligatorio</string>
+    <string name="err_client_invalid_company_name">Ragione sociale non valida (2–255 caratteri)</string>
     <string name="err_client_cannot_delete_has_active_facilities">Impossibile eliminare il cliente: ha stabilimenti attivi</string>
+    <string name="err_client_cannot_delete_has_dependencies">Il cliente ha %1$d stabiliment%, %2$d contatti, %3$d contratti e %4$d isole attive</string>
 
     <!-- ======================================================= -->
     <!-- Errors — ViewModel operation errors                     -->
@@ -264,5 +266,37 @@
     <string name="address_field_province_placeholder">MI</string>
     <string name="address_field_country">Paese</string>
     <string name="address_field_country_placeholder">Italia</string>
+
+    <!-- ClientPkg -->
+    <string name="client_pkg_title">Clienti</string>
+    <string name="client_pkg_description">Gestisci Clienti</string>
+
+    <!-- ======================================================= -->
+    <!-- ClientFilter                                             -->
+    <!-- ======================================================= -->
+
+    <string name="client_filter_all">Tutti</string>
+    <string name="client_filter_active">Attivi</string>
+    <string name="client_filter_inactive">Inattivi</string>
+    <string name="client_filter_with_facilities">Con Stabilimenti</string>
+    <string name="client_filter_with_islands">Con Isole</string>
+    <string name="client_filter_with_contacts">Con Contatti</string>
+    <string name="client_filter_with_contracts">Con Contratti</string>
+
+    <!-- ======================================================= -->
+    <!-- ClientSortOrder                                          -->
+    <!-- ======================================================= -->
+
+    <string name="client_sort_company_name">Nome Azienda</string>
+    <string name="client_sort_created_recent">Pi\u00f9 Recenti</string>
+    <string name="client_sort_created_oldest">Meno Recenti</string>
+    <string name="client_sort_facilities_count">Stabilimenti</string>
+    <string name="client_sort_checkups_count">Check-up</string>
+
+    <!-- ======================================================= -->
+    <!-- ClientOption sentinel                                    -->
+    <!-- ======================================================= -->
+
+    <string name="client_option_all">Tutti i Clienti</string>
 
 </resources>

@@ -10,7 +10,7 @@ import net.calvuz.qreport.checkup.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
-import net.calvuz.qreport.client.client.domain.model.ClientInfo
+import net.calvuz.qreport.checkup.domain.model.ClientInfo
 import net.calvuz.qreport.app.app.domain.model.CriticalityLevel
 import net.calvuz.qreport.client.island.domain.model.IslandInfo
 import net.calvuz.qreport.client.island.domain.model.IslandType

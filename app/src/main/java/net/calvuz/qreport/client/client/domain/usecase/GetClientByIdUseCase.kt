@@ -17,10 +17,13 @@ class GetClientByIdUseCase @Inject constructor(
     suspend operator fun invoke(
         clientId: String
     ): QrResult<Client, QrError.ClientError> {
+
+        // CHeck input
         if (clientId.isBlank()) {
             return QrResult.Error(QrError.ClientError.MissingCompanyName())
         }
 
+        // Get
         return clientRepository.getClientById(clientId).fold(
             onSuccess = { client ->
                 if (client != null) QrResult.Success(client)

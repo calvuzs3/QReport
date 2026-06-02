@@ -17,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
-import net.calvuz.qreport.client.client.presentation.ui.components.FormAddressSection
+import net.calvuz.qreport.app.app.presentation.components.QReportFormAddressSection
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 import timber.log.Timber
 
@@ -209,7 +209,7 @@ private fun FacilityFormContent(
         }
 
         // Address
-        FormAddressSection(
+        QReportFormAddressSection(
             street = uiState.street,
             streetNumber = uiState.streetNumber,
             city = uiState.city,

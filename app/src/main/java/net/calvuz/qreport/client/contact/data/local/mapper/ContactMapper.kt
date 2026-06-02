@@ -1,20 +1,23 @@
 package net.calvuz.qreport.client.contact.data.local.mapper
 
+import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.contact.domain.model.Contact
-import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Mapper per convertire tra ContactEntity (data layer) e Contact (domain layer)
- * Gestisce la conversione delle date Instant ↔ Long
+ * Maps between [ContactEntity] (data layer) and [Contact] (domain layer).
+ * Handles Instant ↔ Long conversion for timestamps.
  */
 class ContactMapper @Inject constructor() {
 
-    /**
-     * Converte da ContactEntity a Contact domain model
-     */
+    companion object {
+        private const val NULL_STRING = "null"
+    }
+
+    /** Maps a [ContactEntity] to a [Contact] domain model. */
     fun toDomain(entity: ContactEntity): Contact {
         return Contact(
             id = entity.id,
@@ -29,15 +32,15 @@ class ContactMapper @Inject constructor() {
             alternativeEmail = entity.alternativeEmail,
             isPrimary = entity.isPrimary,
             isActive = entity.isActive,
-            preferredContactMethod = entity.preferredContactMethod?.let { methodString ->
-                // ✅ FIX: Gestisce il caso in cui il database contenga "null" come stringa
-                if (methodString.isBlank() || methodString.equals("null", ignoreCase = true)) {
+            preferredContactMethod = entity.preferredContactMethod?.let { raw ->
+                // Guard against "null" stored as a string — legacy DB issue
+                if (raw.isBlank() || raw.equals(NULL_STRING, ignoreCase = true)) {
                     null
                 } else {
                     try {
-                        ContactMethod.valueOf(methodString)
-                    } catch (e: IllegalArgumentException) {
-                        // Log del problema e fallback a null
+                        ContactMethod.valueOf(raw)
+                    } catch (_: IllegalArgumentException) {
+                        Timber.w("Unknown ContactMethod value in DB: '$raw' — falling back to null")
                         null
                     }
                 }
@@ -47,9 +50,7 @@ class ContactMapper @Inject constructor() {
         )
     }
 
-    /**
-     * Converte da Contact domain model a ContactEntity
-     */
+    /** Maps a [Contact] domain model to a [ContactEntity]. */
     fun toEntity(domain: Contact): ContactEntity {
         return ContactEntity(
             id = domain.id,
@@ -64,106 +65,68 @@ class ContactMapper @Inject constructor() {
             alternativeEmail = domain.alternativeEmail,
             isPrimary = domain.isPrimary,
             isActive = domain.isActive,
-            // ✅ FIX: Evita di salvare "null" come stringa nel database
+            // Store the enum name, never the string "null"
             preferredContactMethod = domain.preferredContactMethod?.name,
             createdAt = domain.createdAt.toEpochMilliseconds(),
             updatedAt = domain.updatedAt.toEpochMilliseconds()
         )
     }
 
-    /**
-     * Converte lista di ContactEntity a lista di Contact domain models
-     */
-    fun toDomainList(entities: List<ContactEntity>): List<Contact> {
-        return entities.map { toDomain(it) }
-    }
+    /** Maps a list of [ContactEntity] to a list of [Contact] domain models. */
+    fun toDomainList(entities: List<ContactEntity>): List<Contact> = entities.map { toDomain(it) }
+
+    /** Maps a list of [Contact] domain models to a list of [ContactEntity]. */
+    fun toEntityList(domains: List<Contact>): List<ContactEntity> = domains.map { toEntity(it) }
 
     /**
-     * Converte lista di Contact domain models a lista di ContactEntity
+     * Maps a [ContactEntity] optionally enriched with client info.
+     * [clientName] is ignored for now — [Contact] domain model does not carry it.
      */
-    fun toEntityList(domains: List<Contact>): List<ContactEntity> {
-        return domains.map { toEntity(it) }
-    }
+    fun toDomainWithClientInfo(entity: ContactEntity, clientName: String? = null): Contact =
+        toDomain(entity)
 
-    /**
-     * Converte ContactEntity con informazioni sul client
-     * Utility per query complesse che includono client name
-     */
-    fun toDomainWithClientInfo(
-        entity: ContactEntity,
-        clientName: String? = null
-    ): Contact {
-        // Al momento Contact domain non include clientName
-        // Ma potremmo estendere in futuro
-        return toDomain(entity)
-    }
+    /** Returns active primary contacts mapped to domain models. */
+    fun getPrimaryContacts(entities: List<ContactEntity>): List<Contact> =
+        entities.filter { it.isPrimary && it.isActive }.map { toDomain(it) }
 
-    /**
-     * Filtra contacts per ruolo primario
-     */
-    fun getPrimaryContacts(entities: List<ContactEntity>): List<Contact> {
-        return entities
-            .filter { it.isPrimary && it.isActive }
-            .map { toDomain(it) }
-    }
-
-    /**
-     * Filtra contacts attivi
-     */
-    fun getActiveContacts(entities: List<ContactEntity>): List<Contact> {
-        return entities
-            .filter { it.isActive }
-            .map { toDomain(it) }
-    }
+    /** Returns all active contacts mapped to domain models. */
+    fun getActiveContacts(entities: List<ContactEntity>): List<Contact> =
+        entities.filter { it.isActive }.map { toDomain(it) }
 }
 
-/**
- * Extension functions per conversioni dirette
- */
+// =============================================================================
+// Extension functions
+// =============================================================================
+
+/** Convenience extension — maps [ContactEntity] to [Contact] without an injected mapper. */
+fun ContactEntity.toDomain(): Contact = ContactMapper().toDomain(this)
+
+/** Convenience extension — maps [Contact] to [ContactEntity] without an injected mapper. */
+fun Contact.toEntity(): ContactEntity = ContactMapper().toEntity(this)
 
 /**
- * Converte ContactEntity a Contact
+ * Returns the contact's full name.
+ * If [Contact.lastName] is blank, only [Contact.firstName] is returned.
  */
-fun ContactEntity.toDomain(): Contact {
-    return ContactMapper().toDomain(this)
-}
+fun Contact.fullName(): String =
+    if (lastName.isNullOrBlank()) firstName else "$firstName $lastName"
+
+/** Returns true if the contact has at least one reachable contact method. */
+fun Contact.hasValidContactInfo(): Boolean =
+    !phone.isNullOrBlank() || !email.isNullOrBlank()
 
 /**
- * Converte Contact a ContactEntity
- */
-fun Contact.toEntity(): ContactEntity {
-    return ContactMapper().toEntity(this)
-}
-
-/**
- * Extension per nome completo contact
- */
-fun Contact.fullName(): String {
-    return if (lastName.isNullOrBlank()) {
-        firstName
-    } else {
-        "$firstName $lastName"
-    }
-}
-
-/**
- * Extension per verifica se ha informazioni di contatto valide
- */
-fun Contact.hasValidContactInfo(): Boolean {
-    return !phone.isNullOrBlank() || !email.isNullOrBlank()
-}
-
-/**
- * Extension per formattazione display
+ * Returns a compact technical display string for logging and debug use only.
+ * Do NOT use in the UI — build localised strings in the composable layer instead.
  */
 fun Contact.toDisplayString(): String {
     val name = fullName()
-    val roleInfo = role?.let { " - $it" } ?: ""
-    val contactInfo = when {
+    val role = role?.let { " - $it" } ?: ""
+    val contact = when {
         !phone.isNullOrBlank() && !email.isNullOrBlank() -> " ($phone, $email)"
         !phone.isNullOrBlank() -> " ($phone)"
         !email.isNullOrBlank() -> " ($email)"
         else -> ""
     }
-    return "$name$roleInfo$contactInfo"
+    return "$name$role$contact"
 }

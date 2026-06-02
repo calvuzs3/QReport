@@ -460,7 +460,7 @@ fun PhotoDimensionsValidation(photos: List<Photo>) {
                             isSquare -> "Square"
                             isLandscape -> "Landscape"
                             isPortrait -> "Portrait"
-                            else -> "Unknown"
+                            else -> "UnknownError"
                         }
                     })")
 
@@ -566,7 +566,7 @@ private fun String.extractDimensions(): String {
         val height = this.extractHeight()
         "${width}x${height}"
     } catch (e: Exception) {
-        "Unknown"
+        "UnknownError"
     }
 }
 

@@ -13,24 +13,30 @@ class CheckContractExistsUseCase @Inject constructor(
     suspend operator fun invoke(contractId: String): QrResult<Contract, QrError> {
         return try {
 
+            Timber.d("Check contract exists")
+
+            // Check input
             if (contractId.isBlank()) {
-                return QrResult.Error(QrError.ContractsError.ClientIdEmpty("ID cliente non può essere vuoto"))
+                return QrResult.Error(QrError.ContractsError.MissingClientId())
             }
 
+            // Get
             when (val result = contractRepository.getContractById(contractId)) {
                 is QrResult.Success -> {
                     if (result.data == null) {
-                        throw NoSuchElementException("Contatto con ID '$contractId' non trovato")
+                        Timber.d("Contract found: ${result.data}")
+                        return QrResult.Error(QrError.ContractsError.NotFound())
                     }
                     QrResult.Success(result.data)
                 }
                 is QrResult.Error -> {
-                    throw NoSuchElementException("Contatto con ID '$contractId' non trovato")
+                    Timber.d("Contract not found: ${result.error}")
+                    return QrResult.Error(QrError.ContractsError.NotFound())
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error in check contract exists")
-            QrResult.Error(QrError.ContractsError.ContractNotFound(e.message))
+            Timber.e(e)
+            QrResult.Error(QrError.ContractsError.NotFound())
         }
     }
 }

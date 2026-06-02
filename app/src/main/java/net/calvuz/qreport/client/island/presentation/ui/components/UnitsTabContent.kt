@@ -7,18 +7,25 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.PrecisionManufacturing
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
+import net.calvuz.qreport.client.unit.presentation.ui.components.MechanicalUnitCard
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
+/**
+ * Tab content showing the mechanical units of an island.
+ *
+ * Uses [MechanicalUnitCard] (COMPACT variant) so the appearance is consistent
+ * with the standalone unit list screen. Delete confirmation is handled inside
+ * the card — no local pending-delete state needed here.
+ */
 @Composable
 fun UnitsTabContent(
     units: List<MechanicalUnit>,
@@ -29,10 +36,14 @@ fun UnitsTabContent(
     onViewAll: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var pendingDelete by remember { mutableStateOf<MechanicalUnit?>(null) }
-
     Column(modifier = modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+
+        // Header
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 text = stringResource(R.string.island_units_tab_title, units.size),
                 style = MaterialTheme.typography.titleMedium,
@@ -40,7 +51,9 @@ fun UnitsTabContent(
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (units.isNotEmpty()) {
-                    OutlinedButton(onClick = onViewAll) { Text(stringResource(R.string.island_units_view_all)) }
+                    OutlinedButton(onClick = onViewAll) {
+                        Text(stringResource(R.string.island_units_view_all))
+                    }
                 }
                 Button(onClick = onCreateUnit) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -67,14 +80,20 @@ fun UnitsTabContent(
 
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 80.dp),
+                    contentPadding = PaddingValues(
+                        start = 16.dp, end = 16.dp,
+                        top = 16.dp, bottom = 80.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(units, key = { it.id }) { unit ->
-                        MechanicalUnitListItem(
+                        MechanicalUnitCard(
                             unit = unit,
-                            onEditClick = { onEditUnit(unit.id) },
-                            onDeleteClick = { pendingDelete = unit }
+                            variant = ListViewMode.COMPACT,
+                            onClick = { onEditUnit(unit.id) },
+                            onEdit = { onEditUnit(unit.id) },
+                            onDelete = { onDeleteUnit(unit) },
+                            showActions = true
                         )
                     }
                 }
@@ -85,52 +104,6 @@ fun UnitsTabContent(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.island_units_new))
-            }
-        }
-    }
-
-    pendingDelete?.let { unit ->
-        ConfirmDeleteDialog(
-            objectName = stringResource(R.string.island_units_object_name),
-            objectDesc = unit.name,
-            onConfirm = { onDeleteUnit(unit); pendingDelete = null },
-            onDismiss = { pendingDelete = null }
-        )
-    }
-}
-
-@Composable
-private fun MechanicalUnitListItem(
-    unit: MechanicalUnit,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                // unit.unitType.displayName — resolved at presentation layer
-                Text(
-                    text = unit.unitType.displayName,
-                    //text = stringResource(unit.unitType.displayName),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(text = unit.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                val subtitle = listOfNotNull(unit.serialNumber, unit.model).joinToString(" · ")
-                if (subtitle.isNotBlank()) {
-                    Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-                unit.notes?.takeIf { it.isNotBlank() }?.let {
-                    Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            Row {
-                IconButton(onClick = onEditClick) { Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.action_edit)) }
-                IconButton(onClick = onDeleteClick) { Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.action_delete), tint = MaterialTheme.colorScheme.error) }
             }
         }
     }

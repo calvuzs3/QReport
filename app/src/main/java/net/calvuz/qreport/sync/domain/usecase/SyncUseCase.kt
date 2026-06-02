@@ -98,7 +98,7 @@ class SyncUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "SyncUseCase: unexpected exception during sync")
-            QrResult.Error(QrError.SystemError.Unknown(e))
+            QrResult.Error(QrError.SystemError.UnknownError(e))
         }
     }
 

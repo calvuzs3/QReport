@@ -1,13 +1,17 @@
 package net.calvuz.qreport.client.unit.presentation.model
 
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.model.QReportSortOrder
 
-enum class MechanicalUnitSortOrder(private val label: String) : QReportSortOrder {
-    CREATED_RECENT("Recenti"),
-    NAME("Nome custom"),
-    BY_TYPE("Per Tipo"),
-    BY_SERIAL("Per Seriale");
+/**
+ * Sort options for the mechanical unit list.
+ * Labels resolved via stringResource() in the UI.
+ */
+enum class MechanicalUnitSortOrder(val labelResId: Int) : QReportSortOrder {
+    CREATED_RECENT(R.string.unit_sort_created_recent),
+    NAME(R.string.unit_sort_name),
+    BY_TYPE(R.string.unit_sort_by_type),
+    BY_SERIAL(R.string.unit_sort_by_serial);
 
-    override fun getDisplayName(): String = label
+    override fun getDisplayName(): String = name // fallback; UI uses labelResId
 }
-

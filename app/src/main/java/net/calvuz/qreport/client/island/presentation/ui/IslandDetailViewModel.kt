@@ -9,7 +9,9 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.toUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
@@ -67,9 +69,6 @@ data class FacilityIslandDetailUiState(
     val hasOperationsInProgress: Boolean
         get() = isUpdatingMaintenance || isDeleting
 
-    val needsAttention: Boolean
-        get() = statistics?.needsAttention == true || island?.needsMaintenance() == true
-
     val unitsCount: Int
         get() = units.size
 }
@@ -82,7 +81,7 @@ data class FacilityIslandDetailUiState(
 class IslandDetailViewModel @Inject constructor(
     private val getIslandByIdUseCase: GetIslandByIdUseCase,
     private val getStatisticsUseCase: GetIslandStatisticsUseCase,
-    private val getMechanicalUnitsUseCase: GetMechanicalUnitsByIslandUseCase,
+    private val getMechanicalUnitsByIslandUseCase: GetMechanicalUnitsByIslandUseCase,
     private val updateMaintenanceUseCase: UpdateMaintenanceUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
     private val mechanicalUnitRepository: MechanicalUnitRepository
@@ -158,13 +157,15 @@ class IslandDetailViewModel @Inject constructor(
 
     private suspend fun loadMechanicalUnits(islandId: String) {
         _uiState.update { it.copy(isLoadingUnits = true) }
-        getMechanicalUnitsUseCase(islandId).fold(
-            onSuccess = { units -> _uiState.update { it.copy(units = units, isLoadingUnits = false) } },
-            onFailure = { error ->
-                Timber.w(error, "Failed to load mechanical units for island $islandId")
+        when (val result = getMechanicalUnitsByIslandUseCase(islandId)) {
+            is QrResult.Success ->{
+                _uiState.update { it.copy(units = result.data, isLoadingUnits = false) }
+            }
+            is QrResult.Error -> {
+                Timber.w(QrError.UnitError.NotFound(islandId).toUiText().toString())
                 _uiState.update { it.copy(isLoadingUnits = false) }
             }
-        )
+        }
     }
 
     // =========================================================================
@@ -259,6 +260,4 @@ sealed class FacilityIslandDetailEvent {
         val resetHours: Boolean = true,
         val notes: String? = null
     ) : FacilityIslandDetailEvent()
-    data class UpdateNextMaintenance(val date: Instant?) : FacilityIslandDetailEvent()
-    data class DeleteIsland(val force: Boolean = false) : FacilityIslandDetailEvent()
 }

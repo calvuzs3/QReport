@@ -13,44 +13,43 @@ class CheckContactExistsUseCase @Inject constructor(
 
     suspend operator fun invoke(contactId: String): QrResult<Contact, QrError> {
         return try {
-            // Validazione input
+
+            // Check input
             if (contactId.isBlank()) {
-                Timber.w("CheckContactExistsUseCase: contactId is blank")
-                return QrResult.Error(QrError.ValidationError.EmptyField(contactId.toString()))
+                Timber.w("ContactId is blank")
+                return QrResult.Error(QrError.ContactsError.MissingClientId())
             }
 
-            Timber.d("CheckContactExistsUseCase: Checking existence of contact: $contactId")
-
-            // Recupera contatto dal repository
+            // Get contact
             when (val result = contactRepository.getContactById(contactId)) {
                 is QrResult.Success -> {
                     val contact = result.data
                     when {
                         contact == null -> {
-                            Timber.w("CheckContactExistsUseCase: Contact not found: $contactId")
-                            QrResult.Error(QrError.DatabaseError.NotFound(contactId))
+                            Timber.w("Contact not found: $contactId")
+                            QrResult.Error(QrError.ContactsError.NotFound())
                         }
 
                         !contact.isActive -> {
-                            Timber.w("CheckContactExistsUseCase: Contact is not active: $contactId")
-                            QrResult.Error(QrError.ValidationError.IsNotActive(contactId))
+                            Timber.w("Contact is not active: $contactId")
+                            QrResult.Error(QrError.ContactsError.ContactIsNotActive())
                         }
 
                         else -> {
-                            Timber.d("CheckContactExistsUseCase: Contact found and active: $contactId")
+                            Timber.d("Contact found and active: $contactId")
                             QrResult.Success(contact)
                         }
                     }
                 }
 
                 is QrResult.Error -> {
-                    Timber.e("CheckContactExistsUseCase: Repository error for contactId $contactId: ${result.error}")
-                    QrResult.Error(result.error)
+                    Timber.e("Repository error for contactId $contactId: ${result.error}")
+                    QrResult.Error(QrError.ContactsError.LoadError())
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "CheckContactExistsUseCase: Exception checking contact existence: $contactId")
-            QrResult.Error(QrError.SystemError.Unknown())
+            Timber.e(e, "Exception checking contact existence: $contactId")
+            QrResult.Error(QrError.SystemError.UnknownError())
         }
     }
 }

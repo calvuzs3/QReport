@@ -17,7 +17,9 @@ class ObserveIslandsUseCase @Inject constructor(
     private val islandRepository: IslandRepository
 ) {
     operator fun invoke(facilityId: String? = null): Flow<List<Island>> {
-        Timber.d("ObserveIslandsUseCase facilityId=${facilityId ?: "none"}")
+
+        Timber.d("Observe islands for facility: ${facilityId ?: "none"}")
+
         val flow = if (facilityId.isNullOrBlank()) {
             islandRepository.getAllActiveIslandsFlow()
         } else {

@@ -290,7 +290,7 @@ class TechnicianSettingsDataStore @Inject constructor(
 
         } catch (e: Exception) {
             Timber.Forest.e(e, "Errore ottenendo technician settings summary")
-            mapOf("error" to (e.message ?: "Unknown error"))
+            mapOf("error" to (e.message ?: "UnknownError error"))
         }
     }
 }

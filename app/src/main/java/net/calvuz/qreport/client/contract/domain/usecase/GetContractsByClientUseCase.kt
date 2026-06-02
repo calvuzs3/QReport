@@ -13,26 +13,40 @@ class GetContractsByClientUseCase @Inject constructor(
     private val contractRepository: ContractRepository,
     private val checkClientExists: CheckClientExistsUseCase
 ) {
-    suspend operator fun invoke(clientId: String): QrResult<List<Contract>, QrError> {
+    suspend operator fun invoke(clientId: String): QrResult<List<Contract>, QrError.ContractsError> {
         return try {
+
+            Timber.d("Get contracts by client id")
+
+            // Check input
             if (clientId.isBlank()) {
-                return QrResult.Error(QrError.ContractsError.ClientIdEmpty("ID cliente non può essere vuoto"))
+                Timber.d("Client id is blank")
+                return QrResult.Error(QrError.ContractsError.MissingClientId())
             }
 
-            // Verify client exists
+            // Check client exists
             when (checkClientExists(clientId)) {
-                is QrResult.Error -> return QrResult.Error(QrError.ContractsError.ClientNotFound(clientId))
+                is QrResult.Error -> {
+                    Timber.d("Client not found: $clientId")
+                    return QrResult.Error(QrError.ContractsError.ClientNotFound())
+                }
                 is QrResult.Success -> Unit
             }
 
             // Fetch contracts
             when (val result = contractRepository.getContractsByClient(clientId)) {
-                is QrResult.Success -> QrResult.Success(result.data)
-                is QrResult.Error -> QrResult.Error(QrError.ContractsError.ContractNotFound(result.error.toString()))
+                is QrResult.Error -> {
+                    Timber.d("Get contracts by client error: r${result.error}")
+                    QrResult.Error(QrError.ContractsError.NotFound())
+                }
+                is QrResult.Success -> {
+                    Timber.d("Get contracts by client successful: ${result.data.count()}")
+                    QrResult.Success(result.data)
+                }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error getting contracts for client $clientId")
-            QrResult.Error(QrError.ContractsError.ContractNotFound(e.message))
+            Timber.e(e)
+            QrResult.Error(QrError.ContractsError.NotFound(e.message))
         }
     }
 

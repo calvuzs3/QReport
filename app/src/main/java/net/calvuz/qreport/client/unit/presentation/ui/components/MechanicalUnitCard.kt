@@ -1,38 +1,29 @@
 package net.calvuz.qreport.client.unit.presentation.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
+import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
+import net.calvuz.qreport.app.app.presentation.ui.theme.success
+import net.calvuz.qreport.app.app.presentation.ui.theme.successContainer
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 @Composable
 fun MechanicalUnitCard(
+    modifier: Modifier = Modifier,
     unit: MechanicalUnit,
     onClick: () -> Unit,
     onEdit: (() -> Unit)? = null,
@@ -43,7 +34,7 @@ fun MechanicalUnitCard(
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         onClick = onClick,
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -52,231 +43,158 @@ fun MechanicalUnitCard(
             ListViewMode.FULL -> FullMechanicalUnitCard(
                 unit = unit,
                 showActions = showActions,
-                onDelete = if (onDelete != null) {
-                    { showDeleteDialog = true }
-                } else null,
                 onEdit = onEdit,
+                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null
             )
-
             ListViewMode.COMPACT -> CompactMechanicalUnitCard(
-                modifier = Modifier,
                 unit = unit,
                 showActions = showActions,
                 onEdit = onEdit,
-                onDelete = onDelete
+                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null
             )
-
-            ListViewMode.MINIMAL -> MinimalMechanicalUnitCard(
-                unit
-            )
-        }
-
-        // Delete confirmation dialog
-        if (showDeleteDialog && onDelete != null) {
-            ConfirmDeleteDialog(
-                objectName = "Unità meccanica",
-                objectDesc = unit.name,
-                onConfirm = {
-                    onDelete()
-                    showDeleteDialog = false
-                },
-                onDismiss = { showDeleteDialog = false }
-            )
+            ListViewMode.MINIMAL -> MinimalMechanicalUnitCard(unit)
         }
     }
+
+    if (showDeleteDialog && onDelete != null) {
+        ConfirmDeleteDialog(
+            objectName = stringResource(R.string.unit_card_object_name),
+            objectDesc = unit.name,
+            onConfirm = { onDelete(); showDeleteDialog = false },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
 }
+
+// =============================================================================
+// FULL — tutti i dettagli, bottoni grandi per uso con guanti
+// =============================================================================
 
 @Composable
 private fun FullMechanicalUnitCard(
     unit: MechanicalUnit,
-    showActions: Boolean = false,
-    onDelete: (() -> Unit)? = null,
-    onEdit: (() -> Unit)? = null,
+    showActions: Boolean,
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?
 ) {
     Column(
         modifier = Modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Header row - Nome stabilimento e azioni
+        // ── Header: tipo badge + azioni ──────────────────────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = unit.unitType.displayName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
+            SuggestionChip(
+                onClick = {},
+                label = {
+                    Text(
+                        text = stringResource(unit.unitType.labelResId),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                },
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-                Text(
-                    text = unit.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+            )
 
             if (showActions) {
-                Row {
-                    if (onEdit != null) {
-                        IconButton(
-                            onClick = onEdit,
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Modifica Unità",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    if (onDelete != null) {
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Elimina Unità",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
+                UnitActionButtons(onEdit = onEdit, onDelete = onDelete, large = true)
             }
         }
 
-        // Body: Serial + model on the same line when both present
-        val subtitle = listOfNotNull(unit.serialNumber, unit.model).joinToString(" · ")
-        if (subtitle.isNotBlank()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+        // ── Nome ──────────────────────────────────────────────────────────────
+        Text(
+            text = unit.name,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        // ── Dettagli tecnici ─────────────────────────────────────────────────
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            unit.serialNumber?.let {
+                DetailRow(
+                    label = stringResource(R.string.unit_card_serial_label),
+                    value = it
+                )
+            }
+            unit.model?.let {
+                DetailRow(
+                    label = stringResource(R.string.unit_card_model_label),
+                    value = it
+                )
+            }
+            unit.notes?.takeIf { it.isNotBlank() }?.let {
+                DetailRow(
+                    label = stringResource(R.string.unit_card_notes_label),
+                    value = it,
+                    maxLines = 2
                 )
             }
         }
 
-        // Notes
-        unit.notes?.takeIf { it.isNotBlank() }?.let {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-
-        // Last modified
+        // ── Footer: timestamp a sinistra, stato a destra ─────────────────────
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            //horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Left
-            //MechanicalUnitStatusChip(isActive = client.isActive)
-
-            // Right
             Text(
-                text = unit.updatedAt.toItalianLastModified(),
+                text = stringResource(
+                    R.string.unit_card_last_modified,
+                    unit.updatedAt.toItalianLastModified()
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            UnitStatusBadge(isActive = unit.isActive)
         }
     }
 }
+
+// =============================================================================
+// COMPACT — una riga header + subtitle, bottoni standard
+// =============================================================================
 
 @Composable
 private fun CompactMechanicalUnitCard(
-    modifier: Modifier = Modifier,
     unit: MechanicalUnit,
     showActions: Boolean,
     onEdit: (() -> Unit)?,
-    onDelete: (() -> Unit)?,
+    onDelete: (() -> Unit)?
 ) {
-    Column(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // Header row - Nome stabilimento e azioni
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = unit.unitType.displayName,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = unit.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            if (showActions) {
-                Row {
-                    if (onEdit != null) {
-                        IconButton(
-                            onClick = onEdit,
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Modifica Unità",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                    if (onDelete != null) {
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(24.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Elimina Unità",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Body: Serial + model on the same line when both present
-        val subtitle = listOfNotNull(unit.serialNumber, unit.model).joinToString(" · ")
-        if (subtitle.isNotBlank()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
+        // Colonna principale
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            // Tipo piccolo sopra il nome
+            Text(
+                text = stringResource(unit.unitType.labelResId),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = unit.name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            // Seriale · Modello su una riga
+            val subtitle = listOfNotNull(unit.serialNumber, unit.model).joinToString(" · ")
+            if (subtitle.isNotBlank()) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
@@ -287,47 +205,150 @@ private fun CompactMechanicalUnitCard(
             }
         }
 
-        // Last modified
+        // Stato + azioni
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            //horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            // Left
-            //MechanicalUnitStatusChip(isActive = client.isActive)
-
-            // Right
-            Text(
-                text = unit.updatedAt.toItalianLastModified(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            UnitStatusIcon(isActive = unit.isActive)
+            if (showActions) {
+                UnitActionButtons(onEdit = onEdit, onDelete = onDelete, large = false)
+            }
         }
     }
 }
 
-
+// =============================================================================
+// MINIMAL — solo nome e stato
+// =============================================================================
 
 @Composable
-private fun MinimalMechanicalUnitCard(
-    unit: MechanicalUnit,
-) {
-    // Header
+private fun MinimalMechanicalUnitCard(unit: MechanicalUnit) {
     Row(
-        modifier = Modifier.padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(modifier = Modifier.weight(1f)) {
+        Text(
+            text = unit.name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        UnitStatusIcon(isActive = unit.isActive)
+    }
+}
 
-            //
-            Text(
-                text = unit.name,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+// =============================================================================
+// SHARED COMPOSABLES
+// =============================================================================
+
+/**
+ * Label + valore su una riga, per la scheda full.
+ */
+@Composable
+private fun DetailRow(label: String, value: String, maxLines: Int = 1) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(80.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+/**
+ * Chip testuale per la scheda full — "Attiva" / "Non attiva".
+ */
+@Composable
+private fun UnitStatusBadge(isActive: Boolean) {
+    val (text, colors) = if (isActive) {
+        stringResource(R.string.unit_card_status_active) to
+                SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.successContainer,
+                    labelColor = MaterialTheme.colorScheme.onSuccessContainer
+                )
+    } else {
+        stringResource(R.string.unit_card_status_inactive) to
+                SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    labelColor = MaterialTheme.colorScheme.onErrorContainer
+                )
+    }
+    SuggestionChip(
+        onClick = {},
+        label = { Text(text, style = MaterialTheme.typography.labelSmall) },
+        colors = colors
+    )
+}
+
+/**
+ * Icona stato per COMPACT e MINIMAL.
+ */
+@Composable
+private fun UnitStatusIcon(isActive: Boolean) {
+    Icon(
+        imageVector = if (isActive) Icons.Default.CheckCircle else Icons.Default.Cancel,
+        contentDescription = if (isActive)
+            stringResource(R.string.unit_card_status_active)
+        else
+            stringResource(R.string.unit_card_status_inactive),
+        tint = if (isActive) MaterialTheme.colorScheme.success else MaterialTheme.colorScheme.error,
+        modifier = Modifier.size(18.dp)
+    )
+}
+
+/**
+ * Bottoni edit/delete.
+ * [large] = true per la scheda FULL (48dp touch target, uso con guanti).
+ * [large] = false per COMPACT (32dp).
+ */
+@Composable
+private fun UnitActionButtons(
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?,
+    large: Boolean
+) {
+    val buttonSize = if (large) 48.dp else 36.dp
+    val iconSize = if (large) 24.dp else 20.dp
+
+    Row {
+        if (onEdit != null) {
+            IconButton(onClick = onEdit, modifier = Modifier.size(buttonSize)) {
+                Icon(
+                    imageVector = Icons.Default.Edit,
+                    contentDescription = stringResource(R.string.action_edit),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(iconSize)
+                )
+            }
+        }
+        if (onDelete != null) {
+            IconButton(onClick = onDelete, modifier = Modifier.size(buttonSize)) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(R.string.action_delete),
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(iconSize)
+                )
+            }
         }
     }
 }

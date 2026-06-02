@@ -11,7 +11,7 @@ data class Contract(
     val description: String? = null,
     val startDate: Instant,
     val endDate: Instant,
-    val hasPriority: Boolean = true,           // rensponse priority (48h)
+    val hasPriority: Boolean = true,           // response priority (48h)
     val hasRemoteAssistance: Boolean = true,   // remote assistance (24h)
     val hasMaintenance: Boolean = true,        // island|rob maintenance
     val notes: String? = null,

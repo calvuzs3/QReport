@@ -19,7 +19,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
-import net.calvuz.qreport.client.client.presentation.ui.components.FormAddressSection
+import net.calvuz.qreport.app.app.presentation.components.QReportFormAddressSection
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -136,7 +136,7 @@ fun ClientFormScreen(
 
                 // Section 3: Address
                 item {
-                    FormAddressSection(
+                    QReportFormAddressSection(
                         street = uiState.street,
                         streetNumber = uiState.streetNumber,
                         city = uiState.city,
