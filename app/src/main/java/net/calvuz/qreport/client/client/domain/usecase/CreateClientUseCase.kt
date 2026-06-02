@@ -16,9 +16,11 @@ class CreateClientUseCase @Inject constructor(
     private val checkCompanyNameUniqueness: CheckCompanyNameUniquenessUseCase
 ) {
     suspend operator fun invoke(client: Client): QrResult<Unit, QrError.ClientError> {
+
         // Validate required fields
-        validateClientData(client).onFailure {
-            return QrResult.Error(QrError.ClientError.MissingCompanyName(it.message))
+        when (val valid = validateClientData(client)) {
+            is QrResult.Error -> return valid
+            is QrResult.Success -> Unit
         }
 
         // Check name uniqueness
@@ -27,6 +29,7 @@ class CreateClientUseCase @Inject constructor(
             is QrResult.Success -> Unit
         }
 
+        // Create client
         return clientRepository.createClient(client).fold(
             onSuccess = { QrResult.Success(Unit) },
             onFailure = { QrResult.Error(QrError.ClientError.CreateError(it.message)) }

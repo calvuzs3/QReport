@@ -13,6 +13,7 @@ class GetActiveClientsWithIslandsUseCase @Inject constructor(
     private val clientRepository: ClientRepository
 ) {
     suspend operator fun invoke(): QrResult<List<Client>, QrError.ClientError> =
+
         clientRepository.getActiveClientsWithIslands().fold(
             onSuccess = { clients ->
                 QrResult.Success(clients.sortedBy { it.companyName.lowercase() })

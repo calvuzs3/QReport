@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
+import net.calvuz.qreport.client.contact.presentation.model.getDisplayName
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -59,7 +60,7 @@ class GetContactStatisticsUseCase @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Exception calculating statistics for client: $clientId")
-            QrResult.Error(QrError.SystemError.Unknown())
+            QrResult.Error(QrError.SystemError.UnknownError())
         }
     }
 
@@ -97,9 +98,9 @@ class GetContactStatisticsUseCase @Inject constructor(
         val preferredMethodDistribution = contacts
             .mapNotNull { contact ->
                 when (contact.preferredContactMethod) {
-                    ContactMethod.PHONE -> "Telefono"
-                    ContactMethod.MOBILE -> "Cellulare"
-                    ContactMethod.EMAIL -> "Email"
+                    ContactMethod.PHONE -> ContactMethod.PHONE.getDisplayName()
+                    ContactMethod.MOBILE -> ContactMethod.MOBILE.getDisplayName()
+                    ContactMethod.EMAIL -> ContactMethod.EMAIL.getDisplayName()
                     null -> null
                 }
             }

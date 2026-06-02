@@ -14,19 +14,31 @@ class CreateContractUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(contract: Contract): QrResult<String, QrError> {
         return try {
-            // 1. Verify client exists
+
+            Timber.d("Create contract")
+
+            // Check client exist
             when (checkClientExists(contract.clientId)) {
-                is QrResult.Error -> return QrResult.Error(QrError.ContractsError.ClientNotFound(contract.clientId))
+                is QrResult.Error -> {
+                    Timber.d("Client not found ${contract.clientId}")
+                    return QrResult.Error(QrError.ContractsError.ClientNotFound())
+                }
                 is QrResult.Success -> Unit
             }
 
-            // 2. Create
+            // Create
             when (val result = repository.createContract(contract)) {
-                is QrResult.Error -> QrResult.Error(QrError.DatabaseError.InsertFailed(null))
-                is QrResult.Success -> QrResult.Success(result.data)
+                is QrResult.Error -> {
+                    Timber.d("Create contract error: ${result.error}")
+                    QrResult.Error(QrError.DatabaseError.InsertFailed(null))
+                }
+                is QrResult.Success -> {
+                    Timber.d("Contract created successfully: ${result.data}")
+                    QrResult.Success(result.data)
+                }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Error creating contract")
+            Timber.e(e)
             QrResult.Error(QrError.DatabaseError.InsertFailed(null))
         }
     }

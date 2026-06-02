@@ -1,4 +1,4 @@
-package net.calvuz.qreport.client.client.presentation.ui.components
+package net.calvuz.qreport.app.app.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 
 @Composable
-fun FormAddressSection(
+fun QReportFormAddressSection(
     street: String,
     streetNumber: String,
     postalCode: String,

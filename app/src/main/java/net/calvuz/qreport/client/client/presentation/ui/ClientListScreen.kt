@@ -64,7 +64,7 @@ fun ClientListScreen(
         // Top App Bar con azioni
         TopAppBar(
             navigationIcon = { ClientPkg.icon },
-            title = { Text(ClientPkg.title) },
+            title = {  Text(stringResource(ClientPkg.titleResId)) },
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortOrderMenu by remember { mutableStateOf(false) }

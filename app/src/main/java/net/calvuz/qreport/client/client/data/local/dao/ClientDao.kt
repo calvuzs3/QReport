@@ -4,9 +4,6 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 
-/**
- * Client DAO
- */
 @Dao
 interface ClientDao {
 
@@ -52,6 +49,7 @@ interface ClientDao {
         ORDER BY company_name ASC
     """)
     suspend fun searchClients(query: String): List<ClientEntity>
+
     @Query("""
         SELECT * FROM clients 
         WHERE (company_name LIKE '%' || :query || '%' 
@@ -68,6 +66,7 @@ interface ClientDao {
         ORDER BY company_name ASC
     """)
     fun searchClientsFlow(query: String): Flow<List<ClientEntity>>
+
     @Query("""
         SELECT * FROM clients 
         WHERE (company_name LIKE '%' || :query || '%' 
@@ -126,13 +125,6 @@ interface ClientDao {
 
     // ===== BULK OPERATIONS =====
 
-    @Transaction
-    suspend fun deleteClientCompletely(clientId: String) {
-        // Le foreign key CASCADE si occupano di facilities, contacts e islands
-        // Ma potremmo voler fare cleanup manuale per controllo
-        softDeleteClient(clientId)
-    }
-
     @Query("DELETE FROM clients WHERE is_active = 0 AND updated_at < :cutoffTimestamp")
     suspend fun permanentlyDeleteInactiveClients(cutoffTimestamp: Long): Int
 
@@ -183,28 +175,6 @@ interface ClientDao {
     """)
     suspend fun getActiveClientsWithIslands(): List<ClientEntity>
 
-    // ===== QUERY CON CONTEGGI CORRETTA ===== ✅
-    @Query("""
-        SELECT c.id,
-               c.company_name as companyName,
-               c.notes,
-               c.headquarters_json as headquartersJson,
-               c.is_active as isActive,
-               c.created_at as createdAt,
-               c.updated_at as updatedAt,
-               COUNT(DISTINCT f.id) as facilitiesCount,
-               COUNT(DISTINCT ct.id) as contactsCount,
-               COUNT(DISTINCT fi.id) as islandsCount
-        FROM clients c
-        LEFT JOIN facilities f ON c.id = f.client_id AND f.is_active = 1
-        LEFT JOIN contacts ct ON c.id = ct.client_id AND ct.is_active = 1  
-        LEFT JOIN facility_islands fi ON f.id = fi.facility_id AND fi.is_active = 1
-        WHERE c.is_active = 1
-        GROUP BY c.id, c.company_name, c.notes, c.headquarters_json, c.is_active, c.created_at, c.updated_at
-        ORDER BY c.company_name ASC
-    """)
-    suspend fun getClientsWithCounts(): List<ClientWithCountsResult>
-
     // ===== MAINTENANCE =====
 
     @Query("UPDATE clients SET updated_at = :timestamp WHERE id = :id")
@@ -226,16 +196,3 @@ interface ClientDao {
     @Query("SELECT COUNT(*) FROM clients")
     suspend fun count(): Int
 }
-
-data class ClientWithCountsResult(
-    val id: String,
-    val companyName: String,           // ✅ Matches alias in query
-    val notes: String?,
-    val headquartersJson: String?,     // ✅ Matches alias in query
-    val isActive: Boolean,             // ✅ Matches alias in query
-    val createdAt: Long,               // ✅ Matches alias in query
-    val updatedAt: Long,               // ✅ Matches alias in query
-    val facilitiesCount: Int,          // ✅ Matches alias in query
-    val contactsCount: Int,            // ✅ Matches alias in query
-    val islandsCount: Int              // ✅ Matches alias in query
-)

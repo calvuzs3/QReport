@@ -3,7 +3,11 @@ package net.calvuz.qreport.client.client.presentation.model
 import kotlinx.datetime.Instant
 
 /**
- * Statistiche per singolo cliente (per UI liste e card)
+ * Statistics for a single client — used in list cards and detail views.
+ *
+ * Note: [statusDescription] and [summaryText] have been removed.
+ * Localised status labels belong in the UI layer (Composable or ViewModel
+ * via UiText), not in a presentation model.
  */
 data class ClientStatistics(
     val facilitiesCount: Int,
@@ -14,22 +18,19 @@ data class ClientStatistics(
     val completedCheckUps: Int,
     val lastCheckUpDate: Instant?
 ) {
-    /**
-     * Percentuale CheckUp completati
-     */
+    /** Percentage of completed check-ups out of total. */
     val completionRate: Int
         get() = if (totalCheckUps > 0) {
             (completedCheckUps.toDouble() / totalCheckUps * 100).toInt()
         } else 0
 
-    /**
-     * Indica se il cliente ha dati completi
-     */
+    /** True when the client has at least one facility and one contact. */
     val isComplete: Boolean
         get() = facilitiesCount > 0 && contactsCount > 0
 
     /**
-     * Score salute cliente (0-100)
+     * Composite health score (0–100).
+     * Weights: facilities 20, contacts 10, contracts 10, islands 20, check-ups 40.
      */
     val healthScore: Int
         get() {
@@ -40,43 +41,5 @@ data class ClientStatistics(
             if (islandsCount > 0) score += 20
             if (totalCheckUps > 0) score += 40
             return score
-        }
-
-    /**
-     * Descrizione stato per UI
-     */
-    val statusDescription: String
-        get() = when {
-            !isComplete -> "Setup incompleto"
-            totalCheckUps == 0 -> "Nessun check-up"
-            completionRate < 50 -> "Check-up in corso"
-            else -> "Operativo"
-        }
-
-    /**
-     * Testo riassuntivo per UI
-     */
-    val summaryText: String
-        get() = buildString {
-            val parts = mutableListOf<String>()
-
-            if (facilitiesCount > 0) {
-                parts.add("$facilitiesCount stabiliment${if (facilitiesCount == 1) "o" else "i"}")
-            }
-
-            if (islandsCount > 0) {
-                parts.add("$islandsCount isol${if (islandsCount == 1) "a" else "e"}")
-            }
-
-            if (contactsCount > 0) {
-                parts.add("$contactsCount referent${if (contactsCount == 1) "e" else "i"}")
-            }
-
-            when {
-                parts.isEmpty() -> append("Nessun dato configurato")
-                parts.size == 1 -> append(parts.first())
-                parts.size == 2 -> append("${parts[0]} e ${parts[1]}")
-                else -> append("${parts.dropLast(1).joinToString(", ")} e ${parts.last()}")
-            }
         }
 }

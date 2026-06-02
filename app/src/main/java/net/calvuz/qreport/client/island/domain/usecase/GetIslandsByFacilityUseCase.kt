@@ -10,6 +10,7 @@ import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -23,23 +24,33 @@ class GetIslandsByFacilityUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository
 ) {
     suspend operator fun invoke(facilityId: String): QrResult<List<Island>, QrError.IslandError> {
+
+        Timber.d("Get island by facility id")
+
+        // Check input
         if (facilityId.isBlank()) {
-            return QrResult.Error(QrError.IslandError.FacilityNotFound("Facility ID is required"))
+            Timber.d("Facility id is blank")
+            return QrResult.Error(QrError.IslandError.FacilityNotFound())
         }
 
-        // Verify facility exists
+        // Check facility exists
         facilityRepository.getFacilityById(facilityId).fold(
             onSuccess = { facility ->
                 if (facility == null || !facility.isActive) {
+                    Timber.d("Facility not found: $facilityId")
                     return QrResult.Error(QrError.IslandError.FacilityNotFound())
                 }
             },
-            onFailure = { return QrResult.Error(QrError.IslandError.LoadError(it.message)) }
+            onFailure = {
+                Timber.d("Error loading islands: ${it.message}")
+                return QrResult.Error(QrError.IslandError.LoadError(it.message)) }
         )
 
-        return islandRepository.getIslandsByFacility(facilityId).fold(
-            onSuccess = { islands -> QrResult.Success(islands.sortedByTypeThenName()) },
-            onFailure = { QrResult.Error(QrError.IslandError.LoadError(it.message)) }
+        // Get
+        islandRepository.getIslandsByFacility(facilityId).fold(
+            onSuccess = { islands -> return QrResult.Success(islands.sortedByTypeThenName())
+            },
+            onFailure = { return QrResult.Error(QrError.IslandError.LoadError(it.message)) }
         )
     }
 

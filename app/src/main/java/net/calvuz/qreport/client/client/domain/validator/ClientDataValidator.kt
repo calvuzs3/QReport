@@ -1,28 +1,37 @@
 package net.calvuz.qreport.client.client.domain.validator
 
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.model.Client
 import javax.inject.Inject
 
-class ClientDataValidator @Inject constructor(){
+/**
+ * Validates [Client] domain data before create/update operations.
+ *
+ * Returns [QrResult.Success] if all rules pass, or [QrResult.Error] with a
+ * [QrError.ClientError] describing the first failing rule.
+ *
+ * Validation rules:
+ * - [Client.id] must not be blank
+ * - [Client.companyName] must not be blank
+ * - [Client.companyName] must be at least 2 characters
+ * - [Client.companyName] must be at most 255 characters
+ */
+class ClientDataValidator @Inject constructor() {
 
-    /**
-     * Validazione dati client
-     */
-    operator fun invoke(client: Client): Result<Unit> {
-        return when {
-            client.id.isBlank() ->
-                Result.failure(IllegalArgumentException("ID cliente è obbligatorio"))
+    operator fun invoke(client: Client): QrResult<Unit, QrError.ClientError> = when {
+        client.id.isBlank() ->
+            QrResult.Error(QrError.ClientError.MissingCompanyName())
 
-            client.companyName.isBlank() ->
-                Result.failure(IllegalArgumentException("Ragione sociale è obbligatoria"))
+        client.companyName.isBlank() ->
+            QrResult.Error(QrError.ClientError.MissingCompanyName())
 
-            client.companyName.length < 2 ->
-                Result.failure(IllegalArgumentException("Ragione sociale deve essere di almeno 2 caratteri"))
+        client.companyName.length < 2 ->
+            QrResult.Error(QrError.ClientError.InvalidCompanyName())
 
-            client.companyName.length > 255 ->
-                Result.failure(IllegalArgumentException("Ragione sociale troppo lunga (max 255 caratteri)"))
+        client.companyName.length > 255 ->
+            QrResult.Error(QrError.ClientError.InvalidCompanyName())
 
-            else -> Result.success(Unit)
-        }
+        else -> QrResult.Success(Unit)
     }
 }

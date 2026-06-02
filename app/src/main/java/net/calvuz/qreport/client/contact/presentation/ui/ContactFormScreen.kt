@@ -27,6 +27,7 @@ import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
 import timber.log.Timber
 import net.calvuz.qreport.R
+import net.calvuz.qreport.client.contact.presentation.model.getDisplayName
 
 /**
  * Screen per la creazione/modifica di un contatto
@@ -528,7 +529,7 @@ private fun ContactMethodDropdown(
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = selectedMethod?.displayName ?: "",
+            value = selectedMethod?.getDisplayName() ?: "",
             onValueChange = { },
             readOnly = true,
             label = { Text(stringResource(R.string.contact_form_field_preferred_contact_method)) },
@@ -556,7 +557,7 @@ private fun ContactMethodDropdown(
 
             ContactMethod.entries.forEach { method ->
                 DropdownMenuItem(
-                    text = { Text(method.displayName) },
+                    text = { Text(method.getDisplayName()) },
                     onClick = {
                         onMethodSelected(method)
                         expanded = false

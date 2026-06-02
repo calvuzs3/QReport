@@ -11,20 +11,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.ErrorState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandOption
-import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitFilter
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitPkg
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitSortOrder
@@ -33,15 +34,6 @@ import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 import timber.log.Timber
 
-/**
- * Screen that lists all [MechanicalUnit]s for a given island.
- *
- * @param islandId        ID of the parent island.
- * @param islandName      Display name of the parent island (shown in title).
- * @param onNavigateBack  Back navigation callback.
- * @param onNavigateToAdd Navigate to the add form for a new unit.
- * @param onNavigateToEdit Navigate to the edit form for an existing unit.
- */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MechanicalUnitListScreen(
@@ -54,8 +46,6 @@ fun MechanicalUnitListScreen(
     viewModel: MechanicalUnitListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    // Unit pending deletion — drives the confirm dialog
     var pendingDeleteId by remember { mutableStateOf<String?>(null) }
     var pendingDeleteName by remember { mutableStateOf("") }
 
@@ -64,16 +54,14 @@ fun MechanicalUnitListScreen(
         viewModel.initializeForIsland(islandId)
     }
 
-    Column(
-        modifier = modifier.fillMaxSize()
-    ) {
+    Column(modifier = modifier.fillMaxSize()) {
+
         TopAppBar(
             title = {
                 Column {
-                    Text("Unità Meccaniche")
+                    Text(stringResource(R.string.unit_screen_list_title))
                     Text(
-                        text = uiState.selectedIsland
-                            .takeIf { it != IslandOption.ALL }
+                        text = uiState.selectedIsland.takeIf { it != IslandOption.ALL }
                             ?.getDisplayName() ?: islandName,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -82,32 +70,22 @@ fun MechanicalUnitListScreen(
             },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Indietro")
+                    Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.unit_screen_list_action_back))
                 }
             },
             actions = {
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
 
-                // View mode toggle button
                 IconButton(onClick = viewModel::cycleCardVariant) {
-                    Icon(
-                        imageVector = uiState.cardVariant.getCardVariantIcon(),
-                        contentDescription = uiState.cardVariant.getCardVariantDescription()
-                    )
+                    Icon(uiState.cardVariant.getCardVariantIcon(), contentDescription = uiState.cardVariant.getCardVariantDescription())
                 }
-
-                // Sort button
                 IconButton(onClick = { showSortMenu = true }) {
-                    Icon(Icons.AutoMirrored.Default.Sort, contentDescription = "Ordinamento")
+                    Icon(Icons.AutoMirrored.Default.Sort, contentDescription = stringResource(R.string.unit_screen_list_action_sort))
                 }
-
-                // Filter button
                 IconButton(onClick = { showFilterMenu = true }) {
-                    Icon(Icons.Default.FilterList, contentDescription = "Filtri")
+                    Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.unit_screen_list_action_filter))
                 }
-
-                // Sort menu
                 QReportSortOrderMenu(
                     expanded = showSortMenu,
                     entries = MechanicalUnitSortOrder.entries,
@@ -115,8 +93,6 @@ fun MechanicalUnitListScreen(
                     onSortOrderSelected = viewModel::updateSortOrder,
                     onDismiss = { showSortMenu = false }
                 )
-
-                // Filter menu
                 QReportFilterMenu(
                     expanded = showFilterMenu,
                     entries = MechanicalUnitFilter.entries,
@@ -127,14 +103,12 @@ fun MechanicalUnitListScreen(
             }
         )
 
-        // Search bar
         QReportSearchBar(
             query = uiState.searchQuery,
             onQueryChange = viewModel::updateSearchQuery,
-            placeholder = "Cerca per nome, seriale o modello...",
+            placeholder = stringResource(R.string.unit_screen_list_search_placeholder)
         )
 
-        // Island selector
         QReportSelectorRow(
             entries = uiState.availableIslands,
             selectedItem = uiState.selectedIsland,
@@ -143,9 +117,7 @@ fun MechanicalUnitListScreen(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
 
-        // Active filter / sort chips
-        if (uiState.selectedFilter != MechanicalUnitPkg.selectedFilter ||
-            uiState.sortOrder != MechanicalUnitPkg.selectedSortOrder) {
+        if (uiState.selectedFilter != MechanicalUnitPkg.selectedFilter || uiState.sortOrder != MechanicalUnitPkg.selectedSortOrder) {
             QReportFiltersChipRow(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 selectedFilter = uiState.selectedFilter,
@@ -157,32 +129,22 @@ fun MechanicalUnitListScreen(
             )
         }
 
-        // Content with Pull to Refresh
         val pullToRefreshState = rememberPullToRefreshState()
 
         LaunchedEffect(uiState.isRefreshing) {
-            if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
-                pullToRefreshState.endRefresh()
-            }
+            if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) pullToRefreshState.endRefresh()
         }
-
         LaunchedEffect(pullToRefreshState.isRefreshing) {
-            if (pullToRefreshState.isRefreshing) {
-                viewModel.refresh()
-            }
+            if (pullToRefreshState.isRefreshing) viewModel.refresh()
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(pullToRefreshState.nestedScrollConnection)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().nestedScroll(pullToRefreshState.nestedScrollConnection)) {
             val currentError = uiState.error
 
             when {
                 uiState.isLoading -> LoadingState()
 
-                currentError != null -> ErrorState(
+                currentError != null -> QReportErrorState(
                     error = currentError,
                     onRetry = viewModel::loadUnits,
                     onDismiss = viewModel::dismissError
@@ -191,70 +153,58 @@ fun MechanicalUnitListScreen(
                 uiState.filteredUnits.isEmpty() -> {
                     val (title, message) = when {
                         uiState.allUnits.isEmpty() ->
-                            "Nessuna unità meccanica" to "Aggiungi la prima unità con il pulsante +"
+                            stringResource(R.string.unit_screen_list_empty_title) to
+                                    stringResource(R.string.unit_screen_list_empty_message)
                         uiState.selectedFilter != MechanicalUnitPkg.selectedFilter ->
-                            "Nessun risultato" to "Nessuna unità corrisponde al filtro '${uiState.selectedFilter.getDisplayName()}'"
+                            stringResource(R.string.unit_screen_list_empty_filtered_title) to
+                                    stringResource(R.string.unit_screen_list_empty_filtered_message,
+                                        stringResource(uiState.selectedFilter.labelResId))
                         else ->
-                            "Nessun risultato" to "Nessuna unità corrisponde alla ricerca"
+                            stringResource(R.string.unit_screen_list_empty_search_title) to
+                                    stringResource(R.string.unit_screen_list_empty_search_message)
                     }
                     EmptyState(
                         textTitle = title,
                         textMessage = message,
                         iconImageVector = Icons.Default.Settings,
-                        iconContentDescription = "Nessuna unità",
+                        iconContentDescription = stringResource(R.string.unit_screen_list_empty_icon_description),
                         iconActionImageVector = Icons.Default.Add,
-                        iconActionContentDescription = "Aggiungi unità",
-                        textAction = "Aggiungi unità",
+                        iconActionContentDescription = stringResource(R.string.unit_screen_list_fab_add),
+                        textAction = stringResource(R.string.unit_screen_list_fab_add),
                         onAction = onNavigateToAdd
                     )
                 }
 
-                else -> {
-                    MechanicalUnitListContent(
-                        units = uiState.filteredUnits,
-                        variant = uiState.cardVariant,
-                        onUnitClick = onNavigateToEdit,
-                        onUnitDelete = { unitId, unitName ->
-                            pendingDeleteId = unitId
-                            pendingDeleteName = unitName
-                        }
-                    )
-                }
+                else -> MechanicalUnitListContent(
+                    units = uiState.filteredUnits,
+                    variant = uiState.cardVariant,
+                    onUnitClick = onNavigateToEdit,
+                    onUnitDelete = { unitId, unitName ->
+                        pendingDeleteId = unitId
+                        pendingDeleteName = unitName
+                    }
+                )
             }
 
-            // Pull to refresh indicator
             if (pullToRefreshState.isRefreshing || uiState.isRefreshing) {
-                PullToRefreshContainer(
-                    state = pullToRefreshState,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                )
+                PullToRefreshContainer(state = pullToRefreshState, modifier = Modifier.align(Alignment.TopCenter))
             }
 
             FloatingActionButton(
                 onClick = onNavigateToAdd,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Aggiungi unità")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.unit_screen_list_fab_add))
             }
         }
     }
 
-    // Rendered outside the Column so it overlays the whole screen
     pendingDeleteId?.let { unitId ->
         ConfirmDeleteDialog(
-            objectName = "unità meccanica",
+            objectName = stringResource(R.string.unit_card_object_name),
             objectDesc = pendingDeleteName,
-            onConfirm = {
-                viewModel.deleteUnit(unitId)
-                pendingDeleteId = null
-                pendingDeleteName = ""
-            },
-            onDismiss = {
-                pendingDeleteId = null
-                pendingDeleteName = ""
-            }
+            onConfirm = { viewModel.deleteUnit(unitId); pendingDeleteId = null; pendingDeleteName = "" },
+            onDismiss = { pendingDeleteId = null; pendingDeleteName = "" }
         )
     }
 }

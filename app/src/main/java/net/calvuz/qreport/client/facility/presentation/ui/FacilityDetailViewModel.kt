@@ -45,7 +45,7 @@ enum class IslandFilter {
         ALL -> R.string.island_filter_all
         ACTIVE -> R.string.island_filter_active
         INACTIVE -> R.string.island_filter_inactive
-        NEEDS_MAINTENANCE -> R.string.island_filter_needs_maintenance
+        NEEDS_MAINTENANCE -> R.string.island_filter_maintenance_due
         UNDER_WARRANTY -> R.string.island_filter_under_warranty
         BY_TYPE -> R.string.island_filter_by_type
     }

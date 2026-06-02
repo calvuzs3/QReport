@@ -10,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -24,12 +23,11 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
-import net.calvuz.qreport.app.util.SizeUtils.getFormattedCycleCount
-import net.calvuz.qreport.app.util.SizeUtils.getFormattedHours
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
+import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
+import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,17 +46,10 @@ fun FacilityDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) {
-            viewModel.resetDeleteState()
-            onDeleted()
-        }
+        if (uiState.deleteSuccess) { viewModel.resetDeleteState(); onDeleted() }
     }
+    LaunchedEffect(facilityId) { viewModel.loadFacilityDetails(facilityId) }
 
-    LaunchedEffect(facilityId) {
-        viewModel.loadFacilityDetails(facilityId)
-    }
-
-    // Delete confirmation dialog
     if (uiState.showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = viewModel::hideDeleteConfirmation,
@@ -68,9 +59,7 @@ fun FacilityDetailScreen(
                 TextButton(
                     onClick = viewModel::deleteFacility,
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                ) {
-                    Text(stringResource(R.string.facility_detail_delete_dialog_confirm))
-                }
+                ) { Text(stringResource(R.string.facility_detail_delete_dialog_confirm)) }
             },
             dismissButton = {
                 TextButton(onClick = viewModel::hideDeleteConfirmation) {
@@ -93,53 +82,32 @@ fun FacilityDetailScreen(
             },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = stringResource(R.string.facility_detail_action_back)
-                    )
+                    Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.facility_detail_action_back))
                 }
             },
             actions = {
                 if (uiState.hasData) {
-                    IconButton(
-                        onClick = viewModel::showDeleteConfirmation,
-                        enabled = !uiState.isDeleting
-                    ) {
-                        if (uiState.isDeleting) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                tint = MaterialTheme.colorScheme.error,
-                                contentDescription = stringResource(R.string.facility_detail_action_delete)
-                            )
-                        }
+                    IconButton(onClick = viewModel::showDeleteConfirmation, enabled = !uiState.isDeleting) {
+                        if (uiState.isDeleting) CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                        else Icon(Icons.Default.Delete, tint = MaterialTheme.colorScheme.error, contentDescription = stringResource(R.string.facility_detail_action_delete))
                     }
                     IconButton(onClick = { onNavigateToEdit(facilityId) }) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = stringResource(R.string.facility_detail_action_edit)
-                        )
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.facility_detail_action_edit))
                     }
                 }
                 IconButton(onClick = viewModel::refreshData) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.facility_detail_action_refresh)
-                    )
+                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.facility_detail_action_refresh))
                 }
             }
         )
 
         when {
             uiState.isLoading -> LoadingState()
-
-            uiState.error != null -> QReportErrorState(
+            uiState.error != null && !uiState.hasData -> QReportErrorState(
                 error = uiState.error!!,
-                onRetry = viewModel::refreshData,
+                onRetry = { viewModel.loadFacilityDetails(facilityId) },
                 onDismiss = viewModel::dismissError
             )
-
             uiState.hasData -> FacilityDetailContent(
                 uiState = uiState,
                 onTabSelected = viewModel::selectTab,
@@ -152,20 +120,10 @@ fun FacilityDetailScreen(
                 onDeleteIsland = viewModel::deleteIsland,
                 onMarkMaintenanceComplete = viewModel::markMaintenanceComplete
             )
-
             else -> {
-                val (title, message) = when {
-                    uiState.selectedIslandFilter != IslandFilter.ALL ->
-                        stringResource(R.string.facility_detail_empty_filtered_title) to
-                                stringResource(R.string.facility_detail_empty_filtered_message,
-                                    stringResource(uiState.selectedIslandFilter.labelResId()))
-                    else ->
-                        stringResource(R.string.facility_detail_empty_title) to
-                                stringResource(R.string.facility_detail_empty_message)
-                }
                 EmptyState(
-                    textTitle = title,
-                    textMessage = message,
+                    textTitle = stringResource(R.string.facility_detail_empty_title),
+                    textMessage = stringResource(R.string.facility_detail_empty_message),
                     iconImageVector = Icons.Outlined.PrecisionManufacturing,
                     iconContentDescription = stringResource(R.string.facility_detail_empty_icon_description),
                     iconActionImageVector = Icons.Default.Add,
@@ -196,10 +154,7 @@ private fun FacilityDetailContent(
     onMarkMaintenanceComplete: (String) -> Unit
 ) {
     Column {
-        TabRow(
-            selectedTabIndex = uiState.selectedTab.ordinal,
-            containerColor = MaterialTheme.colorScheme.surface
-        ) {
+        TabRow(selectedTabIndex = uiState.selectedTab.ordinal, containerColor = MaterialTheme.colorScheme.surface) {
             FacilityDetailTab.entries.forEach { tab ->
                 val count = when (tab) {
                     FacilityDetailTab.INFO -> null
@@ -210,10 +165,7 @@ private fun FacilityDetailContent(
                     selected = uiState.selectedTab == tab,
                     onClick = { onTabSelected(tab) },
                     text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(stringResource(tab.labelResId))
                             count?.let {
                                 Badge {
@@ -273,54 +225,34 @@ private fun InfoTabContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.facility_detail_tab_info),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text(text = stringResource(R.string.facility_detail_tab_info), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Button(onClick = { onEdit(facility.id) }) {
                 Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(stringResource(R.string.facility_detail_action_edit))
             }
         }
-
-        LazyColumn(
-            modifier = modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        LazyColumn(modifier = modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 InfoCard(title = stringResource(R.string.facility_detail_info_card_general), icon = Icons.Default.Business) {
                     InfoItem(stringResource(R.string.facility_detail_info_field_name), facility.displayName)
                     facility.code?.let { InfoItem(stringResource(R.string.facility_detail_info_field_code), it) }
                     InfoItem(stringResource(R.string.facility_detail_info_field_type), stringResource(facility.facilityType.labelResId))
                     facility.notes?.let { InfoItem(stringResource(R.string.facility_detail_info_field_notes), it) }
-                    InfoItem(
-                        stringResource(R.string.facility_detail_info_field_primary),
-                        stringResource(if (facility.isPrimary) R.string.facility_detail_info_primary_yes else R.string.facility_detail_info_primary_no)
-                    )
+                    InfoItem(stringResource(R.string.facility_detail_info_field_primary), stringResource(if (facility.isPrimary) R.string.facility_detail_info_primary_yes else R.string.facility_detail_info_primary_no))
                 }
             }
             item {
                 InfoCard(title = stringResource(R.string.facility_detail_info_card_address), icon = Icons.Default.LocationOn) {
-                    facility.address?.let {
-                        InfoItem(stringResource(R.string.facility_detail_info_field_address), it.toDisplayString())
-                    }
+                    facility.address?.let { InfoItem(stringResource(R.string.facility_detail_info_field_address), it.toDisplayString()) }
                 }
             }
             item {
                 InfoCard(title = stringResource(R.string.facility_detail_info_card_metadata), icon = Icons.Default.Info) {
                     InfoItem(stringResource(R.string.facility_detail_info_field_created), formatTimestamp(facility.createdAt))
                     InfoItem(stringResource(R.string.facility_detail_info_field_updated), formatTimestamp(facility.updatedAt))
-                    InfoItem(
-                        stringResource(R.string.facility_detail_info_field_status),
-                        stringResource(if (facility.isActive) R.string.facility_detail_info_status_active else R.string.facility_detail_info_status_inactive)
-                    )
+                    InfoItem(stringResource(R.string.facility_detail_info_field_status), stringResource(if (facility.isActive) R.string.facility_detail_info_status_active else R.string.facility_detail_info_status_inactive))
                 }
             }
         }
@@ -328,7 +260,7 @@ private fun InfoTabContent(
 }
 
 // =============================================================================
-// TAB: ISLANDS
+// TAB: ISLANDS — uses IslandCard COMPACT, no more IslandItem duplicate
 // =============================================================================
 
 @Composable
@@ -345,21 +277,15 @@ private fun IslandsTabContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text = "Isole (${islands.size}/${allIslands.size})",
+                text = stringResource(R.string.island_tab_count, islands.size, allIslands.size),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (islands.isNotEmpty()) {
-                    OutlinedButton(onClick = onViewAll) {
-                        Text(stringResource(R.string.facility_detail_empty_action))
-                    }
+                    OutlinedButton(onClick = onViewAll) { Text(stringResource(R.string.facility_detail_empty_action)) }
                 }
                 Button(onClick = onCreateIsland) {
                     Icon(Icons.Default.Add, contentDescription = null)
@@ -383,83 +309,21 @@ private fun IslandsTabContent(
         } else {
             LazyColumn(
                 modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 16.dp)
             ) {
                 items(items = islands, key = { it.id }) { island ->
-                    IslandItem(
+                    IslandCard(
                         island = island,
-                        onIslandClick = onIslandClick,
-                        onEditIsland = onEditIsland,
-                        onDeleteIsland = onDeleteIsland
+                        variant = ListViewMode.COMPACT,
+                        onClick = { onIslandClick(island.id) },
+                        onEdit = { onEditIsland(island.id) },
+                        onDelete = { onDeleteIsland(island.id) },
+                        showActions = true
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun IslandItem(
-    island: Island,
-    onIslandClick: (String) -> Unit,
-    onEditIsland: (String) -> Unit,
-    onDeleteIsland: (String) -> Unit
-) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    Card(modifier = Modifier.fillMaxWidth(), onClick = { onIslandClick(island.id) }) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(island.islandType.labelResId) ,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Text(text = island.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
-                Text(text = "S/N: ${island.serialNumber}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                if (island.operatingHours > 0 || island.cycleCount > 0) {
-                    Text(
-                        text = "${island.operatingHours.getFormattedHours()} • ${island.cycleCount.getFormattedCycleCount()} cicli",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = when (island.islandOperationalStatus) {
-                        IslandOperationalStatus.OPERATIONAL -> Icons.Default.CheckCircle
-                        IslandOperationalStatus.MAINTENANCE_DUE -> Icons.Default.Warning
-                        IslandOperationalStatus.INACTIVE -> Icons.Default.Cancel
-                    },
-                    contentDescription = null,
-                    tint = when (island.islandOperationalStatus) {
-                        IslandOperationalStatus.OPERATIONAL -> MaterialTheme.colorScheme.primary
-                        IslandOperationalStatus.MAINTENANCE_DUE -> MaterialTheme.colorScheme.error
-                        IslandOperationalStatus.INACTIVE -> MaterialTheme.colorScheme.outline
-                    },
-                    modifier = Modifier.size(20.dp)
-                )
-                IconButton(onClick = { showDeleteDialog = true }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.island_delete_dialog_confirm), modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.error)
-                }
-                IconButton(onClick = { onEditIsland(island.id) }, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.facility_detail_action_edit), modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
-                }
-            }
-        }
-    }
-
-    if (showDeleteDialog) {
-        IslandDeleteDialog(
-            islandName = island.displayName,
-            onConfirm = { onDeleteIsland(island.id); showDeleteDialog = false },
-            onDismiss = { showDeleteDialog = false }
-        )
     }
 }
 
@@ -481,10 +345,10 @@ private fun MaintenanceTabContent(
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Icon(Icons.Default.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                        Text("${stringResource(R.string.island_filter_needs_maintenance)} (${islandsNeedingMaintenance.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                        Text("${stringResource(R.string.island_filter_maintenance_due)} (${islandsNeedingMaintenance.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     }
                     if (islandsNeedingMaintenance.isEmpty()) {
-                        Text("Tutte le isole sono in regola", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.island_facility_detail_maintenance_all_ok), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         islandsNeedingMaintenance.forEach { island ->
                             MaintenanceIslandItem(island = island, onMarkComplete = onMarkMaintenanceComplete, onIslandClick = onIslandClick)
@@ -501,7 +365,7 @@ private fun MaintenanceTabContent(
                         Text("${stringResource(R.string.island_filter_under_warranty)} (${islandsUnderWarranty.size})", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     }
                     if (islandsUnderWarranty.isEmpty()) {
-                        Text("Nessuna isola attualmente in garanzia", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.island_facility_detail_warranty_none), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else {
                         islandsUnderWarranty.forEach { island ->
                             WarrantyIslandItem(island = island, onIslandClick = onIslandClick)
@@ -520,20 +384,15 @@ private fun MaintenanceIslandItem(island: Island, onMarkComplete: (String) -> Un
             Column(modifier = Modifier.weight(1f)) {
                 Text(island.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 Text(
-                    text = island.nextScheduledMaintenance?.let {
-                        stringResource(R.string.facility_detail_maintenance_expiry, formatTimestamp(it))
-                    } ?: stringResource(R.string.facility_detail_maintenance_not_scheduled),
+                    text = island.nextScheduledMaintenance?.let { stringResource(R.string.facility_detail_maintenance_expiry, formatTimestamp(it)) }
+                        ?: stringResource(R.string.facility_detail_maintenance_not_scheduled),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                OutlinedButton(onClick = { onMarkComplete(island.id) }) {
-                    Text(stringResource(R.string.facility_detail_maintenance_complete))
-                }
-                IconButton(onClick = { onIslandClick(island.id) }) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = null)
-                }
+                OutlinedButton(onClick = { onMarkComplete(island.id) }) { Text(stringResource(R.string.facility_detail_maintenance_complete)) }
+                IconButton(onClick = { onIslandClick(island.id) }) { Icon(Icons.Default.ChevronRight, contentDescription = null) }
             }
         }
     }
@@ -546,9 +405,8 @@ private fun WarrantyIslandItem(island: Island, onIslandClick: (String) -> Unit) 
             Column(modifier = Modifier.weight(1f)) {
                 Text(island.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 Text(
-                    text = island.warrantyExpiration?.let {
-                        stringResource(R.string.facility_detail_warranty_expiry, formatTimestamp(it))
-                    } ?: stringResource(R.string.facility_detail_warranty_not_set),
+                    text = island.warrantyExpiration?.let { stringResource(R.string.facility_detail_warranty_expiry, formatTimestamp(it)) }
+                        ?: stringResource(R.string.facility_detail_warranty_not_set),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
@@ -559,28 +417,7 @@ private fun WarrantyIslandItem(island: Island, onIslandClick: (String) -> Unit) 
 }
 
 // =============================================================================
-// DIALOGS
-// =============================================================================
-
-@Composable
-private fun IslandDeleteDialog(islandName: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.island_delete_dialog_title)) },
-        text = { Text(stringResource(R.string.island_delete_dialog_message, islandName)) },
-        confirmButton = {
-            Button(onClick = onConfirm, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) {
-                Text(stringResource(R.string.island_delete_dialog_confirm))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.island_delete_dialog_cancel)) }
-        }
-    )
-}
-
-// =============================================================================
-// SHARED COMPOSABLES
+// SHARED COMPOSABLE
 // =============================================================================
 
 @Composable
@@ -601,15 +438,6 @@ private fun InfoItem(label: String, value: String) {
     Column {
         Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-@Composable
-private fun StatItem(icon: ImageVector, value: String, label: String, color: Color = MaterialTheme.colorScheme.onSurfaceVariant) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = color)
-        Text(text = value, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Medium, color = color)
-        Text(text = label, style = MaterialTheme.typography.labelSmall, color = color)
     }
 }
 

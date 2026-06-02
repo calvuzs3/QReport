@@ -41,7 +41,7 @@ class LoginUseCase @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "LoginUseCase: unexpected exception")
-            QrResult.Error(QrError.SystemError.Unknown(e))
+            QrResult.Error(QrError.SystemError.UnknownError(e))
         }
     }
 }

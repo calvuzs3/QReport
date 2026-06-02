@@ -16,6 +16,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.list.*
+import net.calvuz.qreport.app.app.presentation.ui.theme.onWarningContainer
+import net.calvuz.qreport.app.app.presentation.ui.theme.warningContainer
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.client.contract.data.local.mapper.isValid
@@ -265,8 +267,8 @@ private fun ContractStatusChip(
 
                 false -> Triple(
                     stringResource(R.string.contracts_status_active),
-                    MaterialTheme.colorScheme.tertiary,
-                    MaterialTheme.colorScheme.onTertiary
+                    MaterialTheme.colorScheme.warningContainer,
+                    MaterialTheme.colorScheme.onWarningContainer
                 )
             }
         }

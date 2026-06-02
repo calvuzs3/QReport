@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.domain.usecase.CreateCheckUpUseCase
-import net.calvuz.qreport.client.client.domain.model.ClientInfo
+import net.calvuz.qreport.checkup.domain.model.ClientInfo
 import net.calvuz.qreport.client.island.domain.model.IslandInfo
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.settings.domain.model.TechnicianInfo

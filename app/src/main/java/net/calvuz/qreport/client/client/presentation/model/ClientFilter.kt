@@ -1,17 +1,16 @@
 package net.calvuz.qreport.client.client.presentation.model
 
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.model.QReportFilter
 
-enum class ClientFilter: QReportFilter {
-    ALL, ACTIVE, INACTIVE, WITH_FACILITIES, WITH_ISLANDS, WITH_CONTACTS, WITH_CONTRACTS;
+enum class ClientFilter(val labelResId: Int) : QReportFilter {
+    ALL(R.string.client_filter_all),
+    ACTIVE(R.string.client_filter_active),
+    INACTIVE(R.string.client_filter_inactive),
+    WITH_FACILITIES(R.string.client_filter_with_facilities),
+    WITH_ISLANDS(R.string.client_filter_with_islands),
+    WITH_CONTACTS(R.string.client_filter_with_contacts),
+    WITH_CONTRACTS(R.string.client_filter_with_contracts);
 
-    override fun getDisplayName(): String = when (this) {
-        ALL -> "Tutti"
-        ACTIVE -> "Attivi"
-        INACTIVE -> "Inattivi"
-        WITH_FACILITIES -> "Con Stabilimenti"
-        WITH_CONTACTS -> "Con Contatti"
-        WITH_CONTRACTS -> "Con Contratti"
-        WITH_ISLANDS -> "Con Isole"
-    }
+    override fun getDisplayName(): String = name // fallback; UI uses labelResId
 }

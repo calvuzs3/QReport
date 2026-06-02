@@ -12,7 +12,9 @@ import javax.inject.Inject
  * Checks whether a client has active dependencies that would block deletion.
  *
  * Returns [QrResult.Success(Unit)] if the client can be safely deleted.
- * Returns [QrError.ClientError.CannotDeleteHasActiveFacilities] if dependencies exist.
+ * Returns [QrError.ClientError.CannotDeleteHasDependencies] with dependency
+ * counts if any active dependencies exist — counts are resolved to localised
+ * strings in the UI layer via [QrErrorExt].
  */
 class CheckClientDependenciesUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
@@ -21,34 +23,40 @@ class CheckClientDependenciesUseCase @Inject constructor(
     private val getContractsCount: GetContractsCountByClientUseCase
 ) {
     suspend operator fun invoke(clientId: String): QrResult<Unit, QrError.ClientError> {
-        val dependencies = mutableListOf<String>()
 
-        // Check facilities
+        var facilitiesCount = 0
+        var contactsCount = 0
+        var contractsCount = 0
+        var islandsCount = 0
+
         facilityRepository.getFacilitiesCountByClient(clientId)
-            .onSuccess { count -> if (count > 0) dependencies.add("$count facilities") }
+            .onSuccess { count -> facilitiesCount = count }
             .onFailure { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }
 
-        // Check contacts
         when (val result = getContactsCount(clientId)) {
-            is QrResult.Success -> if (result.data > 0) dependencies.add("${result.data} contacts")
+            is QrResult.Success -> contactsCount = result.data
             is QrResult.Error -> return QrResult.Error(QrError.ClientError.LoadError(result.error.toString()))
         }
 
-        // Check contracts
         when (val result = getContractsCount(clientId)) {
-            is QrResult.Success -> if (result.data > 0) dependencies.add("${result.data} contracts")
+            is QrResult.Success -> contractsCount = result.data
             is QrResult.Error -> return QrResult.Error(QrError.ClientError.LoadError(result.error.toString()))
         }
 
-        // Check islands
         clientRepository.getIslandsCount(clientId)
-            .onSuccess { count -> if (count > 0) dependencies.add("$count islands") }
+            .onSuccess { count -> islandsCount = count }
             .onFailure { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }
 
-        return if (dependencies.isNotEmpty()) {
+        val hasDependencies = facilitiesCount > 0 || contactsCount > 0 ||
+                contractsCount > 0 || islandsCount > 0
+
+        return if (hasDependencies) {
             QrResult.Error(
-                QrError.ClientError.CannotDeleteHasActiveFacilities(
-                    "Cannot delete client: has ${dependencies.joinToString(", ")}"
+                QrError.ClientError.CannotDeleteHasDependencies(
+                    facilitiesCount = facilitiesCount,
+                    contactsCount = contactsCount,
+                    contractsCount = contractsCount,
+                    islandsCount = islandsCount
                 )
             )
         } else {

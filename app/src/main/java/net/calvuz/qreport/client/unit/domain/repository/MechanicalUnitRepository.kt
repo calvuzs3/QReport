@@ -11,7 +11,7 @@ interface MechanicalUnitRepository {
     /** Live list of active units for the given island. */
     fun getForIslandFlow(islandId: String): Flow<List<MechanicalUnit>>
 
-    suspend fun getById(id: String): MechanicalUnit?
+    suspend fun getMechanicalUnitById(id: String): Result<MechanicalUnit?>
 
     suspend fun create(unit: MechanicalUnit): Result<Unit>
 

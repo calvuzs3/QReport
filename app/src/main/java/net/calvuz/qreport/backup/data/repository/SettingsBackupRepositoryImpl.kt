@@ -452,7 +452,7 @@ class SettingsBackupRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Settings summary failed")
-            summary["error"] = e.message ?: "Unknown error"
+            summary["error"] = e.message ?: "UnknownError error"
         }
 
         return summary

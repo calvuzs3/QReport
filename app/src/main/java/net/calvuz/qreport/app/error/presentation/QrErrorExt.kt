@@ -2,12 +2,14 @@ package net.calvuz.qreport.app.error.presentation
 
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText.*
 import net.calvuz.qreport.app.error.presentation.UiText.StringResources
 import net.calvuz.qreport.app.result.domain.QrResult
 
 fun QrError.SystemError.toUiText(): UiText {
     return when (this) {
-        is QrError.SystemError.Unknown -> StringResources(R.string.err_unknown)
+        is QrError.SystemError.UnknownError -> StringResources(R.string.err_unknown)
+        is QrError.SystemError.ExceptionError -> StringResources(R.string.err_exception)
     }
 }
 
@@ -76,8 +78,10 @@ fun QrError.App.toUiText(): UiText {
 
 fun QrError.ValidationError.toUiText(): UiText {
     return when (this) {
+        is QrError.ValidationError.IdsDoesntMatch -> StringResources(R.string.err_validation_ids_doesnt_match)
         is QrError.ValidationError.EmptyField -> StringResources(R.string.err_validation_empty_field)
-        is QrError.ValidationError.DuplicateEntry -> StringResources(R.string.err_validation_duplicate_entry)
+        is QrError.ValidationError.EmailAlreadyTaken -> StringResources(R.string.err_validation_email_already_taken)
+        is QrError.ValidationError.PhoneAlreadyTaken -> StringResources(R.string.err_validation_phone_already_taken)
         is QrError.ValidationError.InvalidOperation -> StringResources(R.string.err_validation_invalid_operation)
         is QrError.ValidationError.IsNotActive -> StringResources(R.string.err_validation_is_not_active)
         is QrError.ValidationError.IsNotPrimary -> StringResources(R.string.err_validation_is_not_primary)
@@ -92,75 +96,117 @@ fun QrError.ClientError.toUiText(): UiText {
         is QrError.ClientError.UpdateError -> StringResources(R.string.err_client_update)
         is QrError.ClientError.DeleteError -> StringResources(R.string.err_client_delete)
         is QrError.ClientError.MissingCompanyName -> StringResources(R.string.err_client_fields_required)
+        is QrError.ClientError.InvalidCompanyName -> StringResources(R.string.err_client_invalid_company_name)
         is QrError.ClientError.CannotDeleteHasActiveFacilities -> StringResources(R.string.err_client_cannot_delete_has_active_facilities)
+        is QrError.ClientError.CannotDeleteHasDependencies -> StringResources(
+            R.string.err_client_cannot_delete_has_dependencies,
+            facilitiesCount, contactsCount, contractsCount, islandsCount
+        )
     }
 }
 
 fun QrError.ContractsError.toUiText(): UiText {
     return when (this) {
-        is QrError.ContractsError.ClientIdEmpty -> StringResources(R.string.err_contracts_client_id_empty)
+        is QrError.ContractsError.MissingClientId -> StringResources(R.string.err_contracts_client_id_empty)
         is QrError.ContractsError.ClientNotFound -> StringResources(R.string.err_contracts_client_not_found)
-        is QrError.ContractsError.ContractNotFound -> StringResources(R.string.err_contracts_contract_not_found)
+        is QrError.ContractsError.NotFound -> StringResources(R.string.err_contracts_contract_not_found)
         is QrError.ContractsError.DeleteError -> StringResources(R.string.err_delete)
-        is QrError.ContractsError.ContractIdEmpty -> StringResources(R.string.err_contracts_contract_id_empty)
+        is QrError.ContractsError.MissingContractId -> StringResources(R.string.err_contracts_contract_id_empty)
+        is QrError.ContractsError.CreateError -> StringResources(R.string.err_contracts_create)
+        is QrError.ContractsError.LoadError -> StringResources(R.string.err_contracts_load)
+        is QrError.ContractsError.UpdateError -> StringResources(R.string.err_contracts_update)
     }
 }
 
 fun QrError.ContactsError.toUiText(): UiText {
     return when (this) {
-        is QrError.ContactsError.ValidationError.IdClientMandatory -> StringResources(R.string.err_contact_client_id_empty)
-        is QrError.ContactsError.ValidationError.IdContractMandatory -> StringResources(R.string.err_contact_contact_id_empty)
-        is QrError.ContactsError.ValidationError.IdMandatory -> StringResources(R.string.err_contact_contact_id_empty)
-        is QrError.ContactsError.ValidationError.CannotChangeClientAssociation -> StringResources(R.string.err_contact_cannot_change_client_association)
-        is QrError.ContactsError.ValidationError.CannotRemovePrimaryFlag -> StringResources(R.string.err_contact_cannot_remove_primary_flag)
-        is QrError.ContactsError.ValidationError.IsNotPrimary -> StringResources(R.string.err_contact_is_not_primary)
-        is QrError.ContactsError.ValidationError.ContactDoesntBelongToClient -> StringResources(R.string.err_contact_contact_does_not_belong_to_client)
+
+        is QrError.ContactsError.CreateError -> StringResources(R.string.err_contacts_create)
+        is QrError.ContactsError.LoadError -> StringResources(R.string.err_contacts_load)
+        is QrError.ContactsError.UpdateError -> StringResources(R.string.err_contacts_update)
+        is QrError.ContactsError.DeleteError -> StringResources(R.string.err_contacts_delete)
+        is QrError.ContactsError.ClientNotFound -> StringResources(R.string.err_contacts_client_not_found)
+        is QrError.ContactsError.MissingClientId -> StringResources(R.string.err_contacts_missing_client_id)
+        is QrError.ContactsError.MissingContactId -> StringResources(R.string.err_contacts_missing_contact_id)
+        is QrError.ContactsError.NotFound -> StringResources(R.string.err_contacts_not_found)
+        is QrError.ContactsError.UnknownContactMethodOnDB -> StringResources(R.string.err_contacts_unknown_contact_method)
+        is QrError.ContactsError.ContactIsNotActive -> StringResources(R.string.err_contacts_contact_is_not_active)
+        is QrError.ContactsError.ContactDoesntBelongToClient -> StringResources(R.string.err_contact_contact_does_not_belong_to_client)
+        is QrError.ContactsError.IsNotPrimary -> StringResources(R.string.err_contact_is_not_primary)
+        is QrError.ContactsError.CannotChangeClientAssociation -> StringResources(R.string.err_contact_cannot_change_client_association)
+        is QrError.ContactsError.CannotRemovePrimaryFlag -> StringResources(R.string.err_contact_cannot_remove_primary_flag)
+
+        is QrError.ContactsError.ValidationError.InvalidIdClient -> StringResources(R.string.err_contact_contact_id_empty)
+        is QrError.ContactsError.ValidationError.InvalidContactLastNameLength -> StringResources(R.string.err_contact_validation_invalid_contact_name_length)
+        is QrError.ContactsError.ValidationError.InvalidContactNameLength -> StringResources(R.string.err_contact_validation_invalid_contact_last_name_length)
+        is QrError.ContactsError.ValidationError.InvalidDepartmentLength -> StringResources(R.string.err_contact_validation_invalid_department_length)
+        is QrError.ContactsError.ValidationError.InvalidEmail -> StringResources(R.string.err_contact_validation_invalid_email)
+        is QrError.ContactsError.ValidationError.InvalidMobile -> StringResources(R.string.err_contact_validation_invalid_mobile)
+        is QrError.ContactsError.ValidationError.InvalidPhone -> StringResources(R.string.err_contact_validation_invalid_phone)
+        is QrError.ContactsError.ValidationError.InvalidRoleLength -> StringResources(R.string.err_contact_validation_invalid_role_length)
+        is QrError.ContactsError.ValidationError.InvalidTitleLength -> StringResources(R.string.err_contact_validation_invalid_title_length)
+        is QrError.ContactsError.ValidationError.InvalidContactInfo -> StringResources(R.string.err_contact_validation_invalid_contact_info)
 
     }
 }
 
 fun QrError.FacilityError.toUiText(): UiText {
     return when (this) {
-        is QrError.FacilityError.NotFound ->
-            UiText.StringResource(R.string.err_facility_not_found)
-        is QrError.FacilityError.LoadError ->
-            UiText.StringResource(R.string.err_facility_load)
-        is QrError.FacilityError.CreateError ->
-            UiText.StringResource(R.string.err_facility_create)
-        is QrError.FacilityError.UpdateError ->
-            UiText.StringResource(R.string.err_facility_update)
-        is QrError.FacilityError.DeleteError ->
-            UiText.StringResource(R.string.err_facility_delete)
-        is QrError.FacilityError.MissingName ->
-            UiText.StringResource(R.string.err_facility_missing_name)
-        is QrError.FacilityError.ClientNotFound ->
-            UiText.StringResource(R.string.err_facility_client_not_found)
-        is QrError.FacilityError.CannotDeleteLastFacility ->
-            UiText.StringResource(R.string.err_facility_cannot_delete_last)
-        is QrError.FacilityError.CannotDeleteHasActiveIslands ->
-            UiText.StringResource(R.string.err_facility_cannot_delete_has_islands)
+        is QrError.FacilityError.NotFound -> StringResource(R.string.err_facility_not_found)
+        is QrError.FacilityError.LoadError -> StringResource(R.string.err_facility_load)
+        is QrError.FacilityError.CreateError -> StringResource(R.string.err_facility_create)
+        is QrError.FacilityError.UpdateError -> StringResource(R.string.err_facility_update)
+        is QrError.FacilityError.DeleteError -> StringResource(R.string.err_facility_delete)
+        is QrError.FacilityError.MissingName -> StringResource(R.string.err_facility_missing_name)
+        is QrError.FacilityError.MissingClientId -> StringResource(R.string.err_facility_client_not_found)
+        is QrError.FacilityError.CannotDeleteLastFacility -> StringResource(R.string.err_facility_cannot_delete_last)
+        is QrError.FacilityError.CannotDeleteHasActiveIslands -> StringResource(R.string.err_facility_cannot_delete_has_islands)
+        is QrError.FacilityError.ValidationError.InvalidFacilityNameLength -> StringResource(R.string.err_facility_validation_invalid_name_length)
     }
 }
 
 fun QrError.IslandError.toUiText(): UiText {
     return when (this) {
-        is QrError.IslandError.AlreadyDeleted -> UiText.StringResource(R.string.err_island_already_deleted)
-        is QrError.IslandError.CannotChangeFacility -> UiText.StringResource(R.string.err_island_cannot_change_facility)
-        is QrError.IslandError.CannotDeleteMaintenanceOverdue -> UiText.StringResource(R.string.err_island_cannot_delete_maintenance)
-        is QrError.IslandError.CreateError -> UiText.StringResource(R.string.err_island_create)
-        is QrError.IslandError.DeleteError -> UiText.StringResource(R.string.err_island_delete)
-        is QrError.IslandError.DuplicateSerialNumber -> UiText.StringResource(R.string.err_island_duplicate_serial)
-        is QrError.IslandError.FacilityNotFound -> UiText.StringResource(R.string.err_island_facility_not_found)
-        is QrError.IslandError.InvalidField -> UiText.StringResource(R.string.err_island_invalid_field)
-        is QrError.IslandError.InvalidInstallationDate -> UiText.StringResource(R.string.err_island_invalid_installation_date)
-        is QrError.IslandError.InvalidMaintenanceDate -> UiText.StringResource(R.string.err_island_invalid_maintenance_date)
-        is QrError.IslandError.InvalidSerialNumber -> UiText.StringResource(R.string.err_island_invalid_serial)
-        is QrError.IslandError.InvalidWarrantyDate -> UiText.StringResource(R.string.err_island_invalid_warranty_date)
-        is QrError.IslandError.LoadError -> UiText.StringResource(R.string.err_island_load)
-        is QrError.IslandError.MissingFacilityId -> UiText.StringResource(R.string.err_island_missing_facility)
-        is QrError.IslandError.MissingSerialNumber -> UiText.StringResource(R.string.err_island_missing_serial)
-        is QrError.IslandError.NotFound -> UiText.StringResource(R.string.err_island_not_found)
-        is QrError.IslandError.UpdateError -> UiText.StringResource(R.string.err_island_update)
+        is QrError.IslandError.AlreadyDeleted -> StringResource(R.string.err_island_already_deleted)
+        is QrError.IslandError.CannotChangeFacility -> StringResource(R.string.err_island_cannot_change_facility)
+        is QrError.IslandError.CannotDeleteMaintenanceOverdue -> StringResource(R.string.err_island_cannot_delete_maintenance)
+        is QrError.IslandError.CreateError -> StringResource(R.string.err_island_create)
+        is QrError.IslandError.DeleteError -> StringResource(R.string.err_island_delete)
+        is QrError.IslandError.FacilityNotFound -> StringResource(R.string.err_island_facility_not_found)
+        is QrError.IslandError.InvalidQueryLength -> StringResource(R.string.err_island_invalid_query_length)
+        is QrError.IslandError.InvalidField -> StringResource(R.string.err_island_invalid_field)
+        is QrError.IslandError.LoadError -> StringResource(R.string.err_island_load)
+        is QrError.IslandError.MissingFacilityId -> StringResource(R.string.err_island_missing_facility)
+        is QrError.IslandError.MissingSerialNumber -> StringResource(R.string.err_island_missing_serial)
+        is QrError.IslandError.NotFound -> StringResource(R.string.err_island_not_found)
+        is QrError.IslandError.UpdateError -> StringResource(R.string.err_island_update)
+
+        is QrError.IslandError.ValidationError.DuplicateSerialNumber -> StringResource(R.string.err_island_validation_duplicate_serial)
+        is QrError.IslandError.ValidationError.InvalidCommissioningNumber -> StringResource(R.string.err_island_validation_invalid_commissioning_number)
+        is QrError.IslandError.ValidationError.InvalidModelNumber -> StringResource(R.string.err_island_validation_invalid_model_number)
+        is QrError.IslandError.ValidationError.InvalidSerialNumber -> StringResource(R.string.err_island_validation_invalid_serial_number)
+        is QrError.IslandError.ValidationError.InvalidSerialNumberLength -> StringResource(R.string.err_island_validation_invalid_serial_number_length)
+        is QrError.IslandError.ValidationError.InvalidCustomNameLength -> StringResource(R.string.err_island_validation_invalid_custom_name_length)
+        is QrError.IslandError.ValidationError.InvalidLocationLength -> StringResource(R.string.err_island_validation_invalid_location_length)
+        is QrError.IslandError.ValidationError.InvalidCycleCount -> StringResource(R.string.err_island_validation_invalid_cycle_count)
+        is QrError.IslandError.ValidationError.InvalidOperatingHours -> StringResource(R.string.err_island_validation_invalid_operating_hours)
+        is QrError.IslandError.ValidationError.InvalidInstallationDate -> StringResource(R.string.err_island_validation_invalid_installation_date)
+        is QrError.IslandError.ValidationError.InvalidMaintenanceDate -> StringResource(R.string.err_island_validation_invalid_maintenance_date)
+        is QrError.IslandError.ValidationError.InvalidWarrantyDate -> StringResource(R.string.err_island_validation_invalid_warranty_date)
+    }
+}
+
+fun QrError.UnitError.toUiText(): UiText {
+    return when (this) {
+        is QrError.UnitError.NotFound -> StringResource(R.string.err_unit_not_found)
+        is QrError.UnitError.LoadError -> StringResource(R.string.err_unit_load)
+        is QrError.UnitError.CreateError -> StringResource(R.string.err_unit_create)
+        is QrError.UnitError.UpdateError -> StringResource(R.string.err_unit_update)
+        is QrError.UnitError.DeleteError -> StringResource(R.string.err_unit_delete)
+        is QrError.UnitError.MissingName -> StringResource(R.string.err_unit_missing_name)
+        is QrError.UnitError.InvalidField -> StringResource(R.string.err_unit_invalid_field)
+        is QrError.UnitError.AlreadyDeleted -> StringResource(R.string.err_unit_already_deleted)
+        is QrError.UnitError.IslandNotFound -> StringResource(R.string.err_unit_island_not_found)
     }
 }
 
@@ -174,7 +220,7 @@ fun QrError.DatabaseError.toUiText(): UiText {
     }
 }
 
-fun QrError.Export.toUiText():UiText {
+fun QrError.Export.toUiText(): UiText {
     return when (this) {
         is QrError.Export.Validation.CannotExportDraft -> StringResources(R.string.err_export_cannot_export_draft)
     }

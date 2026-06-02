@@ -14,37 +14,36 @@ class GetContactsCountByClientUseCase @Inject constructor(
 
     suspend operator fun invoke(clientId: String): QrResult<Int, QrError> {
         return try {
-            // 1. Input validation
+            
+            // Check input
             if (clientId.isBlank()) {
-                Timber.w("GetContactsCountByClientUseCase.invoke: clientId is blank")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                Timber.w("ClientId is blank")
+                return QrResult.Error(QrError.ContactsError.MissingClientId())
             }
 
-            // 2. Check client exists
+            // Check client exists
             when (val clientCheck = checkClientExists(clientId)) {
+                is QrResult.Success -> Unit
                 is QrResult.Error -> {
-                    Timber.w("GetContactsByClientUseCase.invoke: Client does not exist: $clientId")
+                    Timber.w("Client does not exist: $clientId")
                     return QrResult.Error(clientCheck.error)
-                }
-                is QrResult.Success -> {
-                    // Client exists, continue
                 }
             }
 
             when (val result = repository.getContactsCountByClient(clientId)) {
                 is QrResult.Success -> {
                     val count = result.data
-                    Timber.d("GetContactsByClientUseCase.invoke: Retrieved $count contacts for client: $clientId")
+                    Timber.d("Retrieved $count contacts for client: $clientId")
                     return QrResult.Success(count)
                 }
                 is QrResult.Error -> {
-                    Timber.e("GetContactsByClientUseCase.invoke: Repository error for clientId $clientId: ${result.error}")
+                    Timber.e("Repository error for clientId $clientId: ${result.error}")
                     return QrResult.Error(result.error)
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "GetContactsCountByClientUseCase.invoke: Exception getting contacts for client: $clientId")
-            QrResult.Error(QrError.SystemError.Unknown())
+            Timber.e(e, clientId)
+            QrResult.Error(QrError.SystemError.UnknownError())
         }
     }
 }

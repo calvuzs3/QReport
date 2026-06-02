@@ -19,6 +19,8 @@ import net.calvuz.qreport.app.app.presentation.components.ListStatItem
 import net.calvuz.qreport.app.app.presentation.components.StatusIndicator
 import androidx.compose.ui.res.stringResource
 import net.calvuz.qreport.R
+import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
+import net.calvuz.qreport.app.app.presentation.ui.theme.successContainer
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
@@ -112,13 +114,13 @@ private fun FullClientCard(
                     if (onEdit != null) {
                         IconButton(
                             onClick = onEdit,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = stringResource(R.string.client_card_action_edit),
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
@@ -296,17 +298,26 @@ private fun ClientStatusChip(
     isActive: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val (text, containerColor) = if (isActive) {
-        stringResource(R.string.client_card_status_active) to MaterialTheme.colorScheme.surfaceVariant
+    val (text, containerColor, labelColor) = if (isActive) {
+        Triple(
+            stringResource(R.string.client_card_status_active),
+            MaterialTheme.colorScheme.successContainer,
+            MaterialTheme.colorScheme.onSuccessContainer
+        )
     } else {
-        stringResource(R.string.client_card_status_inactive) to MaterialTheme.colorScheme.errorContainer
+        Triple(
+            stringResource(R.string.client_card_status_inactive),
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer
+        )
     }
 
     AssistChip(
-        onClick = { },
-        label = { Text(text) },
+        onClick = {},
+        label = { Text(text, style = MaterialTheme.typography.labelSmall) },
         colors = AssistChipDefaults.assistChipColors(
-            containerColor = containerColor
+            containerColor = containerColor,
+            labelColor = labelColor
         ),
         modifier = modifier
     )

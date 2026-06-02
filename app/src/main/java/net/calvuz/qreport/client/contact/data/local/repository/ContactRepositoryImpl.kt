@@ -13,12 +13,6 @@ import net.calvuz.qreport.client.contact.domain.repository.ContactRepository
 import timber.log.Timber
 import javax.inject.Inject
 
-/**
- * Implementazione del repository per gestione contatti
- * Utilizza Room DAO per persistenza e mapper per conversioni domain ↔ entity
- *
- * Updated to use QrResult<T, QrError> pattern with comprehensive error handling
- */
 class ContactRepositoryImpl @Inject constructor(
     private val contactDao: ContactDao,
     private val contactMapper: ContactMapper
@@ -461,7 +455,7 @@ class ContactRepositoryImpl @Inject constructor(
                 try {
                     ContactMethod.valueOf(result.preferred_contact_method) to result.count
                 } catch (_: IllegalArgumentException) {
-                    Timber.w("ContactRepository: Unknown contact method in stats: ${result.preferred_contact_method}")
+                    Timber.w("ContactRepository: UnknownError contact method in stats: ${result.preferred_contact_method}")
                     null
                 }
             }.toMap()

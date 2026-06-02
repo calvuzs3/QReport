@@ -3,6 +3,7 @@ package net.calvuz.qreport.client.island.domain.usecase
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -22,11 +23,16 @@ class DeleteIslandUseCase @Inject constructor(
         islandId: String,
         force: Boolean = false
     ): QrResult<Unit, QrError.IslandError> {
+
+        Timber.d("Delete island")
+
+        // Check input
         if (islandId.isBlank()) {
+            Timber.d("Island id is blank")
             return QrResult.Error(QrError.IslandError.NotFound())
         }
 
-        // Verify exists and active
+        // Check island exists
         val island = when (val r = checkIslandExists(islandId)) {
             is QrResult.Error -> return QrResult.Error(r.error)
             is QrResult.Success -> r.data
@@ -34,12 +40,17 @@ class DeleteIslandUseCase @Inject constructor(
 
         // Block deletion if maintenance is overdue (unless forced)
         if (!force && island.needsMaintenance()) {
+            Timber.d("Error in deleting island due to maintenance date")
             return QrResult.Error(QrError.IslandError.CannotDeleteMaintenanceOverdue())
         }
 
         return islandRepository.deleteIsland(islandId).fold(
-            onSuccess = { QrResult.Success(Unit) },
-            onFailure = { QrResult.Error(QrError.IslandError.DeleteError(it.message)) }
+            onSuccess = {
+                Timber.d("Successfully deleted island: ${Unit}")
+                QrResult.Success(Unit) },
+            onFailure = {
+                Timber.d("Error in deleting island: ${it.message}")
+                QrResult.Error(QrError.IslandError.DeleteError(it.message)) }
         )
     }
 

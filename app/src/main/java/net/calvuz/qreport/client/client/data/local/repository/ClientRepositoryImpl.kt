@@ -9,10 +9,6 @@ import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import javax.inject.Inject
 
-/**
- * Implementazione del repository per gestione clienti
- * Implementa tutti i metodi definiti in ClientRepository
- */
 class ClientRepositoryImpl @Inject constructor(
     private val clientDao: ClientDao,
     private val clientMapper: ClientMapper

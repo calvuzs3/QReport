@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ======================================================= -->
+    <!-- UnitType labels                                          -->
+    <!-- ======================================================= -->
+
+    <string name="unit_type_robot">Robot</string>
+    <string name="unit_type_axis">Asse aggiuntivo</string>
+    <string name="unit_type_safety">Sistema di sicurezza</string>
+    <string name="unit_type_electrical_panel">Quadro elettrico</string>
+    <string name="unit_type_pneumatic_panel">Quadro pneumatico</string>
+    <string name="unit_type_station">Stazione</string>
+    <string name="unit_type_magazine">Magazzino</string>
+    <string name="unit_type_tool_rack">Rack cambio tool</string>
+    <string name="unit_type_other">Altro</string>
+
+    <!-- ======================================================= -->
+    <!-- MechanicalUnitFilter labels                              -->
+    <!-- ======================================================= -->
+
+    <string name="unit_filter_all">Tutte</string>
+    <string name="unit_filter_active">Attive</string>
+    <string name="unit_filter_inactive">Non attive</string>
+    <string name="unit_filter_robot">Solo Robot</string>
+
+    <!-- ======================================================= -->
+    <!-- MechanicalUnitSortOrder labels                           -->
+    <!-- ======================================================= -->
+
+    <string name="unit_sort_created_recent">Recenti</string>
+    <string name="unit_sort_name">Nome</string>
+    <string name="unit_sort_by_type">Per Tipo</string>
+    <string name="unit_sort_by_serial">Per Seriale</string>
+
+    <!-- ======================================================= -->
+    <!-- MechanicalUnitListScreen                                 -->
+    <!-- ======================================================= -->
+
+    <string name="unit_screen_list_title">Unit\u00e0 Meccaniche</string>
+    <string name="unit_screen_list_action_back">Indietro</string>
+    <string name="unit_screen_list_action_sort">Ordinamento</string>
+    <string name="unit_screen_list_action_filter">Filtri</string>
+    <string name="unit_screen_list_search_placeholder">Cerca per nome, seriale o modello\u2026</string>
+    <string name="unit_screen_list_fab_add">Aggiungi unit\u00e0</string>
+    <string name="unit_screen_list_empty_title">Nessuna unit\u00e0 meccanica</string>
+    <string name="unit_screen_list_empty_message">Aggiungi la prima unit\u00e0 con il pulsante +</string>
+    <string name="unit_screen_list_empty_filtered_title">Nessun risultato</string>
+    <string name="unit_screen_list_empty_filtered_message">Nessuna unit\u00e0 corrisponde al filtro \'%1$s\'</string>
+    <string name="unit_screen_list_empty_search_title">Nessun risultato</string>
+    <string name="unit_screen_list_empty_search_message">Nessuna unit\u00e0 corrisponde alla ricerca</string>
+    <string name="unit_screen_list_empty_icon_description">Nessuna unit\u00e0</string>
+
+    <!-- ======================================================= -->
+    <!-- MechanicalUnitFormScreen                                 -->
+    <!-- ======================================================= -->
+
+    <string name="unit_form_title_create">Nuova unit\u00e0</string>
+    <string name="unit_form_title_edit">Modifica unit\u00e0</string>
+    <string name="unit_form_action_back">Indietro</string>
+    <string name="unit_form_field_type">Tipo unit\u00e0 *</string>
+    <string name="unit_form_field_name">Nome *</string>
+    <string name="unit_form_field_name_placeholder">Es. Robot R1, Asse 7\u00b0, Rack Tool A</string>
+    <string name="unit_form_field_serial">Numero seriale</string>
+    <string name="unit_form_field_model">Modello</string>
+    <string name="unit_form_field_notes">Note</string>
+    <string name="unit_form_error_name_required">Il nome \u00e8 obbligatorio</string>
+    <string name="unit_form_button_create">Aggiungi unit\u00e0</string>
+    <string name="unit_form_button_save_changes">Salva modifiche</string>
+
+    <!-- ======================================================= -->
+    <!-- MechanicalUnitCard                                       -->
+    <!-- ======================================================= -->
+
+    <string name="unit_card_object_name">unit\u00e0 meccanica</string>
+
+    <!-- ======================================================= -->
+    <!-- Errors — QrError.UnitError                              -->
+    <!-- ======================================================= -->
+
+    <string name="err_unit_not_found">Unità non trovata</string>
+    <string name="err_unit_load">Errore nel caricamento dell\'unità</string>
+    <string name="err_unit_create">Errore durante la creazione dell\'unità</string>
+    <string name="err_unit_update">Errore durante l\'aggiornamento dell\'unità</string>
+    <string name="err_unit_delete">Errore durante l\'eliminazione dell\'unità</string>
+    <string name="err_unit_missing_name">Il nome dell\'unità è obbligatorio</string>
+    <string name="err_unit_invalid_field">Dati unità non validi</string>
+    <string name="err_unit_already_deleted">Unità già eliminata</string>
+    <string name="err_unit_island_not_found">Isola associata non trovata</string>
+
+    <!-- MechanicalUnitPkg -->
+    <string name="unit_pkg_title">Unità meccanica</string>
+    <string name="unit_pkg_description">Gestisci Unità Meccaniche</string>
+
+    <!-- MechanicalUnitCard detail rows -->
+    <string name="unit_card_serial_label">Seriale</string>
+    <string name="unit_card_model_label">Modello</string>
+    <string name="unit_card_notes_label">Note</string>
+    <string name="unit_card_last_modified">Modificato %1$s</string>
+    <string name="unit_card_status_active">Attiva</string>
+    <string name="unit_card_status_inactive">Non attiva</string>
+
+</resources>

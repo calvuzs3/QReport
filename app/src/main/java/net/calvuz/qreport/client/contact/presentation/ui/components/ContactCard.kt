@@ -152,13 +152,13 @@ private fun FullContactCard(
                     // STAR IT
                     if (!contact.isPrimary && contact.isActive && onSetPrimary != null) {
                         IconButton(
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(48.dp),
                             onClick = onSetPrimary,
                             enabled = !isSettingPrimary
                         ) {
                             if (isSettingPrimary) {
                                 CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
+                                    modifier = Modifier.size(18.dp),
                                     strokeWidth = 2.dp
                                 )
                             } else {
@@ -174,14 +174,14 @@ private fun FullContactCard(
                     // EDIT
                     if (onEdit != null) {
                         IconButton(
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(48.dp),
                             onClick = onEdit
                         ) {
                             Icon(
                                 Icons.Default.Edit,
                                 contentDescription = stringResource(R.string.action_edit),
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
@@ -189,14 +189,14 @@ private fun FullContactCard(
                     // DELETE
                     if (onDeleteClick != null) {
                         IconButton(
-                            modifier = Modifier.size(32.dp),
+                            modifier = Modifier.size(48.dp),
                             onClick = onDeleteClick
                         ) {
                             Icon(
                                 Icons.Default.Delete,
                                 contentDescription = stringResource(R.string.action_delete),
                                 tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
@@ -332,13 +332,13 @@ private fun CompactContactCard(
                 Row {
                     IconButton(
                         onClick = onCall,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             Icons.Default.Call,
                             contentDescription = stringResource(R.string.action_call),
                             tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }
@@ -349,7 +349,7 @@ private fun CompactContactCard(
                 Row {
                     IconButton(
                         onClick = onEmail,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
                             Icons.Default.Email,

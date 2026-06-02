@@ -54,9 +54,7 @@ data class IslandWithStats(
 data class IslandStatistics(
     val unitsCount: Int = 0,
     val activeUnitsCount: Int = 0
-) {
-    val hasUnits: Boolean get() = unitsCount > 0
-}
+)
 
 @HiltViewModel
 class IslandListViewModel @Inject constructor(
@@ -113,7 +111,7 @@ class IslandListViewModel @Inject constructor(
                 observeIslandsUseCase(facilityId)
                     .catch { exception ->
                         if (exception is CancellationException) throw exception
-                        Timber.e(exception, "Error in islands flow")
+                        Timber.e(exception)
                         if (currentCoroutineContext().isActive) {
                             _uiState.update {
                                 it.copy(
@@ -144,7 +142,7 @@ class IslandListViewModel @Inject constructor(
                 Timber.d("Islands observation cancelled")
             } catch (e: Exception) {
                 if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Unexpected error loading islands")
+                    Timber.e(e)
                     _uiState.update {
                         it.copy(
                             isLoading = false,
@@ -234,7 +232,7 @@ class IslandListViewModel @Inject constructor(
         _uiState.update { it.copy(cardVariant = next) }
         viewModelScope.launch {
             try { appSettingsRepository.setListViewMode(KEY, next) }
-            catch (e: Exception) { Timber.e(e, "Failed to persist card variant") }
+            catch (e: Exception) { Timber.e(e) }
         }
     }
 
@@ -249,7 +247,7 @@ class IslandListViewModel @Inject constructor(
     private fun observeCardVariant() {
         viewModelScope.launch {
             appSettingsRepository.getListViewMode(KEY)
-                .catch { e -> Timber.e(e, "Error observing card variant") }
+                .catch { e -> Timber.e(e) }
                 .collect { viewMode -> _uiState.update { it.copy(cardVariant = viewMode) } }
         }
     }
@@ -324,9 +322,11 @@ class IslandListViewModel @Inject constructor(
                 it.island.nextScheduledMaintenance ?: Instant.DISTANT_FUTURE
             }
             IslandSortOrder.CREATED_RECENT -> result.sortedByDescending { it.island.createdAt }
+            IslandSortOrder.CREATED_OLDEST -> result.sortedBy { it.island.createdAt }
             IslandSortOrder.CUSTOM_NAME -> result.sortedBy {
                 it.island.customName?.lowercase() ?: it.island.serialNumber.lowercase()
             }
+
         }
     }
 
@@ -334,7 +334,7 @@ class IslandListViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 observeAllActiveFacilitiesUseCase()
-                    .catch { e -> Timber.e(e, "Error loading facilities for dropdown") }
+                    .catch { e -> Timber.e(e) }
                     .collect { facilities ->
                         val options = listOf(FacilityOption.ALL) + facilities.map { f ->
                             FacilityOption(id = f.id, name = f.name)
@@ -346,7 +346,7 @@ class IslandListViewModel @Inject constructor(
                         }
                     }
             } catch (e: Exception) {
-                Timber.e(e, "Failed to start facilities observation")
+                Timber.e(e)
             }
         }
     }

@@ -12,39 +12,40 @@ class GetContractsCountByClientUseCase @Inject constructor(
     private val checkClientExists: CheckClientExistsUseCase
 ) {
 
-    suspend operator fun invoke(clientId: String): QrResult<Int, QrError> {
+    suspend operator fun invoke(clientId: String): QrResult<Int, QrError.ContractsError> {
         return try {
-            // 1. Input validation
+
+            Timber.d("Get contracts count by client")
+
+            // Check input
             if (clientId.isBlank()) {
-                Timber.w("ClientId is blank")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
+                Timber.d("Client id is blank")
+                return QrResult.Error(QrError.ContractsError.MissingClientId())
             }
 
-            // 2. Check client exists
+            // Check client exists
             when (val clientCheck = checkClientExists(clientId)) {
                 is QrResult.Error -> {
-                    Timber.w("Client does not exist: $clientId")
-                    return QrResult.Error(clientCheck.error)
+                    Timber.d("Client not found: ${clientCheck.error}")
+                    return QrResult.Error(QrError.ContractsError.ClientNotFound())
                 }
-                is QrResult.Success -> {
-                    // Client exists, continue
-                }
+                is QrResult.Success -> Unit
             }
 
+            // Get
             when (val result = repository.getContractsCountByClient(clientId)) {
                 is QrResult.Success -> {
-                    val count = result.data
-                    Timber.d("Retrieved $count contacts for client: $clientId")
-                    return QrResult.Success(count)
+                    Timber.d("Successfully retrieved contacts for client:  ${result.data}-$clientId")
+                    return QrResult.Success(result.data)
                 }
                 is QrResult.Error -> {
-                    Timber.e("Repository error for clientId $clientId: ${result.error}")
-                    return QrResult.Error(result.error)
+                    Timber.d("Error in retrieving contacts: ${result.error}")
+                    return QrResult.Error(QrError.ContractsError.NotFound())
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Exception getting contacts for client: $clientId")
-            QrResult.Error(QrError.SystemError.Unknown())
+            Timber.e(e)
+            QrResult.Success(0)
         }
     }
 }

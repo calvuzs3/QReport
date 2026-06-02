@@ -5,116 +5,100 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardCheckupData
 import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardCheckupStatistics
+import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardClientStatistics
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.domain.usecase.CreateCheckUpUseCase
 import net.calvuz.qreport.checkup.domain.usecase.GetCheckUpsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
+import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
 import timber.log.Timber
 import javax.inject.Inject
+import kotlin.time.Duration.Companion.days
+
+// =============================================================================
+// ISLAND SUMMARY — computed from the island list in the ViewModel
+// =============================================================================
+
+data class IslandDashboardStats(
+    val total: Int = 0,
+    val operational: Int = 0,
+    val maintenanceSoon: Int = 0   // needs maintenance within 30 days
+)
+
+// =============================================================================
+// UI STATE
+// =============================================================================
 
 data class HomeUiState(
     val isLoading: Boolean = false,
-    val isCreatingCheckUp: Boolean = false,
     val checkupStats: DashboardCheckupStatistics? = null,
     val recentCheckUps: List<CheckUp> = emptyList(),
     val inProgressCheckUps: List<CheckUp> = emptyList(),
     val selectedCheckUpId: String? = null,
     val quickCreatedCheckUpId: String? = null,
-    val showQuickCreateSuccess: Boolean = false,
-    val error: String? = null
+
+    // Clients
+    val clientStats: DashboardClientStatistics? = null,
+
+    // Islands
+    val islandStats: IslandDashboardStats = IslandDashboardStats(),
+    val recentIslands: List<Island> = emptyList(),
+
+    val error: UiText? = null
 )
 
-/**
- * ViewModel per la Home Screen
- *
- * Gestisce lo stato della dashboard principale con:
- * - Statistiche generali dell'app
- * - Check-up recenti e in corso
- * - Quick actions per nuove operazioni
- * - Navigazione rapida
- */
+// =============================================================================
+// VIEWMODEL
+// =============================================================================
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getCheckUpsUseCase: GetCheckUpsUseCase,
-//    private val getCheckUpsByStatusUseCase: GetCheckUpsByStatusUseCase,
     private val createCheckUpUseCase: CreateCheckUpUseCase,
-//    private val getCheckUpStatsUseCase: GetCheckUpStatsUseCase
+    private val observeClientsUseCase: ObserveClientsUseCase,
+    private val observeIslandsUseCase: ObserveIslandsUseCase,
 ) : ViewModel() {
-
-    // ============================================================
-    // UI STATE
-    // ============================================================
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    // ============================================================
-    // INIT
-    // ============================================================
-
     init {
         Timber.d("HomeViewModel initialized")
-        loadDashboardData()
+        loadCheckupData()
+        observeClients()
+        observeIslands()
     }
 
-    // ============================================================
-    // PUBLIC METHODS
-    // ============================================================
+    // =========================================================================
+    // PUBLIC
+    // =========================================================================
 
-    /**
-     * Refresh completo dei dati dashboard
-     */
     fun refresh() {
-        Timber.d("Refreshing dashboard data")
-        loadDashboardData()
+        loadCheckupData()
     }
 
-    /**
-     * Naviga ai dettagli check-up
-     */
     fun navigateToCheckUp(checkUpId: String) {
-        Timber.d("Navigate to check-up: $checkUpId")
-        _uiState.value = _uiState.value.copy(
-            selectedCheckUpId = checkUpId
-        )
+        _uiState.update { it.copy(selectedCheckUpId = checkUpId) }
     }
 
-    /**
-     * Dismisses error message
-     */
-    fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
+    fun dismissError() = _uiState.update { it.copy(error = null) }
+    fun clearSelectedCheckUp() = _uiState.update { it.copy(selectedCheckUpId = null) }
 
-    /**
-     * Dismisses quick create success message
-     */
-    fun dismissQuickCreateSuccess() {
-        _uiState.value = _uiState.value.copy(
-            showQuickCreateSuccess = false,
-            quickCreatedCheckUpId = null
-        )
-    }
+    // =========================================================================
+    // CHECKUPS
+    // =========================================================================
 
-    fun clearSelectedCheckUp() {
-        _uiState.value = _uiState.value.copy(selectedCheckUpId = null)
-    }
-
-    // ============================================================
-    // PRIVATE METHODS
-    // ============================================================
-
-    /**
-     * Carica tutti i dati per la dashboard
-     */
-    private fun loadDashboardData() {
+    private fun loadCheckupData() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-
+            _uiState.update { it.copy(isLoading = true) }
             try {
-                // Collect multiple flows and combine them
                 combine(
                     loadRecentCheckUps(),
                     loadInProgressCheckUps(),
@@ -127,69 +111,90 @@ class HomeViewModel @Inject constructor(
                         draftCheckUps = drafts,
                         completedCheckUps = completed
                     )
-                }.collect { dashboardData ->
-
-                    // Calculate statistics
-                    val totalCheckUps = dashboardData.recentCheckUps.size
-                    val activeCheckUps = dashboardData.inProgressCheckUps.size + dashboardData.draftCheckUps.size
-                    val completedThisWeek = dashboardData.completedCheckUps.take(10).size // Approximation
-
-                    val stats = DashboardCheckupStatistics(
-                        totalCheckUps = totalCheckUps,
-                        activeCheckUps = activeCheckUps,
-                        completedThisWeek = completedThisWeek,
-                        averageCompletionTime = 0 // TODO: Calculate from real data
-                    )
-
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        checkupStats = stats,
-                        recentCheckUps = dashboardData.recentCheckUps,
-                        inProgressCheckUps = dashboardData.inProgressCheckUps,
-                        error = null
-                    )
+                }.collect { data ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            checkupStats = DashboardCheckupStatistics(
+                                totalCheckUps = data.recentCheckUps.size,
+                                activeCheckUps = data.inProgressCheckUps.size + data.draftCheckUps.size,
+                                completedThisWeek = data.completedCheckUps.take(10).size,
+                                averageCompletionTime = 0
+                            ),
+                            recentCheckUps = data.recentCheckUps,
+                            inProgressCheckUps = data.inProgressCheckUps,
+                            error = null
+                        )
+                    }
                 }
-
             } catch (e: Exception) {
-                Timber.e(e, "Failed to load dashboard data")
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Errore caricamento dati: ${e.message}"
-                )
+                Timber.e(e, "Failed to load checkup data")
+                _uiState.update {
+                    it.copy(isLoading = false, error = UiText.StringResource(R.string.home_error_load))
+                }
             }
         }
     }
 
-    private fun loadRecentCheckUps(): Flow<List<CheckUp>> {
-        return getCheckUpsUseCase()
-            .map { checkUps -> checkUps.take(5) } // Most recent 5
-            .catch { e ->
-                Timber.e(e, "Failed to load recent check-ups")
-                emit(emptyList())
-            }
+    private fun loadRecentCheckUps(): Flow<List<CheckUp>> =
+        getCheckUpsUseCase().map { it.take(5) }.catch { e -> Timber.e(e); emit(emptyList()) }
+
+    private fun loadInProgressCheckUps(): Flow<List<CheckUp>> =
+        getCheckUpsUseCase(status = CheckUpStatus.IN_PROGRESS).catch { e -> Timber.e(e); emit(emptyList()) }
+
+    private fun loadDraftCheckUps(): Flow<List<CheckUp>> =
+        getCheckUpsUseCase(status = CheckUpStatus.DRAFT).catch { e -> Timber.e(e); emit(emptyList()) }
+
+    private fun loadCompletedCheckUps(): Flow<List<CheckUp>> =
+        getCheckUpsUseCase(status = CheckUpStatus.COMPLETED).catch { e -> Timber.e(e); emit(emptyList()) }
+
+    // =========================================================================
+    // CLIENTS
+    // =========================================================================
+
+    private fun observeClients() {
+        viewModelScope.launch {
+            observeClientsUseCase()
+                .catch { e -> Timber.e(e, "Failed to observe clients") }
+                .collect { clients ->
+                    _uiState.update {
+                        it.copy(
+                            clientStats = DashboardClientStatistics(
+                                totalClient = clients.size,
+                                activeClient = clients.count { c -> c.isActive }
+                            )
+                        )
+                    }
+                }
+        }
     }
 
-    private fun loadInProgressCheckUps(): Flow<List<CheckUp>> {
-        return getCheckUpsUseCase(status = CheckUpStatus.IN_PROGRESS)
-            .catch { e ->
-                Timber.e(e, "Failed to load in-progress check-ups")
-                emit(emptyList())
-            }
-    }
+    // =========================================================================
+    // ISLANDS
+    // =========================================================================
 
-    private fun loadDraftCheckUps(): Flow<List<CheckUp>> {
-        return getCheckUpsUseCase(status = CheckUpStatus.DRAFT)
-            .catch { e ->
-                Timber.e(e, "Failed to load draft check-ups")
-                emit(emptyList())
-            }
-    }
+    private fun observeIslands() {
+        viewModelScope.launch {
+            observeIslandsUseCase()
+                .catch { e -> Timber.e(e, "Failed to observe islands") }
+                .collect { islands ->
+                    val now = Clock.System.now()
+                    val thirtyDaysFromNow = now + 30.days
 
-    private fun loadCompletedCheckUps(): Flow<List<CheckUp>> {
-        return getCheckUpsUseCase(status = CheckUpStatus.COMPLETED)
-            .catch { e ->
-                Timber.e(e, "Failed to load completed check-ups")
-                emit(emptyList())
-            }
+                    val stats = IslandDashboardStats(
+                        total = islands.size,
+                        operational = islands.count { it.isActive && !it.needsMaintenance() },
+                        maintenanceSoon = islands.count { island ->
+                            // Overdue OR scheduled within 30 days
+                            island.needsMaintenance() ||
+                                    island.nextScheduledMaintenance?.let { it <= thirtyDaysFromNow } == true
+                        }
+                    )
+
+                    val recent = islands.sortedByDescending { it.updatedAt }.take(3)
+
+                    _uiState.update { it.copy(islandStats = stats, recentIslands = recent) }
+                }
+        }
     }
 }

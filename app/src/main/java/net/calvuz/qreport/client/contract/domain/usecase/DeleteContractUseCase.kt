@@ -15,30 +15,36 @@ class DeleteContractUseCase @Inject constructor(
     suspend operator fun invoke(contractId: String): QrResult<Int, QrError> {
             return try {
 
+                Timber.d("Delete contract")
+
+                // Check input
                 if (contractId.isBlank()) {
-                    return QrResult.Error(QrError.ContractsError.ClientIdEmpty("ID cliente non può essere vuoto"))
+                    Timber.d("Contract id is blank")
+                    return QrResult.Error(QrError.ContractsError.MissingContractId())
                 }
 
-                // 2. Verificare che il contatto esista
+                // Check contract exists
                 return when (val contact = checkContractExists(contractId)) {
                     is QrResult.Success -> {
-                        // Il contatto esiste, procedi con l'eliminazione
                         return when (val result =contractRepository.deleteContractById(contractId)) {
                             is QrResult.Success -> {
+                                Timber.d("Contract deleted successfully: ${contact.data}")
                                 QrResult.Success(result.data)
                             }
                             is QrResult.Error -> {
+                                Timber.d("Contract delete error: ${result.error}")
                                 QrResult.Error(result.error)
                             }
                         }
                     }
                     is QrResult.Error -> {
-                        QrResult.Error(contact.error)
+                        Timber.d("Contract delete error: ${contact.error}")
+                        QrResult.Error(QrError.ContractsError.DeleteError())
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, "Error in delete contact")
-                QrResult.Error(QrError.ContractsError.DeleteError(e))
+                Timber.e(e)
+                QrResult.Error(QrError.ContractsError.DeleteError())
             }
     }
 

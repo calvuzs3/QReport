@@ -8,16 +8,16 @@ import net.calvuz.qreport.client.contract.domain.repository.ContractRepository
 import javax.inject.Inject
 
 class UpdateContractUseCase @Inject constructor(
-    private val checkContractExists: CheckContractExists,
+    private val checkContractExists: CheckContractExistsUseCase,
     private val repository: ContractRepository
 ) {
 
-    suspend operator fun invoke(contract: Contract): QrResult<String, QrError> {
+    suspend operator fun invoke(contract: Contract): QrResult<String, QrError.ContractsError> {
 
-        // 1. Validation
-        when (val result = checkContractExists(contract.id)) {
-            is QrResult.Success -> result.data
-            is QrResult.Error -> return QrResult.Error(result.error)
+        // 1. Validate input
+        when (val exist = checkContractExists(contract.id)) {
+            is QrResult.Success -> exist
+            is QrResult.Error -> return QrResult.Error(QrError.ContractsError.NotFound())
         }
 
         // 2. Update
@@ -26,7 +26,7 @@ class UpdateContractUseCase @Inject constructor(
         )
         return when (val result = repository.updateContract(finalContract)) {
             is QrResult.Success -> QrResult.Success(result.data)
-            is QrResult.Error -> QrResult.Error(QrError.DatabaseError.UpdateFailed(null))
+            is QrResult.Error -> QrResult.Error(QrError.ContractsError.UpdateError())
         }
     }
 }

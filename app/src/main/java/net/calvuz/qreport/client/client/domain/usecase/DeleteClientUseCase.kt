@@ -22,6 +22,8 @@ class DeleteClientUseCase @Inject constructor(
         clientId: String,
         cascade: Boolean = false
     ): QrResult<Unit, QrError.ClientError> {
+
+        // Check input
         if (clientId.isBlank()) {
             return QrResult.Error(QrError.ClientError.NotFound())
         }

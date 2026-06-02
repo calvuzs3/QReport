@@ -3,6 +3,7 @@
 
     <!-- System Error Messages -->
     <string name="err_unknown">Errore sconosciuto</string>
+    <string name="err_exception">Eccezione</string>
 
     <!-- Errori App -->
     <string name="err_save">Errore salvataggio</string>
@@ -25,8 +26,11 @@
     <string name="err_create_intervention_island_not_found">Isola non trovata</string>
 
     <!-- Validation errors -->
+    <string name="err_validation_ids_doesnt_match">Gli id non corrispondono</string>
     <string name="err_validation_empty_field">Campo obbligatorio mancante</string>
     <string name="err_validation_duplicate_entry">Duplicato trovato</string>
+    <string name="err_validation_email_already_taken">Email gia usata</string>
+    <string name="err_validation_phone_already_taken">Telefono gia usato</string>
     <string name="err_validation_invalid_operation">Operazione non possibile</string>
     <string name="err_validation_is_not_active">Non è attivo</string>
     <string name="err_validation_is_not_primary">Non è primario</string>

@@ -15,39 +15,35 @@ class CheckPhoneUniquenessUseCase @Inject constructor(
         excludeContactId: String = ""
     ): QrResult<Unit, QrError> {
         return try {
-            // Validazione input
+            Timber.d("Checking phone uniqueness: $phone (exclude: $excludeContactId)")
+
+            // Validate input
             if (phone.isBlank()) {
-                Timber.w("CheckPhoneUniquenessUseCase: phone is blank")
-                return QrResult.Error(QrError.ValidationError.EmptyField(phone.toString()))
+                Timber.w("phone is blank")
+                return QrResult.Error(QrError.ContactsError.ValidationError.InvalidPhone())
             }
 
-            Timber.d("CheckPhoneUniquenessUseCase: Checking phone uniqueness: $phone (exclude: $excludeContactId)")
-
-            // Controllo univocità tramite repository
+            // Check uniqueness via repository
             when (val result = contactRepository.isPhoneTaken(phone, excludeContactId)) {
                 is QrResult.Success -> {
                     val isTaken = result.data
                     if (isTaken) {
-                        Timber.w("CheckPhoneUniquenessUseCase: Phone already taken: $phone")
-                        QrResult.Error(QrError.ValidationError.DuplicateEntry(phone))
+                        Timber.w("Phone already taken: $phone")
+                        QrResult.Error(QrError.ValidationError.PhoneAlreadyTaken())
                     } else {
-                        Timber.d("CheckPhoneUniquenessUseCase: Phone is unique: $phone")
+                        Timber.d("Phone is unique: $phone")
                         QrResult.Success(Unit)
                     }
                 }
 
                 is QrResult.Error -> {
-                    Timber.e("CheckPhoneUniquenessUseCase: Repository error checking phone $phone: ${result.error}")
+                    Timber.e("Repository error checking phone $phone: ${result.error}")
                     QrResult.Error(result.error)
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "CheckPhoneUniquenessUseCase: Exception checking phone uniqueness: $phone")
-            QrResult.Error(QrError.SystemError.Unknown())
+            Timber.e(e, "Exception checking phone uniqueness: $phone")
+            QrResult.Error(QrError.SystemError.UnknownError())
         }
-    }
-
-    suspend fun checkPhoneIsUnique(phone: String): QrResult<Unit, QrError> {
-        return invoke(phone, "")
     }
 }

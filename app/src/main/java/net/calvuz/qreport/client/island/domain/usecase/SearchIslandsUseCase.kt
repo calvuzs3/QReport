@@ -7,6 +7,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.days
 
@@ -24,10 +25,13 @@ class SearchIslandsUseCase @Inject constructor(
      * Text search across serial number, custom name and location.
      * Minimum query length: 2 characters.
      */
-    suspend operator fun invoke(query: String): QrResult<List<Island>, QrError.IslandError> {
+    suspend operator fun invoke(query: String): QrResult<List<Island>, QrError> {
+
+        Timber.d("Search island")
+
         val trimmed = query.trim()
         if (trimmed.length < 2) {
-            return QrResult.Error(QrError.IslandError.InvalidField("Search query must be at least 2 characters"))
+            return QrResult.Error(QrError.IslandError.InvalidQueryLength())
         }
 
         return islandRepository.searchIslands(trimmed).fold(

@@ -17,7 +17,7 @@ data class MechanicalUnit(
     val id: String,
     val islandId: String,
     val unitType: UnitType,
-    val name: String,               // Required: e.g. "Robot R1", "7° Asse", "Rack Tool A"
+    val name: String,
     val serialNumber: String? = null,
     val model: String? = null,
     val notes: String? = null,

@@ -9,15 +9,7 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Use Case per recuperare contatti di un cliente
- *
- * Gestisce:
- * - Validazione esistenza cliente
- * - Recupero contatti ordinati (primary prima)
- * - Flow reattivo per UI
- * - Filtri per ruolo e dipartimento
- *
- * ✅ COMPLETE: All 8 methods updated to use QrResult<T, QrError> pattern
+ * Returns the contacts for a given client.
  */
 class GetContactsByClientUseCase @Inject constructor(
     private val contactRepository: ContactRepository,
@@ -25,31 +17,30 @@ class GetContactsByClientUseCase @Inject constructor(
 ) {
 
     /**
-     * ✅ METHOD 1/8: Recupera tutti i contatti di un cliente
+     * Get all client's contacts
      *
-     * @param clientId ID del cliente
-     * @return QrResult.Success con lista contatti ordinata (primary prima, poi alfabetico)
+     * @param clientId the client whose contacts to retrieve
+     * @return [QrResult.Success] with contacts sorted: primary first, then alphabetical
      */
     suspend operator fun invoke(clientId: String): QrResult<List<Contact>, QrError> {
         return try {
-            // 1. Validazione input
+
+            // Check input
             if (clientId.isBlank()) {
                 Timber.w("ClientId is blank")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
+                return QrResult.Error(QrError.ContactsError.MissingClientId())
             }
 
-            // 2. Verifica esistenza cliente
+            // Check client exists
             when (val clientCheck = checkClientExists(clientId)) {
                 is QrResult.Error -> {
                     Timber.w("Client does not exist: $clientId")
                     return QrResult.Error(clientCheck.error)
                 }
-                is QrResult.Success -> {
-                    // Client exists, continue
-                }
+                is QrResult.Success -> Unit
             }
 
-            // 3. Recupero contatti ordinati
+            // Get contacts
             when (val result = contactRepository.getContactsByClient(clientId)) {
                 is QrResult.Success -> {
                     val contacts = result.data
@@ -70,15 +61,15 @@ class GetContactsByClientUseCase @Inject constructor(
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "Exception getting contacts for client: $clientId")
-            QrResult.Error(QrError.SystemError.Unknown())
+            Timber.e(e, clientId)
+            QrResult.Error(QrError.SystemError.UnknownError())
         }
     }
 
 //    /**
 //     * ✅ METHOD 2/8: Osserva tutti i contatti di un cliente (Flow reattivo)
 //     *
-//     * @param clientId ID del cliente
+//     * @param clientId the client whose contacts to retrieve
 //     * @return Flow con lista contatti che si aggiorna automaticamente
 //     */
 //    fun observeContactsByClient(clientId: String): Flow<List<Contact>> {
@@ -99,14 +90,14 @@ class GetContactsByClientUseCase @Inject constructor(
 //    /**
 //     * ✅ METHOD 3/8: Recupera solo i contatti attivi di un cliente
 //     *
-//     * @param clientId ID del cliente
+//     * @param clientId the client whose contacts to retrieve
 //     * @return QrResult.Success con lista contatti attivi
 //     */
 //    suspend fun getActiveContactsByClient(clientId: String): QrResult<List<Contact>, QrError> {
 //        return try {
 //            if (clientId.isBlank()) {
 //                Timber.w("GetContactsByClientUseCase.getActiveContactsByClient: clientId is blank")
-//                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+//                return QrResult.Error(QrError.ContactsError.MissingClientId())
 //            }
 //
 //            // Check client exists
@@ -140,21 +131,21 @@ class GetContactsByClientUseCase @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "GetContactsByClientUseCase.getActiveContactsByClient: Exception for client: $clientId")
-//            QrResult.Error(QrError.SystemError.Unknown()    )
+//            QrResult.Error(QrError.SystemError.UnknownError()    )
 //        }
 //    }
 //
 //    /**
 //     * ✅ METHOD 4/8: Recupera il contatto primary di un cliente
 //     *
-//     * @param clientId ID del cliente
+//     * @param clientId the client whose contacts to retrieve
 //     * @return QrResult.Success con contatto primary se esiste, null se non esiste
 //     */
 //    suspend fun getPrimaryContact(clientId: String): QrResult<Contact?, QrError> {
 //        return try {
 //            if (clientId.isBlank()) {
 //                Timber.w("GetContactsByClientUseCase.getPrimaryContact: clientId is blank")
-//                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+//                return QrResult.Error(QrError.ContactsError.MissingClientId())
 //            }
 //
 //            // Check client exists
@@ -182,14 +173,14 @@ class GetContactsByClientUseCase @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "GetContactsByClientUseCase.getPrimaryContact: Exception for client: $clientId")
-//            QrResult.Error(QrError.SystemError.Unknown())
+//            QrResult.Error(QrError.SystemError.UnknownError())
 //        }
 //    }
 //
 //    /**
 //     * ✅ METHOD 5/8: Recupera contatti di un cliente filtrati per ruolo
 //     *
-//     * @param clientId ID del cliente
+//     * @param clientId the client whose contacts to retrieve
 //     * @param role Ruolo da filtrare
 //     * @return QrResult.Success con lista contatti del ruolo specificato
 //     */
@@ -197,7 +188,7 @@ class GetContactsByClientUseCase @Inject constructor(
 //        return try {
 //            if (clientId.isBlank()) {
 //                Timber.w("GetContactsByClientUseCase.getContactsByRole: clientId is blank")
-//                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+//                return QrResult.Error(QrError.ContactsError.MissingClientId())
 //            }
 //            if (role.isBlank()) {
 //                Timber.w("GetContactsByClientUseCase.getContactsByRole: role is blank")
@@ -233,14 +224,14 @@ class GetContactsByClientUseCase @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "GetContactsByClientUseCase.getContactsByRole: Exception for client: $clientId, role: $role")
-//            QrResult.Error(QrError.SystemError.Unknown())
+//            QrResult.Error(QrError.SystemError.UnknownError())
 //        }
 //    }
 //
 //    /**
 //     * ✅ METHOD 6/8: Recupera contatti di un cliente filtrati per dipartimento
 //     *
-//     * @param clientId ID del cliente
+//     * @param clientId the client whose contacts to retrieve
 //     * @param department Dipartimento da filtrare
 //     * @return QrResult.Success con lista contatti del dipartimento specificato
 //     */
@@ -248,7 +239,7 @@ class GetContactsByClientUseCase @Inject constructor(
 //        return try {
 //            if (clientId.isBlank()) {
 //                Timber.w("GetContactsByClientUseCase.getContactsByDepartment: clientId is blank")
-//                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+//                return QrResult.Error(QrError.ContactsError.MissingClientId())
 //            }
 //            if (department.isBlank()) {
 //                Timber.w("GetContactsByClientUseCase.getContactsByDepartment: department is blank")
@@ -284,21 +275,21 @@ class GetContactsByClientUseCase @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "GetContactsByClientUseCase.getContactsByDepartment: Exception for client: $clientId, department: $department")
-//            QrResult.Error(QrError.SystemError.Unknown())
+//            QrResult.Error(QrError.SystemError.UnknownError())
 //        }
 //    }
 //
 //    /**
 //     * ✅ METHOD 7/8: Recupera contatti che hanno informazioni complete per comunicare
 //     *
-//     * @param clientId ID del cliente
+//     * @param clientId the client whose contacts to retrieve
 //     * @return QrResult.Success con lista contatti con almeno un metodo di contatto
 //     */
 //    suspend fun getContactsWithValidContactInfo(clientId: String): QrResult<List<Contact>, QrError> {
 //        return try {
 //            if (clientId.isBlank()) {
 //                Timber.w("GetContactsByClientUseCase.getContactsWithValidContactInfo: clientId is blank")
-//                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+//                return QrResult.Error(QrError.ContactsError.MissingClientId())
 //            }
 //
 //            // Check client exists
@@ -330,21 +321,21 @@ class GetContactsByClientUseCase @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "GetContactsByClientUseCase.getContactsWithValidContactInfo: Exception for client: $clientId")
-//            QrResult.Error(QrError.SystemError.Unknown())
+//            QrResult.Error(QrError.SystemError.UnknownError())
 //        }
 //    }
 //
 //    /**
 //     * ✅ METHOD 8/8: Conta il numero di contatti per un cliente
 //     *
-//     * @param clientId ID del cliente
+//     * @param clientId the client whose contacts to retrieve
 //     * @return QrResult.Success con numero di contatti
 //     */
 //    suspend fun getContactsCount(clientId: String): QrResult<Int, QrError> {
 //        return try {
 //            if (clientId.isBlank()) {
 //                Timber.w("GetContactsByClientUseCase.getContactsCount: clientId is blank")
-//                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+//                return QrResult.Error(QrError.ContactsError.MissingClientId())
 //            }
 //
 //            when (val result = contactRepository.getContactsCountByClient(clientId)) {
@@ -361,7 +352,7 @@ class GetContactsByClientUseCase @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "GetContactsByClientUseCase.getContactsCount: Exception for client: $clientId")
-//            QrResult.Error(QrError.SystemError.Unknown())
+//            QrResult.Error(QrError.SystemError.UnknownError())
 //        }
 //    }
 

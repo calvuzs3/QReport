@@ -3,7 +3,6 @@ package net.calvuz.qreport.client.unit.data.local.repository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
-import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import net.calvuz.qreport.client.unit.data.local.mapper.MechanicalUnitMapper
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
@@ -32,8 +31,9 @@ class MechanicalUnitRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getById(id: String): MechanicalUnit? =
+    override suspend fun getMechanicalUnitById(id: String): Result<MechanicalUnit?> = runCatching {
         dao.getById(id)?.let { mapper.toDomain(it) }
+    }
 
     override suspend fun create(unit: MechanicalUnit): Result<Unit> = runCatching {
         dao.insert(mapper.toEntity(unit))

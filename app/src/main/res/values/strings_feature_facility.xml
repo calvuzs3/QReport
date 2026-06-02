@@ -38,6 +38,7 @@
     <string name="err_facility_client_not_found">Cliente associato non trovato</string>
     <string name="err_facility_cannot_delete_last">Impossibile eliminare l\'unico stabilimento attivo del cliente</string>
     <string name="err_facility_cannot_delete_has_islands">Impossibile eliminare lo stabilimento: ha isole attive associate</string>
+    <string name="err_facility_validation_invalid_name_length">Lunghezza nome stabilimento errata (2–100)</string>
 
     <!-- ======================================================= -->
     <!-- FacilityListScreen                                       -->
@@ -105,23 +106,9 @@
     <string name="facility_detail_empty_message">Non ci sono ancora isole per questo stabilimento</string>
     <string name="facility_detail_empty_filtered_title">Nessun risultato</string>
     <string name="facility_detail_empty_filtered_message">Nessuna isola corrisponde al filtro \'%1$s\'</string>
-    <string name="facility_detail_empty_action">Nuova Isola</string>
+    <string name="facility_detail_empty_action">Vedi tutte</string>
     <string name="facility_detail_empty_icon_description">Isole robotizzate</string>
     <string name="facility_detail_fab_new_island">Aggiungi Isola</string>
-
-    <!-- Island filter display names -->
-    <string name="island_filter_all">Tutte</string>
-    <string name="island_filter_active">Attive</string>
-    <string name="island_filter_inactive">Inattive</string>
-    <string name="island_filter_needs_maintenance">Da manutenere</string>
-    <string name="island_filter_under_warranty">In garanzia</string>
-    <string name="island_filter_by_type">Per tipo</string>
-
-    <!-- Island delete dialog -->
-    <string name="island_delete_dialog_title">Elimina Isola</string>
-    <string name="island_delete_dialog_message">Sei sicuro di voler eliminare l\'isola \'%1$s\'? Questa operazione non può essere annullata.</string>
-    <string name="island_delete_dialog_confirm">Elimina</string>
-    <string name="island_delete_dialog_cancel">Annulla</string>
 
     <!-- Maintenance -->
     <string name="facility_detail_maintenance_complete">Completata</string>
@@ -190,5 +177,32 @@
     <string name="facility_stat_facilities">Stabilimenti</string>
     <string name="facility_stat_islands_total">Isole Totali</string>
     <string name="facility_stat_islands_active">Isole Attive</string>
+
+    <!-- FacilityPkg -->
+
+    <string name="facility_pkg_title">Stabilimenti</string>
+    <string name="facility_pkg_description">Gestisci Stabilimenti</string>
+
+
+    <!-- ======================================================= -->
+    <!-- FacilityFilter                                          -->
+    <!-- ======================================================= -->
+
+    <string name="facility_filter_all">Tutti</string>
+    <string name="facility_filter_active">Attivi</string>
+    <string name="facility_filter_inactive">Inattivi</string>
+    <string name="facility_filter_primary_only">Solo primari</string>
+    <string name="facility_filter_with_islands">Con Isole</string>
+    <string name="facility_filter_by_type">Per tipo</string>
+
+    <!-- ======================================================= -->
+    <!-- FacilitySortOrder                                       -->
+    <!-- ======================================================= -->
+
+    <string name="facility_sort_facility_name">Nome Stabilimento</string>
+    <string name="facility_sort_created_recent">Pi\u00f9 Recenti</string>
+    <string name="facility_sort_created_oldest">Meno Recenti</string>
+    <string name="facility_sort_islands_count">Numero Isole</string>
+    <string name="facility_sort_by_type">Per tipo</string>
 
 </resources>

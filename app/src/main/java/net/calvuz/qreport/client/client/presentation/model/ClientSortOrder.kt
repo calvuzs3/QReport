@@ -1,15 +1,14 @@
 package net.calvuz.qreport.client.client.presentation.model
 
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.model.QReportSortOrder
 
-enum class ClientSortOrder: QReportSortOrder {
-    COMPANY_NAME, CREATED_RECENT, CREATED_OLDEST, FACILITIES_COUNT, CHECKUPS_COUNT;
+enum class ClientSortOrder(val labelResId: Int) : QReportSortOrder {
+    COMPANY_NAME(R.string.client_sort_company_name),
+    CREATED_RECENT(R.string.client_sort_created_recent),
+    CREATED_OLDEST(R.string.client_sort_created_oldest),
+    FACILITIES_COUNT(R.string.client_sort_facilities_count),
+    CHECKUPS_COUNT(R.string.client_sort_checkups_count);
 
-    override fun getDisplayName(): String = when (this) {
-        COMPANY_NAME -> "Nome Azienda"
-        CREATED_RECENT -> "Più Recenti"
-        CREATED_OLDEST -> "Meno Recenti"
-        FACILITIES_COUNT -> "Stabilimenti"
-        CHECKUPS_COUNT -> "Check-up"
-    }
+    override fun getDisplayName(): String = name // fallback; UI uses labelResId
 }

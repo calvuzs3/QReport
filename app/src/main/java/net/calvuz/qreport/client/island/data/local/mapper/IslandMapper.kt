@@ -97,7 +97,7 @@ class IslandMapper @Inject constructor() {
             IslandType.valueOf(islandTypeString)
         } catch (_: IllegalArgumentException) {
             // Log l'errore e usa un fallback
-             Timber.w("Unknown island type: $islandTypeString, using POLY_MOVE as fallback")
+             Timber.w("UnknownError island type: $islandTypeString, using POLY_MOVE as fallback")
 
             // Prova parsing case-insensitive
             IslandType.entries.find {
@@ -117,7 +117,7 @@ fun IslandType.Companion.parseIslandType(islandType: String): IslandType {
         IslandType.valueOf(islandType)
     } catch (_: IllegalArgumentException) {
         // Log the error and use a fallback
-        Timber.w("Unknown island type: $islandType, using POLY_MOVE as fallback")
+        Timber.w("UnknownError island type: $islandType, using POLY_MOVE as fallback")
 
         // Try case-insensitive parsing
         IslandType.entries.find {

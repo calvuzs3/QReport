@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Header -->
+    <string name="home_subtitle">Check-up Isole Robotizzate</string>
+    <string name="home_action_refresh">Aggiorna</string>
+
+    <!-- Section labels -->
+    <string name="home_section_checkup">Check-up</string>
+    <string name="home_section_clients">Clienti</string>
+    <string name="home_section_islands">Isole</string>
+    <string name="home_section_management">Accesso rapido</string>
+
+    <!-- Section actions -->
+    <string name="home_action_view_all">Vedi tutti</string>
+    <string name="home_action_open">Apri</string>
+
+    <!-- Check-up stat chips -->
+    <string name="home_checkup_stat_total">Totali</string>
+    <string name="home_checkup_stat_active">Attivi</string>
+    <string name="home_checkup_stat_week">Settimana</string>
+    <string name="home_checkup_empty">Nessun check-up recente</string>
+
+    <!-- Client stat chips -->
+    <string name="home_clients_stat_total">Totali</string>
+    <string name="home_clients_stat_active">Attivi</string>
+    <string name="home_clients_empty">Nessun cliente registrato</string>
+
+    <!-- Island stat chips -->
+    <string name="home_islands_stat_total">Totali</string>
+    <string name="home_islands_stat_operational">Operative</string>
+    <string name="home_islands_stat_maintenance">Manutenzione</string>
+    <string name="home_islands_empty">Nessuna isola registrata</string>
+
+    <!-- Navigation cards -->
+    <string name="home_nav_interventions_title">Interventi</string>
+
+    <!-- Errors -->
+    <string name="home_error_load">Errore caricamento dati</string>
+
+</resources>

@@ -25,7 +25,6 @@ class ContractRepositoryImpl @Inject constructor(
         val contracts = contractDao.getAllContracts().map { it.toDomain() }
         QrResult.Success(contracts)
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante il recupero di tutti i contratti")
         QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
     }
 
@@ -33,7 +32,6 @@ class ContractRepositoryImpl @Inject constructor(
         val count = contractDao.setActiveContract(id)
         QrResult.Success(count)
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante l'attivazione del contratto con ID: $id")
         QrResult.Error(QrError.DatabaseError.UpdateFailed(e.localizedMessage))
     }
 
@@ -41,7 +39,6 @@ class ContractRepositoryImpl @Inject constructor(
         val count = contractDao.setInactiveContract(id)
         QrResult.Success(count)
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante l'attivazione del contratto con ID: $id")
         QrResult.Error(QrError.DatabaseError.UpdateFailed(e.localizedMessage))
     }
 
@@ -50,7 +47,6 @@ class ContractRepositoryImpl @Inject constructor(
             val contracts = contractDao.getAllActiveContracts().map { it.toDomain() }
             QrResult.Success(contracts)
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante il recupero dei contratti attivi")
             QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
         }
     }
@@ -59,7 +55,6 @@ class ContractRepositoryImpl @Inject constructor(
         val contracts = contractDao.getAllExpiredContracts().map { it.toDomain() }
         QrResult.Success(contracts)
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante il recupero dei contratti scaduti")
         QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
     }
 
@@ -67,17 +62,14 @@ class ContractRepositoryImpl @Inject constructor(
         val contract = contractDao.getContract(id)?.toDomain()
         QrResult.Success(contract)
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante il recupero del contratto con ID: $id")
         QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
     }
 
     override suspend fun createContract(contract: Contract): QrResult<String, QrError> = try {
         val entity = contract.toEntity()
         contractDao.insertContract(entity)
-        Timber.d("Contratto creato con ID: ${contract.id}")
         QrResult.Success(contract.id)
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante la creazione del contratto con ID: ${contract.id}")
         QrResult.Error(QrError.DatabaseError.InsertFailed(e.localizedMessage))
     }
 
@@ -88,7 +80,6 @@ class ContractRepositoryImpl @Inject constructor(
         QrResult.Success(contract.id)
 
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante l'aggiornamento del contratto con ID: ${contract.id}")
         QrResult.Error(QrError.DatabaseError.UpdateFailed(e.localizedMessage))
     }
 
@@ -97,10 +88,8 @@ class ContractRepositoryImpl @Inject constructor(
             is QrResult.Success -> {
                 if (res.data != null) {
                     contractDao.deleteContract(res.data.toEntity())
-                        Timber.d("Contratto eliminato con ID: $id")
                     1
                 } else {
-                    Timber.w("Nessun contratto eliminato per l'ID: $id. Il contratto potrebbe non esistere.")
                     0
                 }
             }
@@ -108,7 +97,6 @@ class ContractRepositoryImpl @Inject constructor(
         }
         QrResult.Success(c)
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante l'eliminazione del contratto con ID: $id")
         QrResult.Error(QrError.DatabaseError.DeleteFailed(e.localizedMessage))
     }
 
@@ -117,7 +105,6 @@ class ContractRepositoryImpl @Inject constructor(
             val contracts = contractDao.getContractsByClientId(clientId).map { it.toDomain() }
             QrResult.Success(contracts)
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante il recupero dei contratti per il cliente: $clientId")
             QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
         }
 
@@ -126,7 +113,6 @@ class ContractRepositoryImpl @Inject constructor(
             val contracts = contractDao.getContractCountByClientId(clientId)
             QrResult.Success(contracts)
         } catch (e: Exception) {
-            Timber.e(e, "Errore durante il recupero dei contratti per il cliente: $clientId")
             QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
         }
 
@@ -138,7 +124,6 @@ class ContractRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Timber.e(
                 e,
-                "Errore durante il recupero dei contratti attivi per il cliente: $clientId"
             )
             QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
         }
@@ -146,7 +131,7 @@ class ContractRepositoryImpl @Inject constructor(
     override suspend fun isExpired(id: String): QrResult<Boolean, QrError> = try {
         val contract = contractDao.getContract(id)
         if (contract == null) {
-            QrResult.Error(QrError.DatabaseError.NotFound("Contratto con ID $id non trovato"))
+            QrResult.Error(QrError.DatabaseError.NotFound(id))
         } else {
             QrResult.Success(
                 // Check contract validity
@@ -154,18 +139,15 @@ class ContractRepositoryImpl @Inject constructor(
             )
         }
     } catch (e: Exception) {
-        Timber.e(e, "Errore durante la verifica della scadenza per il contratto con ID: $id")
         QrResult.Error(QrError.DatabaseError.OperationFailed(e.localizedMessage))
     }
 
-    // --- METODI CON FLOW (REATTIVI) ---
+    // --- REACTIVE FLOW ---
 
     override suspend fun getAllActiveContractsFlow(): Flow<List<Contract>> {
         return contractDao.getAllActiveContractsFlow()
             .map { entities -> entities.map { it.toDomain() } }
             .catch { e ->
-                Timber.e(e, "Errore nel flow dei contratti attivi")
-                // In un flow, è meglio emettere una lista vuota o gestire l'errore nel ViewModel/UI
                 emit(emptyList())
             }
     }
@@ -174,7 +156,6 @@ class ContractRepositoryImpl @Inject constructor(
         return contractDao.getContractFlow(id)
             .map { entity -> entity?.toDomain() }
             .catch { e ->
-                Timber.e(e, "Errore nel flow del contratto con ID: $id")
                 emit(null)
             }
     }
@@ -183,7 +164,6 @@ class ContractRepositoryImpl @Inject constructor(
         return contractDao.getContractsByClientIdFlow(clientId)
             .map { entities -> entities.map { it.toDomain() } }
             .catch { e ->
-                Timber.e(e, "Errore nel flow dei contratti per il cliente: $clientId")
                 emit(emptyList())
             }
     }

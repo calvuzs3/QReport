@@ -23,7 +23,7 @@ class NewFacilityUseCase @Inject constructor(
 
         // 1. Verify client exists
         when (checkClientExists(facility.clientId)) {
-            is QrResult.Error -> return QrResult.Error(QrError.FacilityError.ClientNotFound())
+            is QrResult.Error -> return QrResult.Error(QrError.FacilityError.MissingClientId())
             is QrResult.Success -> Unit
         }
 

@@ -18,7 +18,7 @@ import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
 import net.calvuz.qreport.client.contact.domain.usecase.GetContactStatisticsUseCase
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.model.ContractStatistics
-import net.calvuz.qreport.client.contract.domain.usecase.NewGetContractStatisticsUseCase
+import net.calvuz.qreport.client.contract.domain.usecase.GetContractStatisticsUseCase
 import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
 import net.calvuz.qreport.client.island.domain.model.Island
 import timber.log.Timber
@@ -93,7 +93,7 @@ data class ClientDetailUiState(
 class ClientDetailViewModel @Inject constructor(
     private val getClientWithDetailsUseCase: GetClientWithDetailsUseCase,
     private val getContactStatisticsUseCase: GetContactStatisticsUseCase,
-    private val getContractStatisticsUseCase: NewGetContractStatisticsUseCase,
+    private val getContractStatisticsUseCase: GetContractStatisticsUseCase,
     private val deleteClientUseCase: DeleteClientUseCase
 ) : ViewModel() {
 
@@ -165,8 +165,8 @@ class ClientDetailViewModel @Inject constructor(
                 clientDetails = clientDetails,
                 companyName = clientDetails.client.companyName,
                 facilitiesWithIslands = clientDetails.facilities,
-                activeContacts = clientDetails.activeContactsError,
-                activeContracts = clientDetails.activeContractsError,
+                activeContacts = clientDetails.contacts,
+                activeContracts = clientDetails.contracts,
                 allIslands = clientDetails.activeIslands,
                 statistics = clientDetails.statistics
             )
@@ -257,7 +257,6 @@ class ClientDetailViewModel @Inject constructor(
         _uiState.value.facilitiesWithIslands.flatMap { it.islandsNeedingMaintenance }
 
     fun hasCompleteSetup(): Boolean = _uiState.value.isFullyOperational
-    fun getStatusMessage(): String = _uiState.value.clientDetails?.statusMessage ?: ""
     fun getActiveFacilitiesCount(): Int = _uiState.value.facilitiesWithIslands.count { it.facility.isActive }
     fun getActiveContactsCount(): Int = _uiState.value.activeContacts.count { it.isActive }
     fun getActiveIslandsCount(): Int = _uiState.value.allIslands.count { it.isActive }

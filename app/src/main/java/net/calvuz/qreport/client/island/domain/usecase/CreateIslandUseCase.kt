@@ -8,6 +8,7 @@ import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.maintenanceIntervalFor
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import net.calvuz.qreport.client.island.domain.validator.IslandDataValidator
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.days
 
@@ -30,35 +31,49 @@ class CreateIslandUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(island: Island): QrResult<Unit, QrError.IslandError> {
 
-        // 1. Validate fields
+        Timber.d("Create island")
+
+        // Check input
         when (val v = validateIslandData(island)) {
-            is QrResult.Error -> return v
+            is QrResult.Error -> {
+                Timber.d("Island is not valid: ${v.error}")
+                return v
+            }
             is QrResult.Success -> Unit
         }
 
-        // 2. Verify facility exists
+        // Check facility exists
         when (checkFacilityExists(island.facilityId)) {
             is QrResult.Error -> return QrResult.Error(QrError.IslandError.FacilityNotFound())
             is QrResult.Success -> Unit
         }
 
-        // 3. Check serial number uniqueness
+        // Check serial number uniqueness
         when (val sn = checkSerialNumberUniqueness(island.serialNumber)) {
             is QrResult.Error -> return sn
             is QrResult.Success -> Unit
         }
 
-        // 4. Validate date consistency
+        // Validate date consistency
         val dateError = validateMaintenanceDates(island)
-        if (dateError != null) return dateError
+        if (dateError != null) {
+            Timber.d("Validate date error: $dateError")
+            return dateError
+        }
 
+        //
         // 5. Auto-compute next maintenance
         val finalIsland = autoScheduleNextMaintenance(island)
+        Timber.d("Autocompute next maintenance: ${finalIsland.nextScheduledMaintenance}")
 
         // 6. Persist
         return islandRepository.createIsland(finalIsland).fold(
-            onSuccess = { QrResult.Success(Unit) },
-            onFailure = { QrResult.Error(QrError.IslandError.CreateError(it.message)) }
+            onSuccess = {
+                Timber.d("Successfully created island: $finalIsland")
+                QrResult.Success(Unit) },
+            onFailure = {
+                Timber.d("Error in creating island: ${it.message}")
+                QrResult.Error(QrError.IslandError.CreateError(it.message)) }
         )
     }
 
@@ -68,25 +83,25 @@ class CreateIslandUseCase @Inject constructor(
         val now = Clock.System.now()
         return when {
             island.installationDate?.let { it > now } == true ->
-                QrResult.Error(QrError.IslandError.InvalidInstallationDate("Installation date cannot be in the future"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidInstallationDate())
 
             island.warrantyExpiration?.let { exp ->
                 island.installationDate?.let { install -> exp < install }
             } == true ->
-                QrResult.Error(QrError.IslandError.InvalidWarrantyDate("Warranty expiration before installation date"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidWarrantyDate())
 
             island.lastMaintenanceDate?.let { last ->
                 island.installationDate?.let { install -> last < install }
             } == true ->
-                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Last maintenance before installation date"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
 
             island.lastMaintenanceDate?.let { it > now } == true ->
-                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Last maintenance date cannot be in the future"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
 
             island.nextScheduledMaintenance?.let { next ->
                 island.lastMaintenanceDate?.let { last -> next <= last }
             } == true ->
-                QrResult.Error(QrError.IslandError.InvalidMaintenanceDate("Next maintenance must be after last maintenance"))
+                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
 
             else -> null
         }

@@ -1,13 +1,18 @@
 package net.calvuz.qreport.client.contract.data.local.mapper
 
 import kotlinx.datetime.Clock
-import net.calvuz.qreport.client.contract.domain.model.Contract
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
+import net.calvuz.qreport.client.contract.domain.model.Contract
 import javax.inject.Inject
 
+/**
+ * Maps between [ContractEntity] (data layer) and [Contract] (domain layer).
+ * Handles Instant ↔ Long conversion for timestamps.
+ */
 class ContractMapper @Inject constructor() {
 
+    /** Maps a [ContractEntity] to a [Contract] domain model. */
     fun toDomain(entity: ContractEntity): Contract {
         return Contract(
             id = entity.id,
@@ -26,6 +31,7 @@ class ContractMapper @Inject constructor() {
         )
     }
 
+    /** Maps a [Contract] domain model to a [ContractEntity]. */
     fun toEntity(domain: Contract): ContractEntity {
         return ContractEntity(
             id = domain.id,
@@ -44,42 +50,35 @@ class ContractMapper @Inject constructor() {
         )
     }
 
-    fun toDomainList(entities: List<ContractEntity>): List<Contract> {
-        return entities.map { toDomain(it) }
-    }
+    /** Maps a list of [ContractEntity] to a list of [Contract] domain models. */
+    fun toDomainList(entities: List<ContractEntity>): List<Contract> = entities.map { toDomain(it) }
 
-    fun toEntityList(domains: List<Contract>): List<ContractEntity> {
-        return domains.map { toEntity(it) }
-    }
+    /** Maps a list of [Contract] domain models to a list of [ContractEntity]. */
+    fun toEntityList(domains: List<Contract>): List<ContractEntity> = domains.map { toEntity(it) }
 
     /**
-     * Converte ContractEntity with customer info
-     * Complex query utility with customer name
-     * Contract domain does not include clientName
+     * Maps a [ContractEntity] optionally enriched with client info.
+     * [clientName] is ignored for now — [Contract] domain model does not carry it.
      */
-    fun toDomainWithClientInfo(
-        entity: ContractEntity,
-        clientName: String? = null
-    ): Contract {
-        return toDomain(entity)
-    }
-
+    fun toDomainWithClientInfo(entity: ContractEntity, clientName: String? = null): Contract =
+        toDomain(entity)
 }
 
-fun ContractEntity.toDomain(): Contract {
-    return ContractMapper().toDomain(this)
-}
+// =============================================================================
+// Extension functions
+// =============================================================================
 
-fun Contract.toEntity(): ContractEntity {
-    return ContractMapper().toEntity(this)
-}
+/** Convenience extension — maps [ContractEntity] to [Contract] without an injected mapper. */
+fun ContractEntity.toDomain(): Contract = ContractMapper().toDomain(this)
 
+/** Convenience extension — maps [Contract] to [ContractEntity] without an injected mapper. */
+fun Contract.toEntity(): ContractEntity = ContractMapper().toEntity(this)
+
+/**
+ * Returns true if the contract is currently active by date —
+ * i.e. [startDate] is in the past and [endDate] is in the future.
+ */
 fun Contract.isValid(): Boolean {
     val now = Clock.System.now()
-    return (startDate <= now) && (endDate >= now)
-}
-
-fun Contract.toDisplayString(): String {
-
-    return "$name (${isValid()})"
+    return startDate <= now && endDate >= now
 }
