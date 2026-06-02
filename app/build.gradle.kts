@@ -170,20 +170,17 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
+    // ===== SYNCING DEPENDENCIES =====
 
-    // SYNC
+    // Sync
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.kotlinx)
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
 
-    // Retrofit
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-//    implementation("com.jakewharton.retrofit2:retrofit2-kotlinx-serialization-converter:1.0.0")
-    implementation("com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0")
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    // Security
+    implementation(libs.androidx.security.crypto)
 
-    // Encrypted SharedPreferences
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
-
-    // Phase 5
-    implementation("androidx.lifecycle:lifecycle-process:2.8.7")
-
+    // Lifecycle
+    implementation(libs.androidx.lifecycle.process)
 }

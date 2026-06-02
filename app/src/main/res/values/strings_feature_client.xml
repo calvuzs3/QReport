@@ -2,7 +2,7 @@
 <resources>
 
     <!-- ======================================================= -->
-    <!-- ClientListScreen                                         -->
+    <!-- ClientListScreen                                        -->
     <!-- ======================================================= -->
 
     <!-- Top bar -->
@@ -39,7 +39,7 @@
     <string name="err_client_fields_required">Il nome dell\'azienda è obbligatorio</string>
     <string name="err_client_invalid_company_name">Ragione sociale non valida (2–255 caratteri)</string>
     <string name="err_client_cannot_delete_has_active_facilities">Impossibile eliminare il cliente: ha stabilimenti attivi</string>
-    <string name="err_client_cannot_delete_has_dependencies">Il cliente ha %1$d stabiliment%, %2$d contatti, %3$d contratti e %4$d isole attive</string>
+    <string name="err_client_cannot_delete_has_dependencies" formatted="false">Il cliente ha %1$d stabiliment%, %2$d contatti, %3$d contratti e %4$d isole attive</string>
 
     <!-- ======================================================= -->
     <!-- Errors — ViewModel operation errors                     -->
@@ -53,7 +53,7 @@
     <string name="err_client_unexpected">Errore imprevisto</string>
 
     <!-- ======================================================= -->
-    <!-- ClientCard                                               -->
+    <!-- ClientCard                                              -->
     <!-- ======================================================= -->
 
     <!-- Actions -->
@@ -74,7 +74,7 @@
     <string name="client_card_status_inactive">Inattivo</string>
 
     <!-- ======================================================= -->
-    <!-- ClientFormScreen                                         -->
+    <!-- ClientFormScreen                                        -->
     <!-- ======================================================= -->
 
     <!-- Top bar -->
@@ -109,7 +109,7 @@
     <string name="client_form_error_unexpected">Errore imprevisto</string>
 
     <!-- ======================================================= -->
-    <!-- ClientDetailScreen                                       -->
+    <!-- ClientDetailScreen                                      -->
     <!-- ======================================================= -->
 
     <!-- Top bar -->
@@ -196,7 +196,7 @@
     <string name="client_detail_error_unexpected">Errore imprevisto</string>
 
     <!-- ======================================================= -->
-    <!-- ClientDetailScreen                                       -->
+    <!-- ClientDetailScreen                                      -->
     <!-- ======================================================= -->
 
     <!-- Top bar actions -->
@@ -250,7 +250,7 @@
     <!-- Operation errors -->
 
     <!-- ======================================================= -->
-    <!-- FormAddressSection                                       -->
+    <!-- FormAddressSection                                      -->
     <!-- ======================================================= -->
 
     <string name="address_section_title">Indirizzo</string>
@@ -272,7 +272,7 @@
     <string name="client_pkg_description">Gestisci Clienti</string>
 
     <!-- ======================================================= -->
-    <!-- ClientFilter                                             -->
+    <!-- ClientFilter                                            -->
     <!-- ======================================================= -->
 
     <string name="client_filter_all">Tutti</string>
@@ -284,7 +284,7 @@
     <string name="client_filter_with_contracts">Con Contratti</string>
 
     <!-- ======================================================= -->
-    <!-- ClientSortOrder                                          -->
+    <!-- ClientSortOrder                                         -->
     <!-- ======================================================= -->
 
     <string name="client_sort_company_name">Nome Azienda</string>
@@ -294,7 +294,7 @@
     <string name="client_sort_checkups_count">Check-up</string>
 
     <!-- ======================================================= -->
-    <!-- ClientOption sentinel                                    -->
+    <!-- ClientOption sentinel                                   -->
     <!-- ======================================================= -->
 
     <string name="client_option_all">Tutti i Clienti</string>

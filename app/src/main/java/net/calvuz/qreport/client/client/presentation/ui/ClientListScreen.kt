@@ -8,12 +8,9 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,6 +30,7 @@ import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 import net.calvuz.qreport.R
 import androidx.compose.ui.res.stringResource
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
+import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 
 /**
  * Client list screen
@@ -134,27 +132,10 @@ fun ClientListScreen(
             )
         }
 
-        // Content with Pull to Refresh
-        val pullToRefreshState = rememberPullToRefreshState()
-
-        // Handle pull to refresh
-        LaunchedEffect(pullToRefreshState.isRefreshing) {
-            if (pullToRefreshState.isRefreshing) {
-                viewModel.refresh()
-            }
-        }
-
-        // Reset refresh state when not refreshing
-        LaunchedEffect(uiState.isRefreshing) {
-            if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
-                pullToRefreshState.endRefresh()
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(pullToRefreshState.nestedScrollConnection)
+        QReportPullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.fillMaxSize()
         ) {
 
             // Store error in local variable to avoid smart cast issues
@@ -206,14 +187,6 @@ fun ClientListScreen(
                         onClientDelete = viewModel::inactivateClient
                     )
                 }
-            }
-
-            // Pull to refresh indicator
-            if (pullToRefreshState.isRefreshing || uiState.isRefreshing) {
-                PullToRefreshContainer(
-                    state = pullToRefreshState,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                )
             }
 
             // FAB per nuovo cliente

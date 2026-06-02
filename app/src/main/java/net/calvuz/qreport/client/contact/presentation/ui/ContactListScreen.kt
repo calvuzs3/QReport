@@ -25,8 +25,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,7 +34,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,6 +55,7 @@ import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.presentation.ui.components.ContactCard
 import androidx.compose.material.icons.filled.Star
+import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -176,22 +174,6 @@ fun ContactListScreen(
         SelectionAction.SelectAll
     )
 
-    // Pull to refresh state
-    val pullToRefreshState = rememberPullToRefreshState()
-
-    // Handle pull to refresh
-    LaunchedEffect(pullToRefreshState.isRefreshing) {
-        if (pullToRefreshState.isRefreshing) {
-            viewModel.refresh()
-        }
-    }
-
-    LaunchedEffect(uiState.isRefreshing) {
-        if (!uiState.isRefreshing) {
-            pullToRefreshState.endRefresh()
-        }
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -297,11 +279,12 @@ fun ContactListScreen(
             }
 
             // Content with Pull to Refresh
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
+            QReportPullToRefresh(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = viewModel::refresh,
+                modifier = Modifier.fillMaxSize()
             ) {
+
                 // Content based on state
                 when {
                     uiState.isLoading -> {
@@ -350,14 +333,6 @@ fun ContactListScreen(
                             modifier = Modifier.fillMaxSize()
                         )
                     }
-                }
-
-                // Pull to refresh indicator
-                if (pullToRefreshState.isRefreshing || uiState.isLoading) {
-                    PullToRefreshContainer(
-                        state = pullToRefreshState,
-                        modifier = Modifier.align(Alignment.TopCenter)
-                    )
                 }
 
                 // FAB (hidden in selection mode)

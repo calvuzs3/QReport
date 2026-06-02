@@ -452,19 +452,6 @@ class SignatureArchiveRepositoryImpl @Inject constructor(
     }
 }
 
-/**
- * Extension function for empty SignatureManifest
- */
-fun SignatureManifest.Companion.empty(): SignatureManifest {
-    return SignatureManifest(
-        totalSignatures = 0,
-        totalSizeMB = 0.0,
-        signatures = emptyList(),
-        technicianCount = 0,
-        customerCount = 0
-    )
-}
-
 /*
 =============================================================================
                         SIGNATURE ARCHIVE STRUCTURE

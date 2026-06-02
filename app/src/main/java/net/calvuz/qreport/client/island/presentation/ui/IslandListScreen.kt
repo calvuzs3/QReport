@@ -7,12 +7,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -23,6 +20,7 @@ import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
+import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
@@ -151,22 +149,12 @@ fun IslandListScreen(
             )
         }
 
-        val pullToRefreshState = rememberPullToRefreshState()
-
-        LaunchedEffect(uiState.isRefreshing) {
-            if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
-                pullToRefreshState.endRefresh()
-            }
-        }
-        LaunchedEffect(pullToRefreshState.isRefreshing) {
-            if (pullToRefreshState.isRefreshing) viewModel.refresh()
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(pullToRefreshState.nestedScrollConnection)
+        QReportPullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.fillMaxSize()
         ) {
+
             val currentError = uiState.error
 
             when {
@@ -207,13 +195,6 @@ fun IslandListScreen(
                     variant = uiState.cardVariant,
                     onIslandClick = onNavigateToIslandDetail,
                     onIslandDelete = viewModel::deleteIsland
-                )
-            }
-
-            if (pullToRefreshState.isRefreshing || uiState.isRefreshing) {
-                PullToRefreshContainer(
-                    state = pullToRefreshState,
-                    modifier = Modifier.align(Alignment.TopCenter)
                 )
             }
 

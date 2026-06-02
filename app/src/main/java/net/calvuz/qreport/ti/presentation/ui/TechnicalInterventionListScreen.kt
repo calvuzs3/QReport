@@ -7,18 +7,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Workspaces
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,8 +24,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
-import net.calvuz.qreport.app.app.presentation.components.list.CardVariant
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 // Selection system imports
@@ -133,24 +129,8 @@ fun TechnicalInterventionListScreen(
         SelectionAction.Archive,
     )
 
-    // Pull to refresh state
-    val pullToRefreshState = rememberPullToRefreshState()
-
     // Snackbar host state
     val snackbarHostState = remember { SnackbarHostState() }
-
-    // Handle pull to refresh
-    LaunchedEffect(pullToRefreshState.isRefreshing) {
-        if (pullToRefreshState.isRefreshing) {
-            viewModel.refresh()
-        }
-    }
-
-    LaunchedEffect(uiState.isRefreshing) {
-        if (!uiState.isRefreshing) {
-            pullToRefreshState.endRefresh()
-        }
-    }
 
     // Clear selection when navigating away or data changes significantly
     LaunchedEffect(uiState.isLoading) {
@@ -296,11 +276,12 @@ fun TechnicalInterventionListScreen(
             }
 
             // Content area with pull-to-refresh
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .nestedScroll(pullToRefreshState.nestedScrollConnection)
+            QReportPullToRefresh(
+                isRefreshing = uiState.isRefreshing,
+                onRefresh = viewModel::refresh,
+                modifier = Modifier.fillMaxSize()
             ) {
+
                 when {
                     uiState.isLoading -> {
                         LoadingState(
@@ -343,14 +324,6 @@ fun TechnicalInterventionListScreen(
                     }
                 }
             }
-        }
-
-        // Pull to refresh indicator
-        if (pullToRefreshState.isRefreshing || uiState.isLoading) {
-            PullToRefreshContainer(
-                state = pullToRefreshState,
-                modifier = Modifier.align(Alignment.TopCenter)
-            )
         }
 
         if (!selectionState.isInSelectionMode) {

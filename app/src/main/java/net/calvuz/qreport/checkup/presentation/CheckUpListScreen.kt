@@ -8,19 +8,15 @@ import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshContainer
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.checkup.presentation.components.CheckupCard
-import net.calvuz.qreport.checkup.presentation.components.CheckupCardVariant
 import net.calvuz.qreport.checkup.presentation.model.CheckUpFilter
 import net.calvuz.qreport.checkup.presentation.model.CheckUpSortOrder
 import net.calvuz.qreport.checkup.presentation.model.CheckUpWithStats
@@ -30,6 +26,7 @@ import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorDialog
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
@@ -121,28 +118,12 @@ fun CheckUpListScreen(
             )
         }
 
-        // Content with Pull to Refresh
-        val pullToRefreshState = rememberPullToRefreshState()
-
-        // Handle pull to refresh
-        LaunchedEffect(pullToRefreshState.isRefreshing) {
-            if (pullToRefreshState.isRefreshing) {
-                viewModel.refresh()
-            }
-        }
-
-        // Reset refresh state when not refreshing
-        LaunchedEffect(uiState.isRefreshing) {
-            if (!uiState.isRefreshing && pullToRefreshState.isRefreshing) {
-                pullToRefreshState.endRefresh()
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .nestedScroll(pullToRefreshState.nestedScrollConnection)
+        QReportPullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refresh,
+            modifier = Modifier.fillMaxSize()
         ) {
+
 
             // Store error in local variable to avoid smart cast issues
             val currentError = uiState.error
@@ -201,14 +182,6 @@ fun CheckUpListScreen(
                         onDelete = {}
                     )
                 }
-            }
-
-            // Pull to refresh indicator - only show when actively refreshing
-            if (pullToRefreshState.isRefreshing || uiState.isRefreshing) {
-                PullToRefreshContainer(
-                    state = pullToRefreshState,
-                    modifier = Modifier.align(Alignment.TopCenter)
-                )
             }
 
             // FAB
