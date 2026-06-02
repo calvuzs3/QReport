@@ -4,9 +4,6 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 
-/**
- * Facility DAO
- */
 @Dao
 interface FacilityDao {
 

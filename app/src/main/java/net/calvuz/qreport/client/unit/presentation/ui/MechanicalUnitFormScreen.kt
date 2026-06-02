@@ -159,7 +159,7 @@ private fun UnitTypeDropdown(selected: UnitType, onSelected: (UnitType) -> Unit)
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             UnitType.entries.forEach { type ->

@@ -4,11 +4,6 @@ import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 
-/**
- * Repository interface per gestione stabilimenti
- * Definisce il contratto per accesso ai dati degli stabilimenti
- * Implementazione nel data layer
- */
 interface FacilityRepository {
 
     // ===== CRUD OPERATIONS =====

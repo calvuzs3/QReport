@@ -315,7 +315,7 @@ private fun PerspectiveDropdownSelector(
             },
             isError = selectedPerspective == null,
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
         )
 
