@@ -17,7 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
@@ -50,7 +50,7 @@ fun IslandDetailScreen(
     LaunchedEffect(islandId) { viewModel.loadIslandDetails(islandId) }
 
     if (uiState.showDeleteConfirmation) {
-        ConfirmDeleteDialog(
+        QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.island_detail_object_name),
             objectDesc = uiState.islandName,
             onConfirm = { viewModel.deleteFacilityIsland(force = true) },

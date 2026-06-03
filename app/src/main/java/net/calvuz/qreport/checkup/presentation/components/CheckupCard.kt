@@ -38,7 +38,7 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
-import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.ListStatItem
 import net.calvuz.qreport.app.app.presentation.components.StatusIndicator
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDateTime
@@ -90,7 +90,7 @@ fun CheckupCard(
 
     // Delete confirmation dialog
     if (showDeleteDialog && onDelete != null) {
-        ConfirmDeleteDialog(
+        QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.checkup_component_card_delete_object_name),
             objectDesc = checkup.header.checkUpDate.toItalianDateTime(),
             onConfirm = {

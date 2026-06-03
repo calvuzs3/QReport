@@ -10,7 +10,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.asUiText
+import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
+import net.calvuz.qreport.client.island.presentation.ui.components.DeleteMechanicalUnitUseCase
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandOption
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.model.UnitType
@@ -47,6 +50,7 @@ class MechanicalUnitListViewModel @Inject constructor(
     private val repository: MechanicalUnitRepository,
     private val observeIslandsUseCase: ObserveIslandsUseCase,
     private val observeMechanicalUnitsUseCase: ObserveMechanicalUnitsUseCase,
+    private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
@@ -92,7 +96,7 @@ class MechanicalUnitListViewModel @Inject constructor(
         loadJob = viewModelScope.launch {
             _uiState.update { it.copy(isLoading = !it.isRefreshing, error = null) }
             try {
-                observeMechanicalUnitsUseCase(islandId)
+                observeMechanicalUnitsUseCase(islandId = islandId)
                     .catch { exception ->
                         if (exception is CancellationException) throw exception
                         Timber.e(exception)
@@ -137,13 +141,21 @@ class MechanicalUnitListViewModel @Inject constructor(
     fun deleteUnit(unitId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isDeletingUnit = unitId) }
-            repository.delete(unitId).fold(
-                onSuccess = { Timber.d("Unit deleted: $unitId") },
-                onFailure = { error ->
-                    Timber.e(error)
-                    _uiState.update { it.copy(error = UiText.StringResource(R.string.err_unit_delete)) }
+            when (val delete = deleteMechanicalUnitUseCase(unitId)) {
+                is QrResult.Error -> {
+                    _uiState.update {
+                        it.copy(
+                            isDeletingUnit = null,
+                            error = delete.error.asUiText()
+                        )
+                        return@launch
+                    }
                 }
-            )
+                is QrResult.Success -> {
+                    return@launch
+                }
+            }
+
             _uiState.update { it.copy(isDeletingUnit = null) }
         }
     }

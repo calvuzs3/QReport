@@ -13,7 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.success
 import net.calvuz.qreport.app.app.presentation.ui.theme.successContainer
@@ -57,7 +57,7 @@ fun MechanicalUnitCard(
     }
 
     if (showDeleteDialog && onDelete != null) {
-        ConfirmDeleteDialog(
+        QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.unit_card_object_name),
             objectDesc = unit.name,
             onConfirm = { onDelete(); showDeleteDialog = false },

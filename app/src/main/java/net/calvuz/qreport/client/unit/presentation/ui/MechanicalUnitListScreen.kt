@@ -13,7 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
@@ -190,7 +190,7 @@ fun MechanicalUnitListScreen(
     }
 
     pendingDeleteId?.let { unitId ->
-        ConfirmDeleteDialog(
+        QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.unit_card_object_name),
             objectDesc = pendingDeleteName,
             onConfirm = { viewModel.deleteUnit(unitId); pendingDeleteId = null; pendingDeleteName = "" },

@@ -21,7 +21,7 @@ import javax.inject.Inject
 class ObserveMechanicalUnitsUseCase @Inject constructor(
     private val repository: MechanicalUnitRepository
 ) {
-    operator fun invoke(islandId: String? = null): Flow<List<MechanicalUnit>> {
+    operator fun invoke(onlyActive: Boolean? = true,islandId: String? = null): Flow<List<MechanicalUnit>> {
 
         Timber.d("ObserveMechanicalUnitsUseCase islandId=${islandId ?: "none"}")
 

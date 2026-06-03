@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
-import net.calvuz.qreport.app.app.presentation.components.ConfirmDeleteDialog
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.ListStatItem
 import net.calvuz.qreport.app.app.presentation.components.StatusIndicator
 import androidx.compose.ui.res.stringResource
@@ -69,7 +69,7 @@ fun ClientCard(
 
     // Delete confirmation dialog
     if (showDeleteDialog && onDelete != null) {
-        ConfirmDeleteDialog(
+        QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.client_card_delete_object_name),
             objectDesc = client.companyName,
             onConfirm = {

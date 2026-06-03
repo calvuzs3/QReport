@@ -80,9 +80,8 @@ enum class UnitType(val labelResId: Int) {
  * Room entity for the mechanical_units table.
  *
  * Delete lifecycle:
- *  isActive=true,  isDeleted=false  →  normal
- *  isActive=false, isDeleted=false  →  deactivated  (first stage)
- *  isActive=false, isDeleted=true   →  marked deleted (second stage)
+ *  isActive=true  →  normal
+ *  isActive=false →  deactivated  
  *
  * Note: IslandDao contains bulk UPDATE queries targeting this table
  * to cascade deactivation/deletion from a parent Island in a single @Transaction.
@@ -100,7 +99,6 @@ enum class UnitType(val labelResId: Int) {
     indices = [
         Index(value = ["island_id"]),
         Index(value = ["is_active"]),
-        Index(value = ["is_deleted"]),
         Index(value = ["updated_at"]),
     ]
 )
@@ -134,12 +132,7 @@ data class MechanicalUnitEntity(
 
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long,                // Epoch milliseconds
-
-    // ===== SYNC =====
-    @ColumnInfo(name = "synced_at")
-    val syncedAt: Long? = null,         // null = never synced; set after successful server push
-
-    @ColumnInfo(name = "is_deleted")
+    
     val isDeleted: Boolean = false      // Second delete stage
 )
 ```
@@ -323,7 +316,7 @@ Use cases return `QrResult<D, QrError.UnitError>`.
 CheckUnitExistsUseCase
 CreateMechanicalUnitUseCase
 UpdateMechanicalUnitUseCase
-DeleteMechanicalUnitUseCase         ← two-stage, see §6.4
+DeleteMechanicalUnitUseCase         ← see §6.4
 GetUnitsByIslandUseCase
 GetUnitByIdUseCase
 ObserveUnitsByIslandUseCase
@@ -389,11 +382,10 @@ class UpdateMechanicalUnitUseCase @Inject constructor(
 
 ```kotlin
 /**
- * Two-stage soft-delete for a MechanicalUnit.
+ * Soft-delete for a MechanicalUnit.
  * No children to cascade — only the unit row is affected.
  *
- * Stage 1 — DEACTIVATE: isActive=true  → isActive=false
- * Stage 2 — MARK DELETED: isActive=false, isDeleted=false → isDeleted=true
+ * DEACTIVATE: isActive=true  → isActive=false
  */
 enum class DeleteUnitResult { DEACTIVATED, MARKED_DELETED }
 
@@ -414,10 +406,6 @@ class DeleteMechanicalUnitUseCase @Inject constructor(
         return when {
             unit.isActive -> unitRepository.deactivateUnit(unitId).fold(
                 onSuccess = { QrResult.Success(DeleteUnitResult.DEACTIVATED) },
-                onFailure = { QrResult.Error(QrError.UnitError.DeleteError(it.message)) }
-            )
-            !unit.isActive && !unit.isDeleted -> unitRepository.markUnitDeleted(unitId).fold(
-                onSuccess = { QrResult.Success(DeleteUnitResult.MARKED_DELETED) },
                 onFailure = { QrResult.Error(QrError.UnitError.DeleteError(it.message)) }
             )
             else -> QrResult.Error(QrError.UnitError.AlreadyDeleted())
