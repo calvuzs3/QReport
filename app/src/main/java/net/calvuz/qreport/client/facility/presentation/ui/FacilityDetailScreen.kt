@@ -382,7 +382,7 @@ private fun MaintenanceIslandItem(island: Island, onMarkComplete: (String) -> Un
     Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.errorContainer) {
         Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(island.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                Text(island.customName ?: island.serialNumber, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 Text(
                     text = island.nextScheduledMaintenance?.let { stringResource(R.string.facility_detail_maintenance_expiry, formatTimestamp(it)) }
                         ?: stringResource(R.string.facility_detail_maintenance_not_scheduled),
@@ -403,7 +403,7 @@ private fun WarrantyIslandItem(island: Island, onIslandClick: (String) -> Unit) 
     Surface(modifier = Modifier.fillMaxWidth(), onClick = { onIslandClick(island.id) }, shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.primaryContainer) {
         Row(modifier = Modifier.padding(12.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(island.displayName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
+                Text(island.customName ?: island.serialNumber, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
                 Text(
                     text = island.warrantyExpiration?.let { stringResource(R.string.facility_detail_warranty_expiry, formatTimestamp(it)) }
                         ?: stringResource(R.string.facility_detail_warranty_not_set),

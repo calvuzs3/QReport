@@ -1,10 +1,12 @@
 package net.calvuz.qreport.client.island.data.local.repository
 
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.island.data.local.dao.IslandDao
+import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.client.island.data.local.mapper.IslandMapper
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
@@ -82,13 +84,29 @@ class IslandRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteIsland(id: String): Result<Unit> {
+    override suspend fun deleteIsland(island: Island): Result<Unit> {
         return try {
-            islandDao.softDeleteIsland(id)
+            islandDao.deleteIsland(islandMapper.toEntity(island))
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // DELETE
+
+    @Transaction
+    override suspend fun deactivateIsland(id: String): Result<Unit> = runCatching {
+        val ts = System.currentTimeMillis()
+        islandDao.deactivateMechanicalUnitsByIsland(id, ts)
+        islandDao.deactivateIsland(id, ts)
+    }
+
+    @Transaction
+    override suspend fun markIslandDeleted(id: String): Result<Unit> = runCatching {
+        val ts = System.currentTimeMillis()
+        islandDao.markMechanicalUnitsDeletedByIsland(id, ts)
+        islandDao.markIslandDeleted(id, ts)
     }
 
     // ===== FACILITY RELATED =====

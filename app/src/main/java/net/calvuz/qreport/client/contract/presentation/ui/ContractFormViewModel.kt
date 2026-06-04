@@ -189,6 +189,7 @@ class ContractFormViewModel @Inject constructor(
             is ContractFormEvent.HasPriorityChanged -> updateHasPriority(event.b)
             is ContractFormEvent.HasMaintenanceChanged -> updateHasMaintenance(event.b)
             is ContractFormEvent.HasRemoteAssistanceChanged -> updateHasRemoteAssistance(event.b)
+            is ContractFormEvent.SaveForm -> saveContract()
         }
     }
 
@@ -325,9 +326,9 @@ class ContractFormViewModel @Inject constructor(
 // SAVE OPERATIONS
 // ============================================================
 
-    fun saveContract() {
+    private fun saveContract() {
 
-        Timber.d("saveContract() {canSave=${_uiState.value.canSave}}")
+        Timber.d("Saving contract {canSave=${_uiState.value.canSave}}")
 
         //Check required fields
         val currentState = _uiState.value
@@ -346,7 +347,7 @@ class ContractFormViewModel @Inject constructor(
                 )
             }
 
-            Timber.d("saveContract() {validationErrors=$allErrors}")
+            Timber.d("Saving contract validation errors: $allErrors")
 
             return
         }
@@ -368,7 +369,7 @@ class ContractFormViewModel @Inject constructor(
                 when (result) {
                     is QrResult.Success -> {
 
-                        Timber.d("savedContract {result.data=${result.data}}")
+                        Timber.d("Contract saved successfully: ${result.data}")
 
                         _uiState.update {
                             it.copy(
@@ -385,7 +386,7 @@ class ContractFormViewModel @Inject constructor(
                     }
                     is QrResult.Error -> {
 
-                        Timber.d("error savedContract {result.error=${result.error}}")
+                        Timber.d("Failed in saving contract: ${result.error}")
 
                         _uiState.update {
                             it.copy(
@@ -445,4 +446,5 @@ sealed class ContractFormEvent {
     data class HasPriorityChanged(val b: Boolean) : ContractFormEvent()
     data class HasRemoteAssistanceChanged(val b: Boolean) : ContractFormEvent()
     data class HasMaintenanceChanged(val b: Boolean) : ContractFormEvent()
+    object SaveForm: ContractFormEvent()
 }

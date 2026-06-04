@@ -1,10 +1,9 @@
-package net.calvuz.qreport.client.island.presentation.ui.components
+package net.calvuz.qreport.client.unit.domain.usecase
 
 import jakarta.inject.Inject
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.unit.domain.repository.MechanicalUnitRepository
-import net.calvuz.qreport.client.unit.domain.usecase.CheckMechanicalUnitExistsUseCase
 import timber.log.Timber
 
 /**
@@ -14,39 +13,33 @@ import timber.log.Timber
  * Stage 1 — DEACTIVATE: isActive=true  → isActive=false
  * Stage 2 — MARK DELETED: isActive=false, isDeleted=false → isDeleted=true
  */
-enum class DeleteUnitResult { DEACTIVATED, MARKED_DELETED }
-
 class DeleteMechanicalUnitUseCase @Inject constructor(
     private val unitRepository: MechanicalUnitRepository,
     private val checkUnitExists: CheckMechanicalUnitExistsUseCase
 ) {
-    suspend operator fun invoke(unitId: String): QrResult<DeleteUnitResult, QrError.UnitError> {
+    suspend operator fun invoke(unitId: String): QrResult<String, QrError.UnitError> {
 
-        Timber.d("Deleting (deactivating) unit $unitId")
+        Timber.Forest.d("Deleting (deactivating) unit $unitId")
 
         if (unitId.isBlank())
             return QrResult.Error(QrError.UnitError.NotFound())
 
         val unit = when (val r = checkUnitExists(unitId)) {
             is QrResult.Error -> {
-                Timber.d("Error in deleting unit: ${r.error}")
+                Timber.Forest.d("Error in deleting unit: ${r.error}")
                 return QrResult.Error(r.error)
             }
             is QrResult.Success -> {
-                Timber.d("Unit found: ${r.data}")
+                Timber.Forest.d("Unit found: ${r.data}")
                 r.data
             }
         }
 
         return when {
             unit.isActive -> unitRepository.deactivateUnit(unitId).fold(
-                onSuccess = { QrResult.Success(DeleteUnitResult.DEACTIVATED) },
+                onSuccess = { QrResult.Success(unitId) },
                 onFailure = { QrResult.Error(QrError.UnitError.DeleteError(it.message)) }
             )
-//            !unit.isActive && !unit.isDeleted -> unitRepository.markUnitDeleted(unitId).fold(
-//                onSuccess = { QrResult.Success(DeleteUnitResult.MARKED_DELETED) },
-//                onFailure = { QrResult.Error(QrError.UnitError.DeleteError(it.message)) }
-//            )
             else -> QrResult.Error(QrError.UnitError.AlreadyDeleted())
         }
     }

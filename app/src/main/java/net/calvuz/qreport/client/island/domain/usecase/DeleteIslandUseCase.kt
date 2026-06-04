@@ -9,7 +9,7 @@ import javax.inject.Inject
 /**
  * Soft-deletes a robotic island.
  *
- * Business rules checked unless [force] = true:
+ * Business rules checked unless [ force] = true:
  * - Island must not have overdue maintenance
  *
  * The warning about being the last island in the facility is informational
@@ -44,14 +44,27 @@ class DeleteIslandUseCase @Inject constructor(
             return QrResult.Error(QrError.IslandError.CannotDeleteMaintenanceOverdue())
         }
 
-        return islandRepository.deleteIsland(islandId).fold(
-            onSuccess = {
-                Timber.d("Successfully deleted island: ${Unit}")
-                QrResult.Success(Unit) },
-            onFailure = {
-                Timber.d("Error in deleting island: ${it.message}")
-                QrResult.Error(QrError.IslandError.DeleteError(it.message)) }
-        )
+        when {
+
+            // ── Stage 1: island is still active ──────────────────────────────
+            island.isActive -> {
+
+                islandRepository.deactivateIsland(islandId).fold(
+                    onSuccess = {
+                        Timber.d("Successfully deactivated island: $Unit")
+                        return QrResult.Success(Unit) },
+                    onFailure = {
+                        Timber.d("Error in deactivating island: ${it.message}")
+                        return QrResult.Error(QrError.IslandError.DeleteError(it.message)) }
+                )
+            }
+
+            // ── Already deleted ───────────────────────────────────────────────
+            else -> {
+                Timber.d("Error in deleting island: not found")
+                return QrResult.Error(QrError.IslandError.NotFound())
+            }
+        }
     }
 
     /** Returns the number of islands that would remain in the facility after deletion. */
@@ -70,7 +83,7 @@ class DeleteIslandUseCase @Inject constructor(
         val islands = islandRepository.getIslandsByFacility(facilityId).getOrElse { return Result.failure(it) }
         var deleted = 0
         islands.forEach { island ->
-            islandRepository.deleteIsland(island.id)
+            islandRepository.deleteIsland(island)
                 .onSuccess { deleted++ }
                 .onFailure { return Result.failure(it) }
         }

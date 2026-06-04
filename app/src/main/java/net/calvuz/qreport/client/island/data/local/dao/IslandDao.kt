@@ -54,6 +54,30 @@ interface IslandDao {
     @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE id = :id")
     suspend fun softDeleteIsland(id: String, timestamp: Long = System.currentTimeMillis())
 
+
+    // ===== DELETE — TWO-STAGE =====
+
+    /**
+     * Stage 1 (standalone): deactivate a single island and cascade to its MechanicalUnits.
+     * Called by [IslandRepositoryImpl.deactivateIsland].
+     * Note: FacilityDao contains the bulk version for facility-level cascade.
+     */
+    @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE id = :id")
+    suspend fun deactivateIsland(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE mechanical_units SET is_active = 0, updated_at = :timestamp WHERE island_id = :islandId")
+    suspend fun deactivateMechanicalUnitsByIsland(islandId: String, timestamp: Long = System.currentTimeMillis())
+
+    /**
+     * Stage 2 (standalone): mark a single island and its MechanicalUnits as deleted.
+     * Called by [IslandRepositoryImpl.markIslandDeleted].
+     */
+    @Query("UPDATE facility_islands SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
+    suspend fun markIslandDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp WHERE island_id = :islandId")
+    suspend fun markMechanicalUnitsDeletedByIsland(islandId: String, timestamp: Long = System.currentTimeMillis())
+
     // ===== SEARCH & FILTER =====
 
     @Query("""

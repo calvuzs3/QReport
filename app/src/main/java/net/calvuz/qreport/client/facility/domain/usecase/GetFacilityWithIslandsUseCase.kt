@@ -37,7 +37,7 @@ class GetFacilityWithIslandsUseCase @Inject constructor(
             .sortedWith(
                 compareByDescending<Island> { it.isActive }
                     .thenBy { it.islandType.name }
-                    .thenBy { it.displayName.lowercase() }
+                    .thenBy { (it.customName ?: it.serialNumber).lowercase() }
             )
 
         return QrResult.Success(
@@ -58,7 +58,7 @@ class GetFacilityWithIslandsUseCase @Inject constructor(
             val sorted = islands.sortedWith(
                 compareByDescending<Island> { it.isActive }
                     .thenBy { it.islandType.name }
-                    .thenBy { it.displayName.lowercase() }
+                    .thenBy { (it.customName ?: it.serialNumber).lowercase() }
             )
             FacilityWithIslands(
                 facility = facility,

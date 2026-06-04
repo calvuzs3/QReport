@@ -75,7 +75,7 @@ data class IslandWithUnits(
     val statistics: UnitStatistics
 ) {
     val hasUnits: Boolean get() = units.isNotEmpty()
-    val displayName: String get() = island.displayName
+    val displayName: String get() = island.customName ?: island.serialNumber
     val unitsCount: Int get() = units.size
 }
 

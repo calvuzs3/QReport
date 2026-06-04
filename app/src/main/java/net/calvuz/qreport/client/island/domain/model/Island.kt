@@ -44,13 +44,6 @@ data class Island(
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
-    /**
-     * Display name shown in lists and headers.
-     * Uses [customName] if set; falls back to serial number only —
-     * the island type label is resolved by the UI via [islandType.labelResId].
-     */
-    val displayName: String
-        get() = customName ?: serialNumber
 
     /**
      * Returns true if scheduled maintenance is overdue or due today.

@@ -133,7 +133,7 @@ data class MechanicalUnitEntity(
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long,                // Epoch milliseconds
     
-    val isDeleted: Boolean = false      // Second delete stage
+    val isDeleted: Boolean = false      // Second delete stage (server side)
 )
 ```
 
@@ -387,13 +387,12 @@ class UpdateMechanicalUnitUseCase @Inject constructor(
  *
  * DEACTIVATE: isActive=true  → isActive=false
  */
-enum class DeleteUnitResult { DEACTIVATED, MARKED_DELETED }
 
 class DeleteMechanicalUnitUseCase @Inject constructor(
     private val unitRepository: MechanicalUnitRepository,
     private val checkUnitExists: CheckUnitExistsUseCase
 ) {
-    suspend operator fun invoke(unitId: String): QrResult<DeleteUnitResult, QrError.UnitError> {
+    suspend operator fun invoke(unitId: String): QrResult<String, QrError.UnitError> {
 
         if (unitId.isBlank())
             return QrResult.Error(QrError.UnitError.NotFound())
@@ -405,7 +404,7 @@ class DeleteMechanicalUnitUseCase @Inject constructor(
 
         return when {
             unit.isActive -> unitRepository.deactivateUnit(unitId).fold(
-                onSuccess = { QrResult.Success(DeleteUnitResult.DEACTIVATED) },
+                onSuccess = { QrResult.Success(unitId) },
                 onFailure = { QrResult.Error(QrError.UnitError.DeleteError(it.message)) }
             )
             else -> QrResult.Error(QrError.UnitError.AlreadyDeleted())

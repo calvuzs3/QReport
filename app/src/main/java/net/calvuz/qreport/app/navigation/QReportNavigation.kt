@@ -1227,11 +1227,9 @@ fun QReportNavigation(
                     arguments = listOf(navArgument("islandId") { type = NavType.StringType })
                 ) { backStack ->
                     val islandId = backStack.arguments?.getString("islandId")!!
-                    val islandName = backStack.arguments?.getString("islandName") ?: "Unità meccaniche"
 
                     MechanicalUnitListScreen(
                         islandId = islandId,
-                        islandName = islandName,
                         onNavigateBack = { navController.popBackStack() },
                         onNavigateToAdd = {
                             navController.navigate(QReportRoutes.unitAdd(islandId))

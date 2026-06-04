@@ -75,7 +75,7 @@ fun IslandCard(
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text(stringResource(R.string.island_card_delete_dialog_title)) },
-            text = { Text(stringResource(R.string.island_card_delete_dialog_message, island.displayName)) },
+            text = { Text(stringResource(R.string.island_card_delete_dialog_message, island.customName ?: island.serialNumber)) },
             confirmButton = {
                 TextButton(
                     onClick = { onDelete(); showDeleteDialog = false },
@@ -139,7 +139,7 @@ private fun FullIslandCard(
 
         // ── Nome + serial ─────────────────────────────────────────────────────
         Text(
-            text = island.displayName,
+            text = island.customName ?: island.serialNumber,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
@@ -238,7 +238,7 @@ private fun CompactIslandCard(
                 color = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = island.displayName,
+                text = island.customName ?: island.serialNumber,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
@@ -279,7 +279,7 @@ private fun MinimalIslandCard(island: Island) {
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = island.displayName,
+            text = island.customName ?: island.serialNumber,
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             maxLines = 1,

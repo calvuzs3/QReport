@@ -72,7 +72,7 @@ class DeleteFacilityUseCase @Inject constructor(
         // 5. Cascade delete islands if forceDelete
         if (forceDelete) {
             islands.forEach { island ->
-                islandRepository.deleteIsland(island.id) // non-fatal if fails
+                islandRepository.deleteIsland(island) // non-fatal if fails
             }
         }
 

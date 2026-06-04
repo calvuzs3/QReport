@@ -27,9 +27,10 @@ fun MechanicalUnitFormScreen(
     val snackbarHost = remember { SnackbarHostState() }
 
     val context = LocalContext.current
+    val formEvent = viewModel::onFormEvent
 
     LaunchedEffect(state.error) {
-        state.error?.let { snackbarHost.showSnackbar(it.asString(context)); viewModel.clearError() }
+        state.error?.let { snackbarHost.showSnackbar(it.asString(context)); formEvent(MechanicalUnitFormEvent.DismissError) }
     }
 
     val titleRes =
@@ -49,7 +50,7 @@ fun MechanicalUnitFormScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { viewModel.save(onSuccess = onNavigateBack) },
+                        onClick = { formEvent(MechanicalUnitFormEvent.SaveForm(onSuccess = onNavigateBack)) },
                         enabled = !state.isSaving
                     ) {
                         if (state.isSaving) {
@@ -79,11 +80,15 @@ fun MechanicalUnitFormScreen(
                 .imePadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            UnitTypeDropdown(selected = state.unitType, onSelected = viewModel::onUnitTypeChange)
+            UnitTypeDropdown(selected = state.unitType, onSelected = {
+                formEvent(
+                    MechanicalUnitFormEvent.UnitTypeChanged(it)
+                )
+            })
 
             OutlinedTextField(
                 value = state.name,
-                onValueChange = viewModel::onNameChange,
+                onValueChange = { formEvent(MechanicalUnitFormEvent.NameChanged(it)) },
                 label = { Text(stringResource(R.string.unit_form_field_name)) },
                 placeholder = { Text(stringResource(R.string.unit_form_field_name_placeholder)) },
                 isError = state.showValidation && !state.isNameValid,
@@ -100,7 +105,7 @@ fun MechanicalUnitFormScreen(
 
             OutlinedTextField(
                 value = state.serialNumber,
-                onValueChange = viewModel::onSerialNumberChange,
+                onValueChange = { formEvent(MechanicalUnitFormEvent.SerialNumberChanged(it)) },
                 label = { Text(stringResource(R.string.unit_form_field_serial)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -108,7 +113,7 @@ fun MechanicalUnitFormScreen(
 
             OutlinedTextField(
                 value = state.model,
-                onValueChange = viewModel::onModelChange,
+                onValueChange = { formEvent(MechanicalUnitFormEvent.ModelChanged(it)) },
                 label = { Text(stringResource(R.string.unit_form_field_model)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
@@ -116,7 +121,7 @@ fun MechanicalUnitFormScreen(
 
             OutlinedTextField(
                 value = state.notes,
-                onValueChange = viewModel::onNotesChange,
+                onValueChange = { formEvent(MechanicalUnitFormEvent.NotesChanged(it)) },
                 label = { Text(stringResource(R.string.unit_form_field_notes)) },
                 minLines = 2,
                 maxLines = 5,
@@ -124,7 +129,7 @@ fun MechanicalUnitFormScreen(
             )
 
             Button(
-                onClick = { viewModel.save(onSuccess = onNavigateBack) },
+                onClick = { formEvent(MechanicalUnitFormEvent.SaveForm(onSuccess = onNavigateBack)) },
                 enabled = !state.isSaving,
                 modifier = Modifier
                     .fillMaxWidth()

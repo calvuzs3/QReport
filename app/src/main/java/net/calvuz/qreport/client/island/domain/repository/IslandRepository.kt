@@ -1,5 +1,6 @@
 package net.calvuz.qreport.client.island.domain.repository
 
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.island.domain.model.Island
@@ -15,7 +16,7 @@ interface IslandRepository {
     suspend fun getIslandsByIds(ids: List<String>): Result<List<Island>>
     suspend fun createIsland(island: Island): Result<Unit>
     suspend fun updateIsland(island: Island): Result<Unit>
-    suspend fun deleteIsland(id: String): Result<Unit>
+    suspend fun deleteIsland(island: Island): Result<Unit>
 
     // ===== FACILITY RELATED =====
 
@@ -63,4 +64,6 @@ interface IslandRepository {
 
     suspend fun createIslands(islands: List<Island>): Result<Unit>
     suspend fun bulkUpdateMaintenanceDates(updates: Map<String, Instant>): Result<Unit>
+    suspend fun deactivateIsland(id: String): Result<Unit>
+    suspend fun markIslandDeleted(id: String): Result<Unit>
 }

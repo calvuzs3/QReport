@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.model.UnitType
@@ -71,7 +72,7 @@ class MechanicalUnitFormViewModel @Inject constructor(
                 is QrResult.Error -> {
                     Timber.e("Failed to load unit for edit $unitId: ${result.error}")
                     _state.update {
-                        it.copy(error = UiText.StringResource(R.string.err_unit_not_found))
+                        it.copy(error = result.error.asUiText())
                     }
                 }
             }
@@ -82,18 +83,30 @@ class MechanicalUnitFormViewModel @Inject constructor(
     // FORM EVENTS
     // =========================================================================
 
-    fun onNameChange(v: String) = _state.update { it.copy(name = v) }
-    fun onUnitTypeChange(v: UnitType) = _state.update { it.copy(unitType = v) }
-    fun onSerialNumberChange(v: String) = _state.update { it.copy(serialNumber = v) }
-    fun onModelChange(v: String) = _state.update { it.copy(model = v) }
-    fun onNotesChange(v: String) = _state.update { it.copy(notes = v) }
-    fun clearError() = _state.update { it.copy(error = null) }
+    fun onFormEvent(event: MechanicalUnitFormEvent) {
+        when (event) {
+            is MechanicalUnitFormEvent.NameChanged -> onNameChange(event.s)
+            is MechanicalUnitFormEvent.UnitTypeChanged -> onUnitTypeChange(event.type)
+            is MechanicalUnitFormEvent.SerialNumberChanged -> onSerialNumberChange(event.s)
+            is MechanicalUnitFormEvent.ModelChanged -> onModelChange(event.s)
+            is MechanicalUnitFormEvent.NotesChanged -> onNotesChange(event.s)
+            is MechanicalUnitFormEvent.SaveForm -> save(event.onSuccess)
+            is MechanicalUnitFormEvent.DismissError -> clearError()
+        }
+    }
+
+    private fun onNameChange(s: String) = _state.update { it.copy(name = s) }
+    private fun onUnitTypeChange(type: UnitType) = _state.update { it.copy(unitType = type) }
+    private fun onSerialNumberChange(s: String) = _state.update { it.copy(serialNumber = s) }
+    private fun onModelChange(s: String) = _state.update { it.copy(model = s) }
+    private fun onNotesChange(s: String) = _state.update { it.copy(notes = s) }
+    private fun clearError() = _state.update { it.copy(error = null) }
 
     // =========================================================================
     // SAVE
     // =========================================================================
 
-    fun save(onSuccess: () -> Unit) {
+    private fun save(onSuccess: () -> Unit) {
         _state.update { it.copy(showValidation = true) }
         if (!_state.value.isValid) return
 
@@ -137,4 +150,14 @@ class MechanicalUnitFormViewModel @Inject constructor(
             }
         }
     }
+}
+
+sealed class MechanicalUnitFormEvent {
+    data class NameChanged(val s: String) : MechanicalUnitFormEvent()
+    data class UnitTypeChanged(val type: UnitType) : MechanicalUnitFormEvent()
+    data class SerialNumberChanged(val s: String) : MechanicalUnitFormEvent()
+    data class ModelChanged(val s: String) : MechanicalUnitFormEvent()
+    data class NotesChanged(val s: String) : MechanicalUnitFormEvent()
+    data class SaveForm(val onSuccess: () -> Unit) : MechanicalUnitFormEvent()
+    object DismissError : MechanicalUnitFormEvent()
 }

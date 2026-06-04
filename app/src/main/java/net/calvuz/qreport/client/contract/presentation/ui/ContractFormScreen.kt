@@ -114,7 +114,7 @@ fun ContractFormScreen(
             actions = {
                 // Save button
                 IconButton(
-                    onClick = { viewModel.saveContract() },
+                    onClick = { viewModel.onFormEvent(ContractFormEvent.SaveForm) },
                     enabled = uiState.canSave && !uiState.isSaving
                 ) {
                     if (uiState.isSaving) {
@@ -141,7 +141,7 @@ fun ContractFormScreen(
                 uiState = uiState,
                 onFormEvent = viewModel::onFormEvent,
 
-                onSave = viewModel::saveContract,
+                onSave = { viewModel.onFormEvent(ContractFormEvent.SaveForm) },
                 focusManager = focusManager
             )
         }

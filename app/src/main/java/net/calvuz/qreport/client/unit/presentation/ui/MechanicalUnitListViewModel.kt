@@ -13,11 +13,10 @@ import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
-import net.calvuz.qreport.client.island.presentation.ui.components.DeleteMechanicalUnitUseCase
+import net.calvuz.qreport.client.unit.domain.usecase.DeleteMechanicalUnitUseCase
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandOption
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.model.UnitType
-import net.calvuz.qreport.client.unit.domain.repository.MechanicalUnitRepository
 import net.calvuz.qreport.client.unit.domain.usecase.ObserveMechanicalUnitsUseCase
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitFilter
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitPkg
@@ -47,7 +46,6 @@ data class MechanicalUnitListUiState(
 
 @HiltViewModel
 class MechanicalUnitListViewModel @Inject constructor(
-    private val repository: MechanicalUnitRepository,
     private val observeIslandsUseCase: ObserveIslandsUseCase,
     private val observeMechanicalUnitsUseCase: ObserveMechanicalUnitsUseCase,
     private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase,
@@ -74,21 +72,36 @@ class MechanicalUnitListViewModel @Inject constructor(
     // PUBLIC
     // =========================================================================
 
-    fun initialize() = loadUnits()
-
-    fun initializeForIsland(islandId: String) {
-        if (islandId == currentIslandId) return
-        currentIslandId = islandId
+    fun initialize(islandId: String? = null) {
+        if (!islandId.isNullOrBlank() && islandId == currentIslandId) return
+        currentIslandId = islandId ?: ""
         _uiState.update { state ->
             state.copy(
-                islandId = islandId,
+                islandId = currentIslandId,
                 selectedIsland = state.availableIslands.find { it.id == islandId } ?: IslandOption.ALL
             )
         }
         loadUnits()
     }
 
-    fun loadUnits() {
+    fun onEvent(event: MechanicalUnitListEvent) {
+        when (event) {
+            is MechanicalUnitListEvent.SelectedIslandChanges -> updateSelectedIsland(event.island)
+            is MechanicalUnitListEvent.SearchQueryChanged -> updateSearchQuery(event.query)
+            is MechanicalUnitListEvent.FilterChanged -> updateFilter(event.filter)
+            is MechanicalUnitListEvent.SortOrderChanged -> updateSortOrder(event.sortOrder)
+            is MechanicalUnitListEvent.DeleteUnit -> deleteUnit(event.unitId)
+            MechanicalUnitListEvent.DismissError -> dismissError()
+            MechanicalUnitListEvent.Refresh -> refresh()
+            MechanicalUnitListEvent.CycleCardVariant -> cycleCardVariant()
+        }
+    }
+
+    // =========================================================================
+    // PRIVATE
+    // =========================================================================
+
+    private fun loadUnits() {
         loadJob?.cancel()
         val islandId = currentIslandId.takeIf { it.isNotEmpty() }
         Timber.d("Observing units islandId=${islandId ?: "all"}")
@@ -133,12 +146,12 @@ class MechanicalUnitListViewModel @Inject constructor(
         }
     }
 
-    fun refresh() {
+    private fun refresh() {
         _uiState.update { it.copy(isRefreshing = true, error = null) }
         loadUnits()
     }
 
-    fun deleteUnit(unitId: String) {
+    private fun deleteUnit(unitId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isDeletingUnit = unitId) }
             when (val delete = deleteMechanicalUnitUseCase(unitId)) {
@@ -160,7 +173,7 @@ class MechanicalUnitListViewModel @Inject constructor(
         }
     }
 
-    fun updateSearchQuery(query: String) {
+    private fun updateSearchQuery(query: String) {
         val current = _uiState.value
         if (query.length >= 3) {
             performSearch(query)
@@ -174,7 +187,7 @@ class MechanicalUnitListViewModel @Inject constructor(
         }
     }
 
-    fun updateFilter(filter: MechanicalUnitFilter) {
+    private fun updateFilter(filter: MechanicalUnitFilter) {
         val current = _uiState.value
         _uiState.update {
             it.copy(
@@ -194,14 +207,14 @@ class MechanicalUnitListViewModel @Inject constructor(
         }
     }
 
-    fun updateSelectedIsland(island: IslandOption) {
+    private fun updateSelectedIsland(island: IslandOption) {
         if (island == _uiState.value.selectedIsland) return
         currentIslandId = island.id
         _uiState.update { it.copy(selectedIsland = island, islandId = island.id) }
         loadUnits()
     }
 
-    fun cycleCardVariant() {
+    private fun cycleCardVariant() {
         val next = when (_uiState.value.cardVariant) {
             ListViewMode.FULL -> ListViewMode.COMPACT
             ListViewMode.COMPACT -> ListViewMode.MINIMAL
@@ -214,11 +227,7 @@ class MechanicalUnitListViewModel @Inject constructor(
         }
     }
 
-    fun dismissError() = _uiState.update { it.copy(error = null) }
-
-    // =========================================================================
-    // PRIVATE
-    // =========================================================================
+    private fun dismissError() = _uiState.update { it.copy(error = null) }
 
     private fun observeCardVariant() {
         viewModelScope.launch {
@@ -285,7 +294,7 @@ class MechanicalUnitListViewModel @Inject constructor(
                     .catch { e -> Timber.e(e) }
                     .collect { islands ->
                         val options = listOf(IslandOption.ALL) + islands.map { island ->
-                            IslandOption(id = island.id, name = island.displayName)
+                            IslandOption(id = island.id, name = island.customName ?: island.serialNumber)
                         }
                         _uiState.update { state ->
                             val synced = options.find { it.id == state.islandId } ?: IslandOption.ALL
@@ -300,10 +309,12 @@ class MechanicalUnitListViewModel @Inject constructor(
 }
 
 sealed class MechanicalUnitListEvent {
+    data class SelectedIslandChanges(val island: IslandOption) : MechanicalUnitListEvent()
     data class SearchQueryChanged(val query: String) : MechanicalUnitListEvent()
     data class FilterChanged(val filter: MechanicalUnitFilter) : MechanicalUnitListEvent()
     data class SortOrderChanged(val sortOrder: MechanicalUnitSortOrder) : MechanicalUnitListEvent()
     data class DeleteUnit(val unitId: String) : MechanicalUnitListEvent()
+    object CycleCardVariant : MechanicalUnitListEvent()
     object Refresh : MechanicalUnitListEvent()
     object DismissError : MechanicalUnitListEvent()
 }

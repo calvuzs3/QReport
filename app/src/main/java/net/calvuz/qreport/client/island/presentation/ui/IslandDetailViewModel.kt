@@ -11,6 +11,7 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.error.presentation.toUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
@@ -19,6 +20,7 @@ import net.calvuz.qreport.client.island.domain.usecase.GetIslandByIdUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandStatisticsUseCase
 import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 import net.calvuz.qreport.client.island.domain.usecase.UpdateMaintenanceUseCase
+import net.calvuz.qreport.client.unit.domain.usecase.DeleteMechanicalUnitUseCase
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.repository.MechanicalUnitRepository
 import net.calvuz.qreport.client.unit.domain.usecase.GetMechanicalUnitsByIslandUseCase
@@ -64,7 +66,7 @@ data class FacilityIslandDetailUiState(
     val error: UiText? = null
 ) {
     val islandName: String
-        get() = island?.displayName ?: ""
+        get() = island?.customName ?: island?.serialNumber ?: ""
 
     val hasOperationsInProgress: Boolean
         get() = isUpdatingMaintenance || isDeleting
@@ -84,6 +86,7 @@ class IslandDetailViewModel @Inject constructor(
     private val getMechanicalUnitsByIslandUseCase: GetMechanicalUnitsByIslandUseCase,
     private val updateMaintenanceUseCase: UpdateMaintenanceUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
+    private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase,
     private val mechanicalUnitRepository: MechanicalUnitRepository
 ) : ViewModel() {
 
@@ -147,7 +150,7 @@ class IslandDetailViewModel @Inject constructor(
                             UiText.StringResource(R.string.err_island_detail_stats)
                         }
                     }
-                    Timber.d("Island loaded: ${islandResult.data.displayName} statsError=$statsError")
+                    Timber.d("Island loaded: ${islandResult.data.customName ?: islandResult.data.serialNumber} statsError=$statsError")
                 }
             }
 
@@ -174,16 +177,19 @@ class IslandDetailViewModel @Inject constructor(
 
     fun deleteUnit(unit: MechanicalUnit) {
         viewModelScope.launch {
-            mechanicalUnitRepository.delete(unit.id).fold(
-                onSuccess = {
+            when (val result= deleteMechanicalUnitUseCase(unit.id)) {
+                is QrResult.Success -> {
                     Timber.d("MechanicalUnit deleted: ${unit.id}")
                     loadMechanicalUnits(currentIslandId)
-                },
-                onFailure = { error ->
-                    Timber.e(error, "Failed to delete MechanicalUnit: ${unit.id}")
-                    _uiState.update { it.copy(error = UiText.StringResource(R.string.err_island_detail_unit_delete)) }
                 }
-            )
+
+                is QrResult.Error -> {
+                    Timber.d("Failed to delete MechanicalUnit: ${unit.id}")
+                    _uiState.update {
+                        it.copy(error = result.error.asUiText())
+                    }
+                }
+            }
         }
     }
 
@@ -225,15 +231,15 @@ class IslandDetailViewModel @Inject constructor(
     fun deleteFacilityIsland(force: Boolean = false) {
         viewModelScope.launch {
             _uiState.update { it.copy(isDeleting = true, deleteError = null, showDeleteConfirmation = false) }
-            when (deleteIslandUseCase(islandId = currentIslandId, force = force)) {
+            when (val result = deleteIslandUseCase(islandId = currentIslandId, force = force)) {
                 is QrResult.Success -> {
-                    Timber.d("Island deleted: $currentIslandId")
+                    Timber.d("Island deleted: ${result.data}")
                     _uiState.update { it.copy(isDeleting = false, deleteSuccess = true) }
                 }
                 is QrResult.Error -> {
                     Timber.e("Failed to delete island: $currentIslandId")
                     _uiState.update {
-                        it.copy(isDeleting = false, deleteError = UiText.StringResource(R.string.err_island_detail_delete))
+                        it.copy(isDeleting = false, deleteError = result.error.asUiText())
                     }
                 }
             }

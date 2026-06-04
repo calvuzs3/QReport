@@ -36,7 +36,6 @@ import timber.log.Timber
 @Composable
 fun MechanicalUnitListScreen(
     islandId: String,
-    islandName: String,
     onNavigateBack: () -> Unit,
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (unitId: String) -> Unit,
@@ -46,10 +45,11 @@ fun MechanicalUnitListScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var pendingDeleteId by remember { mutableStateOf<String?>(null) }
     var pendingDeleteName by remember { mutableStateOf("") }
+    val onEvent: (MechanicalUnitListEvent) -> Unit = viewModel::onEvent
 
     LaunchedEffect(islandId) {
         Timber.d("MechanicalUnitListScreen islandId=$islandId")
-        viewModel.initializeForIsland(islandId)
+        viewModel.initialize(islandId)
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -57,10 +57,10 @@ fun MechanicalUnitListScreen(
         TopAppBar(
             title = {
                 Column {
-                    Text(stringResource(R.string.unit_screen_list_title))
+                    Text( stringResource(MechanicalUnitPkg.titleResId))
                     Text(
                         text = uiState.selectedIsland.takeIf { it != IslandOption.ALL }
-                            ?.getDisplayName() ?: islandName,
+                            ?.getDisplayName() ?: stringResource(MechanicalUnitPkg.descriptionResId),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -75,7 +75,7 @@ fun MechanicalUnitListScreen(
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
 
-                IconButton(onClick = viewModel::cycleCardVariant) {
+                IconButton(onClick = { onEvent(MechanicalUnitListEvent.CycleCardVariant) }) {
                     Icon(uiState.cardVariant.getCardVariantIcon(), contentDescription = uiState.cardVariant.getCardVariantDescription())
                 }
                 IconButton(onClick = { showSortMenu = true }) {
@@ -88,14 +88,14 @@ fun MechanicalUnitListScreen(
                     expanded = showSortMenu,
                     entries = MechanicalUnitSortOrder.entries,
                     selectedSortOrder = uiState.sortOrder,
-                    onSortOrderSelected = viewModel::updateSortOrder,
+                    onSortOrderSelected = { onEvent(MechanicalUnitListEvent.SortOrderChanged(it)) },
                     onDismiss = { showSortMenu = false }
                 )
                 QReportFilterMenu(
                     expanded = showFilterMenu,
                     entries = MechanicalUnitFilter.entries,
                     selectedFilter = uiState.selectedFilter,
-                    onFilterSelected = viewModel::updateFilter,
+                    onFilterSelected = { onEvent(MechanicalUnitListEvent.FilterChanged(it)) },
                     onDismiss = { showFilterMenu = false }
                 )
             }
@@ -103,14 +103,14 @@ fun MechanicalUnitListScreen(
 
         QReportSearchBar(
             query = uiState.searchQuery,
-            onQueryChange = viewModel::updateSearchQuery,
+            onQueryChange = { onEvent(MechanicalUnitListEvent.SearchQueryChanged(it)) },
             placeholder = stringResource(R.string.unit_screen_list_search_placeholder)
         )
 
         QReportSelectorRow(
             entries = uiState.availableIslands,
             selectedItem = uiState.selectedIsland,
-            onItemSelected = viewModel::updateSelectedIsland,
+            onItemSelected = { onEvent(MechanicalUnitListEvent.SelectedIslandChanges(it)) },
             icon = Icons.Default.PrecisionManufacturing,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
@@ -120,7 +120,7 @@ fun MechanicalUnitListScreen(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 selectedFilter = uiState.selectedFilter,
                 avoidFilter = MechanicalUnitPkg.selectedFilter,
-                onClearFilter = { viewModel.updateFilter(MechanicalUnitPkg.selectedFilter) },
+                onClearFilter = {  onEvent(MechanicalUnitListEvent.FilterChanged(MechanicalUnitPkg.selectedFilter)) },
                 selectedSort = uiState.sortOrder,
                 avoidSort = MechanicalUnitPkg.selectedSortOrder,
                 onClearSort = { viewModel.updateSortOrder(MechanicalUnitPkg.selectedSortOrder) }
@@ -129,7 +129,7 @@ fun MechanicalUnitListScreen(
 
         QReportPullToRefresh(
             isRefreshing = uiState.isRefreshing,
-            onRefresh = viewModel::refresh,
+            onRefresh = { onEvent(MechanicalUnitListEvent.Refresh) },
             modifier = Modifier.fillMaxSize()
         ) {
 
@@ -140,8 +140,8 @@ fun MechanicalUnitListScreen(
 
                 currentError != null -> QReportErrorState(
                     error = currentError,
-                    onRetry = viewModel::loadUnits,
-                    onDismiss = viewModel::dismissError
+                    onRetry = { onEvent(MechanicalUnitListEvent.Refresh) },
+                    onDismiss = { onEvent(MechanicalUnitListEvent.DismissError) }
                 )
 
                 uiState.filteredUnits.isEmpty() -> {
@@ -182,7 +182,9 @@ fun MechanicalUnitListScreen(
 
             FloatingActionButton(
                 onClick = onNavigateToAdd,
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(R.string.unit_screen_list_fab_add))
             }
@@ -193,7 +195,7 @@ fun MechanicalUnitListScreen(
         QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.unit_card_object_name),
             objectDesc = pendingDeleteName,
-            onConfirm = { viewModel.deleteUnit(unitId); pendingDeleteId = null; pendingDeleteName = "" },
+            onConfirm = { onEvent(MechanicalUnitListEvent.DeleteUnit(unitId)); pendingDeleteId = null; pendingDeleteName = "" },
             onDismiss = { pendingDeleteId = null; pendingDeleteName = "" }
         )
     }
