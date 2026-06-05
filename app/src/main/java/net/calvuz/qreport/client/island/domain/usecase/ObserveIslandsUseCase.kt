@@ -21,9 +21,9 @@ class ObserveIslandsUseCase @Inject constructor(
         Timber.d("Observe islands for facility: ${facilityId ?: "none"}")
 
         val flow = if (facilityId.isNullOrBlank()) {
-            islandRepository.getAllActiveIslandsFlow()
+            islandRepository.getAllIslandsFlow()
         } else {
-            islandRepository.getAllActiveIslandsByFacilityFlow(facilityId)
+            islandRepository.getAllIslandsByFacilityFlow(facilityId)
         }
         return flow.map { islands ->
             islands.sortedWith(

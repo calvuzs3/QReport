@@ -46,7 +46,6 @@ data class Island(
     val islandType: IslandType,
 
     // ===== TECHNICAL DETAILS =====
-    val model: String? = null,
     val serialNumber: String,
     val installationDate: Instant? = null,
     val warrantyExpiration: Instant? = null,
@@ -248,9 +247,6 @@ data class IslandEntity(
     @ColumnInfo(name = "serial_number")
     val serialNumber: String,
 
-    @ColumnInfo(name = "model")
-    val model: String? = null,
-
     @ColumnInfo(name = "installation_date")
     val installationDate: Long? = null, // Epoch milliseconds
 
@@ -391,7 +387,6 @@ interface IslandDao {
           AND f.is_active = 1 AND c.is_active = 1
           AND (fi.serial_number LIKE '%' || :query || '%'
                OR fi.custom_name  LIKE '%' || :query || '%'
-               OR fi.model        LIKE '%' || :query || '%'
                OR fi.location     LIKE '%' || :query || '%'
                OR f.name          LIKE '%' || :query || '%'
                OR c.company_name  LIKE '%' || :query || '%')
@@ -524,7 +519,6 @@ interface IslandDao {
                fi.facility_id      AS facilityId,
                fi.island_type      AS islandType,
                fi.serial_number    AS serialNumber,
-               fi.model,
                fi.installation_date    AS installationDate,
                fi.warranty_expiration  AS warrantyExpiration,
                fi.is_active            AS isActive,
@@ -574,7 +568,6 @@ data class IslandWithFacilityAndClientResult(
     val facilityId: String,
     val islandType: String,
     val serialNumber: String,
-    val model: String?,
     val installationDate: Long?,
     val warrantyExpiration: Long?,
     val isActive: Boolean,
@@ -1025,7 +1018,7 @@ when (val result = deleteIslandUseCase(islandId)) {
 ```
 IslandListScreen        ← IslandListViewModel
 IslandDetailScreen      ← IslandDetailViewModel
-  ├── InfoTab           (island data: type, model, serial, installation, warranty)
+  ├── InfoTab           (island data: type, serial, installation, warranty)
   ├── UnitsTab          (mechanical units list)
   └── MaintenanceTab    (maintenance history and schedule)
 IslandFormScreen        ← IslandFormViewModel  (create + edit)
@@ -1070,7 +1063,7 @@ FAB → onCreateNewIsland
 
 | Variant | Button size | Contents |
 |---------|------------|----------|
-| FULL    | 48 dp      | Custom name / serial, type chip, model, facility + client, operational status badge, maintenance date, warranty badge, timestamps |
+| FULL    | 48 dp      | Custom name / serial, type chip, facility + client, operational status badge, maintenance date, warranty badge, timestamps |
 | COMPACT | 36 dp      | Custom name / serial, type chip, facility name, operational status badge |
 | MINIMAL | —          | Custom name / serial only, tap to navigate |
 

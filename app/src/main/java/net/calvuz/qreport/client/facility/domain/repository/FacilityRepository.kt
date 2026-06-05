@@ -1,5 +1,6 @@
 package net.calvuz.qreport.client.facility.domain.repository
 
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
@@ -14,6 +15,13 @@ interface FacilityRepository {
     suspend fun createFacility(facility: Facility): Result<Unit>
     suspend fun updateFacility(facility: Facility): Result<Unit>
     suspend fun softDeleteFacility(id: String): Result<Unit>
+
+    // ===== TWO-STAGE DELETE =====
+
+    @Transaction
+    suspend fun deactivateFacility(id: String): Result<Unit>
+    @Transaction
+    suspend fun markFacilityDeleted(id: String): Result<Unit>
 
     // ===== CLIENT RELATED =====
 

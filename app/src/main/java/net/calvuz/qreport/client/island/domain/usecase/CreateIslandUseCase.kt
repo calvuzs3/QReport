@@ -16,10 +16,10 @@ import kotlin.time.Duration.Companion.days
  * Creates a new robotic island.
  *
  * Steps:
- * 1. Validate fields via [IslandDataValidator]
+ * 1. Validate fields via [IslandDataValidator.invoke]
  * 2. Verify the facility exists
  * 3. Check serial number uniqueness
- * 4. Validate maintenance/warranty date consistency
+ * 4. Validate date consistency via [IslandDataValidator.validateDates]
  * 5. Auto-compute next maintenance if not provided
  * 6. Persist
  */
@@ -33,79 +33,48 @@ class CreateIslandUseCase @Inject constructor(
 
         Timber.d("Create island")
 
-        // Check input
+        // 1. Validate fields
         when (val v = validateIslandData(island)) {
             is QrResult.Error -> {
-                Timber.d("Island is not valid: ${v.error}")
+                Timber.d("Island fields invalid: ${v.error}")
                 return v
             }
             is QrResult.Success -> Unit
         }
 
-        // Check facility exists
+        // 2. Verify facility exists
         when (checkFacilityExists(island.facilityId)) {
             is QrResult.Error -> return QrResult.Error(QrError.IslandError.FacilityNotFound())
             is QrResult.Success -> Unit
         }
 
-        // Check serial number uniqueness
+        // 3. Check serial number uniqueness
         when (val sn = checkSerialNumberUniqueness(island.serialNumber)) {
             is QrResult.Error -> return sn
             is QrResult.Success -> Unit
         }
 
-        // Validate date consistency
-        val dateError = validateMaintenanceDates(island)
-        if (dateError != null) {
-            Timber.d("Validate date error: $dateError")
-            return dateError
-        }
+        // 4. Validate date consistency
+        validateIslandData.validateDates(island)?.let { return it }
 
-        //
-        // 5. Auto-compute next maintenance
+        // 5. Auto-compute next maintenance if not provided
         val finalIsland = autoScheduleNextMaintenance(island)
-        Timber.d("Autocompute next maintenance: ${finalIsland.nextScheduledMaintenance}")
+        Timber.d("Next maintenance scheduled: ${finalIsland.nextScheduledMaintenance}")
 
         // 6. Persist
         return islandRepository.createIsland(finalIsland).fold(
             onSuccess = {
-                Timber.d("Successfully created island: $finalIsland")
-                QrResult.Success(Unit) },
+                Timber.d("Island created: ${finalIsland.id}")
+                QrResult.Success(Unit)
+            },
             onFailure = {
-                Timber.d("Error in creating island: ${it.message}")
-                QrResult.Error(QrError.IslandError.CreateError(it.message)) }
+                Timber.e("Failed to create island: ${it.message}")
+                QrResult.Error(QrError.IslandError.CreateError(it.message))
+            }
         )
     }
 
     // -------------------------------------------------------------------------
-
-    private fun validateMaintenanceDates(island: Island): QrResult<Unit, QrError.IslandError>? {
-        val now = Clock.System.now()
-        return when {
-            island.installationDate?.let { it > now } == true ->
-                QrResult.Error(QrError.IslandError.ValidationError.InvalidInstallationDate())
-
-            island.warrantyExpiration?.let { exp ->
-                island.installationDate?.let { install -> exp < install }
-            } == true ->
-                QrResult.Error(QrError.IslandError.ValidationError.InvalidWarrantyDate())
-
-            island.lastMaintenanceDate?.let { last ->
-                island.installationDate?.let { install -> last < install }
-            } == true ->
-                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
-
-            island.lastMaintenanceDate?.let { it > now } == true ->
-                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
-
-            island.nextScheduledMaintenance?.let { next ->
-                island.lastMaintenanceDate?.let { last -> next <= last }
-            } == true ->
-                QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
-
-            else -> null
-        }
-    }
 
     private fun autoScheduleNextMaintenance(island: Island): Island {
         if (island.nextScheduledMaintenance != null) return island

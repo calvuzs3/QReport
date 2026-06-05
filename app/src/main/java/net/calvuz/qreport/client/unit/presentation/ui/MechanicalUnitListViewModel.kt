@@ -14,7 +14,7 @@ import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
 import net.calvuz.qreport.client.unit.domain.usecase.DeleteMechanicalUnitUseCase
-import net.calvuz.qreport.client.island.presentation.ui.components.IslandOption
+import net.calvuz.qreport.client.unit.presentation.model.IslandOption
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.model.UnitType
 import net.calvuz.qreport.client.unit.domain.usecase.ObserveMechanicalUnitsUseCase

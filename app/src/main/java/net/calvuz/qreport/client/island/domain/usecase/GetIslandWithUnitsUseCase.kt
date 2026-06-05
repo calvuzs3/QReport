@@ -73,23 +73,11 @@ data class IslandWithUnits(
     val island: Island,
     val units: List<MechanicalUnit>,
     val statistics: UnitStatistics
-) {
-    val hasUnits: Boolean get() = units.isNotEmpty()
-    val displayName: String get() = island.customName ?: island.serialNumber
-    val unitsCount: Int get() = units.size
-}
+)
 
 data class UnitStatistics(
     val totalCount: Int = 0,
     val activeCount: Int = 0,
     val inactiveCount: Int = 0,
     val byType: Map<UnitType, Int> = emptyMap()
-) {
-    val hasActiveUnits: Boolean get() = activeCount > 0
-    val hasInactiveUnits: Boolean get() = inactiveCount > 0
-}
-
-data class UnitSearchCriteria(
-    val unitType: Set<UnitType> = emptySet(),
-    val activeOnly: Boolean = false
 )

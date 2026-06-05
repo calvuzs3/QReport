@@ -31,7 +31,7 @@ fun <T> QReportSelectorMenu(
     ) {
         entries.forEach { entry ->
             DropdownMenuItem(
-                text = { Text(entry.getDisplayName()) },
+                text = { Text(entry.getDisplayName().asString()) },
                 onClick = { onFilterSelected(entry); onDismiss() },
                 leadingIcon = if (selectedFilter == entry) {
                     { Icon(Icons.Default.Check, contentDescription = null) }

@@ -8,35 +8,27 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Mapper per conversioni tra IslandEntity (data layer) e Island (domain layer)
+ * Maps between [IslandEntity] (data layer) and [Island] (domain layer).
  *
- * ✅ Gestisce conversioni type-safe tra layers
- * ✅ Supporta enum IslandType con fallback
- * ✅ Conversioni Instant ↔ Long automatiche
+ * Handles:
+ * - Type-safe enum conversion with fallback via [IslandType.Companion.parse]
+ * - [Instant] ↔ epoch-milliseconds [Long] conversion
  */
 class IslandMapper @Inject constructor() {
 
-    /**
-     * Converte IslandEntity in Island domain model
-     */
     fun toDomain(entity: IslandEntity): Island {
         return Island(
             id = entity.id,
             facilityId = entity.facilityId,
             commissioningNumber = entity.commissioningNumber,
-            islandType = IslandType.parseIslandType(entity.islandType),
+            islandType = IslandType.parse(entity.islandType),
             serialNumber = entity.serialNumber,
-            modelNumber = entity.modelNumber,
             installationDate = entity.installationDate?.let { Instant.fromEpochMilliseconds(it) },
             warrantyExpiration = entity.warrantyExpiration?.let { Instant.fromEpochMilliseconds(it) },
             operatingHours = entity.operatingHours,
             cycleCount = entity.cycleCount,
             lastMaintenanceDate = entity.lastMaintenanceDate?.let { Instant.fromEpochMilliseconds(it) },
-            nextScheduledMaintenance = entity.nextScheduledMaintenance?.let {
-                Instant.fromEpochMilliseconds(
-                    it
-                )
-            },
+            nextScheduledMaintenance = entity.nextScheduledMaintenance?.let { Instant.fromEpochMilliseconds(it) },
             customName = entity.customName,
             location = entity.location,
             notes = entity.notes,
@@ -46,9 +38,6 @@ class IslandMapper @Inject constructor() {
         )
     }
 
-    /**
-     * Converte Island domain model in IslandEntity
-     */
     fun toEntity(domain: Island): IslandEntity {
         return IslandEntity(
             id = domain.id,
@@ -56,7 +45,6 @@ class IslandMapper @Inject constructor() {
             commissioningNumber = domain.commissioningNumber,
             islandType = domain.islandType.name,
             serialNumber = domain.serialNumber,
-            modelNumber = domain.modelNumber,
             installationDate = domain.installationDate?.toEpochMilliseconds(),
             warrantyExpiration = domain.warrantyExpiration?.toEpochMilliseconds(),
             operatingHours = domain.operatingHours,
@@ -72,71 +60,30 @@ class IslandMapper @Inject constructor() {
         )
     }
 
-    /**
-     * Converte lista di IslandEntity in lista di Island domain models
-     */
-    fun toDomainList(entities: List<IslandEntity>): List<Island> {
-        return entities.map { toDomain(it) }
-    }
+    fun toDomainList(entities: List<IslandEntity>): List<Island> = entities.map { toDomain(it) }
 
-    /**
-     * Converte lista di Island domain models in lista di IslandEntity
-     */
-    fun toEntityList(domains: List<Island>): List<IslandEntity> {
-        return domains.map { toEntity(it) }
-    }
-
-    /**
-     * Parsing sicuro di IslandType con fallback
-     *
-     * Se il tipo non è riconosciuto, usa un default o lancia eccezione
-     * controllata per evitare crash runtime
-     */
-    private fun parseIslandType(islandTypeString: String): IslandType {
-        return try {
-            IslandType.valueOf(islandTypeString)
-        } catch (_: IllegalArgumentException) {
-            // Log l'errore e usa un fallback
-             Timber.w("UnknownError island type: $islandTypeString, using POLY_MOVE as fallback")
-
-            // Prova parsing case-insensitive
-            IslandType.entries.find {
-                it.name.equals(islandTypeString, ignoreCase = true)
-            } ?: IslandType.POLY_MOVE // Default fallback
-        }
-    }
-}
-
-/*
- * Parsing of an Island Type
- *
- * Fallback: PolyMove
- */
-fun IslandType.Companion.parseIslandType(islandType: String): IslandType {
-    return try {
-        IslandType.valueOf(islandType)
-    } catch (_: IllegalArgumentException) {
-        // Log the error and use a fallback
-        Timber.w("UnknownError island type: $islandType, using POLY_MOVE as fallback")
-
-        // Try case-insensitive parsing
-        IslandType.entries.find {
-            it.name.equals(islandType, ignoreCase = true)
-        } ?: IslandType.POLY_MOVE // Default fallback
-    }
+    fun toEntityList(domains: List<Island>): List<IslandEntity> = domains.map { toEntity(it) }
 }
 
 /**
- * Extension functions per convenience
+ * Parses an [IslandType] from its stored name string.
+ * Falls back to [IslandType.POLY_MOVE] if the value is unrecognised,
+ * logging a warning to aid diagnosis of stale DB data.
  */
-fun IslandEntity.toDomain(mapper: IslandMapper): Island =
-    mapper.toDomain(this)
+fun IslandType.Companion.parse(value: String): IslandType {
+    return IslandType.entries.find { it.name.equals(value, ignoreCase = true) }
+        ?: run {
+            Timber.w("Unknown IslandType value '$value' — falling back to POLY_MOVE")
+            IslandType.POLY_MOVE
+        }
+}
 
-fun Island.toEntity(mapper: IslandMapper): IslandEntity =
-    mapper.toEntity(this)
+// Convenience extensions
 
-fun List<IslandEntity>.toDomain(mapper: IslandMapper): List<Island> =
-    mapper.toDomainList(this)
+fun IslandEntity.toDomain(mapper: IslandMapper): Island = mapper.toDomain(this)
 
-fun List<Island>.toEntity(mapper: IslandMapper): List<IslandEntity> =
-    mapper.toEntityList(this)
+fun Island.toEntity(mapper: IslandMapper): IslandEntity = mapper.toEntity(this)
+
+fun List<IslandEntity>.toDomain(mapper: IslandMapper): List<Island> = mapper.toDomainList(this)
+
+fun List<Island>.toEntity(mapper: IslandMapper): List<IslandEntity> = mapper.toEntityList(this)

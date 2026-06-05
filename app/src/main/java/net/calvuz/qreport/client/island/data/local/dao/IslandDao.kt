@@ -30,6 +30,9 @@ interface IslandDao {
     @Query("SELECT * FROM facility_islands WHERE facility_id = :facilityId AND is_active = 1 ORDER BY custom_name ASC, serial_number ASC")
     fun getAllActiveIslandsForFacilityFlow(facilityId: String): Flow<List<IslandEntity>>
 
+    @Query("SELECT * FROM facility_islands WHERE facility_id = :facilityId ORDER BY custom_name ASC, serial_number ASC")
+    fun getAllIslandsForFacilityFlow(facilityId: String): Flow<List<IslandEntity>>
+
     @Query("SELECT * FROM facility_islands WHERE serial_number = :serialNumber")
     suspend fun getIslandBySerialNumber(serialNumber: String): IslandEntity?
 
@@ -38,6 +41,13 @@ interface IslandDao {
 
     @Query("SELECT * FROM facility_islands WHERE is_active = 1 ORDER BY serial_number ASC")
     fun getAllActiveIslandsFlow(): Flow<List<IslandEntity>>
+
+
+    @Query("SELECT * FROM facility_islands ORDER BY serial_number ASC")
+    suspend fun getAllIslands(): List<IslandEntity>
+
+    @Query("SELECT * FROM facility_islands ORDER BY serial_number ASC")
+    fun getAllIslandsFlow(): Flow<List<IslandEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertIsland(island: IslandEntity)
@@ -59,7 +69,7 @@ interface IslandDao {
 
     /**
      * Stage 1 (standalone): deactivate a single island and cascade to its MechanicalUnits.
-     * Called by [IslandRepositoryImpl.deactivateIsland].
+     * Called by [deactivateIsland].
      * Note: FacilityDao contains the bulk version for facility-level cascade.
      */
     @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE id = :id")
@@ -70,7 +80,7 @@ interface IslandDao {
 
     /**
      * Stage 2 (standalone): mark a single island and its MechanicalUnits as deleted.
-     * Called by [IslandRepositoryImpl.markIslandDeleted].
+     * Called by [markIslandDeleted].
      */
     @Query("UPDATE facility_islands SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
     suspend fun markIslandDeleted(id: String, timestamp: Long = System.currentTimeMillis())

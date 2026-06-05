@@ -25,7 +25,7 @@ import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
 import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
-import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityOption
+import net.calvuz.qreport.client.island.presentation.model.FacilityOption
 import net.calvuz.qreport.client.island.presentation.model.IslandFilter
 import net.calvuz.qreport.client.island.presentation.model.IslandPkg
 import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
@@ -48,10 +48,11 @@ fun IslandListScreen(
     viewModel: IslandListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val onListEvent: (IslandListEvent) -> Unit = viewModel::onListEvent
 
     LaunchedEffect(facilityId) {
         Timber.d("IslandListScreen facilityId=$facilityId")
-        viewModel.initializeForFacility(facilityId)
+        viewModel.initialize(facilityId)
     }
 
     Column(modifier = modifier.fillMaxSize()) {
@@ -63,7 +64,7 @@ fun IslandListScreen(
                     Text(
                         text = uiState.selectedFacility
                             .takeIf { it != FacilityOption.ALL }
-                            ?.getDisplayName() ?: facilityName,
+                            ?.getDisplayName()?.asString() ?: facilityName,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -81,7 +82,7 @@ fun IslandListScreen(
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
 
-                IconButton(onClick = viewModel::cycleCardVariant) {
+                IconButton(onClick = { onListEvent(IslandListEvent.CycleCardVariant) }) {
                     Icon(
                         imageVector = uiState.cardVariant.getCardVariantIcon(),
                         contentDescription = uiState.cardVariant.getCardVariantDescription()
@@ -103,14 +104,14 @@ fun IslandListScreen(
                     expanded = showSortMenu,
                     entries = IslandSortOrder.entries,
                     selectedSortOrder = uiState.sortOrder,
-                    onSortOrderSelected = viewModel::updateSortOrder,
+                    onSortOrderSelected = { onListEvent(IslandListEvent.SortOrderChanged(it))},
                     onDismiss = { showSortMenu = false }
                 )
                 QReportFilterMenu(
                     expanded = showFilterMenu,
                     entries = IslandFilter.entries,
                     selectedFilter = uiState.selectedFilter,
-                    onFilterSelected = viewModel::updateFilter,
+                    onFilterSelected = { onListEvent(IslandListEvent.FilterChanged(it))},
                     onDismiss = { showFilterMenu = false }
                 )
             }
@@ -125,14 +126,14 @@ fun IslandListScreen(
 
         QReportSearchBar(
             query = uiState.searchQuery,
-            onQueryChange = viewModel::updateSearchQuery,
+            onQueryChange = { onListEvent(IslandListEvent.SearchQueryChanged(it)) },
             placeholder = stringResource(R.string.island_screen_list_search_placeholder)
         )
 
         QReportSelectorRow(
             entries = uiState.availableFacilities,
             selectedItem = uiState.selectedFacility,
-            onItemSelected = viewModel::updateSelectedFacility,
+            onItemSelected = { onListEvent(IslandListEvent.SelectedFacilityChanged(it)) },
             icon = FacilityPkg.icon,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
@@ -144,14 +145,14 @@ fun IslandListScreen(
                 avoidFilter = IslandPkg.selectedFilter,
                 selectedSort = uiState.sortOrder,
                 avoidSort = IslandPkg.selectedSortOrder,
-                onClearFilter = { viewModel.updateFilter(IslandFilter.ALL) },
-                onClearSort = { viewModel.updateSortOrder(IslandSortOrder.SERIAL_NUMBER) }
+                onClearFilter = { onListEvent(IslandListEvent.FilterChanged(IslandPkg.selectedFilter)) },
+                onClearSort = { onListEvent(IslandListEvent.SortOrderChanged(IslandPkg.selectedSortOrder)) }
             )
         }
 
         QReportPullToRefresh(
             isRefreshing = uiState.isRefreshing,
-            onRefresh = viewModel::refresh,
+            onRefresh = { onListEvent(IslandListEvent.Refresh) },
             modifier = Modifier.fillMaxSize()
         ) {
 
@@ -162,8 +163,8 @@ fun IslandListScreen(
 
                 currentError != null -> QReportErrorState(
                     error = currentError,
-                    onRetry = viewModel::loadIslands,
-                    onDismiss = viewModel::dismissError
+                    onRetry = { onListEvent(IslandListEvent.Refresh) },
+                    onDismiss = { onListEvent(IslandListEvent.DismissError)}
                 )
 
                 uiState.filteredIslands.isEmpty() -> {
@@ -194,20 +195,22 @@ fun IslandListScreen(
                     islands = uiState.filteredIslands,
                     variant = uiState.cardVariant,
                     onIslandClick = onNavigateToIslandDetail,
-                    onIslandDelete = viewModel::deleteIsland
+                    onIslandDelete = { onListEvent(IslandListEvent.DeleteIsland(it)) }
                 )
             }
 
-            FloatingActionButton(
-                onClick = onCreateNewIsland,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(horizontal = 16.dp, vertical = 48.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.island_screen_list_fab_new)
-                )
+            if (!facilityId.isNullOrBlank()) {
+                FloatingActionButton(
+                    onClick = onCreateNewIsland,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(horizontal = 16.dp, vertical = 48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringResource(R.string.island_screen_list_fab_new)
+                    )
+                }
             }
         }
     }

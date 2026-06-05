@@ -81,7 +81,7 @@ fun <T : QReportFilter> QReportSelectorRow(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = selectedItem.getDisplayName(),
+                        text = selectedItem.getDisplayName().asString(),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

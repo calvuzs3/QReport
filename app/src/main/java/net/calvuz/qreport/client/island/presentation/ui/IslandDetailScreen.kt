@@ -5,7 +5,6 @@ package net.calvuz.qreport.client.island.presentation.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.PrecisionManufacturing
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +20,8 @@ import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDi
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
+import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
+import net.calvuz.qreport.client.island.presentation.model.IslandPkg
 import net.calvuz.qreport.client.island.presentation.ui.components.InfoTabContent
 import net.calvuz.qreport.client.island.presentation.ui.components.MaintenanceDialog
 import net.calvuz.qreport.client.island.presentation.ui.components.MaintenanceTabContent
@@ -44,16 +45,18 @@ fun IslandDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var showMaintenanceDialog by remember { mutableStateOf(false) }
 
+    val onDetailEvent: (IslandDetailEvent) -> Unit = viewModel::onDetailEvent
+
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) { viewModel.resetDeleteState(); onIslandDeleted() }
     }
-    LaunchedEffect(islandId) { viewModel.loadIslandDetails(islandId) }
+    LaunchedEffect(islandId) { onDetailEvent(IslandDetailEvent.LoadIsland(islandId)) }
 
     if (uiState.showDeleteConfirmation) {
         QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.island_detail_object_name),
             objectDesc = uiState.islandName,
-            onConfirm = { viewModel.deleteFacilityIsland(force = true) },
+            onConfirm = { onDetailEvent(IslandDetailEvent.DeleteIsland(force = false)) },
             onDismiss = viewModel::hideDeleteConfirmation
         )
     }
@@ -106,39 +109,48 @@ fun IslandDetailScreen(
                         )
                     }
                 }
-                IconButton(onClick = viewModel::refreshData, enabled = !uiState.hasOperationsInProgress) {
-                    Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.island_detail_action_refresh))
-                }
             }
         )
 
-        when {
-            uiState.isLoading -> LoadingState(
-                modifier = Modifier.fillMaxSize(),
-                message = stringResource(R.string.island_detail_loading)
-            )
-            uiState.error != null && !uiState.hasData -> QReportErrorState(
-                modifier = Modifier.fillMaxSize().padding(32.dp),
-                error = uiState.error!!,
-                onRetry = { viewModel.loadIslandDetails(islandId) },
-                onDismiss = viewModel::dismissError
-            )
-            uiState.hasData -> IslandDetailContent(
-                uiState = uiState,
-                onTabSelected = viewModel::selectTab,
-                onEdit = { onNavigateToEdit(facilityId, islandId) },
-                onCreateUnit = { onNavigateToCreateUnit(islandId) },
-                onEditUnit = onNavigateToEditUnit,
-                onDeleteUnit = viewModel::deleteUnit,
-                onMaintenanceAction = { showMaintenanceDialog = true },
-                onNavigateToUnitList = onNavigateToUnitList,
-                onDismissError = viewModel::dismissError
-            )
-            else -> EmptyState(
-                textTitle = stringResource(R.string.island_detail_empty_title),
-                textMessage = stringResource(R.string.island_detail_empty_message),
-                iconImageVector = Icons.Outlined.PrecisionManufacturing
-            )
+        QReportPullToRefresh(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = { onDetailEvent(IslandDetailEvent.Refresh) },
+            modifier = Modifier.fillMaxSize()
+        ) {
+
+            when {
+                uiState.isLoading -> LoadingState(
+                    modifier = Modifier.fillMaxSize(),
+                    message = stringResource(R.string.island_detail_loading)
+                )
+
+                uiState.error != null && !uiState.hasData -> QReportErrorState(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(32.dp),
+                    error = uiState.error!!,
+                    onRetry = { onDetailEvent(IslandDetailEvent.Refresh) },
+                    onDismiss = { onDetailEvent(IslandDetailEvent.DismissError) }
+                )
+
+                uiState.hasData -> IslandDetailContent(
+                    uiState = uiState,
+                    onTabSelected = viewModel::selectTab,
+                    onEdit = { onNavigateToEdit(facilityId, islandId) },
+                    onCreateUnit = { onNavigateToCreateUnit(islandId) },
+                    onEditUnit = onNavigateToEditUnit,
+                    onDeleteUnit = { onDetailEvent(IslandDetailEvent.DeleteUnit(it)) },
+                    onMaintenanceAction = { showMaintenanceDialog = true },
+                    onNavigateToUnitList = onNavigateToUnitList,
+                    onDismissError = { onDetailEvent(IslandDetailEvent.DismissError) }
+                )
+
+                else -> EmptyState(
+                    textTitle = stringResource(R.string.island_detail_empty_title),
+                    textMessage = stringResource(R.string.island_detail_empty_message),
+                    iconImageVector = IslandPkg.icon
+                )
+            }
         }
     }
 

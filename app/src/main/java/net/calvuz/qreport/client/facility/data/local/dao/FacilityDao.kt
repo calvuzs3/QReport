@@ -48,6 +48,40 @@ interface FacilityDao {
     @Query("UPDATE facilities SET is_active = 0, updated_at = :timestamp WHERE id = :id")
     suspend fun softDeleteFacility(id: String, timestamp: Long = System.currentTimeMillis())
 
+    // ===== DELETE — TWO-STAGE =====
+
+    /**
+     * Stage 1: deactivate facility and cascade to children.
+     * Called by [FacilityRepositoryImpl.deactivateFacility].
+     */
+    @Query("UPDATE facilities SET is_active = 0, updated_at = :timestamp WHERE id = :id")
+    suspend fun deactivateFacility(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE facility_id = :facilityId")
+    suspend fun deactivateIslandsByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("""
+        UPDATE mechanical_units SET is_active = 0, updated_at = :timestamp
+        WHERE island_id IN (SELECT id FROM facility_islands WHERE facility_id = :facilityId)
+    """)
+    suspend fun deactivateMechanicalUnitsByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
+
+    /**
+     * Stage 2: mark facility and children as deleted for server sync.
+     * Called by [FacilityRepositoryImpl.markFacilityDeleted].
+     */
+    @Query("UPDATE facilities SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
+    suspend fun markFacilityDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE facility_islands SET is_deleted = 1, updated_at = :timestamp WHERE facility_id = :facilityId")
+    suspend fun markIslandDeletedByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("""
+        UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp
+        WHERE island_id IN (SELECT id FROM facility_islands WHERE facility_id = :facilityId)
+    """)
+    suspend fun markMechanicalUnitsDeletedByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
+
     // ===== PRIMARY FACILITY MANAGEMENT =====
 
     @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_primary = 1 AND is_active = 1")

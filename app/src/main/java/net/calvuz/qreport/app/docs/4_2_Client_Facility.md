@@ -270,7 +270,7 @@ interface FacilityDao {
     @Query("UPDATE facilities SET is_active = 0, updated_at = :timestamp WHERE id = :id")
     suspend fun deactivateFacility(id: String, timestamp: Long = System.currentTimeMillis())
 
-    @Query("UPDATE islands SET is_active = 0, updated_at = :timestamp WHERE facility_id = :facilityId")
+    @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE facility_id = :facilityId")
     suspend fun deactivateIslandsByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
 
     @Query("""
@@ -286,7 +286,7 @@ interface FacilityDao {
     @Query("UPDATE facilities SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
     suspend fun markFacilityDeleted(id: String, timestamp: Long = System.currentTimeMillis())
 
-    @Query("UPDATE islands SET is_deleted = 1, updated_at = :timestamp WHERE facility_id = :facilityId")
+    @Query("UPDATE facility_islands SET is_deleted = 1, updated_at = :timestamp WHERE facility_id = :facilityId")
     suspend fun markIslandDeletedByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
 
     @Query("""

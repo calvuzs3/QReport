@@ -1,5 +1,6 @@
 package net.calvuz.qreport.client.facility.data.local.repository
 
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
@@ -77,6 +78,24 @@ class FacilityRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // ===== TWO-STAGE DELETE =====
+
+    @Transaction
+    override suspend fun deactivateFacility(id: String): Result<Unit> = runCatching {
+        val ts = System.currentTimeMillis()
+        facilityDao.deactivateMechanicalUnitsByFacility(id, ts)
+        facilityDao.deactivateIslandsByFacility(id, ts)
+        facilityDao.deactivateFacility(id, ts)
+    }
+
+    @Transaction
+    override suspend fun markFacilityDeleted(id: String): Result<Unit> = runCatching {
+        val ts = System.currentTimeMillis()
+        facilityDao.markMechanicalUnitsDeletedByFacility(id, ts)
+        facilityDao.markIslandDeletedByFacility(id, ts)
+        facilityDao.markFacilityDeleted(id, ts)
     }
 
     // ===== CLIENT RELATED =====

@@ -22,7 +22,6 @@ import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 import net.calvuz.qreport.client.island.domain.usecase.UpdateMaintenanceUseCase
 import net.calvuz.qreport.client.unit.domain.usecase.DeleteMechanicalUnitUseCase
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
-import net.calvuz.qreport.client.unit.domain.repository.MechanicalUnitRepository
 import net.calvuz.qreport.client.unit.domain.usecase.GetMechanicalUnitsByIslandUseCase
 import timber.log.Timber
 import javax.inject.Inject
@@ -56,9 +55,9 @@ data class FacilityIslandDetailUiState(
     val units: List<MechanicalUnit> = emptyList(),
     val isLoadingUnits: Boolean = false,
 
+    val isRefreshing: Boolean = false,
     val isDeleting: Boolean = false,
     val deleteSuccess: Boolean = false,
-    val deleteError: UiText? = null,
     val showDeleteConfirmation: Boolean = false,
 
     val isUpdatingMaintenance: Boolean = false,
@@ -86,8 +85,7 @@ class IslandDetailViewModel @Inject constructor(
     private val getMechanicalUnitsByIslandUseCase: GetMechanicalUnitsByIslandUseCase,
     private val updateMaintenanceUseCase: UpdateMaintenanceUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
-    private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase,
-    private val mechanicalUnitRepository: MechanicalUnitRepository
+    private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityIslandDetailUiState())
@@ -99,6 +97,22 @@ class IslandDetailViewModel @Inject constructor(
     init {
         Timber.d("IslandDetailViewModel initialized")
     }
+
+    fun onDetailEvent(event: IslandDetailEvent) {
+        when (event) {
+            is IslandDetailEvent.LoadIsland -> loadIslandDetails(event.islandId)
+            is IslandDetailEvent.DeleteIsland -> deleteFacilityIsland(event.force)
+            is IslandDetailEvent.DeleteUnit -> deleteUnit(event.unit)
+            is IslandDetailEvent.RecordMaintenance -> recordMaintenance(
+                maintenanceDate = event.maintenanceDate,
+                resetOperatingHours = event.resetHours,
+                notes = event.notes
+            )
+            IslandDetailEvent.DismissError -> dismissError()
+            IslandDetailEvent.Refresh -> refreshData()
+        }
+    }
+
 
     // =========================================================================
     // TAB
@@ -114,7 +128,7 @@ class IslandDetailViewModel @Inject constructor(
     // LOADING
     // =========================================================================
 
-    fun loadIslandDetails(islandId: String) {
+    private fun loadIslandDetails(islandId: String) {
         if (islandId.isBlank()) {
             _uiState.update {
                 it.copy(error = UiText.StringResource(R.string.err_island_detail_invalid_id))
@@ -175,7 +189,7 @@ class IslandDetailViewModel @Inject constructor(
     // UNIT ACTIONS
     // =========================================================================
 
-    fun deleteUnit(unit: MechanicalUnit) {
+    private fun deleteUnit(unit: MechanicalUnit) {
         viewModelScope.launch {
             when (val result= deleteMechanicalUnitUseCase(unit.id)) {
                 is QrResult.Success -> {
@@ -225,21 +239,18 @@ class IslandDetailViewModel @Inject constructor(
     // DELETE ISLAND
     // =========================================================================
 
-    fun showDeleteConfirmation() = _uiState.update { it.copy(showDeleteConfirmation = true) }
-    fun hideDeleteConfirmation() = _uiState.update { it.copy(showDeleteConfirmation = false) }
-
-    fun deleteFacilityIsland(force: Boolean = false) {
+    private fun deleteFacilityIsland(force: Boolean = false) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isDeleting = true, deleteError = null, showDeleteConfirmation = false) }
+            _uiState.update { it.copy(isDeleting = true, error = null, showDeleteConfirmation = false) }
             when (val result = deleteIslandUseCase(islandId = currentIslandId, force = force)) {
                 is QrResult.Success -> {
-                    Timber.d("Island deleted: ${result.data}")
+                    Timber.d("Island deleted: $currentIslandId")
                     _uiState.update { it.copy(isDeleting = false, deleteSuccess = true) }
                 }
                 is QrResult.Error -> {
                     Timber.e("Failed to delete island: $currentIslandId")
                     _uiState.update {
-                        it.copy(isDeleting = false, deleteError = result.error.asUiText())
+                        it.copy(isDeleting = false, error = result.error.asUiText())
                     }
                 }
             }
@@ -250,20 +261,26 @@ class IslandDetailViewModel @Inject constructor(
     // UTILITY
     // =========================================================================
 
-    fun refreshData() {
+    private fun refreshData() {
         if (currentIslandId.isNotBlank()) loadIslandDetails(currentIslandId)
     }
 
-    fun dismissError() = _uiState.update { it.copy(error = null) }
-    fun resetDeleteState() = _uiState.update { it.copy(deleteSuccess = false, deleteError = null) }
+    private fun dismissError() = _uiState.update { it.copy(error = null) }
+    fun resetDeleteState() = _uiState.update { it.copy(deleteSuccess = false) }
+
+    fun showDeleteConfirmation() = _uiState.update { it.copy(showDeleteConfirmation = true) }
+    fun hideDeleteConfirmation() = _uiState.update { it.copy(showDeleteConfirmation = false) }
 }
 
-sealed class FacilityIslandDetailEvent {
-    object Refresh : FacilityIslandDetailEvent()
-    object DismissError : FacilityIslandDetailEvent()
+sealed class IslandDetailEvent {
+    data class LoadIsland(val islandId: String) : IslandDetailEvent()
+    data class DeleteIsland(val force: Boolean = false) : IslandDetailEvent()
+    data class DeleteUnit(val unit: MechanicalUnit) : IslandDetailEvent()
+    object Refresh : IslandDetailEvent()
+    object DismissError : IslandDetailEvent()
     data class RecordMaintenance(
         val maintenanceDate: Instant? = null,
         val resetHours: Boolean = true,
         val notes: String? = null
-    ) : FacilityIslandDetailEvent()
+    ) : IslandDetailEvent()
 }

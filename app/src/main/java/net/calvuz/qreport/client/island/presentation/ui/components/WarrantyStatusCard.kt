@@ -12,19 +12,31 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
+import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
+import net.calvuz.qreport.app.app.presentation.ui.theme.onWarningContainer
+import net.calvuz.qreport.app.app.presentation.ui.theme.successContainer
+import net.calvuz.qreport.app.app.presentation.ui.theme.warningContainer
 import net.calvuz.qreport.client.island.domain.usecase.WarrantyStatus
 
 @Composable
 fun WarrantyStatusCard(island: Island, statistics: SingleIslandStatistics?) {
     val warrantyStatus = statistics?.warrantyStats?.status
 
-    // Map status to theme color token — no hex codes in presentation layer
+    // Map status to theme color token — no hex codes, no tertiary/secondary
     val statusColor = when (warrantyStatus) {
-        WarrantyStatus.ACTIVE -> MaterialTheme.colorScheme.tertiary
-        WarrantyStatus.EXPIRING_THIS_QUARTER -> MaterialTheme.colorScheme.secondary
-        WarrantyStatus.EXPIRING_SOON -> MaterialTheme.colorScheme.error
-        WarrantyStatus.EXPIRED -> MaterialTheme.colorScheme.error
-        else -> MaterialTheme.colorScheme.onSurfaceVariant
+        WarrantyStatus.ACTIVE                -> MaterialTheme.colorScheme.successContainer
+        WarrantyStatus.EXPIRING_THIS_QUARTER -> MaterialTheme.colorScheme.warningContainer
+        WarrantyStatus.EXPIRING_SOON         -> MaterialTheme.colorScheme.errorContainer
+        WarrantyStatus.EXPIRED               -> MaterialTheme.colorScheme.errorContainer
+        else                                 -> MaterialTheme.colorScheme.surfaceVariant
+    }
+
+    val statusOnColor = when (warrantyStatus) {
+        WarrantyStatus.ACTIVE                -> MaterialTheme.colorScheme.onSuccessContainer
+        WarrantyStatus.EXPIRING_THIS_QUARTER -> MaterialTheme.colorScheme.onWarningContainer
+        WarrantyStatus.EXPIRING_SOON         -> MaterialTheme.colorScheme.onErrorContainer
+        WarrantyStatus.EXPIRED               -> MaterialTheme.colorScheme.onErrorContainer
+        else                                 -> MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Card {
@@ -34,7 +46,7 @@ fun WarrantyStatusCard(island: Island, statistics: SingleIslandStatistics?) {
                 Text(text = stringResource(R.string.island_warranty_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
 
                 Surface(
-                    color = statusColor.copy(alpha = 0.15f),
+                    color = statusColor,
                     shape = MaterialTheme.shapes.small
                 ) {
                     Text(
@@ -42,7 +54,7 @@ fun WarrantyStatusCard(island: Island, statistics: SingleIslandStatistics?) {
                             ?: stringResource(R.string.island_warranty_no_info),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Medium,
-                        color = statusColor,
+                        color = statusOnColor,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
@@ -66,7 +78,7 @@ fun WarrantyStatusCard(island: Island, statistics: SingleIslandStatistics?) {
                                 fontWeight = FontWeight.Medium,
                                 color = when {
                                     daysRemaining <= 30 -> MaterialTheme.colorScheme.error
-                                    daysRemaining <= 90 -> MaterialTheme.colorScheme.secondary
+                                    daysRemaining <= 90 -> MaterialTheme.colorScheme.onWarningContainer
                                     else -> MaterialTheme.colorScheme.onSurface
                                 }
                             )

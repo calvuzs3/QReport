@@ -23,7 +23,7 @@ fun <T> QReportFilterMenu(
     ) {
         entries.forEach { filter ->
             DropdownMenuItem(
-                text = { Text(filter.getDisplayName()) },
+                text = { Text(filter.getDisplayName().asString()) },
                 onClick = { onFilterSelected(filter); onDismiss() },
                 leadingIcon = if (selectedFilter == filter) {
                     { Icon(Icons.Default.Check, contentDescription = null) }

@@ -5,7 +5,6 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.checkup.domain.repository.CheckUpRepository
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
 import net.calvuz.qreport.client.island.domain.model.IslandType
@@ -18,17 +17,18 @@ import javax.inject.Inject
  *
  * [MaintenanceStatus] and [WarrantyStatus] carry [labelResId] so the
  * presentation layer resolves user-facing strings without any domain strings.
+ *
+ * CheckUp fields (totalCheckUps, lastCheckUpDate, issuesCount) are stubbed
+ * to 0 / null until the CheckUp feature is implemented.
  */
 class GetIslandStatisticsUseCase @Inject constructor(
-    private val islandRepository: IslandRepository,
-    private val checkUpRepository: CheckUpRepository? = null
+    private val islandRepository: IslandRepository
 ) {
     suspend operator fun invoke(islandId: String): QrResult<SingleIslandStatistics, QrError.IslandError> {
 
-        Timber.d("Get island statistics")
+        Timber.d("Get island statistics: $islandId")
 
         if (islandId.isBlank()) {
-            Timber.d("Island id is blank")
             return QrResult.Error(QrError.IslandError.NotFound())
         }
 
@@ -46,9 +46,9 @@ class GetIslandStatisticsUseCase @Inject constructor(
                 operationalStats = calculateOperationalStats(island, now),
                 maintenanceStats = calculateMaintenanceStats(island, now),
                 warrantyStats = calculateWarrantyStats(island, now),
-                totalCheckUps = 0,      // TODO: integrate CheckUpRepository
-                lastCheckUpDate = null, // TODO: integrate CheckUpRepository
-                issuesCount = 0,        // TODO: integrate CheckUpRepository
+                totalCheckUps = 0,       // TODO: wire CheckUpRepository when available
+                lastCheckUpDate = null,  // TODO: wire CheckUpRepository when available
+                issuesCount = 0,         // TODO: wire CheckUpRepository when available
                 generatedAt = now
             )
         )
@@ -105,9 +105,9 @@ class GetIslandStatisticsUseCase @Inject constructor(
             else -> {
                 val days = (exp - now).inWholeDays
                 when {
-                    days <= 30 -> WarrantyStatus.EXPIRING_SOON to days
-                    days <= 90 -> WarrantyStatus.EXPIRING_THIS_QUARTER to days
-                    else -> WarrantyStatus.ACTIVE to days
+                    days <= 30  -> WarrantyStatus.EXPIRING_SOON to days
+                    days <= 90  -> WarrantyStatus.EXPIRING_THIS_QUARTER to days
+                    else        -> WarrantyStatus.ACTIVE to days
                 }
             }
         }
@@ -115,7 +115,11 @@ class GetIslandStatisticsUseCase @Inject constructor(
             status = status,
             expirationDate = exp,
             daysRemaining = daysRemaining,
-            isActive = status in listOf(WarrantyStatus.ACTIVE, WarrantyStatus.EXPIRING_SOON, WarrantyStatus.EXPIRING_THIS_QUARTER)
+            isActive = status in listOf(
+                WarrantyStatus.ACTIVE,
+                WarrantyStatus.EXPIRING_SOON,
+                WarrantyStatus.EXPIRING_THIS_QUARTER
+            )
         )
     }
 }
@@ -140,35 +144,22 @@ data class SingleIslandStatistics(
         get() {
             var score = (operationalStats.performanceScore * 0.4).toInt()
             score += when (maintenanceStats.status) {
-                MaintenanceStatus.UP_TO_DATE -> 35
-                MaintenanceStatus.SCHEDULED -> 30
-                MaintenanceStatus.DUE_SOON -> 15
-                MaintenanceStatus.OVERDUE -> 0
-                MaintenanceStatus.NO_HISTORY -> 20
+                MaintenanceStatus.UP_TO_DATE  -> 35
+                MaintenanceStatus.SCHEDULED   -> 30
+                MaintenanceStatus.DUE_SOON    -> 15
+                MaintenanceStatus.OVERDUE     -> 0
+                MaintenanceStatus.NO_HISTORY  -> 20
             }
             score += when (warrantyStats.status) {
-                WarrantyStatus.ACTIVE -> 15
-                WarrantyStatus.EXPIRING_THIS_QUARTER -> 12
-                WarrantyStatus.EXPIRING_SOON -> 8
-                WarrantyStatus.EXPIRED -> 5
-                WarrantyStatus.NO_INFO -> 7
+                WarrantyStatus.ACTIVE                 -> 15
+                WarrantyStatus.EXPIRING_THIS_QUARTER  -> 12
+                WarrantyStatus.EXPIRING_SOON          -> 8
+                WarrantyStatus.EXPIRED                -> 5
+                WarrantyStatus.NO_INFO                -> 7
             }
             if (operationalStats.isActive) score += 10
             return score.coerceIn(0, 100)
         }
-
-    val overallStatus: IslandOperationalStatus
-        get() = when {
-            !operationalStats.isActive -> IslandOperationalStatus.INACTIVE
-            maintenanceStats.status == MaintenanceStatus.OVERDUE -> IslandOperationalStatus.MAINTENANCE_DUE
-            else -> IslandOperationalStatus.OPERATIONAL
-        }
-
-    val needsAttention: Boolean
-        get() = maintenanceStats.status == MaintenanceStatus.OVERDUE ||
-                warrantyStats.status == WarrantyStatus.EXPIRING_SOON ||
-                !operationalStats.isActive ||
-                healthScore < 50
 }
 
 data class OperationalStats(
@@ -188,7 +179,6 @@ data class MaintenanceStats(
     val daysSinceLast: Int?,
     val lastMaintenanceDate: Instant?,
     val nextScheduledDate: Instant?
-    // statusText removed — resolved in UI via status.labelResId
 )
 
 data class WarrantyStats(

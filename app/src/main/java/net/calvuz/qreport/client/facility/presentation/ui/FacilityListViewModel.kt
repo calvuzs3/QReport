@@ -13,7 +13,7 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
-import net.calvuz.qreport.client.client.presentation.model.ClientOption
+import net.calvuz.qreport.client.facility.presentation.model.ClientOption
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilityWithIslandsUseCase

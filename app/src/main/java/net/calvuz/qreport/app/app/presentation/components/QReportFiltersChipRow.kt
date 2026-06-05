@@ -11,7 +11,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.model.QReportFilter
 import net.calvuz.qreport.app.app.presentation.model.QReportSortOrder
 
@@ -35,9 +37,9 @@ fun QReportFiltersChipRow(
                 FilterChip(
                     selected = true,
                     onClick = onClearFilter,
-                    label = { Text("Filtro: ${selectedFilter.getDisplayName()}") }, // 👈
+                    label = { Text("Filtro: ${selectedFilter.getDisplayName().asString()}") }, // 👈
                     trailingIcon = {
-                        Icon(Icons.Default.Close, contentDescription = "Rimuovi filtro",
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.filter_chip_row_remove_filter),
                             modifier = Modifier.size(18.dp))
                     }
                 )
@@ -49,9 +51,9 @@ fun QReportFiltersChipRow(
                 FilterChip(
                     selected = true,
                     onClick = onClearSort,
-                    label = { Text("Ordine: ${selectedSort.getDisplayName()}") }, // 👈
+                    label = { Text("Ordine: ${selectedSort.getDisplayName().asString()}") }, // 👈
                     trailingIcon = {
-                        Icon(Icons.Default.Close, contentDescription = "Rimuovi ordinamento",
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.filter_chip_row_remove_sort),
                             modifier = Modifier.size(18.dp))
                     }
                 )

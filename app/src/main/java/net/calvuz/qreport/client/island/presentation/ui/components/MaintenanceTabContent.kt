@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.app.app.presentation.ui.theme.onWarningContainer
+import net.calvuz.qreport.app.app.presentation.ui.theme.warningContainer
 import net.calvuz.qreport.client.island.domain.usecase.MaintenanceStatus
 import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 
@@ -46,7 +48,7 @@ fun MaintenanceStatusCard(
         colors = CardDefaults.cardColors(
             containerColor = when {
                 needsMaintenance -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                maintenanceStatus == MaintenanceStatus.DUE_SOON -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
+                maintenanceStatus == MaintenanceStatus.DUE_SOON -> MaterialTheme.colorScheme.warningContainer.copy(alpha = 0.3f)
                 else -> MaterialTheme.colorScheme.surface
             }
         )
@@ -61,7 +63,7 @@ fun MaintenanceStatusCard(
                         onClick = onMaintenanceAction,
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = if (needsMaintenance) MaterialTheme.colorScheme.errorContainer
-                            else MaterialTheme.colorScheme.tertiaryContainer
+                            else MaterialTheme.colorScheme.warningContainer
                         )
                     ) {
                         Icon(Icons.Default.Build, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -84,7 +86,7 @@ fun MaintenanceStatusCard(
                     fontWeight = FontWeight.Medium,
                     color = when {
                         needsMaintenance -> MaterialTheme.colorScheme.error
-                        maintenanceStatus == MaintenanceStatus.DUE_SOON -> MaterialTheme.colorScheme.tertiary
+                        maintenanceStatus == MaintenanceStatus.DUE_SOON -> MaterialTheme.colorScheme.onWarningContainer
                         else -> MaterialTheme.colorScheme.onSurface
                     }
                 )

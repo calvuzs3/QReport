@@ -208,17 +208,18 @@ class ClientListViewModel @Inject constructor(
             ClientFilter.WITH_CONTACTS -> loadClientsWithSpecialFilter { getAllActiveClientWithContactsUseCase() }
             ClientFilter.WITH_CONTRACTS -> loadClientsWithSpecialFilter { getAllActiveClientWithContractsUseCase() }
             else -> {
-                val currentState = _uiState.value
-                _uiState.value = currentState.copy(
-                    selectedFilter = filter,
-                    filteredClients = applyFiltersAndSort(
-                        currentState.clients,
-                        currentState.searchQuery,
-                        filter,
-                        currentState.selectedSortOrder
-                    )
-                )
             }
+        }.also {
+            val currentState = _uiState.value
+            _uiState.value = currentState.copy(
+                selectedFilter = filter,
+                filteredClients = applyFiltersAndSort(
+                    currentState.clients,
+                    currentState.searchQuery,
+                    filter,
+                    currentState.selectedSortOrder
+                )
+            )
         }
     }
 

@@ -79,26 +79,6 @@ data class FacilityIslandFormUiState(
 }
 
 // =============================================================================
-// EVENTS
-// =============================================================================
-
-sealed class FacilityIslandFormEvent {
-    data class SerialNumberChanged(val serialNumber: String) : FacilityIslandFormEvent()
-    data class IslandTypeChanged(val islandType: IslandType) : FacilityIslandFormEvent()
-    data class ModelChanged(val model: String) : FacilityIslandFormEvent()
-    data class CustomNameChanged(val customName: String) : FacilityIslandFormEvent()
-    data class LocationChanged(val location: String) : FacilityIslandFormEvent()
-    data class InstallationDateChanged(val date: Instant?) : FacilityIslandFormEvent()
-    data class WarrantyExpirationChanged(val date: Instant?) : FacilityIslandFormEvent()
-    data class OperatingHoursChanged(val hours: String) : FacilityIslandFormEvent()
-    data class CycleCountChanged(val count: String) : FacilityIslandFormEvent()
-    data class LastMaintenanceDateChanged(val date: Instant?) : FacilityIslandFormEvent()
-    data class NextMaintenanceChanged(val date: Instant?) : FacilityIslandFormEvent()
-    data class IsActiveChanged(val isActive: Boolean) : FacilityIslandFormEvent()
-    data class NotesChanged(val notes: String) : FacilityIslandFormEvent()
-}
-
-// =============================================================================
 // VIEW MODEL
 // =============================================================================
 
@@ -144,6 +124,7 @@ class IslandFormViewModel @Inject constructor(
             it.copy(
                 isLoading = false,
                 islandId = island.id,
+                facilityId = island.facilityId,
                 serialNumber = island.serialNumber,
                 islandType = island.islandType,
                 modelNumber = island.modelNumber ?: "",
@@ -195,6 +176,7 @@ class IslandFormViewModel @Inject constructor(
                 _uiState.update { it.copy(isActive = event.isActive) }
             is FacilityIslandFormEvent.NotesChanged ->
                 _uiState.update { it.copy(notes = event.notes, notesError = validateNotes(event.notes)) }
+            is FacilityIslandFormEvent.SaveIsland -> saveIsland()
         }
     }
 
@@ -202,7 +184,7 @@ class IslandFormViewModel @Inject constructor(
     // SAVE
     // =========================================================================
 
-    fun saveIsland() {
+    private fun saveIsland() {
         val state = _uiState.value
         if (!state.isFormValid || state.isLoading) return
 
@@ -352,4 +334,25 @@ class IslandFormViewModel @Inject constructor(
     fun dismissError() {
         _uiState.update { it.copy(error = null) }
     }
+}
+
+// =============================================================================
+// EVENTS
+// =============================================================================
+
+sealed class FacilityIslandFormEvent {
+    data class SerialNumberChanged(val serialNumber: String) : FacilityIslandFormEvent()
+    data class IslandTypeChanged(val islandType: IslandType) : FacilityIslandFormEvent()
+    data class ModelChanged(val model: String) : FacilityIslandFormEvent()
+    data class CustomNameChanged(val customName: String) : FacilityIslandFormEvent()
+    data class LocationChanged(val location: String) : FacilityIslandFormEvent()
+    data class InstallationDateChanged(val date: Instant?) : FacilityIslandFormEvent()
+    data class WarrantyExpirationChanged(val date: Instant?) : FacilityIslandFormEvent()
+    data class OperatingHoursChanged(val hours: String) : FacilityIslandFormEvent()
+    data class CycleCountChanged(val count: String) : FacilityIslandFormEvent()
+    data class LastMaintenanceDateChanged(val date: Instant?) : FacilityIslandFormEvent()
+    data class NextMaintenanceChanged(val date: Instant?) : FacilityIslandFormEvent()
+    data class IsActiveChanged(val isActive: Boolean) : FacilityIslandFormEvent()
+    data class NotesChanged(val notes: String) : FacilityIslandFormEvent()
+    object SaveIsland : FacilityIslandFormEvent()
 }

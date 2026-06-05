@@ -6,7 +6,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.island.data.local.dao.IslandDao
-import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.client.island.data.local.mapper.IslandMapper
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
@@ -22,7 +21,7 @@ class IslandRepositoryImpl @Inject constructor(
 
     override suspend fun getAllIslands(): Result<List<Island>> {
         return try {
-            val entities = islandDao.getAllActiveIslands()
+            val entities = islandDao.getAllIslands()
             val islands = islandMapper.toDomainList(entities)
             Result.success(islands)
         } catch (e: Exception) {
@@ -30,7 +29,7 @@ class IslandRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getActiveIslands(): Result<List<Island>> {
+    override suspend fun getAllActiveIslands(): Result<List<Island>> {
         return try {
             val entities = islandDao.getAllActiveIslands()
             val islands = islandMapper.toDomainList(entities)
@@ -93,7 +92,7 @@ class IslandRepositoryImpl @Inject constructor(
         }
     }
 
-    // DELETE
+    // DELETE — TWO-STAGE
 
     @Transaction
     override suspend fun deactivateIsland(id: String): Result<Unit> = runCatching {
@@ -170,10 +169,21 @@ class IslandRepositoryImpl @Inject constructor(
     }
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
-    // ✅ FIXED: Rimosso suspend da metodi Flow
+
+    override fun getAllIslandsFlow(): Flow<List<Island>> {
+        return islandDao.getAllIslandsFlow().map { entities ->
+            islandMapper.toDomainList(entities)
+        }
+    }
 
     override fun getAllActiveIslandsFlow(): Flow<List<Island>> {
         return islandDao.getAllActiveIslandsFlow().map { entities ->
+            islandMapper.toDomainList(entities)
+        }
+    }
+
+    override fun getAllIslandsByFacilityFlow(facilityId: String): Flow<List<Island>> {
+        return islandDao.getAllIslandsForFacilityFlow(facilityId).map { entities ->
             islandMapper.toDomainList(entities)
         }
     }

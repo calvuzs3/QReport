@@ -2,6 +2,7 @@ package net.calvuz.qreport.client.unit.presentation.model
 
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.model.QReportFilter
+import net.calvuz.qreport.app.error.presentation.UiText
 
 /**
  * Filter options for the mechanical unit list.
@@ -13,5 +14,10 @@ enum class MechanicalUnitFilter(val labelResId: Int) : QReportFilter {
     INACTIVE(R.string.unit_filter_inactive),
     ROBOT(R.string.unit_filter_robot);
 
-    override fun getDisplayName(): String = name // fallback; UI uses labelResId
+    override fun getDisplayName(): UiText = when (this) {
+        ALL -> UiText.StringResource(R.string.unit_filter_all)
+        ACTIVE -> UiText.StringResource(R.string.unit_filter_active)
+        INACTIVE -> UiText.StringResource(R.string.unit_filter_inactive)
+        ROBOT -> UiText.StringResource(R.string.unit_filter_robot)
+    }
 }

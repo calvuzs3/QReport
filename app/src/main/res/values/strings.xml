@@ -268,7 +268,11 @@
     <string name="error_state_action_dismiss">Chiudi</string>
     <string name="error_state_action_retry">Riprova</string>
 
+    <!-- ======================================================= -->
+    <!-- QReportFilterChipRow                                        -->
+    <!-- ======================================================= -->
 
-
+    <string name="filter_chip_row_remove_filter">Rimuovi filtro</string>
+    <string name="filter_chip_row_remove_sort">Rimuovi ordinamento</string>
 
 </resources>

@@ -7,7 +7,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import net.calvuz.qreport.app.app.presentation.model.QReportFilter
 import net.calvuz.qreport.app.app.presentation.model.QReportSortOrder
 
 @Composable
@@ -24,7 +23,7 @@ fun <T> QReportSortOrderMenu(
     ) {
         entries.forEach { filter ->
             DropdownMenuItem(
-                text = { Text(filter.getDisplayName()) },
+                text = { Text(filter.getDisplayName().asString()) },
                 onClick = { onSortOrderSelected(filter); onDismiss() },
                 leadingIcon = if (selectedSortOrder == filter) {
                     { Icon(Icons.Default.Check, contentDescription = null) }

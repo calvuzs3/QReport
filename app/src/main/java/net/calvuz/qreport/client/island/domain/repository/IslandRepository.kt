@@ -10,17 +10,22 @@ interface IslandRepository {
 
     // ===== BASIC CRUD =====
     suspend fun getAllIslands(): Result<List<Island>>
-
-    suspend fun getActiveIslands(): Result<List<Island>>
+    suspend fun getAllActiveIslands(): Result<List<Island>>
     suspend fun getIslandById(id: String): Result<Island?>
     suspend fun getIslandsByIds(ids: List<String>): Result<List<Island>>
     suspend fun createIsland(island: Island): Result<Unit>
     suspend fun updateIsland(island: Island): Result<Unit>
     suspend fun deleteIsland(island: Island): Result<Unit>
 
+    // ===== DELETE — TWO-STAGE =====
+
+    @Transaction
+    suspend fun deactivateIsland(id: String): Result<Unit>
+
     // ===== FACILITY RELATED =====
 
     suspend fun getIslandsByFacility(facilityId: String): Result<List<Island>>
+    fun getAllIslandsByFacilityFlow(facilityId: String): Flow<List<Island>>
     fun getAllActiveIslandsByFacilityFlow(facilityId: String): Flow<List<Island>>
     suspend fun getActiveIslandsByFacility(facilityId: String): Result<List<Island>>
 
@@ -32,6 +37,7 @@ interface IslandRepository {
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
+    fun getAllIslandsFlow(): Flow<List<Island>>
     fun getAllActiveIslandsFlow(): Flow<List<Island>>
     fun getIslandByIdFlow(id: String): Flow<Island?>
 
@@ -64,6 +70,5 @@ interface IslandRepository {
 
     suspend fun createIslands(islands: List<Island>): Result<Unit>
     suspend fun bulkUpdateMaintenanceDates(updates: Map<String, Instant>): Result<Unit>
-    suspend fun deactivateIsland(id: String): Result<Unit>
     suspend fun markIslandDeleted(id: String): Result<Unit>
 }

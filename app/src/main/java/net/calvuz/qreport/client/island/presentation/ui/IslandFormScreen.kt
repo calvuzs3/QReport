@@ -71,7 +71,7 @@ fun IslandFormScreen(
             },
             actions = {
                 TextButton(
-                    onClick = viewModel::saveIsland,
+                    onClick = { viewModel.onFormEvent(FacilityIslandFormEvent.SaveIsland) },
                     enabled = uiState.isFormValid && !uiState.isLoading
                 ) {
                     Text(stringResource(R.string.island_form_action_save))
@@ -184,7 +184,8 @@ private fun IslandTypeSelector(
             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                .fillMaxWidth().fillMaxWidth()
+                .fillMaxWidth()
+                .fillMaxWidth()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             IslandType.entries.forEach { type ->

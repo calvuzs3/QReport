@@ -23,7 +23,7 @@ import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
-import net.calvuz.qreport.client.island.presentation.ui.components.IslandOption
+import net.calvuz.qreport.client.unit.presentation.model.IslandOption
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitFilter
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitPkg
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitSortOrder
@@ -60,7 +60,7 @@ fun MechanicalUnitListScreen(
                     Text( stringResource(MechanicalUnitPkg.titleResId))
                     Text(
                         text = uiState.selectedIsland.takeIf { it != IslandOption.ALL }
-                            ?.getDisplayName() ?: stringResource(MechanicalUnitPkg.descriptionResId),
+                            ?.getDisplayName()?.asString() ?: stringResource(MechanicalUnitPkg.descriptionResId),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

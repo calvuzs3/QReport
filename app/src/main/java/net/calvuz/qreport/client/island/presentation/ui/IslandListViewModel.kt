@@ -13,7 +13,7 @@ import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.usecase.ObserveAllActiveFacilitiesUseCase
-import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityOption
+import net.calvuz.qreport.client.island.presentation.model.FacilityOption
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
@@ -85,9 +85,31 @@ class IslandListViewModel @Inject constructor(
     // PUBLIC
     // =========================================================================
 
-    fun initialize() = loadIslands()
+    fun initialize(facilityId: String? = null) {
+        when  (facilityId.isNullOrBlank()) {
+            true -> loadIslands()
+            false -> initializeForFacility(facilityId)
+        }
+    }
 
-    fun initializeForFacility(facilityId: String) {
+    fun onListEvent(event: IslandListEvent) {
+        when (event) {
+            is IslandListEvent.DeleteIsland -> deleteIsland(event.islandId)
+            is IslandListEvent.FilterChanged -> updateFilter(event.filter)
+            is IslandListEvent.SearchQueryChanged -> updateSearchQuery(event.query)
+            is IslandListEvent.SortOrderChanged -> updateSortOrder(event.sortOrder)
+            is IslandListEvent.CycleCardVariant -> cycleCardVariant()
+            is IslandListEvent.DismissError -> dismissError()
+            is IslandListEvent.Refresh -> refresh()
+            is IslandListEvent.SelectedFacilityChanged -> updateSelectedFacility(facility = event.facility)
+        }
+    }
+
+    // =========================================================================
+    // PRIVATE
+    // =========================================================================
+
+    private fun initializeForFacility(facilityId: String) {
         if (facilityId == currentFacilityId) return
         currentFacilityId = facilityId
         _uiState.update { state ->
@@ -100,7 +122,7 @@ class IslandListViewModel @Inject constructor(
         loadIslands()
     }
 
-    fun loadIslands() {
+    private fun loadIslands() {
         loadJob?.cancel()
         val facilityId = currentFacilityId.takeIf { it.isNotEmpty() }
         Timber.d("Observing islands facilityId=${facilityId ?: "all"}")
@@ -155,12 +177,12 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
-    fun refresh() {
+    private fun refresh() {
         _uiState.update { it.copy(isRefreshing = true, error = null) }
         loadIslands()
     }
 
-    fun deleteIsland(islandId: String) {
+    private fun deleteIsland(islandId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isDeletingIsland = islandId) }
             when (val result = deleteIslandUseCase(islandId)) {
@@ -176,7 +198,7 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
-    fun updateSearchQuery(query: String) {
+    private fun updateSearchQuery(query: String) {
         val current = _uiState.value
         if (query.length >= 3) {
             performSearch(query)
@@ -192,7 +214,7 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
-    fun updateFilter(filter: IslandFilter) {
+    private fun updateFilter(filter: IslandFilter) {
         val current = _uiState.value
         _uiState.update {
             it.copy(
@@ -204,7 +226,7 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
-    fun updateSortOrder(sortOrder: IslandSortOrder) {
+    private fun updateSortOrder(sortOrder: IslandSortOrder) {
         val current = _uiState.value
         _uiState.update {
             it.copy(
@@ -216,14 +238,14 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
-    fun updateSelectedFacility(facility: FacilityOption) {
+    private fun updateSelectedFacility(facility: FacilityOption) {
         if (facility == _uiState.value.selectedFacility) return
         currentFacilityId = facility.id
         _uiState.update { it.copy(selectedFacility = facility, facilityId = facility.id) }
         loadIslands()
     }
 
-    fun cycleCardVariant() {
+    private fun cycleCardVariant() {
         val next = when (_uiState.value.cardVariant) {
             ListViewMode.FULL -> ListViewMode.COMPACT
             ListViewMode.COMPACT -> ListViewMode.MINIMAL
@@ -236,13 +258,9 @@ class IslandListViewModel @Inject constructor(
         }
     }
 
-    fun dismissError() {
+    private fun dismissError() {
         _uiState.update { it.copy(error = null) }
     }
-
-    // =========================================================================
-    // PRIVATE
-    // =========================================================================
 
     private fun observeCardVariant() {
         viewModelScope.launch {
@@ -352,11 +370,13 @@ class IslandListViewModel @Inject constructor(
     }
 }
 
-sealed class FacilityIslandListEvent {
-    data class SearchQueryChanged(val query: String) : FacilityIslandListEvent()
-    data class FilterChanged(val filter: IslandFilter) : FacilityIslandListEvent()
-    data class SortOrderChanged(val sortOrder: IslandSortOrder) : FacilityIslandListEvent()
-    data class DeleteIsland(val islandId: String) : FacilityIslandListEvent()
-    object Refresh : FacilityIslandListEvent()
-    object DismissError : FacilityIslandListEvent()
+sealed class IslandListEvent {
+    data class SearchQueryChanged(val query: String) : IslandListEvent()
+    data class FilterChanged(val filter: IslandFilter) : IslandListEvent()
+    data class SortOrderChanged(val sortOrder: IslandSortOrder) : IslandListEvent()
+    data class SelectedFacilityChanged(val facility: FacilityOption) : IslandListEvent()
+    object CycleCardVariant : IslandListEvent()
+    data class DeleteIsland(val islandId: String) : IslandListEvent()
+    object DismissError : IslandListEvent()
+    object Refresh : IslandListEvent()
 }
