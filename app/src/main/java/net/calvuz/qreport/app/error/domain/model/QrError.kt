@@ -20,8 +20,7 @@ interface QrError {
         data class DeleteRequiresConfirmation(val message: String? = null) : InterventionError
         data class CreateError(val message: String? = null) : InterventionError
         data class InvalidStatusTransition(
-            val status: InterventionStatus? = null,
-            val newStatus: InterventionStatus? = null
+            val status: InterventionStatus? = null, val newStatus: InterventionStatus? = null
         ) : InterventionError
 
         data class UpdateError(val message: String? = null) : InterventionError
@@ -84,7 +83,7 @@ interface QrError {
     }
 
     sealed interface ValidationError : QrError {
-        data class IdsDoesntMatch(val message :String? = null): ValidationError
+        data class IdsDoesntMatch(val message: String? = null) : ValidationError
         data class EmptyField(val message: String? = null) : ValidationError
         data class IsNotActive(val message: String? = null) : ValidationError
         data class IsNotPrimary(val message: String? = null) : ValidationError
@@ -106,6 +105,7 @@ interface QrError {
 
         // ── Validation ───────────────────────────────────────────────────────
         data class InvalidQueryLength(val message: String? = null) : ClientError
+
         /** Company name is missing */
         data class MissingCompanyName(val message: String? = null) : ClientError
 
@@ -117,9 +117,7 @@ interface QrError {
         /** Client still owns active facilities; deactivate them before deleting. */
         data class CannotDeleteHasActiveFacilities(val message: String? = null) : ClientError
         data class CannotDeleteHasDependencies(
-            val facilitiesCount: Int = 0,
-            val contactsCount: Int = 0,
-            val contractsCount: Int = 0
+            val facilitiesCount: Int = 0, val contactsCount: Int = 0, val contractsCount: Int = 0
         ) : ClientError
     }
 
@@ -193,11 +191,11 @@ interface QrError {
 
         // ── Business rules ───────────────────────────────────────────────────────
 
-        data class CannotDeleteLastFacility(val message: String? = null): FacilityError
-        data class CannotDeleteHasActiveIslands(val message: String? = null): FacilityError
+        data class CannotDeleteLastFacility(val message: String? = null) : FacilityError
+        data class CannotDeleteHasActiveIslands(val message: String? = null) : FacilityError
 
         sealed interface ValidationError : FacilityError {
-            data class InvalidFacilityNameLength(val message: String? = null): ValidationError
+            data class InvalidFacilityNameLength(val message: String? = null) : ValidationError
         }
     }
 
@@ -217,7 +215,7 @@ interface QrError {
         data class MissingSerialNumber(val message: String? = null) : IslandError
         data class MissingFacilityId(val message: String? = null) : IslandError
         data class InvalidField(val message: String? = null) : IslandError
-        data class InvalidQueryLength(val message: String? = null): IslandError
+        data class InvalidQueryLength(val message: String? = null) : IslandError
 
         sealed interface ValidationError : IslandError {
             data class DuplicateSerialNumber(val message: String? = null) : IslandError
@@ -247,6 +245,39 @@ interface QrError {
         /** Cannot change facility after creation. */
         data class CannotChangeFacility(val message: String? = null) : IslandError
     }
+
+
+    sealed interface MaintenanceLogError : QrError {
+
+        // ── Validation ────────────────────────────────────────────────────────────
+        /** description field is blank. */
+        data class MissingDescription(val message: String? = null) : MaintenanceLogError
+
+        /** technicianName field is blank. */
+        data class MissingTechnicianName(val message: String? = null) : MaintenanceLogError
+
+        /** operationType is OTHER but customOperationLabel is blank. */
+        data class MissingCustomLabel(val message: String? = null) : MaintenanceLogError
+
+        /** performedAt is set to a future date/time. */
+        data class InvalidPerformedAt(val message: String? = null) : MaintenanceLogError
+
+        // ── Business rules ────────────────────────────────────────────────────────
+        /** The referenced island does not exist or is inactive. */
+        data class IslandNotFound(val message: String? = null) : MaintenanceLogError
+
+        /**
+         * The referenced mechanicalUnitId does not belong to the given island,
+         * or does not exist.
+         */
+        data class UnitNotInIsland(val message: String? = null) : MaintenanceLogError
+
+        // ── Persistence ───────────────────────────────────────────────────────────
+        data class CreateError(val message: String? = null) : MaintenanceLogError
+        data class LoadError(val message: String? = null) : MaintenanceLogError
+        data class UpdateError(val message: String? = null) : MaintenanceLogError
+    }
+
 
     sealed interface UnitError : QrError {
 
@@ -614,45 +645,13 @@ interface QrError {
 
 
     enum class File : QrError {
-        OPEN,
-        READ,
-        COPY,
-        MOVE,
-        LIST,
-        CREATE,
-        DELETE,
-        NOT_FOUND,
-        FILE_NOT_EXISTS,
-        GET_FILE_SIZE,
-        PROCESSING,
-        IO_ERROR,
+        OPEN, READ, COPY, MOVE, LIST, CREATE, DELETE, NOT_FOUND, FILE_NOT_EXISTS, GET_FILE_SIZE, PROCESSING, IO_ERROR,
     }
 
     enum class Checkup : QrError {
-        UNKNOWN,
-        NOT_FOUND,
-        CANNOT_DELETE_COMPLETED,
-        CANNOT_DELETE_EXPORTED,
-        CANNOT_DELETE_ARCHIVED,
-        LOAD,
-        RELOAD,
-        REFRESH,
-        CREATE,
-        DELETE,
-        FIELDS_REQUIRED,
-        FILE_OPEN,
-        FILE_SHARE,
+        UNKNOWN, NOT_FOUND, CANNOT_DELETE_COMPLETED, CANNOT_DELETE_EXPORTED, CANNOT_DELETE_ARCHIVED, LOAD, RELOAD, REFRESH, CREATE, DELETE, FIELDS_REQUIRED, FILE_OPEN, FILE_SHARE,
 
-        UPDATE_STATUS,
-        UPDATE_NOTES,
-        UPDATE_HEADER,
-        NOT_AVAILABLE,
-        SPARE_ADD,
-        ASSOCIATION,
-        ASSOCIATION_REMOVE,
-        FINALIZE,
-        EXPORT,
-        LOAD_PHOTOS,
+        UPDATE_STATUS, UPDATE_NOTES, UPDATE_HEADER, NOT_AVAILABLE, SPARE_ADD, ASSOCIATION, ASSOCIATION_REMOVE, FINALIZE, EXPORT, LOAD_PHOTOS,
 
         INVALID_STATUS_TRANSITION,
 

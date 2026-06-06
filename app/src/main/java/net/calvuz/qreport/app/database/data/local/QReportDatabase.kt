@@ -27,6 +27,8 @@ import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
+import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
+import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
 import net.calvuz.qreport.sync.data.local.dao.SyncDao
@@ -60,6 +62,7 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
         FacilityEntity::class,
         IslandEntity::class,
         MechanicalUnitEntity::class,
+        MaintenanceLogEntity::class,
         // checkup-client association
         CheckUpIslandAssociationEntity::class,
         // client-contract association
@@ -91,6 +94,7 @@ abstract class QReportDatabase() : RoomDatabase() {
     abstract fun facilityDao(): FacilityDao
     abstract fun facilityIslandDao(): IslandDao
     abstract fun mechanicalUnitDao(): MechanicalUnitDao
+    abstract fun MaintenanceLogDao(): MaintenanceLogDao
     abstract fun checkUpAssociationDao(): CheckUpAssociationDao
     abstract fun contractDao(): ContractDao
     abstract fun technicalInterventionDao(): TechnicalInterventionDao

@@ -20,6 +20,7 @@ import net.calvuz.qreport.client.island.data.local.dao.IslandDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
+import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import net.calvuz.qreport.sync.data.local.dao.SyncDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
@@ -41,6 +42,43 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+
+    val MIGRATION_4_5 = object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("""
+            CREATE TABLE IF NOT EXISTS maintenance_logs (
+                id                      TEXT NOT NULL PRIMARY KEY,
+                island_id               TEXT NOT NULL,
+                operation_type          TEXT NOT NULL,
+                custom_operation_label  TEXT,
+                mechanical_unit_id      TEXT,
+                component_label         TEXT,
+                description             TEXT NOT NULL,
+                technician_name         TEXT NOT NULL,
+                technician_company      TEXT,
+                operating_hours_at_event INTEGER,
+                cycle_count_at_event    INTEGER,
+                outcome                 TEXT NOT NULL,
+                duration_minutes        INTEGER,
+                notes                   TEXT,
+                performed_at            INTEGER NOT NULL,
+                created_at              INTEGER NOT NULL,
+                updated_at              INTEGER NOT NULL,
+                is_active               INTEGER NOT NULL DEFAULT 1,
+                is_deleted              INTEGER NOT NULL DEFAULT 0,
+                FOREIGN KEY (island_id) REFERENCES facility_islands(id)
+                    ON DELETE CASCADE
+            )
+        """.trimIndent())
+
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_maintenance_logs_island_id ON maintenance_logs (island_id)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_maintenance_logs_mechanical_unit_id ON maintenance_logs (mechanical_unit_id)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_maintenance_logs_operation_type ON maintenance_logs (operation_type)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_maintenance_logs_outcome ON maintenance_logs (outcome)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_maintenance_logs_performed_at ON maintenance_logs (performed_at)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_maintenance_logs_is_deleted ON maintenance_logs (is_deleted)")
+        }
+    }
 
     val MIGRATION_3_4 = object : Migration(3, 4) {
         override fun migrate(database: SupportSQLiteDatabase) {
@@ -99,6 +137,7 @@ object DatabaseModule {
             .addMigrations(
                 // Migrations go here...
                 MIGRATION_3_4,
+                MIGRATION_4_5
             )
             .build()
     }
@@ -157,6 +196,11 @@ object DatabaseModule {
     fun provideMechanicalUnitDao(
         database: QReportDatabase
     ): MechanicalUnitDao = database.mechanicalUnitDao()
+
+    @Provides
+    fun provideMaintenanceLogDao(
+        database: QReportDatabase
+    ): MaintenanceLogDao = database.MaintenanceLogDao()
 
     @Provides
     fun provideTechnicianInterventionDao(

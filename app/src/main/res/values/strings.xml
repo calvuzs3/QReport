@@ -42,6 +42,10 @@
     <!-- CORE COMPONENTS -->
 
     <string name="core_component_loading_in_progress">Caricamento..</string>
+    <!-- ===== Core actions (add if not already present) ===== -->
+    <string name="core_action_next">Avanti</string>
+    <string name="core_action_confirm">Conferma</string>
+    <string name="core_action_cancel">Annulla</string>
 
 
     <!-- Navigation -->

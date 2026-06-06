@@ -2,11 +2,37 @@
 
 package net.calvuz.qreport.client.island.presentation.ui
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Badge
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -16,9 +42,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.client.island.presentation.model.IslandPkg
@@ -40,6 +66,9 @@ fun IslandDetailScreen(
     onNavigateToUnitList: (islandId: String) -> Unit,
     onNavigateToEditUnit: (unitId: String) -> Unit,
     onIslandDeleted: () -> Unit = {},
+    onNavigateToCreateMaintenanceLog: (islandId: String) -> Unit,
+    onNavigateToIslandHealth: (IslandId: String) -> Unit,
+
     viewModel: IslandDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,7 +77,9 @@ fun IslandDetailScreen(
     val onDetailEvent: (IslandDetailEvent) -> Unit = viewModel::onDetailEvent
 
     LaunchedEffect(uiState.deleteSuccess) {
-        if (uiState.deleteSuccess) { viewModel.resetDeleteState(); onIslandDeleted() }
+        if (uiState.deleteSuccess) {
+            viewModel.resetDeleteState(); onIslandDeleted()
+        }
     }
     LaunchedEffect(islandId) { onDetailEvent(IslandDetailEvent.LoadIsland(islandId)) }
 
@@ -63,54 +94,70 @@ fun IslandDetailScreen(
 
     Column(modifier = modifier.fillMaxSize()) {
 
-        TopAppBar(
-            title = {
-                Column {
-                    Text(
-                        text = uiState.islandName.takeIf { it.isNotBlank() }
-                            ?: stringResource(R.string.island_detail_title_fallback),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleLarge
+        TopAppBar(title = {
+            Column {
+                Text(text = uiState.islandName.takeIf { it.isNotBlank() }
+                    ?: stringResource(R.string.island_detail_title_fallback),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.titleLarge)
+            }
+        }, navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    Icons.Default.ArrowBackIosNew,
+                    contentDescription = stringResource(R.string.island_detail_action_back)
+                )
+            }
+        }, actions = {
+            if (uiState.hasData) {
+                IconButton(
+                    onClick = viewModel::showDeleteConfirmation, enabled = !uiState.isDeleting
+                ) {
+                    if (uiState.isDeleting) CircularProgressIndicator(
+                        modifier = Modifier.size(
+                            18.dp
+                        )
+                    )
+                    else Icon(
+                        Icons.Default.Delete,
+                        tint = MaterialTheme.colorScheme.error,
+                        contentDescription = stringResource(R.string.island_detail_action_delete)
                     )
                 }
-            },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.island_detail_action_back))
-                }
-            },
-            actions = {
-                if (uiState.hasData) {
-                    IconButton(onClick = viewModel::showDeleteConfirmation, enabled = !uiState.isDeleting) {
-                        if (uiState.isDeleting) CircularProgressIndicator(modifier = Modifier.size(18.dp))
-                        else Icon(Icons.Default.Delete, tint = MaterialTheme.colorScheme.error, contentDescription = stringResource(R.string.island_detail_action_delete))
-                    }
-                    if (uiState.island?.needsMaintenance() == true) {
-                        IconButton(
-                            onClick = { showMaintenanceDialog = true },
-                            colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                        ) {
-                            Icon(Icons.Default.Build, contentDescription = stringResource(R.string.island_detail_action_maintenance))
-                        }
-                    }
-                    IconButton(onClick = { onNavigateToEdit(facilityId, islandId) }) {
-                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.island_detail_action_edit))
-                    }
-                    var showMoreMenu by remember { mutableStateOf(false) }
-                    IconButton(onClick = { showMoreMenu = true }) {
-                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.island_detail_action_more))
-                    }
-                    DropdownMenu(expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.island_detail_menu_record_maintenance)) },
-                            onClick = { showMaintenanceDialog = true; showMoreMenu = false },
-                            leadingIcon = { Icon(Icons.Default.Build, contentDescription = null) }
+                if (uiState.island?.needsMaintenance() == true) {
+                    IconButton(
+                        onClick = { showMaintenanceDialog = true },
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(
+                            Icons.Default.Build,
+                            contentDescription = stringResource(R.string.island_detail_action_maintenance)
                         )
                     }
                 }
+                IconButton(onClick = { onNavigateToEdit(facilityId, islandId) }) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.island_detail_action_edit)
+                    )
+                }
+                var showMoreMenu by remember { mutableStateOf(false) }
+                IconButton(onClick = { showMoreMenu = true }) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = stringResource(R.string.island_detail_action_more)
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.island_detail_menu_record_maintenance)) },
+                        onClick = { showMaintenanceDialog = true; showMoreMenu = false },
+                        leadingIcon = { Icon(Icons.Default.Build, contentDescription = null) })
+                }
             }
-        )
+        })
 
         QReportPullToRefresh(
             isRefreshing = uiState.isRefreshing,
@@ -130,8 +177,7 @@ fun IslandDetailScreen(
                         .padding(32.dp),
                     error = uiState.error!!,
                     onRetry = { onDetailEvent(IslandDetailEvent.Refresh) },
-                    onDismiss = { onDetailEvent(IslandDetailEvent.DismissError) }
-                )
+                    onDismiss = { onDetailEvent(IslandDetailEvent.DismissError) })
 
                 uiState.hasData -> IslandDetailContent(
                     uiState = uiState,
@@ -142,7 +188,9 @@ fun IslandDetailScreen(
                     onDeleteUnit = { onDetailEvent(IslandDetailEvent.DeleteUnit(it)) },
                     onMaintenanceAction = { showMaintenanceDialog = true },
                     onNavigateToUnitList = onNavigateToUnitList,
-                    onDismissError = { onDetailEvent(IslandDetailEvent.DismissError) }
+                    onDismissError = { onDetailEvent(IslandDetailEvent.DismissError) },
+                    onAddLog = { onNavigateToCreateMaintenanceLog(islandId) },
+                    onNavigateToHealth = { onNavigateToIslandHealth(islandId) },
                 )
 
                 else -> EmptyState(
@@ -162,11 +210,9 @@ fun IslandDetailScreen(
                 viewModel.recordMaintenance(
                     maintenanceDate = Clock.System.now(),
                     resetOperatingHours = resetHours,
-                    notes = notes.takeIf { it.isNotBlank() }
-                )
+                    notes = notes.takeIf { it.isNotBlank() })
                 showMaintenanceDialog = false
-            }
-        )
+            })
     }
 }
 
@@ -180,10 +226,15 @@ private fun IslandDetailContent(
     onDeleteUnit: (MechanicalUnit) -> Unit,
     onMaintenanceAction: () -> Unit,
     onNavigateToUnitList: (String) -> Unit,
-    onDismissError: () -> Unit
+    onDismissError: () -> Unit,
+    onAddLog: () -> Unit,
+    onNavigateToHealth: () -> Unit,
 ) {
     Column {
-        TabRow(selectedTabIndex = uiState.selectedTab.ordinal, containerColor = MaterialTheme.colorScheme.surface) {
+        TabRow(
+            selectedTabIndex = uiState.selectedTab.ordinal,
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
             IslandDetailTab.entries.forEach { tab ->
                 val badge = when (tab) {
                     IslandDetailTab.UNITS -> uiState.unitsCount.takeIf { it > 0 }
@@ -193,12 +244,14 @@ private fun IslandDetailContent(
                     selected = uiState.selectedTab == tab,
                     onClick = { onTabSelected(tab) },
                     text = {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             Text(stringResource(tab.labelResId))
                             badge?.let { Badge { Text(it.toString()) } }
                         }
-                    }
-                )
+                    })
             }
         }
 
@@ -211,6 +264,7 @@ private fun IslandDetailContent(
                 onEdit = onEdit,
                 modifier = Modifier.weight(1f)
             )
+
             IslandDetailTab.UNITS -> UnitsTabContent(
                 units = uiState.units,
                 isLoading = uiState.isLoadingUnits,
@@ -220,10 +274,17 @@ private fun IslandDetailContent(
                 onViewAll = { onNavigateToUnitList(uiState.island?.id ?: "") },
                 modifier = Modifier.weight(1f)
             )
+
             IslandDetailTab.MAINTENANCE -> MaintenanceTabContent(
                 island = uiState.island!!,
                 statistics = uiState.statistics,
                 onMaintenanceAction = onMaintenanceAction,
+                logs = uiState.logs,
+                isLoadingLogs = uiState.isLoadingLogs,
+                availableUnits = uiState.units,
+                onAddLog = onAddLog,
+                onNavigateToHealth = onNavigateToHealth,
+
                 modifier = Modifier.weight(1f)
             )
         }

@@ -47,6 +47,8 @@ import net.calvuz.qreport.checkup.presentation.model.CheckupPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.contract.presentation.ui.ContractFormScreen
 import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen
+import net.calvuz.qreport.client.island.maintenance.presentation.ui.IslandHealthScreen
+import net.calvuz.qreport.client.island.maintenance.presentation.ui.MaintenanceLogFormScreen
 import net.calvuz.qreport.client.unit.presentation.ui.MechanicalUnitFormScreen
 import net.calvuz.qreport.client.unit.presentation.ui.MechanicalUnitListScreen
 import net.calvuz.qreport.settings.presentation.model.SettingsPkg
@@ -168,10 +170,21 @@ object QReportRoutes {
     const val UNIT_LIST = "units/{islandId}"
     const val UNIT_CREATE = "unit_form/{islandId}"
     const val UNIT_EDIT = "unit_form/{islandId}/{unitId}"
-
     fun unitList(islandId: String) = "units/$islandId"
     fun unitAdd(islandId: String) = "unit_form/$islandId"
     fun unitEdit(islandId: String, unitId: String) = "unit_form/$islandId/$unitId"
+
+
+    // Maintenance Log routes
+
+
+    const val MAINTENANCE_LOG_CREATE = "maintenance_log_form/{islandId}"
+    const val ISLAND_HEALTH          = "island_health/{islandId}"
+
+    fun maintenanceLogCreateRoute(islandId: String) =
+        "maintenance_log_form/$islandId"
+    fun islandHealthRoute(islandId: String) =
+        "island_health/$islandId"
 
 
     // Backup
@@ -1169,6 +1182,16 @@ fun QReportNavigation(
                         },
                         onIslandDeleted = {
                             navController.popBackStack()
+                        },
+                        // ── Maintenance Log — filled ──────────────────────────
+                        onNavigateToCreateMaintenanceLog = { iId ->
+                            // islandName is resolved by IslandDetailViewModel;
+                            navController.navigate(
+                                QReportRoutes.maintenanceLogCreateRoute(iId)
+                            )
+                        },
+                        onNavigateToIslandHealth = { iId ->
+                            navController.navigate(QReportRoutes.islandHealthRoute(iId))
                         }
                     )
                 }
@@ -1263,6 +1286,40 @@ fun QReportNavigation(
                     )
                 }
 
+                // ============================================================
+                // ✅ MAINTENANCE LOG
+                // ============================================================
+
+                // ── Create maintenance log ───────────────────────────────────
+                composable(
+                    route = QReportRoutes.MAINTENANCE_LOG_CREATE,
+                    arguments = listOf(
+                        navArgument("islandId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val islandId = backStackEntry.arguments?.getString("islandId") ?: ""
+
+                    MaintenanceLogFormScreen(
+                        islandId       = islandId,
+                        onNavigateBack = { navController.popBackStack() },
+                        onLogSaved     = { navController.popBackStack() }
+                    )
+                }
+
+                // ── Island health analysis (M5 — registered now, screen added in M5) ──
+                composable(
+                    route = QReportRoutes.ISLAND_HEALTH,
+                    arguments = listOf(
+                        navArgument("islandId") { type = NavType.StringType }
+                    )
+                ) { backStackEntry ->
+                    val islandId = backStackEntry.arguments?.getString("islandId") ?: ""
+
+                    IslandHealthScreen(
+                        islandId       = islandId,
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
 
                 // ============================================================
                 // ✅ BACKUP

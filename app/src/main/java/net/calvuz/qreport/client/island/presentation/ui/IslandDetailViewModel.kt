@@ -20,6 +20,8 @@ import net.calvuz.qreport.client.island.domain.usecase.GetIslandByIdUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandStatisticsUseCase
 import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 import net.calvuz.qreport.client.island.domain.usecase.UpdateMaintenanceUseCase
+import net.calvuz.qreport.client.island.maintenance.domain.model.MaintenanceLog
+import net.calvuz.qreport.client.island.maintenance.domain.usecase.GetLogsForIslandUseCase
 import net.calvuz.qreport.client.unit.domain.usecase.DeleteMechanicalUnitUseCase
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.usecase.GetMechanicalUnitsByIslandUseCase
@@ -62,6 +64,10 @@ data class FacilityIslandDetailUiState(
 
     val isUpdatingMaintenance: Boolean = false,
 
+
+    val logs: List<MaintenanceLog> = emptyList(),
+    val isLoadingLogs: Boolean = false,
+
     val error: UiText? = null
 ) {
     val islandName: String
@@ -85,13 +91,15 @@ class IslandDetailViewModel @Inject constructor(
     private val getMechanicalUnitsByIslandUseCase: GetMechanicalUnitsByIslandUseCase,
     private val updateMaintenanceUseCase: UpdateMaintenanceUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
-    private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase
+    private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase,
+    private val getLogsForIslandUseCase: GetLogsForIslandUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityIslandDetailUiState())
     val uiState = _uiState.asStateFlow()
 
     private var loadJob: Job? = null
+    private var logsJob: Job? = null
     private var currentIslandId: String = ""
 
     init {
@@ -169,6 +177,7 @@ class IslandDetailViewModel @Inject constructor(
             }
 
             loadMechanicalUnits(islandId)
+            observeLogs(islandId)
         }
     }
 
@@ -182,6 +191,30 @@ class IslandDetailViewModel @Inject constructor(
                 Timber.w(QrError.UnitError.NotFound(islandId).toUiText().toString())
                 _uiState.update { it.copy(isLoadingUnits = false) }
             }
+        }
+    }
+
+    private fun observeLogs(islandId: String) {
+        logsJob?.cancel()
+        logsJob = viewModelScope.launch {
+            _uiState.update { it.copy(isLoadingLogs = true) }
+            getLogsForIslandUseCase(islandId)
+                .catch { e ->
+                    Timber.w("Failed to observe maintenance logs: $e")
+                    _uiState.update { it.copy(isLoadingLogs = false) }
+                }
+                .collect { result ->
+                    when (result) {
+                        is QrResult.Success ->
+                            _uiState.update {
+                                it.copy(logs = result.data, isLoadingLogs = false)
+                            }
+                        is QrResult.Error -> {
+                            Timber.w("Maintenance log error: ${result.error}")
+                            _uiState.update { it.copy(isLoadingLogs = false) }
+                        }
+                    }
+                }
         }
     }
 

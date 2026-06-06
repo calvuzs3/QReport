@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ============================================================ -->
+    <!-- MaintenanceLog feature strings                               -->
+    <!-- Add to: app/src/main/res/values/strings.xml                 -->
+    <!-- (or to a dedicated strings_feature_maintenance.xml)         -->
+    <!-- ============================================================ -->
+
+    <!-- ===== MaintenanceOperationType labels ===== -->
+    <string name="maint_op_routine_inspection">Ispezione programmata</string>
+    <string name="maint_op_oil_change">Cambio olio</string>
+    <string name="maint_op_filter_replacement">Sostituzione filtro</string>
+    <string name="maint_op_lubrication">Lubrificazione</string>
+    <string name="maint_op_calibration">Calibrazione</string>
+    <string name="maint_op_component_replacement">Sostituzione componente</string>
+    <string name="maint_op_encoder_replacement">Sostituzione encoder</string>
+    <string name="maint_op_motor_replacement">Sostituzione motore</string>
+    <string name="maint_op_reducer_replacement">Sostituzione riduttore</string>
+    <string name="maint_op_sensor_replacement">Sostituzione sensore</string>
+    <string name="maint_op_cable_replacement">Sostituzione cablaggio</string>
+    <string name="maint_op_electrical_repair">Riparazione elettrica</string>
+    <string name="maint_op_software_update">Aggiornamento software</string>
+    <string name="maint_op_parameter_tuning">Taratura parametri</string>
+    <string name="maint_op_emergency_repair">Intervento d\'emergenza</string>
+    <string name="maint_op_revamping">Revamping</string>
+    <string name="maint_op_installation">Installazione</string>
+    <string name="maint_op_other">Altro</string>
+
+    <!-- ===== MaintenanceOutcome labels ===== -->
+    <string name="maint_outcome_completed">Completato</string>
+    <string name="maint_outcome_partial">Parzialmente risolto</string>
+    <string name="maint_outcome_deferred">Rimandato</string>
+    <string name="maint_outcome_requires_parts">In attesa di ricambi</string>
+
+    <!-- ===== UI labels — form fields ===== -->
+    <string name="maint_label_operation_type">Tipo operazione</string>
+    <string name="maint_label_custom_operation">Descrizione operazione</string>
+    <string name="maint_label_component">Componente</string>
+    <string name="maint_label_component_unit">Seleziona unità meccanica</string>
+    <string name="maint_label_component_free">Nome componente (testo libero)</string>
+    <string name="maint_label_component_not_listed">Componente non in lista</string>
+    <string name="maint_label_description">Descrizione intervento</string>
+    <string name="maint_label_outcome">Esito</string>
+    <string name="maint_label_duration">Durata (minuti)</string>
+    <string name="maint_label_operating_hours">Ore macchina al momento</string>
+    <string name="maint_label_cycle_count">Cicli al momento</string>
+    <string name="maint_label_notes">Note aggiuntive</string>
+    <string name="maint_label_performed_at">Data e ora intervento</string>
+    <string name="maint_label_technician">Tecnico</string>
+    <string name="maint_label_technician_company">Azienda</string>
+
+    <!-- ===== UI labels — screens and sections ===== -->
+    <string name="maint_screen_log_list_title">Storico interventi</string>
+    <string name="maint_screen_log_form_title_create">Registra intervento</string>
+    <string name="maint_screen_health_title">Analisi salute isola</string>
+    <string name="maint_section_scheduled">Manutenzione programmata</string>
+    <string name="maint_section_history">Storico interventi</string>
+    <string name="maint_fab_add">Registra intervento</string>
+    <string name="maint_btn_health_analysis">Analisi salute isola</string>
+    <string name="maint_no_logs">Nessun intervento registrato</string>
+    <string name="maint_no_logs_hint">Premi il pulsante + per registrare il primo intervento</string>
+
+    <!-- ===== UI labels — health summary ===== -->
+    <string name="maint_health_total_logs">Interventi totali</string>
+    <string name="maint_health_avg_interval">Intervallo medio</string>
+    <string name="maint_health_avg_interval_value">%1$.0f giorni</string>
+    <string name="maint_health_predicted_next">Prossimo intervento stimato</string>
+    <string name="maint_health_predicted_next_na">Dati insufficienti</string>
+    <string name="maint_health_emergency_rate">Tasso emergenze</string>
+    <string name="maint_health_deferred_rate">Tasso interventi rimandati</string>
+    <string name="maint_health_avg_duration">Durata media intervento</string>
+    <string name="maint_health_avg_duration_value">%1$.0f min</string>
+    <string name="maint_health_top_operations">Operazioni più frequenti</string>
+    <string name="maint_health_recurrent_components">Componenti con problemi ricorrenti</string>
+    <string name="maint_health_no_recurrent">Nessun componente ricorrente negli ultimi 90 giorni</string>
+    <string name="maint_health_post_revamping">Stabilità post-revamping</string>
+    <string name="maint_health_emergencies_after_revamping">Emergenze dopo l\'ultimo revamping: %1$d</string>
+    <string name="maint_health_no_revamping">Nessun revamping registrato</string>
+    <string name="maint_health_last_intervention">Ultimo intervento</string>
+    <string name="maint_health_last_outcome">Ultimo esito</string>
+    <string name="maint_health_no_data">Nessun dato disponibile</string>
+
+    <!-- ===== Errors ===== -->
+    <string name="maint_error_missing_description">La descrizione dell\'intervento è obbligatoria</string>
+    <string name="maint_error_missing_technician">Il nome del tecnico è obbligatorio</string>
+    <string name="maint_error_missing_custom_label">Specificare il tipo di operazione per la voce \"Altro\"</string>
+    <string name="maint_error_invalid_performed_at">La data dell\'intervento non può essere nel futuro</string>
+    <string name="maint_error_island_not_found">Isola non trovata o non attiva</string>
+    <string name="maint_error_unit_not_in_island">L\'unità selezionata non appartiene a questa isola</string>
+    <string name="maint_error_create">Errore durante il salvataggio dell\'intervento</string>
+    <string name="maint_error_load">Errore durante il caricamento degli interventi</string>
+    <string name="maint_error_update">Errore durante l\'aggiornamento</string>
+
+    <!-- ===== Unsaved changes dialog ===== -->
+    <string name="maint_form_unsaved_title">Modifiche non salvate</string>
+    <string name="maint_form_unsaved_message">Hai modifiche non salvate. Uscire senza salvare?</string>
+    <string name="maint_form_unsaved_discard">Abbandona</string>
+    <string name="maint_form_unsaved_keep_editing">Continua a modificare</string>
+
+</resources>
