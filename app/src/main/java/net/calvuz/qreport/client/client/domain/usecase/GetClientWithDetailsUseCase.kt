@@ -27,7 +27,11 @@ class GetClientWithDetailsUseCase @Inject constructor(
     private val getContractsByClient: GetContractsByClientUseCase,
 ) {
     suspend operator fun invoke(clientId: String): QrResult<ClientWithDetails, QrError.ClientError> {
+
+        Timber.d("Getting client details for $clientId")
+
         if (clientId.isBlank()) {
+            Timber.w("ClientId is blank")
             return QrResult.Error(QrError.ClientError.NotFound())
         }
 
@@ -36,46 +40,30 @@ class GetClientWithDetailsUseCase @Inject constructor(
             is QrResult.Error -> return QrResult.Error(result.error)
             is QrResult.Success -> result.data
         }
-        Timber.v("Client found: ${client.companyName}")
 
         // 2. Load facilities — degrade gracefully
         val facilities = when (val result = getFacilitiesByClient(clientId)) {
-            is QrResult.Success -> {
-                result.data
-            }
-
-            is QrResult.Error -> {
-                Timber.w("Failed to load facilities for client $clientId")
-                emptyList()
-            }
+            is QrResult.Success ->                 result.data
+            is QrResult.Error ->                 emptyList()
         }
 
         // 3. Load contacts — degrade gracefully
         val contacts = when (val result = getContactsByClient(clientId)) {
             is QrResult.Success -> result.data
-            is QrResult.Error -> {
-                Timber.w("Failed to load contacts for client $clientId")
-                emptyList()
-            }
+            is QrResult.Error ->                emptyList()
         }
 
         // 4. Load contracts — degrade gracefully
         val contracts = when (val result = getContractsByClient(clientId)) {
             is QrResult.Success -> result.data
-            is QrResult.Error -> {
-                Timber.w("Failed to load contracts for client $clientId")
-                emptyList()
-            }
+            is QrResult.Error ->                emptyList()
         }
 
         // 5. Load islands per facility — degrade gracefully
         val facilitiesWithIslands = facilities.map { facility ->
             val islands = when (val result = getIslandsByFacility(facility.id)) {
                 is QrResult.Success -> result.data
-                is QrResult.Error -> {
-                    Timber.w("Failed to load islands for facility ${facility.id}")
-                    emptyList()
-                }
+                is QrResult.Error -> emptyList()
             }
             FacilityWithIslands(facility = facility, islands = islands)
         }

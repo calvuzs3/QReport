@@ -2,6 +2,7 @@ package net.calvuz.qreport.client.facility.domain.usecase
 
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -12,10 +13,13 @@ import javax.inject.Inject
  * [NewFacilityUseCase] and [UpdateFacilityUseCase], which handle the
  * error wrapping themselves.
  */
-class HandlePrimaryFacilityChangeUseCase @Inject constructor(
+class RevokePrimaryFacilityChangeUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository
 ) {
     suspend operator fun invoke(clientId: String): Result<Unit> {
+
+        Timber.d("Revoking primary facility change for client $clientId")
+
         return try {
             val existing = facilityRepository.getPrimaryFacility(clientId)
                 .getOrElse { return Result.success(Unit) } // No primary exists — nothing to do

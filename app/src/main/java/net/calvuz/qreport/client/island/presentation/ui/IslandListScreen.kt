@@ -133,7 +133,7 @@ fun IslandListScreen(
         QReportSelectorRow(
             entries = uiState.availableFacilities,
             selectedItem = uiState.selectedFacility,
-            onItemSelected = { onListEvent(IslandListEvent.SelectedFacilityChanged(it)) },
+            onItemSelected = { onListEvent(IslandListEvent.SelectedIslandChanged(it)) },
             icon = FacilityPkg.icon,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
@@ -197,20 +197,6 @@ fun IslandListScreen(
                     onIslandClick = onNavigateToIslandDetail,
                     onIslandDelete = { onListEvent(IslandListEvent.DeleteIsland(it)) }
                 )
-            }
-
-            if (!facilityId.isNullOrBlank()) {
-                FloatingActionButton(
-                    onClick = onCreateNewIsland,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(horizontal = 16.dp, vertical = 48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringResource(R.string.island_screen_list_fab_new)
-                    )
-                }
             }
         }
     }

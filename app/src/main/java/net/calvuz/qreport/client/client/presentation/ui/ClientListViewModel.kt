@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -61,6 +62,8 @@ class ClientListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ClientListUiState())
     val uiState: StateFlow<ClientListUiState> = _uiState.asStateFlow()
 
+    private var observeJob: Job? = null  // tracks the active Flow collector
+
     init {
         Timber.d("ClientListViewModel initialized")
         observeCardVariant()
@@ -72,9 +75,9 @@ class ClientListViewModel @Inject constructor(
     // =========================================================================
 
     fun loadClients() {
-        viewModelScope.launch {
+        observeJob?.cancel()
+        observeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-
             try {
                 observeClientsUseCase()
                     .catch { exception ->
@@ -93,15 +96,14 @@ class ClientListViewModel @Inject constructor(
                         val clientsWithStats = enrichWithStatistics(clients)
                         if (currentCoroutineContext().isActive) {
                             val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                clientsWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.selectedSortOrder
-                            )
                             _uiState.value = currentState.copy(
                                 clients = clientsWithStats,
-                                filteredClients = filteredAndSorted,
+                                filteredClients = applyFiltersAndSort(
+                                    clientsWithStats,
+                                    currentState.searchQuery,
+                                    currentState.selectedFilter,
+                                    currentState.selectedSortOrder
+                                ),
                                 isLoading = false,
                                 isRefreshing = false,
                                 error = null
@@ -128,37 +130,8 @@ class ClientListViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
             delay(500)
-
-            when (val result = getClientsUseCase()) {
-                is QrResult.Success -> {
-                    if (!currentCoroutineContext().isActive) return@launch
-                    val clientsWithStats = enrichWithStatistics(result.data)
-                    if (currentCoroutineContext().isActive) {
-                        val currentState = _uiState.value
-                        _uiState.value = currentState.copy(
-                            clients = clientsWithStats,
-                            filteredClients = applyFiltersAndSort(
-                                clientsWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.selectedSortOrder
-                            ),
-                            isRefreshing = false,
-                            error = null
-                        )
-                        Timber.d("Refresh completed successfully")
-                    }
-                }
-                is QrResult.Error -> {
-                    if (currentCoroutineContext().isActive) {
-                        Timber.e("Failed to refresh clients: ${result.error}")
-                        _uiState.value = _uiState.value.copy(
-                            isRefreshing = false,
-                            error = UiText.StringResource(R.string.err_client_refresh)
-                        )
-                    }
-                }
-            }
+            // Future: call remote sync here before restarting the observer
+            loadClients()
         }
     }
 

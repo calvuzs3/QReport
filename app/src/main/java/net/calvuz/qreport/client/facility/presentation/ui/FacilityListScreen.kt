@@ -43,6 +43,7 @@ fun FacilityListScreen(
     viewModel: FacilityListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val onListEvent: (FacilityListEvent) -> Unit = viewModel::onListEvent
 
     LaunchedEffect(clientId) {
         if (clientId != null) viewModel.initializeForClient(clientId)
@@ -65,7 +66,7 @@ fun FacilityListScreen(
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
 
-                IconButton(onClick = viewModel::cycleCardVariant) {
+                IconButton(onClick = { onListEvent(FacilityListEvent.CycleCardVariant) }) {
                     Icon(
                         imageVector = uiState.cardVariant.getCardVariantIcon(),
                         contentDescription = uiState.cardVariant.getCardVariantDescription()
@@ -88,14 +89,14 @@ fun FacilityListScreen(
                     expanded = showFilterMenu,
                     entries = FacilityFilter.entries,
                     selectedFilter = uiState.selectedFilter,
-                    onFilterSelected = viewModel::updateFilter,
+                    onFilterSelected = { onListEvent(FacilityListEvent.FilterChanged(it)) },
                     onDismiss = { showFilterMenu = false }
                 )
                 QReportSortOrderMenu(
                     expanded = showSortMenu,
                     entries = FacilitySortOrder.entries,
                     selectedSortOrder = uiState.sortOrder,
-                    onSortOrderSelected = viewModel::updateSortOrder,
+                    onSortOrderSelected = {onListEvent(FacilityListEvent.SortOrderChanged(it))},
                     onDismiss = { showSortMenu = false }
                 )
             }
@@ -103,7 +104,7 @@ fun FacilityListScreen(
 
         QReportSearchBar(
             query = uiState.searchQuery,
-            onQueryChange = viewModel::updateSearchQuery,
+            onQueryChange = { onListEvent(FacilityListEvent.SearchQueryChanged(it)) },
             placeholder = stringResource(R.string.facility_screen_list_search_placeholder)
         )
 
@@ -120,16 +121,16 @@ fun FacilityListScreen(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 selectedFilter = uiState.selectedFilter,
                 avoidFilter = FacilityPkg.selectedFilter,
-                onClearFilter = { viewModel.updateFilter(FacilityPkg.selectedFilter) },
+                onClearFilter = { onListEvent(FacilityListEvent.FilterChanged(FacilityPkg.selectedFilter)) },
                 selectedSort = uiState.sortOrder,
                 avoidSort = FacilityPkg.selectedSortOrder,
-                onClearSort = { viewModel.updateSortOrder(FacilityPkg.selectedSortOrder) }
+                onClearSort = { onListEvent(FacilityListEvent.SortOrderChanged(FacilityPkg.selectedSortOrder)) },
             )
         }
 
         QReportPullToRefresh(
             isRefreshing = uiState.isRefreshing,
-            onRefresh = viewModel::refresh,
+            onRefresh = { onListEvent(FacilityListEvent.Refresh) },
             modifier = Modifier.fillMaxSize()
         ) {
 
@@ -141,7 +142,7 @@ fun FacilityListScreen(
                 currentError != null -> QReportErrorState(
                     error = currentError,
                     onRetry = viewModel::loadFacilities,
-                    onDismiss = viewModel::dismissError
+                    onDismiss = { onListEvent(FacilityListEvent.DismissError) }
                 )
 
                 uiState.filteredFacilities.isEmpty() -> {
@@ -174,18 +175,6 @@ fun FacilityListScreen(
                     onFacilityClick = onNavigateToFacilityDetail,
                     onFacilityEdit = onEditFacility,
                     onFacilityDelete = null
-                )
-            }
-
-            FloatingActionButton(
-                onClick = onCreateNewFacility,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(horizontal = 16.dp, vertical = 48.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.facility_screen_list_fab_new)
                 )
             }
         }

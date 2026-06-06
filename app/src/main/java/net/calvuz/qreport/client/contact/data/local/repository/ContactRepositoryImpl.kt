@@ -50,7 +50,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (id.isBlank()) {
                 Timber.w("ContactRepository: getContactById called with blank id")
-                return QrResult.Error(QrError.ValidationError.EmptyField(id.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(id))
             }
 
             Timber.d("ContactRepository: Getting contact by id: $id")
@@ -87,11 +87,9 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun updateContact(contact: Contact): QrResult<Contact, QrError> {
         return try {
-            Timber.d("ContactRepository: Updating contact: ${contact.id}")
             val entity = contactMapper.toEntity(contact)
             contactDao.updateContact(entity)
 
-                Timber.d("ContactRepository: Contact updated successfully: ${contact.id}")
                 QrResult.Success(contact)
 
         } catch (e: Exception) {
@@ -102,12 +100,9 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun deleteContact(id: String): QrResult<Unit, QrError> {
         return try {
-            if (id.isBlank()) {
-                Timber.w("ContactRepository: deleteContact called with blank id")
-                return QrResult.Error(QrError.ValidationError.EmptyField(id.toString()))
-            }
+            if (id.isBlank())
+                return QrResult.Error(QrError.ValidationError.EmptyField(id))
 
-            Timber.d("ContactRepository: Soft deleting contact: $id")
             contactDao.softDeleteContact(id, System.currentTimeMillis())
 
                 Timber.d("ContactRepository: Contact soft deleted successfully: $id")
@@ -119,13 +114,23 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
+    // ===== DELETE — TWO-STAGE =====
+
+    override suspend fun deactivateContact(id: String, timestamp: Long ) {
+        contactDao.deactivateContact(id, timestamp)
+    }
+
+    override suspend fun markContactDeleted(id: String, timestamp: Long ){
+        contactDao.markContactDeleted(id, timestamp)
+    }
+
     // ===== CLIENT RELATED =====
 
     override suspend fun getContactsByClient(clientId: String): QrResult<List<Contact>, QrError> {
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: getContactsByClient called with blank clientId")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
             Timber.d("ContactRepository: Getting contacts for client: $clientId")
@@ -154,7 +159,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: getActiveContactsByClient called with blank clientId")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
             Timber.d("ContactRepository: Getting active contacts for client: $clientId")
@@ -172,7 +177,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: getPrimaryContact called with blank clientId")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
             Timber.d("ContactRepository: Getting primary contact for client: $clientId")
@@ -222,7 +227,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (query.isBlank()) {
                 Timber.w("ContactRepository: searchContacts called with blank query")
-                return QrResult.Error(QrError.ValidationError.EmptyField(query.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(query))
             }
 
             Timber.d("ContactRepository: Searching contacts with query: $query")
@@ -240,7 +245,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (role.isBlank()) {
                 Timber.w("ContactRepository: getContactsByRole called with blank role")
-                return QrResult.Error(QrError.ValidationError.EmptyField(role.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(role))
             }
 
             Timber.d("ContactRepository: Getting contacts by role: $role")
@@ -258,7 +263,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (department.isBlank()) {
                 Timber.w("ContactRepository: getContactsByDepartment called with blank department")
-                return QrResult.Error(QrError.ValidationError.EmptyField(department.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(department))
             }
 
             Timber.d("ContactRepository: Getting contacts by department: $department")
@@ -276,7 +281,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: getContactsByPreferredMethod called with blank clientId")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
             Timber.d("ContactRepository: Getting contacts by preferred method: $contactMethod for client: $clientId")
@@ -294,7 +299,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (email.isBlank()) {
                 Timber.w("ContactRepository: getContactByEmail called with blank email")
-                return QrResult.Error(QrError.ValidationError.EmptyField(email.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(email))
             }
 
             Timber.d("ContactRepository: Getting contact by email: $email")
@@ -318,7 +323,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (phone.isBlank()) {
                 Timber.w("ContactRepository: getContactByPhone called with blank phone")
-                return QrResult.Error(QrError.ValidationError.EmptyField(phone.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(phone))
             }
 
             Timber.d("ContactRepository: Getting contact by phone: $phone")
@@ -344,7 +349,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (email.isBlank()) {
                 Timber.w("ContactRepository: isEmailTaken called with blank email")
-                return QrResult.Error(QrError.ValidationError.EmptyField(email.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(email))
             }
 
             Timber.d("ContactRepository: Checking if email is taken: $email (exclude: $excludeId)")
@@ -361,7 +366,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (phone.isBlank()) {
                 Timber.w("ContactRepository: isPhoneTaken called with blank phone")
-                return QrResult.Error(QrError.ValidationError.EmptyField(phone.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(phone))
             }
 
             Timber.d("ContactRepository: Checking if phone is taken: $phone (exclude: $excludeId)")
@@ -378,7 +383,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: hasPrimaryContact called with blank clientId")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
             Timber.d("ContactRepository: Checking if client has primary contact: $clientId (exclude: $excludeId)")
@@ -410,7 +415,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: getContactsCountByClient called with blank clientId")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
             Timber.d("ContactRepository: Getting contacts count for client: $clientId")
@@ -491,7 +496,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (clientId.isBlank() || contactId.isBlank()) {
                 Timber.w("ContactRepository: setPrimaryContact called with blank clientId or contactId")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
             Timber.d("ContactRepository: Setting primary contact $contactId for client $clientId")
@@ -525,7 +530,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: getPrimaryContactForClients called with blank clientId")
-                return QrResult.Error(QrError.ValidationError.EmptyField(clientId.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
             Timber.d("ContactRepository: Getting primary contact for client: $clientId")
@@ -551,7 +556,7 @@ class ContactRepositoryImpl @Inject constructor(
         return try {
             if (id.isBlank()) {
                 Timber.w("ContactRepository: touchContact called with blank id")
-                return QrResult.Error(QrError.ValidationError.EmptyField(id.toString()))
+                return QrResult.Error(QrError.ValidationError.EmptyField(id))
             }
 
             Timber.d("ContactRepository: Touching contact: $id")

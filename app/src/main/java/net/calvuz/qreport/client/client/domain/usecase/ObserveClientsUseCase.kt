@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -17,7 +18,10 @@ import javax.inject.Inject
 class ObserveClientsUseCase @Inject constructor(
     private val clientRepository: ClientRepository
 ) {
-    operator fun invoke(activeOnly: Boolean = true): Flow<List<Client>> {
+    operator fun invoke(activeOnly: Boolean = false): Flow<List<Client>> {
+
+        Timber.d("Observing clients (activeOnly=$activeOnly)")
+
         val flow = if (activeOnly) {
             clientRepository.getActiveClientsFlow()
         } else {

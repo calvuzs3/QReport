@@ -1,6 +1,13 @@
 package net.calvuz.qreport.client.facility.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.RoomWarnings
+import androidx.room.Transaction
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 
@@ -58,13 +65,19 @@ interface FacilityDao {
     suspend fun deactivateFacility(id: String, timestamp: Long = System.currentTimeMillis())
 
     @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE facility_id = :facilityId")
-    suspend fun deactivateIslandsByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun deactivateIslandsByFacility(
+        facilityId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
-    @Query("""
+    @Query(
+        """
         UPDATE mechanical_units SET is_active = 0, updated_at = :timestamp
         WHERE island_id IN (SELECT id FROM facility_islands WHERE facility_id = :facilityId)
-    """)
-    suspend fun deactivateMechanicalUnitsByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
+    """
+    )
+    suspend fun deactivateMechanicalUnitsByFacility(
+        facilityId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     /**
      * Stage 2: mark facility and children as deleted for server sync.
@@ -74,13 +87,19 @@ interface FacilityDao {
     suspend fun markFacilityDeleted(id: String, timestamp: Long = System.currentTimeMillis())
 
     @Query("UPDATE facility_islands SET is_deleted = 1, updated_at = :timestamp WHERE facility_id = :facilityId")
-    suspend fun markIslandDeletedByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markIslandDeletedByFacility(
+        facilityId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
-    @Query("""
+    @Query(
+        """
         UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp
         WHERE island_id IN (SELECT id FROM facility_islands WHERE facility_id = :facilityId)
-    """)
-    suspend fun markMechanicalUnitsDeletedByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
+    """
+    )
+    suspend fun markMechanicalUnitsDeletedByFacility(
+        facilityId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     // ===== PRIMARY FACILITY MANAGEMENT =====
 
@@ -104,7 +123,8 @@ interface FacilityDao {
     // ===== SEARCH & FILTER =====
 
     @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
-    @Query("""
+    @Query(
+        """
         SELECT * FROM facilities f
         INNER JOIN clients c ON f.client_id = c.id
         WHERE f.is_active = 1 AND c.is_active = 1
@@ -112,7 +132,8 @@ interface FacilityDao {
              OR f.code LIKE '%' || :query || '%'
              OR c.company_name LIKE '%' || :query || '%')
         ORDER BY f.name ASC
-    """)
+    """
+    )
     suspend fun searchFacilities(query: String): List<FacilityEntity>
 
     @Query("SELECT * FROM facilities WHERE facility_type = :facilityType AND is_active = 1 ORDER BY name ASC")
@@ -132,20 +153,26 @@ interface FacilityDao {
     @Query("SELECT COUNT(*) FROM facilities WHERE facility_type = :facilityType AND is_active = 1")
     suspend fun getFacilitiesCountByType(facilityType: String): Int
 
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM facility_islands fi
         INNER JOIN facilities f ON fi.facility_id = f.id
         WHERE f.id = :facilityId AND f.is_active = 1 AND fi.is_active = 1
-    """)
+    """
+    )
     suspend fun getIslandsCountForFacility(facilityId: String): Int
 
     // ===== VALIDATION =====
 
     @Query("SELECT COUNT(*) > 0 FROM facilities WHERE client_id = :clientId AND name = :name AND id != :excludeId AND is_active = 1")
-    suspend fun isFacilityNameTakenForClient(clientId: String, name: String, excludeId: String = ""): Boolean
+    suspend fun isFacilityNameTakenForClient(
+        clientId: String, name: String, excludeId: String = ""
+    ): Boolean
 
     @Query("SELECT COUNT(*) > 0 FROM facilities WHERE client_id = :clientId AND code = :code AND id != :excludeId AND is_active = 1")
-    suspend fun isFacilityCodeTakenForClient(clientId: String, code: String, excludeId: String = ""): Boolean
+    suspend fun isFacilityCodeTakenForClient(
+        clientId: String, code: String, excludeId: String = ""
+    ): Boolean
 
     // ===== COMPLEX QUERIES =====
 //
@@ -159,7 +186,8 @@ interface FacilityDao {
 //    """)
 //    suspend fun getFacilitiesWithIslandCount(clientId: String): List<FacilityWithIslandCountResult>
 
-    @Query("""
+    @Query(
+        """
         SELECT f.* FROM facilities f
         WHERE f.is_active = 1
         AND EXISTS (
@@ -167,10 +195,12 @@ interface FacilityDao {
             WHERE fi.facility_id = f.id AND fi.is_active = 1
         )
         ORDER BY f.name ASC
-    """)
+    """
+    )
     suspend fun getFacilitiesWithIslands(): List<FacilityEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT f.* FROM facilities f
         WHERE f.is_active = 1
         AND NOT EXISTS (
@@ -178,25 +208,30 @@ interface FacilityDao {
             WHERE fi.facility_id = f.id AND fi.is_active = 1
         )
         ORDER BY f.name ASC
-    """)
+    """
+    )
     suspend fun getFacilitiesWithoutIslands(): List<FacilityEntity>
 
     // ===== GEO QUERIES (per future features) =====
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM facilities 
         WHERE is_active = 1 
         AND address_json LIKE '%' || :city || '%'
         ORDER BY name ASC
-    """)
+    """
+    )
     suspend fun getFacilitiesByCity(city: String): List<FacilityEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM facilities 
         WHERE is_active = 1 
         AND address_json LIKE '%' || :province || '%'
         ORDER BY name ASC
-    """)
+    """
+    )
     suspend fun getFacilitiesByProvince(province: String): List<FacilityEntity>
 
     // ===== MAINTENANCE =====

@@ -6,6 +6,7 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -21,21 +22,34 @@ class SearchClientsUseCase @Inject constructor(
     private val clientRepository: ClientRepository
 ) {
     suspend operator fun invoke(query: String): QrResult<List<Client>, QrError.ClientError> {
+
+        Timber.d("Searching clients by $query")
+
         val trimmed = query.trim()
 
         if (trimmed.length < 2) {
-            return QrResult.Error(QrError.ClientError.LoadError("Search query must be at least 2 characters"))
+            Timber.w("Search query too short")
+            return QrResult.Error(QrError.ClientError.InvalidQueryLength())
         }
 
         return clientRepository.searchClients(trimmed).fold(
-            onSuccess = { clients -> QrResult.Success(clients.sortedByRelevance(trimmed)) },
-            onFailure = { QrResult.Error(QrError.ClientError.LoadError(it.message)) }
+            onSuccess = { clients ->
+                Timber.d("Found ${clients.size} clients")
+                QrResult.Success(clients.sortedByRelevance(trimmed))
+             },
+            onFailure = {
+                Timber.d( "Failed to search clients: ${it.message}")
+                QrResult.Error(QrError.ClientError.LoadError(it.message)) }
         )
     }
 
-    fun searchFlow(query: String): Flow<List<Client>> =
-        clientRepository.searchClientsFlow(query.trim())
+    fun searchFlow(query: String): Flow<List<Client>> {
+
+        Timber.d("Searching clients by $query")
+
+        return clientRepository.searchClientsFlow(query.trim())
             .map { clients -> clients.sortedByRelevance(query.trim()) }
+    }
 
     // -------------------------------------------------------------------------
 

@@ -38,7 +38,6 @@ class EditInterventionViewModel @Inject constructor(
 
             when (val result = getTechnicalInterventionByIdUseCase(interventionId)) {
                 is QrResult.Success -> {
-                    if (result.data != null) {
                         currentIntervention = result.data
                         lastSavedState = result.data.copy() // Store for dirty comparison
 
@@ -49,14 +48,6 @@ class EditInterventionViewModel @Inject constructor(
                                 errorMessage = null
                             )
                         }
-                    } else {
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = UiText.DynStr("Intervento non trovato")
-                            )
-                        }
-                    }
                 }
                 is QrResult.Error -> {
                     _state.update {

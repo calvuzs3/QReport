@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import net.calvuz.qreport.client.client.domain.validator.ClientDataValidator
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -16,6 +17,8 @@ class CreateClientUseCase @Inject constructor(
     private val checkCompanyNameUniqueness: CheckCompanyNameUniquenessUseCase
 ) {
     suspend operator fun invoke(client: Client): QrResult<Unit, QrError.ClientError> {
+
+        Timber.d("Creating client $client")
 
         // Validate required fields
         when (val valid = validateClientData(client)) {
@@ -31,8 +34,12 @@ class CreateClientUseCase @Inject constructor(
 
         // Create client
         return clientRepository.createClient(client).fold(
-            onSuccess = { QrResult.Success(Unit) },
-            onFailure = { QrResult.Error(QrError.ClientError.CreateError(it.message)) }
+            onSuccess = {
+                Timber.d("Client ${client.id} successfully created ")
+                QrResult.Success(Unit) },
+            onFailure = {
+                Timber.d("Failed to create client: ${it.message}")
+                QrResult.Error(QrError.ClientError.CreateError(it.message)) }
         )
     }
 }

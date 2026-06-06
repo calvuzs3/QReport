@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -18,16 +19,22 @@ class GetFacilitiesByClientUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository
 ) {
     suspend operator fun invoke(clientId: String): QrResult<List<Facility>, QrError.FacilityError> {
+
+        Timber.d("Getting facilities for client $clientId")
+
         if (clientId.isBlank()) {
+            Timber.d("Client ID is blank")
             return QrResult.Error(QrError.FacilityError.LoadError("Client ID is required"))
         }
 
-        return facilityRepository.getFacilitiesByClient(clientId).fold(
+        facilityRepository.getFacilitiesByClient(clientId).fold(
             onSuccess = { facilities ->
-                QrResult.Success(facilities.sortedByPrimaryThenName())
+                Timber.d("Loaded ${facilities.size} facilities for client $clientId")
+                return QrResult.Success(facilities.sortedByPrimaryThenName())
             },
             onFailure = {
-                QrResult.Error(QrError.FacilityError.LoadError(it.message))
+                Timber.d("Failed to load facilities for client $clientId: ${it.message}")
+                return QrResult.Error(QrError.FacilityError.LoadError(it.message))
             }
         )
     }

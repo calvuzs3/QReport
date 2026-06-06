@@ -254,9 +254,49 @@ interface ClientDao {
     @Update
     suspend fun updateClient(client: ClientEntity)
 
-    @Query("UPDATE clients SET is_active = 0, is_deleted = 1, updated_at = :timestamp WHERE id = :id")
-    suspend fun softDeleteClient(id: String, timestamp: Long = System.currentTimeMillis())
+    @Delete
+    suspend fun deleteClient(client: ClientEntity)
 
+    // ===== DELETE — TWO-STAGE =====
+
+    /**
+     * Stage 1: deactivate facility and cascade to children.
+     * Called by [ClientRepositoryImpl.deactivateClient].
+     */
+    @Query("UPDATE clients SET is_active = 0, updated_at = :timestamp WHERE id = :id")
+    suspend fun deactivateClient(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE facilities SET is_active = 0, updated_at = :timestamp WHERE id = :id")
+    suspend fun deactivateFacilitiesByClient(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE facility_id = :facilityId")
+    suspend fun deactivateIslandsByClient(facilityId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("""
+        UPDATE mechanical_units SET is_active = 0, updated_at = :timestamp
+        WHERE island_id IN (SELECT id FROM facility_islands WHERE facility_id = :facilityId)
+    """)
+    suspend fun deactivateMechanicalUnitsByClient(facilityId: String, timestamp: Long = System.currentTimeMillis())
+
+    /**
+     * Stage 2: mark facility and children as deleted for server sync.
+     * Called by [ClientRepositoryImpl.markClientDeleted].
+     */
+    @Query("UPDATE clients SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
+    suspend fun markClientDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE facilities SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
+    suspend fun markFacilityDeletedByClient(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE facility_islands SET is_deleted = 1, updated_at = :timestamp WHERE facility_id = :facilityId")
+    suspend fun markIslandDeletedByClient(facilityId: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("""
+        UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp
+        WHERE island_id IN (SELECT id FROM facility_islands WHERE facility_id = :facilityId)
+    """)
+    suspend fun markMechanicalUnitsDeletedByClient(facilityId: String, timestamp: Long = System.currentTimeMillis())
+    
     // ===== SEARCH =====
 
     @Query("""

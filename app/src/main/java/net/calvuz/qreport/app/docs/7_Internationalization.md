@@ -59,8 +59,12 @@ QReportState
 app/src/main/res/values/
 ├── strings.xml                     # Stringhe app generali (esistente)
 ├── strings_errors.xml              # ✅ Errori centralizzati
-├── strings_feature_checkup.xml     # ✅ Feature CheckUp
-├── strings_feature_client.xml      # 🚧 Feature Client (da creare)
+├── strings_feature_checkup.xml     # ✅ Feature CheckUp (?done?)
+├── strings_feature_client.xml      # ✅ Feature Client
+├── strings_feature_facility.xml    # ✅ Feature Facility
+├── strings_feature_island.xml      # ✅ Feature Island
+├── strings_feature_contact.xml     # ✅ Feature Contact
+├── strings_feature_contrat.xml     # ✅ Feature Contract
 ├── strings_feature_photo.xml       # 🚧 Feature Photo (da creare)
 └── strings_feature_export.xml      # 🚧 Feature Export (da creare)
 ```

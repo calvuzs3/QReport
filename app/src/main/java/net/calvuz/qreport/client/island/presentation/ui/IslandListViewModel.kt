@@ -86,6 +86,7 @@ class IslandListViewModel @Inject constructor(
     // =========================================================================
 
     fun initialize(facilityId: String? = null) {
+        Timber.d("IslandListViewModel initialize facilityId=$facilityId")
         when  (facilityId.isNullOrBlank()) {
             true -> loadIslands()
             false -> initializeForFacility(facilityId)
@@ -93,6 +94,7 @@ class IslandListViewModel @Inject constructor(
     }
 
     fun onListEvent(event: IslandListEvent) {
+        Timber.d("IslandListEvent: $event")
         when (event) {
             is IslandListEvent.DeleteIsland -> deleteIsland(event.islandId)
             is IslandListEvent.FilterChanged -> updateFilter(event.filter)
@@ -101,7 +103,7 @@ class IslandListViewModel @Inject constructor(
             is IslandListEvent.CycleCardVariant -> cycleCardVariant()
             is IslandListEvent.DismissError -> dismissError()
             is IslandListEvent.Refresh -> refresh()
-            is IslandListEvent.SelectedFacilityChanged -> updateSelectedFacility(facility = event.facility)
+            is IslandListEvent.SelectedIslandChanged -> updateSelectedFacility(facility = event.facility)
         }
     }
 
@@ -328,7 +330,6 @@ class IslandListViewModel @Inject constructor(
             IslandFilter.MAINTENANCE_DUE -> result.filter { it.island.needsMaintenance() }
             IslandFilter.UNDER_WARRANTY -> result.filter { it.island.isUnderWarranty() }
             IslandFilter.HIGH_OPERATING_HOURS -> result.filter { it.island.operatingHours > 5000 }
-            IslandFilter.BY_TYPE -> result
         }
 
         return when (sortOrder) {
@@ -374,7 +375,7 @@ sealed class IslandListEvent {
     data class SearchQueryChanged(val query: String) : IslandListEvent()
     data class FilterChanged(val filter: IslandFilter) : IslandListEvent()
     data class SortOrderChanged(val sortOrder: IslandSortOrder) : IslandListEvent()
-    data class SelectedFacilityChanged(val facility: FacilityOption) : IslandListEvent()
+    data class SelectedIslandChanged(val facility: FacilityOption) : IslandListEvent()
     object CycleCardVariant : IslandListEvent()
     data class DeleteIsland(val islandId: String) : IslandListEvent()
     object DismissError : IslandListEvent()

@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -19,14 +20,20 @@ class UpdateFacilityUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(facility: Facility): QrResult<Unit, QrError.FacilityError> {
 
+        Timber.d("Updating facility: $facility")
+
         // 1. Verify exists — error type matches so we can propagate directly
         val original = when (val result = checkFacilityExists(facility.id)) {
-            is QrResult.Error -> return QrResult.Error(result.error)
+            is QrResult.Error -> {
+                Timber.d("Facility ${facility.id} not found")
+                return QrResult.Error(result.error)
+            }
             is QrResult.Success -> result.data
         }
 
         // 2. clientId must not change
         if (facility.clientId != original.clientId) {
+            Timber.d("Cannot change client of an existing facility")
             return QrResult.Error(
                 QrError.FacilityError.UpdateError("Cannot change client of an existing facility")
             )
@@ -39,7 +46,10 @@ class UpdateFacilityUseCase @Inject constructor(
         // 4. Check name uniqueness if name changed
         if (facility.name != original.name) {
             when (val unique = checkFacilityNameUniqueness(facility.clientId, facility.name, facility.id)) {
-                is QrResult.Error -> return QrResult.Error(unique.error)
+                is QrResult.Error -> {
+                    Timber.d("Facility name not unique: $unique")
+                    return QrResult.Error(unique.error)
+                }
                 is QrResult.Success -> Unit
             }
         }
@@ -52,9 +62,11 @@ class UpdateFacilityUseCase @Inject constructor(
 
         // 6. Persist with refreshed timestamp
         val updated = facility.copy(updatedAt = Clock.System.now())
-        return facilityRepository.updateFacility(updated).fold(
-            onSuccess = { QrResult.Success(Unit) },
-            onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
+        facilityRepository.updateFacility(updated).fold(
+            onSuccess = { return QrResult.Success(Unit) },
+            onFailure = {
+                Timber.d("Failed to update facility: ${it.message}")
+                return QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
         )
     }
 

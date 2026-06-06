@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 class ObserveFacilitiesByClientUseCase @Inject constructor(
@@ -18,6 +19,10 @@ class ObserveFacilitiesByClientUseCase @Inject constructor(
      * @return Facility list flow
      */
     operator fun invoke(clientId: String): Flow<List<Facility>> {
+
+        Timber.d("Observig facilities by ClientId: $clientId")
+
+
         return facilityRepository.getFacilitiesByClientFlow(clientId)
             .map { facilities ->
                 facilities.sortedWith(

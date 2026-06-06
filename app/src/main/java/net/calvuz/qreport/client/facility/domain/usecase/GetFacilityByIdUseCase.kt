@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -17,42 +18,30 @@ class GetFacilityByIdUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository
 ) {
     suspend operator fun invoke(facilityId: String): QrResult<Facility, QrError.FacilityError> {
+
+        Timber.d("Getting facility $facilityId")
+
         if (facilityId.isBlank()) {
+            Timber.d("Facility ID is blank")
             return QrResult.Error(QrError.FacilityError.NotFound())
         }
 
-        return facilityRepository.getFacilityById(facilityId).fold(
+        facilityRepository.getFacilityById(facilityId).fold(
             onSuccess = { facility ->
-                if (facility != null) QrResult.Success(facility)
-                else QrResult.Error(QrError.FacilityError.NotFound())
+                if (facility != null) {
+                    Timber.d("Loaded facility $facility")
+                    return QrResult.Success(facility)
+                } else {
+                    Timber.d("Facility not found")
+                    return QrResult.Error(QrError.FacilityError.NotFound())
+                }
             },
             onFailure = {
-                QrResult.Error(QrError.FacilityError.LoadError(it.message))
+                return QrResult.Error(QrError.FacilityError.LoadError(it.message))
             }
         )
     }
 
     fun observeFacility(facilityId: String): Flow<Facility?> =
         facilityRepository.getFacilityByIdFlow(facilityId)
-
-    /** Returns the display name for navigation titles; degrades gracefully. */
-    suspend fun getFacilityName(facilityId: String): String {
-        if (facilityId.isBlank()) return ""
-        return when (val result = invoke(facilityId)) {
-            is QrResult.Success -> result.data.displayName
-            is QrResult.Error -> ""
-        }
-    }
-
-    suspend fun existsAndActive(facilityId: String): Boolean =
-        when (val result = invoke(facilityId)) {
-            is QrResult.Success -> result.data.isActive
-            is QrResult.Error -> false
-        }
-
-    suspend fun getClientId(facilityId: String): String? =
-        when (val result = invoke(facilityId)) {
-            is QrResult.Success -> result.data.clientId
-            is QrResult.Error -> null
-        }
 }

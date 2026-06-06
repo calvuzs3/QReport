@@ -3,6 +3,7 @@ package net.calvuz.qreport.client.client.domain.usecase
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -16,16 +17,29 @@ class CheckClientExistsUseCase @Inject constructor(
     private val clientRepository: ClientRepository
 ) {
     suspend operator fun invoke(clientId: String): QrResult<Boolean, QrError.ClientError> {
+
+        Timber.d("Checking existence of client $clientId")
+
         if (clientId.isBlank()) {
+            Timber.d("Client ID is blank")
             return QrResult.Error(QrError.ClientError.NotFound())
         }
 
         return clientRepository.getClientById(clientId).fold(
+
             onSuccess = { client ->
-                if (client != null && client.isActive) QrResult.Success(true)
-                else QrResult.Error(QrError.ClientError.NotFound())
+
+                if (client != null && client.isActive) {
+                    Timber.d("Client $clientId exists")
+                    QrResult.Success(true)
+                }
+                else {
+                    Timber.d("Client $clientId not found or inactive")
+                    QrResult.Error(QrError.ClientError.NotFound())
+                }
             },
             onFailure = {
+                Timber.d( "Failed to get client $clientId: ${it.message}")
                 QrResult.Error(QrError.ClientError.LoadError(it.message))
             }
         )

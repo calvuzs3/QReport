@@ -20,6 +20,7 @@ class ObserveFacilitiesUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository,
 ) {
     operator fun invoke(clientId: String? = null): Flow<List<Facility>> {
+
         Timber.d("ObserveFacilitiesUseCase clientId=${clientId ?: "none"}")
 
         val flow = if (clientId.isNullOrBlank()) {

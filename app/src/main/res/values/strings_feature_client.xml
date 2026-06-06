@@ -10,6 +10,7 @@
     <string name="client_screen_list_action_sort">Ordinamento</string>
     <string name="client_screen_list_action_filter">Filtri</string>
     <string name="client_screen_list_action_view_mode">Modalità vista</string>
+    <string name="client_screen_list_title_count">Clienti(%1$d)</string>
 
     <!-- Search bar -->
     <string name="client_screen_list_search_placeholder">Ricerca Clienti</string>
@@ -26,6 +27,8 @@
     <string name="client_screen_list_empty_generic_message">Errore nel caricamento dati</string>
     <string name="client_screen_list_empty_action">Nuovo Cliente</string>
     <string name="client_screen_list_empty_icon_description">Nessun Cliente</string>
+    <string name="client_screen_list_empty_icon_content_description">Nessun Cliente</string>
+
 
     <!-- ======================================================= -->
     <!-- Errors — QrError.ClientError                            -->
@@ -39,7 +42,7 @@
     <string name="err_client_fields_required">Il nome dell\'azienda è obbligatorio</string>
     <string name="err_client_invalid_company_name">Ragione sociale non valida (2–255 caratteri)</string>
     <string name="err_client_cannot_delete_has_active_facilities">Impossibile eliminare il cliente: ha stabilimenti attivi</string>
-    <string name="err_client_cannot_delete_has_dependencies" formatted="false">Il cliente ha %1$d stabiliment%, %2$d contatti, %3$d contratti e %4$d isole attive</string>
+    <string name="err_client_cannot_delete_has_dependencies" formatted="false">Il cliente ha %1$d stabiliment%, %2$d contatti, %3$d contratti attivi</string>
 
     <!-- ======================================================= -->
     <!-- Errors — ViewModel operation errors                     -->

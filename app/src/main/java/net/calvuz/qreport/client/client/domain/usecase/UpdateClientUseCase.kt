@@ -6,6 +6,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import net.calvuz.qreport.client.client.domain.validator.ClientDataValidator
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -18,6 +19,8 @@ class UpdateClientUseCase @Inject constructor(
     private val validateClientData: ClientDataValidator
 ) {
     suspend operator fun invoke(client: Client): QrResult<Unit, QrError.ClientError> {
+
+        Timber.d("Updating client: $client")
 
         // Verify client exists
         when (val exists = checkClientExists(client.id)) {
@@ -40,8 +43,12 @@ class UpdateClientUseCase @Inject constructor(
         // Update client
         val updated = client.copy(updatedAt = Clock.System.now())
         return clientRepository.updateClient(updated).fold(
-            onSuccess = { QrResult.Success(Unit) },
-            onFailure = { QrResult.Error(QrError.ClientError.UpdateError(it.message)) }
+            onSuccess = {
+                Timber.d("Client updated: $updated")
+                QrResult.Success(Unit) },
+            onFailure = {
+                Timber.d( "Client update failed: ${it.message}")
+                QrResult.Error(QrError.ClientError.UpdateError(it.message)) }
         )
     }
 }

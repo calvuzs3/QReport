@@ -95,12 +95,13 @@ fun QrError.ClientError.toUiText(): UiText {
         is QrError.ClientError.CreateError -> StringResources(R.string.err_client_create)
         is QrError.ClientError.UpdateError -> StringResources(R.string.err_client_update)
         is QrError.ClientError.DeleteError -> StringResources(R.string.err_client_delete)
+        is QrError.ClientError.InvalidQueryLength -> StringResources(R.string.err_validation_invalid_query_length)
         is QrError.ClientError.MissingCompanyName -> StringResources(R.string.err_client_fields_required)
         is QrError.ClientError.InvalidCompanyName -> StringResources(R.string.err_client_invalid_company_name)
         is QrError.ClientError.CannotDeleteHasActiveFacilities -> StringResources(R.string.err_client_cannot_delete_has_active_facilities)
         is QrError.ClientError.CannotDeleteHasDependencies -> StringResources(
             R.string.err_client_cannot_delete_has_dependencies,
-            facilitiesCount, contactsCount, contractsCount, islandsCount
+            facilitiesCount, contactsCount, contractsCount
         )
     }
 }
@@ -173,7 +174,7 @@ fun QrError.IslandError.toUiText(): UiText {
         is QrError.IslandError.CreateError -> StringResource(R.string.err_island_create)
         is QrError.IslandError.DeleteError -> StringResource(R.string.err_island_delete)
         is QrError.IslandError.FacilityNotFound -> StringResource(R.string.err_island_facility_not_found)
-        is QrError.IslandError.InvalidQueryLength -> StringResource(R.string.err_island_invalid_query_length)
+        is QrError.IslandError.InvalidQueryLength -> StringResource(R.string.err_validation_invalid_query_length)
         is QrError.IslandError.InvalidField -> StringResource(R.string.err_island_invalid_field)
         is QrError.IslandError.LoadError -> StringResource(R.string.err_island_load)
         is QrError.IslandError.MissingFacilityId -> StringResource(R.string.err_island_missing_facility)

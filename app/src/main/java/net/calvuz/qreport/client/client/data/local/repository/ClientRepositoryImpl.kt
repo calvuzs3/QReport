@@ -1,5 +1,6 @@
 package net.calvuz.qreport.client.client.data.local.repository
 
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
@@ -66,13 +67,38 @@ class ClientRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteClient(id: String): Result<Unit> {
+    override suspend fun deleteClient(client: Client): Result<Unit> {
         return try {
-            clientDao.softDeleteClient(id)
+            val entity = clientMapper.toEntity(client)
+            clientDao.deleteClient(entity)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // ===== TWO-STAGE DELETE =====
+
+    @Transaction
+    override suspend fun deactivateClient(id: String): Result<Unit> = runCatching {
+        val ts = System.currentTimeMillis()
+        clientDao.deactivateMechanicalUnitsByClient(id, ts)
+        clientDao.deactivateIslandsByClient(id, ts)
+        clientDao.deactivateFacilitiesByClient(id, ts)
+        clientDao.deactivateContactsByClient(id, ts)
+        clientDao.deactivateContractsByClient(id, ts)
+        clientDao.deactivateClient(id, ts)
+    }
+
+    @Transaction
+    override suspend fun markClientDeleted(id: String): Result<Unit> = runCatching {
+        val ts = System.currentTimeMillis()
+        clientDao.markMechanicalUnitsDeletedByClient(id, ts)
+        clientDao.markIslandsDeletedByClient(id, ts)
+        clientDao.markFacilitiesDeletedByClient(id, ts)
+        clientDao.markContactsDeletedByClient(id, ts)
+        clientDao.markContractsDeletedByClient(id, ts)
+        clientDao.markClientDeleted(id, ts)
     }
 
     // ===== FLOW OPERATIONS (REACTIVE) =====

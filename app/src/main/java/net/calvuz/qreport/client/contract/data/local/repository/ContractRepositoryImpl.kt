@@ -100,6 +100,19 @@ class ContractRepositoryImpl @Inject constructor(
         QrResult.Error(QrError.DatabaseError.DeleteFailed(e.localizedMessage))
     }
 
+
+    // ===== DELETE — TWO-STAGE =====
+
+    override suspend fun deactivateContract(id: String, timestamp: Long ) {
+        contractDao.deactivateContract(id, timestamp)
+    }
+
+    override suspend fun markContractDeleted(id: String, timestamp: Long ){
+        contractDao.markContractDeleted(id, timestamp)
+    }
+
+    // --- METODI ---
+
     override suspend fun getContractsByClient(clientId: String): QrResult<List<Contract>, QrError> =
         try {
             val contracts = contractDao.getContractsByClientId(clientId).map { it.toDomain() }

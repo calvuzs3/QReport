@@ -1,5 +1,6 @@
 package net.calvuz.qreport.client.client.domain.repository
 
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.client.domain.model.Client
@@ -16,7 +17,14 @@ interface ClientRepository {
     suspend fun getClientById(id: String): Result<Client?>
     suspend fun createClient(client: Client): Result<Unit>
     suspend fun updateClient(client: Client): Result<Unit>
-    suspend fun deleteClient(id: String): Result<Unit>
+    suspend fun deleteClient(client: Client): Result<Unit>
+
+    // ===== TWO-STAGE DELETE =====
+
+    @Transaction
+    suspend fun deactivateClient(id: String): Result<Unit>
+    @Transaction
+    suspend fun markClientDeleted(id: String): Result<Unit>
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 

@@ -170,8 +170,6 @@ fun ClientDetailScreen(
 
             uiState.hasData -> ClientDetailContent(
                 uiState = uiState,
-                clientId = clientId,
-                clientName = clientName,
                 onTabSelected = viewModel::selectTab,
                 onEdit = { onNavigateToEdit(clientId) },
                 onFacilityClick = { facilityId -> onNavigateToFacilityDetail(clientId, facilityId) },
@@ -206,8 +204,6 @@ fun ClientDetailScreen(
 @Composable
 private fun ClientDetailContent(
     uiState: ClientDetailUiState,
-    clientId: String,
-    clientName: String,
     onTabSelected: (ClientDetailTab) -> Unit,
     onEdit: () -> Unit,
     onFacilityClick: (String) -> Unit,

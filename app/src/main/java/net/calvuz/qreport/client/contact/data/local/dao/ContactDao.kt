@@ -53,6 +53,22 @@ interface ContactDao {
     @Query("DELETE FROM contacts WHERE id = :id")
     suspend fun deleteContact(id: String)
 
+    // ===== DELETE — TWO-STAGE =====
+
+    /**
+     * Stage 1: deactivate a single contact.
+     * Called by [ContactRepositoryImpl.deactivateContact].
+     */
+    @Query("UPDATE contacts SET is_active = 0, updated_at = :timestamp WHERE id = :id")
+    suspend fun deactivateContact(id: String, timestamp: Long = System.currentTimeMillis())
+
+    /**
+     * Stage 2: mark a single contact as deleted for server sync.
+     * Called by [ContactRepositoryImpl.markContactDeleted].
+     */
+    @Query("UPDATE contacts SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
+    suspend fun markContactDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+
     // ===== PRIMARY CONTACT MANAGEMENT =====
 
     @Query("SELECT * FROM contacts WHERE client_id = :clientId AND is_primary = 1 AND is_active = 1 LIMIT 1")

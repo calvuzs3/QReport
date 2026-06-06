@@ -24,6 +24,11 @@ interface ContactRepository {
     suspend fun updateContact(contact: Contact): QrResult<Contact, QrError>
     suspend fun deleteContact(id: String): QrResult<Unit, QrError>
 
+    // ===== DELETE — TWO-STAGE =====
+
+    suspend fun deactivateContact(id: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markContactDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+
     // ===== CLIENT RELATED =====
 
     suspend fun getContactsByClient(clientId: String): QrResult<List<Contact>, QrError>

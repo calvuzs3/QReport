@@ -14,7 +14,7 @@ interface ContractDao {
 
     // ===== OPERATIONS =====
 
-    @Insert(onConflict = OnConflictStrategy.Companion.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertContract(contract: ContractEntity): Long
 
     @Update
@@ -53,6 +53,22 @@ interface ContractDao {
 
     @Query("SELECT * FROM contracts WHERE client_id = :clientId AND end_date > CURRENT_TIMESTAMP ORDER BY end_date ASC, name ASC")
     fun getAllActiveContractsByClientIdFlow(clientId: String): Flow<List<ContractEntity>>
+
+    // ===== DELETE — TWO-STAGE =====
+
+    /**
+     * Stage 1: deactivate a single contract.
+     * Called by [ContractRepositoryImpl.deactivateContract].
+     */
+    @Query("UPDATE contracts SET is_active = 0, updated_at = :timestamp WHERE id = :id")
+    suspend fun deactivateContract(id: String, timestamp: Long = System.currentTimeMillis())
+
+    /**
+     * Stage 2: mark a single contract as deleted for server sync.
+     * Called by [ContractRepositoryImpl.markContractDeleted].
+     */
+    @Query("UPDATE contracts SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
+    suspend fun markContractDeleted(id: String, timestamp: Long = System.currentTimeMillis())
 
     // ===== FLOW OPERATIONS =====
 

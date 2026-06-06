@@ -105,7 +105,7 @@ interface QrError {
         data class DeleteError(val message: String? = null) : ClientError
 
         // ── Validation ───────────────────────────────────────────────────────
-
+        data class InvalidQueryLength(val message: String? = null) : ClientError
         /** Company name is missing */
         data class MissingCompanyName(val message: String? = null) : ClientError
 
@@ -119,8 +119,7 @@ interface QrError {
         data class CannotDeleteHasDependencies(
             val facilitiesCount: Int = 0,
             val contactsCount: Int = 0,
-            val contractsCount: Int = 0,
-            val islandsCount: Int = 0
+            val contractsCount: Int = 0
         ) : ClientError
     }
 

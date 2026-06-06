@@ -17,24 +17,31 @@ class GetFacilitiesUseCase @Inject constructor(
     private val checkClientExists: CheckClientExistsUseCase
 ) {
     suspend operator fun invoke(clientId: String? = null): Result<List<Facility>> {
+
         Timber.d("GetFacilitiesUseCase clientId=${clientId ?: "none"}")
 
-        return try {
+        try {
             if (clientId != null) {
                 // Verify client exists before querying
                 when (checkClientExists(clientId)) {
-                    is QrResult.Error -> return Result.failure(IllegalStateException("Client $clientId not found"))
+                    is QrResult.Error -> {
+                        Timber.d("Client $clientId not found")
+                        return Result.failure(IllegalStateException("Client $clientId not found"))
+                    }
                     is QrResult.Success -> Unit
                 }
 
-                facilityRepository.getFacilitiesByClient(clientId)
+                Timber.d("Querying facilities for client $clientId")
+                return facilityRepository.getFacilitiesByClient(clientId)
                     .map { it.sortedByPrimaryThenName() }
             } else {
-                facilityRepository.getAllFacilities()
+                Timber.d("Querying all facilities")
+                return facilityRepository.getAllFacilities()
                     .map { it.sortedByPrimaryThenName() }
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Timber.d( "Failed to get facilities: {$e.message}")
+            return Result.failure(e)
         }
     }
 

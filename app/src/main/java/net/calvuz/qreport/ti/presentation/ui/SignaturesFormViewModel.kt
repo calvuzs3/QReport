@@ -51,19 +51,9 @@ class SignaturesFormViewModel @Inject constructor(
 
             when (val result = getTechnicalInterventionByIdUseCase(interventionId)) {
                 is QrResult.Success -> {
-                    if (result.data != null) {
-                        Timber.d("Successfully loaded intervention: ${result.data.interventionNumber}")
-                        currentIntervention = result.data
-                        populateFormFromIntervention(result.data)
-                    } else {
-                        Timber.w("Intervention not found for ID: $interventionId")
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = QrError.InterventionError.NotFound()
-                            )
-                        }
-                    }
+                    Timber.d("Successfully loaded intervention: ${result.data.interventionNumber}")
+                    currentIntervention = result.data
+                    populateFormFromIntervention(result.data)
                 }
 
                 is QrResult.Error -> {

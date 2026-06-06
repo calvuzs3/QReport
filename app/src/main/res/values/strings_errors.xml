@@ -34,6 +34,7 @@
     <string name="err_validation_invalid_operation">Operazione non possibile</string>
     <string name="err_validation_is_not_active">Non è attivo</string>
     <string name="err_validation_is_not_primary">Non è primario</string>
+    <string name="err_validation_invalid_query_length">Lunghezza query non valida (2–100)</string>
 
 
     <!-- Errori Database -->

@@ -19,6 +19,11 @@ interface ContractRepository {
     suspend fun updateContract(contract: Contract): QrResult<String, QrError>
     suspend fun deleteContractById(id: String): QrResult<Int, QrError>
 
+    // ===== DELETE — TWO-STAGE =====
+
+    suspend fun deactivateContract(id: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markContractDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+
     // ===== CLIENT RELATED =====
 
     suspend fun getContractsByClient(clientId: String): QrResult<List<Contract>, QrError>

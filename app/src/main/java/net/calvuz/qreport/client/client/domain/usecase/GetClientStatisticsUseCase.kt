@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.checkup.domain.repository.CheckUpRepository
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -15,17 +16,23 @@ import javax.inject.Inject
  */
 class GetClientStatisticsUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
+    private val checkClientExists: CheckClientExistsUseCase,
     private val checkUpRepository: CheckUpRepository? = null
 ) {
     suspend operator fun invoke(clientId: String): QrResult<ClientStatistics, QrError.ClientError> {
+
+        Timber.d("Getting statistics for client $clientId")
+
         if (clientId.isBlank()) {
+            Timber.d("Client ID is blank")
             return QrResult.Error(QrError.ClientError.NotFound())
         }
 
-        // Verify client exists
-        clientRepository.getClientById(clientId)
-            .getOrElse { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }
-            ?: return QrResult.Error(QrError.ClientError.NotFound())
+        // Check client exists
+        when (val clientCheck = checkClientExists(clientId)) {
+            is QrResult.Success -> Unit
+            is QrResult.Error -> return QrResult.Error(clientCheck.error)
+        }
 
         val facilitiesCount = clientRepository.getFacilitiesCount(clientId)
             .getOrElse { return QrResult.Error(QrError.ClientError.LoadError(it.message)) }

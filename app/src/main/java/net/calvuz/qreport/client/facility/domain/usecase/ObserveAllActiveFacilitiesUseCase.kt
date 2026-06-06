@@ -19,6 +19,7 @@ class ObserveAllActiveFacilitiesUseCase @Inject constructor(
      * @return Facility list Flow
      */
     operator fun invoke(clientId: String? = null): Flow<List<Facility>> {
+
         Timber.d("ClientId: ${clientId ?: "nullo"}")
 
         if (clientId.isNullOrBlank()) {

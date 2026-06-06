@@ -55,17 +55,8 @@ class WorkDayFormViewModel @Inject constructor(
 
             when (val result = getTechnicalInterventionByIdUseCase(interventionId)) {
                 is QrResult.Success -> {
-                    if (result.data != null) {
-                        currentIntervention = result.data
-                        populateFormFromIntervention(result.data, workDayIndex)
-                    } else {
-                        _state.update {
-                            it.copy(
-                                isLoading = false,
-                                errorMessage = "Intervento non trovato"
-                            )
-                        }
-                    }
+                    currentIntervention = result.data
+                    populateFormFromIntervention(result.data, workDayIndex)
                 }
                 is QrResult.Error -> {
                     _state.update {

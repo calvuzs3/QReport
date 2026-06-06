@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.usecase.CheckClientExistsUseCase
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -17,33 +18,45 @@ class NewFacilityUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository,
     private val checkClientExists: CheckClientExistsUseCase,
     private val checkFacilityNameUniqueness: CheckFacilityNameUniquenessUseCase,
-    private val handlePrimaryFacilityChange: HandlePrimaryFacilityChangeUseCase
+    private val revokePrimaryFacilityChangeUseCase: RevokePrimaryFacilityChangeUseCase
 ) {
     suspend operator fun invoke(facility: Facility): QrResult<Unit, QrError.FacilityError> {
 
+        Timber.d("Creating new facility: $facility")
+
         // 1. Verify client exists
         when (checkClientExists(facility.clientId)) {
-            is QrResult.Error -> return QrResult.Error(QrError.FacilityError.MissingClientId())
+            is QrResult.Error -> {
+                Timber.d("Client ${facility.clientId} not found")
+                return QrResult.Error(QrError.FacilityError.MissingClientId())
+            }
             is QrResult.Success -> Unit
         }
 
         // 2. Check name uniqueness
         when (val unique = checkFacilityNameUniqueness(facility.clientId, facility.name)) {
-            is QrResult.Error -> return unique
+            is QrResult.Error -> {
+                Timber.d("Facility name not unique: $unique")
+                return unique
+            }
             is QrResult.Success -> Unit
         }
 
         // 3. Handle primary facility change if needed
         if (facility.isPrimary) {
-            handlePrimaryFacilityChange(facility.clientId).onFailure {
+            revokePrimaryFacilityChangeUseCase(facility.clientId).onFailure {
                 return QrResult.Error(QrError.FacilityError.UpdateError(it.message))
             }
         }
 
         // 4. Persist
-        return facilityRepository.createFacility(facility).fold(
-            onSuccess = { QrResult.Success(Unit) },
-            onFailure = { QrResult.Error(QrError.FacilityError.CreateError(it.message)) }
+        facilityRepository.createFacility(facility).fold(
+            onSuccess = {
+                Timber.d("Created new facility: $facility")
+                return QrResult.Success(Unit) },
+            onFailure = {
+                Timber.d("Failed to create new facility: ${it.message}")
+                return QrResult.Error(QrError.FacilityError.CreateError(it.message)) }
         )
     }
 }
