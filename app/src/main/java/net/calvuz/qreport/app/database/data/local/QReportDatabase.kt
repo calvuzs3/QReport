@@ -1,9 +1,9 @@
 package net.calvuz.qreport.app.database.data.local
 
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.sqlite.db.SupportSQLiteDatabase
 import net.calvuz.qreport.app.app.QReportApplication
 import net.calvuz.qreport.app.app.data.converter.AddressConverter
 import net.calvuz.qreport.app.app.data.converter.DatabaseConverters
@@ -27,6 +27,8 @@ import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
+import net.calvuz.qreport.client.document.data.local.dao.IslandDocumentDao
+import net.calvuz.qreport.client.document.data.local.entity.IslandDocumentEntity
 import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
 import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
@@ -47,7 +49,7 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
  * - Type converters per Instant (kotlinx.datetime)
  * - Migrazioni automatiche per versioni future
  *
- * @version 3 - Database schema iniziale
+ * @version 1 - Database schema iniziale
  */
 @Database(
     entities = [
@@ -63,6 +65,7 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
         IslandEntity::class,
         MechanicalUnitEntity::class,
         MaintenanceLogEntity::class,
+        IslandDocumentEntity::class,
         // checkup-client association
         CheckUpIslandAssociationEntity::class,
         // client-contract association
@@ -70,19 +73,18 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
         // IRF
         TechnicalInterventionEntity::class
     ],
-    version = QReportDatabase.Companion.DATABASE_VERSION,
+    version = QReportApplication.DATABASE_VERSION,
     exportSchema = true,
     autoMigrations = [
         // Future migrations will be added here
-        //AutoMigration(from = 1, to = 2),  // ← Room: "Ci penso io!"
-        //AutoMigration(from = 2, to = 3),  // ← Room genera SQL automaticamente
+        // AutoMigration(from = 1, to = 2),
     ]
 )
 @TypeConverters(
     DatabaseConverters::class,
     AddressConverter::class
 )
-abstract class QReportDatabase() : RoomDatabase() {
+abstract class QReportDatabase : RoomDatabase() {
 
     // DAO abstract methods
     abstract fun checkUpDao(): CheckUpDao
@@ -94,32 +96,21 @@ abstract class QReportDatabase() : RoomDatabase() {
     abstract fun facilityDao(): FacilityDao
     abstract fun facilityIslandDao(): IslandDao
     abstract fun mechanicalUnitDao(): MechanicalUnitDao
-    abstract fun MaintenanceLogDao(): MaintenanceLogDao
+    abstract fun maintenanceLogDao(): MaintenanceLogDao
+    abstract fun islandDocumentDao(): IslandDocumentDao
     abstract fun checkUpAssociationDao(): CheckUpAssociationDao
     abstract fun contractDao(): ContractDao
     abstract fun technicalInterventionDao(): TechnicalInterventionDao
     abstract fun syncDao(): SyncDao
 
     companion object {
-        const val DATABASE_NAME = QReportApplication.DATABASE_NAME
-        const val DATABASE_VERSION = QReportApplication.DATABASE_VERSION
 
         /**
-         * 3. Callback per inizializzazione database
+         * Callback per inizializzazione database
          * Popola dati di base se necessario
          */
         val CALLBACK = object : Callback() {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                super.onCreate(db)
-                // Qui si potrebbero inserire dati di default se necessari
-                // Ad esempio template checklist predefiniti
-            }
 
-            override fun onOpen(db: SupportSQLiteDatabase) {
-                super.onOpen(db)
-                // Operazioni da eseguire ad ogni apertura del database
-                // Ad esempio pulizia di dati temporanei vecchi
-            }
         }
     }
 }

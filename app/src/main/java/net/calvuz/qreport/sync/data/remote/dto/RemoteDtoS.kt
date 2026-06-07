@@ -1,6 +1,7 @@
 package net.calvuz.qreport.sync.data.remote.dto
 
 import kotlinx.serialization.Serializable
+import net.calvuz.qreport.client.document.sync.remote.DocumentDto
 
 // ===== AUTH =====
 
@@ -27,7 +28,8 @@ data class SyncPayloadDto(
     val facilities: List<FacilityDto> = emptyList(),
     val facilityIslands: List<FacilityIslandDto> = emptyList(),
     val mechanicalUnits: List<MechanicalUnitDto> = emptyList(),
-    val maintenanceLogs: List<MaintenanceLogDto> = emptyList()
+    val maintenanceLogs: List<MaintenanceLogDto> = emptyList(),
+    val documents: List<DocumentDto> = emptyList()
 )
 
 @Serializable
@@ -168,6 +170,28 @@ data class MaintenanceLogDto(
     val durationMinutes: Int? = null,
     val notes: String? = null,
     val performedAt: Long,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val syncedAt: Long? = null,
+    val isActive: Boolean = true,
+    val isDeleted: Boolean = false
+)
+
+@Serializable
+data class IslandDocumentDto(
+    val id: String,
+    val scope: String,
+    val islandId: String? = null,
+    val facilityId: String? = null,
+    val clientId: String? = null,
+    val fileName: String,
+    val filePath: String,
+    val fileSize: Long,
+    val mimeType: String,
+    val fileHash: String? = null,
+    val title: String,
+    val category: String,
+    val notes: String? = null,
     val createdAt: Long,
     val updatedAt: Long,
     val syncedAt: Long? = null,

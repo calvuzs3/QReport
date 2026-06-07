@@ -10,7 +10,7 @@
     <string name="client_screen_list_action_sort">Ordinamento</string>
     <string name="client_screen_list_action_filter">Filtri</string>
     <string name="client_screen_list_action_view_mode">Modalità vista</string>
-    <string name="client_screen_list_title_count">Clienti(%1$d)</string>
+    <string name="client_screen_list_title_count">Clienti (%1$d)</string>
 
     <!-- Search bar -->
     <string name="client_screen_list_search_placeholder">Ricerca Clienti</string>

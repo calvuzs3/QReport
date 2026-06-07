@@ -44,23 +44,7 @@ fun UnitsTabContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = stringResource(R.string.island_units_tab_title, units.size),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (units.isNotEmpty()) {
-                    OutlinedButton(onClick = onViewAll) {
-                        Text(stringResource(R.string.island_units_view_all))
-                    }
-                }
-                Button(onClick = onCreateUnit) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.island_units_new))
-                }
-            }
+
         }
 
         Box(modifier = Modifier.fillMaxSize()) {

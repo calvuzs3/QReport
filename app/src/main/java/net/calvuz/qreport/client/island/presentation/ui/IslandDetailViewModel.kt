@@ -37,9 +37,10 @@ import javax.inject.Inject
  * [labelResId] is resolved at runtime via stringResource() in the composable.
  */
 enum class IslandDetailTab(val labelResId: Int) {
+    INFO(R.string.island_detail_tab_info),
     UNITS(R.string.island_detail_tab_units),
     MAINTENANCE(R.string.island_detail_tab_maintenance),
-    INFO(R.string.island_detail_tab_info),
+    DOCUMENTS(R.string.island_detail_tab_documents)
 }
 
 // =============================================================================
@@ -52,7 +53,7 @@ data class FacilityIslandDetailUiState(
     val island: Island? = null,
     val statistics: SingleIslandStatistics? = null,
 
-    val selectedTab: IslandDetailTab = IslandDetailTab.UNITS,
+    val selectedTab: IslandDetailTab = IslandDetailTab.INFO,
 
     val units: List<MechanicalUnit> = emptyList(),
     val isLoadingUnits: Boolean = false,

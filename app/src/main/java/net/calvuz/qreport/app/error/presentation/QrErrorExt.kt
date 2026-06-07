@@ -302,6 +302,22 @@ fun QrError.MaintenanceLogError.toUiText(): UiText {
     }
 }
 
+ fun QrError.IslandDocumentError.toUiText(): UiText {
+     return when (this) {
+         is QrError.IslandDocumentError.MissingTitle     -> StringResources(R.string.err_document_missing_title)
+         is QrError.IslandDocumentError.FileTooLarge     -> StringResources(R.string.err_document_file_too_large)
+         is QrError.IslandDocumentError.ParentNotFound   -> StringResources(R.string.err_document_parent_not_found)
+         is QrError.IslandDocumentError.ImportFailed     -> StringResources(R.string.err_document_import_failed)
+         is QrError.IslandDocumentError.FileNotFound     -> StringResources(R.string.err_document_file_not_found)
+         is QrError.IslandDocumentError.NoAppAvailable   -> StringResources(R.string.err_document_no_app_available)
+         is QrError.IslandDocumentError.OpenFailed       -> StringResources(R.string.err_document_open_failed)
+         is QrError.IslandDocumentError.CreateError      -> StringResources(R.string.err_document_create)
+         is QrError.IslandDocumentError.LoadError        -> StringResources(R.string.err_document_load)
+         is QrError.IslandDocumentError.UpdateError      -> StringResources(R.string.err_document_update)
+         is QrError.IslandDocumentError.DeleteError      -> StringResources(R.string.err_document_delete)
+     }
+ }
+
 fun QrError.UnitError.toUiText(): UiText {
     return when (this) {
         is QrError.UnitError.NotFound -> StringResource(R.string.err_unit_not_found)
@@ -350,6 +366,7 @@ fun QrError.asUiText(): UiText {
         is QrError.IslandError -> this.toUiText()
         is QrError.UnitError -> this.toUiText()
         is QrError.MaintenanceLogError -> this.toUiText()
+        is QrError.IslandDocumentError -> this.toUiText()
 
         // Export Error Mappings
         QrError.ExportError.DIRECTORY_CREATE -> StringResources(R.string.err_export_directory_create)

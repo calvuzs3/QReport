@@ -100,6 +100,7 @@
     <!-- Actions -->
     <string name="action_ok">OK</string>
     <string name="action_more_vert">Altre azioni</string>
+    <string name="action_new">Nuovo</string>
     <string name="action_create">Crea</string>
     <string name="action_open">Apri</string>
     <string name="action_close">Chiudi</string>

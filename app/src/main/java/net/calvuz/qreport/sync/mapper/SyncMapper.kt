@@ -3,6 +3,7 @@ package net.calvuz.qreport.sync.mapper
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
+import net.calvuz.qreport.client.document.data.local.entity.IslandDocumentEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
@@ -12,6 +13,7 @@ import net.calvuz.qreport.sync.data.remote.dto.ContactDto
 import net.calvuz.qreport.sync.data.remote.dto.ContractDto
 import net.calvuz.qreport.sync.data.remote.dto.FacilityDto
 import net.calvuz.qreport.sync.data.remote.dto.FacilityIslandDto
+import net.calvuz.qreport.sync.data.remote.dto.IslandDocumentDto
 import net.calvuz.qreport.sync.data.remote.dto.MaintenanceLogDto
 import net.calvuz.qreport.sync.data.remote.dto.MechanicalUnitDto
 import javax.inject.Inject
@@ -290,6 +292,50 @@ class SyncMapper @Inject constructor() {
         durationMinutes = dto.durationMinutes,
         notes = dto.notes,
         performedAt = dto.performedAt,
+        createdAt = dto.createdAt,
+        updatedAt = dto.updatedAt,
+        syncedAt = dto.syncedAt,
+        isActive = dto.isActive,
+        isDeleted = dto.isDeleted
+    )
+
+    // ===== END =====
+
+    fun islandDocumentToDto(entity: IslandDocumentEntity) = IslandDocumentDto(
+        id = entity.id,
+        scope = entity.scope,
+        islandId = entity.islandId,
+        facilityId = entity.facilityId,
+        clientId = entity.clientId,
+        fileName = entity.fileName,
+        filePath = entity.filePath,
+        fileSize = entity.fileSize,
+        mimeType = entity.mimeType,
+        fileHash = entity.fileHash,
+        title = entity.title,
+        category = entity.category,
+        notes = entity.notes,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        syncedAt = entity.syncedAt,
+        isActive = entity.isActive,
+        isDeleted = entity.isDeleted
+    )
+
+    fun islandDocumentToEntity(dto: IslandDocumentDto) = IslandDocumentEntity(
+        id = dto.id,
+        scope = dto.scope,
+        islandId = dto.islandId,
+        facilityId = dto.facilityId,
+        clientId = dto.clientId,
+        fileName = dto.fileName,
+        filePath = dto.filePath,
+        fileSize = dto.fileSize,
+        mimeType = dto.mimeType,
+        fileHash = dto.fileHash,
+        title = dto.title,
+        category = dto.category,
+        notes = dto.notes,
         createdAt = dto.createdAt,
         updatedAt = dto.updatedAt,
         syncedAt = dto.syncedAt,

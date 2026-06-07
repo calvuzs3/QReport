@@ -5,24 +5,34 @@ package net.calvuz.qreport.client.island.presentation.ui
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.HealthAndSafety
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PrecisionManufacturing
 import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -36,6 +46,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -47,6 +58,8 @@ import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
+import net.calvuz.qreport.client.document.domain.model.DocumentScope
+import net.calvuz.qreport.client.document.presentation.ui.components.DocumentsTab
 import net.calvuz.qreport.client.island.presentation.model.IslandPkg
 import net.calvuz.qreport.client.island.presentation.ui.components.InfoTabContent
 import net.calvuz.qreport.client.island.presentation.ui.components.MaintenanceDialog
@@ -67,27 +80,25 @@ fun IslandDetailScreen(
     onNavigateToEditUnit: (unitId: String) -> Unit,
     onIslandDeleted: () -> Unit = {},
     onNavigateToCreateMaintenanceLog: (islandId: String) -> Unit,
-    onNavigateToIslandHealth: (IslandId: String) -> Unit,
-
+    onNavigateToIslandHealth: (islandId: String) -> Unit,
     viewModel: IslandDetailViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
     var showMaintenanceDialog by remember { mutableStateOf(false) }
-
-    val onDetailEvent: (IslandDetailEvent) -> Unit = viewModel::onDetailEvent
+    val onEvent: (IslandDetailEvent) -> Unit = viewModel::onDetailEvent
 
     LaunchedEffect(uiState.deleteSuccess) {
         if (uiState.deleteSuccess) {
             viewModel.resetDeleteState(); onIslandDeleted()
         }
     }
-    LaunchedEffect(islandId) { onDetailEvent(IslandDetailEvent.LoadIsland(islandId)) }
+    LaunchedEffect(islandId) { onEvent(IslandDetailEvent.LoadIsland(islandId)) }
 
     if (uiState.showDeleteConfirmation) {
         QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.island_detail_object_name),
             objectDesc = uiState.islandName,
-            onConfirm = { onDetailEvent(IslandDetailEvent.DeleteIsland(force = false)) },
+            onConfirm = { onEvent(IslandDetailEvent.DeleteIsland(force = false)) },
             onDismiss = viewModel::hideDeleteConfirmation
         )
     }
@@ -95,13 +106,11 @@ fun IslandDetailScreen(
     Column(modifier = modifier.fillMaxSize()) {
 
         TopAppBar(title = {
-            Column {
-                Text(text = uiState.islandName.takeIf { it.isNotBlank() }
-                    ?: stringResource(R.string.island_detail_title_fallback),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.titleLarge)
-            }
+            Text(text = uiState.islandName.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.island_detail_title_fallback),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleLarge)
         }, navigationIcon = {
             IconButton(onClick = onNavigateBack) {
                 Icon(
@@ -112,7 +121,8 @@ fun IslandDetailScreen(
         }, actions = {
             if (uiState.hasData) {
                 IconButton(
-                    onClick = viewModel::showDeleteConfirmation, enabled = !uiState.isDeleting
+                    onClick = viewModel::showDeleteConfirmation,
+                    enabled = !uiState.isDeleting
                 ) {
                     if (uiState.isDeleting) CircularProgressIndicator(
                         modifier = Modifier.size(
@@ -124,17 +134,6 @@ fun IslandDetailScreen(
                         tint = MaterialTheme.colorScheme.error,
                         contentDescription = stringResource(R.string.island_detail_action_delete)
                     )
-                }
-                if (uiState.island?.needsMaintenance() == true) {
-                    IconButton(
-                        onClick = { showMaintenanceDialog = true },
-                        colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) {
-                        Icon(
-                            Icons.Default.Build,
-                            contentDescription = stringResource(R.string.island_detail_action_maintenance)
-                        )
-                    }
                 }
                 IconButton(onClick = { onNavigateToEdit(facilityId, islandId) }) {
                     Icon(
@@ -150,21 +149,30 @@ fun IslandDetailScreen(
                     )
                 }
                 DropdownMenu(
-                    expanded = showMoreMenu, onDismissRequest = { showMoreMenu = false }) {
+                    expanded = showMoreMenu,
+                    onDismissRequest = { showMoreMenu = false }) {
                     DropdownMenuItem(
                         text = { Text(stringResource(R.string.island_detail_menu_record_maintenance)) },
                         onClick = { showMaintenanceDialog = true; showMoreMenu = false },
                         leadingIcon = { Icon(Icons.Default.Build, contentDescription = null) })
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.island_detail_menu_record_maintenance)) },
+                        onClick = { onNavigateToIslandHealth(islandId); showMoreMenu = false },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.HealthAndSafety,
+                                contentDescription = null
+                            )
+                        })
                 }
             }
         })
 
         QReportPullToRefresh(
             isRefreshing = uiState.isRefreshing,
-            onRefresh = { onDetailEvent(IslandDetailEvent.Refresh) },
+            onRefresh = { onEvent(IslandDetailEvent.Refresh) },
             modifier = Modifier.fillMaxSize()
         ) {
-
             when {
                 uiState.isLoading -> LoadingState(
                     modifier = Modifier.fillMaxSize(),
@@ -175,9 +183,9 @@ fun IslandDetailScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(32.dp),
-                    error = uiState.error!!,
-                    onRetry = { onDetailEvent(IslandDetailEvent.Refresh) },
-                    onDismiss = { onDetailEvent(IslandDetailEvent.DismissError) })
+                    error = uiState.error,
+                    onRetry = { onEvent(IslandDetailEvent.Refresh) },
+                    onDismiss = { onEvent(IslandDetailEvent.DismissError) })
 
                 uiState.hasData -> IslandDetailContent(
                     uiState = uiState,
@@ -185,13 +193,12 @@ fun IslandDetailScreen(
                     onEdit = { onNavigateToEdit(facilityId, islandId) },
                     onCreateUnit = { onNavigateToCreateUnit(islandId) },
                     onEditUnit = onNavigateToEditUnit,
-                    onDeleteUnit = { onDetailEvent(IslandDetailEvent.DeleteUnit(it)) },
+                    onDeleteUnit = { onEvent(IslandDetailEvent.DeleteUnit(it)) },
                     onMaintenanceAction = { showMaintenanceDialog = true },
                     onNavigateToUnitList = onNavigateToUnitList,
-                    onDismissError = { onDetailEvent(IslandDetailEvent.DismissError) },
+                    onDismissError = { onEvent(IslandDetailEvent.DismissError) },
                     onAddLog = { onNavigateToCreateMaintenanceLog(islandId) },
-                    onNavigateToHealth = { onNavigateToIslandHealth(islandId) },
-                )
+                    onNavigateToHealth = { onNavigateToIslandHealth(islandId) })
 
                 else -> EmptyState(
                     textTitle = stringResource(R.string.island_detail_empty_title),
@@ -216,6 +223,10 @@ fun IslandDetailScreen(
     }
 }
 
+// =============================================================================
+// DETAIL CONTENT
+// =============================================================================
+
 @Composable
 private fun IslandDetailContent(
     uiState: FacilityIslandDetailUiState,
@@ -231,30 +242,41 @@ private fun IslandDetailContent(
     onNavigateToHealth: () -> Unit,
 ) {
     Column {
+
+        // ── Icon-only tabs (same pattern as ClientDetailScreen) ───────────────
         TabRow(
             selectedTabIndex = uiState.selectedTab.ordinal,
             containerColor = MaterialTheme.colorScheme.surface
         ) {
             IslandDetailTab.entries.forEach { tab ->
-                val badge = when (tab) {
+                val badgeCount = when (tab) {
                     IslandDetailTab.UNITS -> uiState.unitsCount.takeIf { it > 0 }
                     else -> null
                 }
                 Tab(
                     selected = uiState.selectedTab == tab,
                     onClick = { onTabSelected(tab) },
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(stringResource(tab.labelResId))
-                            badge?.let { Badge { Text(it.toString()) } }
+                    icon = {
+                        BadgedBox(badge = {
+                            if (badgeCount != null) Badge { Text(badgeCount.toString()) }
+                        }) {
+                            Icon(
+                                imageVector = when (tab) {
+                                    IslandDetailTab.UNITS -> Icons.Default.PrecisionManufacturing
+                                    IslandDetailTab.MAINTENANCE -> Icons.Default.Build
+                                    IslandDetailTab.INFO -> Icons.Default.Info
+                                    IslandDetailTab.DOCUMENTS -> Icons.Default.Folder
+                                }, contentDescription = stringResource(tab.labelResId)
+                            )
                         }
                     })
             }
         }
 
+        // ── Tab header: name + contextual actions ─────────────────────────────
+        TabHeader(tab = uiState.selectedTab, uiState = uiState, onEdit = onEdit, onCreateUnit = onCreateUnit, onNavigateToUnitList = onNavigateToUnitList, onMaintenanceAction = onMaintenanceAction, onAddLog = onAddLog, onNavigateToHealth = onNavigateToHealth)
+
+        // ── Tab content ───────────────────────────────────────────────────────
         when (uiState.selectedTab) {
             IslandDetailTab.INFO -> InfoTabContent(
                 island = uiState.island!!,
@@ -284,9 +306,88 @@ private fun IslandDetailContent(
                 availableUnits = uiState.units,
                 onAddLog = onAddLog,
                 onNavigateToHealth = onNavigateToHealth,
-
                 modifier = Modifier.weight(1f)
             )
+
+            IslandDetailTab.DOCUMENTS -> DocumentsTab(
+                modifier = Modifier.weight(1f),
+                scope = DocumentScope.ISLAND,
+                scopeEntityId = uiState.island?.id
+            )
+        }
+    }
+}
+
+// =============================================================================
+// TAB HEADER — title + contextual action buttons
+// =============================================================================
+
+@Composable
+private fun TabHeader(
+    tab: IslandDetailTab,
+    uiState: FacilityIslandDetailUiState,
+    onEdit: () -> Unit,
+    onCreateUnit: () -> Unit,
+    onNavigateToUnitList: (String) -> Unit,
+    onMaintenanceAction: () -> Unit,
+    onAddLog: () -> Unit,
+    onNavigateToHealth: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = stringResource(tab.labelResId),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        // Contextual actions per tab
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            when (tab) {
+                IslandDetailTab.INFO -> {
+                    // Info tab manages its own actions internally
+                }
+
+                IslandDetailTab.UNITS -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp))  {
+                        OutlinedButton(onClick = {
+                            onNavigateToUnitList(
+                                uiState.island?.id ?: ""
+                            )
+                        }) {
+                            Text(stringResource(R.string.island_units_view_all))
+                        }
+                        Button(onClick = onCreateUnit) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(R.string.island_units_new))
+                        }
+                    }
+                }
+
+                IslandDetailTab.MAINTENANCE -> {
+                    // Maintenance tab manages its own actions internally
+                }
+
+                IslandDetailTab.DOCUMENTS -> {
+                    // Documents tab manages its own actions internally
+                }
+            }
         }
     }
 }

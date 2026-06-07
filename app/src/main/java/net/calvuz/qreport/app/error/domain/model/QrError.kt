@@ -278,6 +278,50 @@ interface QrError {
         data class UpdateError(val message: String? = null) : MaintenanceLogError
     }
 
+    sealed interface IslandDocumentError : QrError {
+
+        // ── Validation ────────────────────────────────────────────────────────
+        /** Document title is blank. */
+        data class MissingTitle(val message: String? = null) : IslandDocumentError
+
+        /** Imported file exceeds the allowed size limit. */
+        data class FileTooLarge(
+            val actualBytes: Long,
+            val maxBytes: Long
+        ) : IslandDocumentError
+
+        // ── Business rules ────────────────────────────────────────────────────
+        /**
+         * The referenced parent entity (island, facility, or client) does not
+         * exist or is inactive.
+         */
+        data class ParentNotFound(
+            val scope: String,          // DocumentScope.name — avoids circular import
+            val id: String? = null
+        ) : IslandDocumentError
+
+        // ── File operations ───────────────────────────────────────────────────
+        /** Import from content URI failed (copy error, unreadable URI, etc.). */
+        data class ImportFailed(val message: String? = null) : IslandDocumentError
+
+        /** Physical file not found on disk (may have been removed externally). */
+        data class FileNotFound(val path: String? = null) : IslandDocumentError
+
+        /**
+         * No installed app can open this MIME type.
+         * UI should show an informative message — not a crash.
+         */
+        data class NoAppAvailable(val mimeType: String) : IslandDocumentError
+
+        /** FileProvider URI creation or [startActivity] failed. */
+        data class OpenFailed(val message: String? = null) : IslandDocumentError
+
+        // ── Persistence ───────────────────────────────────────────────────────
+        data class CreateError(val message: String? = null) : IslandDocumentError
+        data class LoadError(val message: String? = null) : IslandDocumentError
+        data class UpdateError(val message: String? = null) : IslandDocumentError
+        data class DeleteError(val message: String? = null) : IslandDocumentError
+    }
 
     sealed interface UnitError : QrError {
 

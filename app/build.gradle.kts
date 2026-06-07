@@ -21,8 +21,10 @@ android {
         minSdk = 33
         //noinspection OldTargetApi
         targetSdk = 35
+
+        // Version
         versionCode = 1
-        versionName = "0.9.6"
+        versionName = "0.10.0"
 
         // ✅ AGGIORNATO test runner per Hilt
         testInstrumentationRunner = "net.calvuz.qreport.CustomTestRunner"

@@ -180,6 +180,7 @@
     <string name="island_detail_tab_units">Unità</string>
     <string name="island_detail_tab_maintenance">Manutenzione</string>
     <string name="island_detail_tab_info">Informazioni</string>
+    <string name="island_detail_tab_documents">Documenti</string>
 
     <!-- IslandBasicInfoCard -->
     <string name="island_detail_info_card_general">Informazioni Generali</string>
@@ -224,7 +225,8 @@
     <string name="maintenance_dialog_confirm">Conferma</string>
 
     <!-- UnitsTabContent -->
-    <string name="island_units_tab_title">Unità (%1$d)</string>
+    <string name="island_units_tab_title">Unità</string>
+    <string name="island_units_tab_title_count">Unità (%1$d)</string>
     <string name="island_units_view_all">Vedi tutti</string>
     <string name="island_units_new">Nuova Unità</string>
     <string name="island_units_empty_title">Nessuna unità meccanica</string>

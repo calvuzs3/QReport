@@ -26,20 +26,7 @@ fun InfoTabContent(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(R.string.island_detail_tab_info),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Button(onClick = onEdit) {
-                Text(stringResource(R.string.island_detail_action_edit))
-            }
-        }
+
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

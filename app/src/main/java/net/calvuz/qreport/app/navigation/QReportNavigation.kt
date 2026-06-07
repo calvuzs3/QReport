@@ -311,6 +311,10 @@ fun QReportNavigation(
                         onNavigateToIslands = {
                             navController.navigate(QReportRoutes.ISLAND_LIST_ALL)
                         },
+                        onNavigateToIslandDetail = { facilityId, islandId ->
+                            navController.navigate(QReportRoutes.islandDetailRoute(facilityId, islandId))
+                        },
+
                         onNavigateToNewCheckUp = {
                             navController.navigate(QReportRoutes.CHECKUP_CREATE)
                         },

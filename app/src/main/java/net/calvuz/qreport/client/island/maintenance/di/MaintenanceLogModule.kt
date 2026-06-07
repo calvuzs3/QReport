@@ -2,8 +2,11 @@ package net.calvuz.qreport.client.island.maintenance.di
 
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import net.calvuz.qreport.app.database.data.local.QReportDatabase
+import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
 import net.calvuz.qreport.client.island.maintenance.data.repository.MaintenanceLogRepositoryImpl
 import net.calvuz.qreport.client.island.maintenance.domain.repository.MaintenanceLogRepository
 import javax.inject.Singleton
@@ -29,4 +32,12 @@ abstract class MaintenanceLogModule {
     abstract fun bindMaintenanceLogRepository(
         impl: MaintenanceLogRepositoryImpl
     ): MaintenanceLogRepository
+
+    companion object {
+        @Provides
+        @Singleton
+        fun provideMaintenanceLogDao(
+            database: QReportDatabase
+        ): MaintenanceLogDao = database.maintenanceLogDao()
+    }
 }

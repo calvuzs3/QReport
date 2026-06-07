@@ -39,8 +39,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     onNavigateToClients: () -> Unit,
     onNavigateToCheckUps: () -> Unit,
-    // facilityId="" loads all islands — IslandListScreen handles blank id as "no filter"
     onNavigateToIslands: () -> Unit,
+    onNavigateToIslandDetail: (facilityId: String, islandId: String) -> Unit,
     onNavigateToTechnicalInterventions: () -> Unit,
     onNavigateToNewCheckUp: () -> Unit,
     onNavigateToCheckUpDetail: (String) -> Unit,
@@ -143,7 +143,10 @@ fun HomeScreen(
                             PreviewEmptyRow(stringResource(R.string.home_islands_empty))
                         } else {
                             uiState.recentIslands.forEach { island ->
-                                IslandPreviewRow(island = island, onClick = onNavigateToIslands)
+                                IslandPreviewRow(
+                                    island = island,
+                                    onClick = { onNavigateToIslandDetail(island.facilityId, island.id) }
+                                )
                             }
                         }
                     }

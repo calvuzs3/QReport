@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import net.calvuz.qreport.BuildConfig
+import net.calvuz.qreport.app.app.QReportApplication
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import timber.log.Timber
 import javax.inject.Inject
@@ -62,7 +63,7 @@ class AppVersionInfo @Inject constructor(
      * Database schema version
      * ⚠️ IMPORTANTE: Aggiorna quando modifichi schema Room
      */
-    val databaseVersion: Int = QReportDatabase.DATABASE_VERSION
+    val databaseVersion: Int = QReportApplication.DATABASE_VERSION
 
     /**
      * Database schema version string per display

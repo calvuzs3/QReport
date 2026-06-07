@@ -408,7 +408,7 @@ private fun FacilitiesTabContent(
                 Button(onClick = onCreateFacility) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.client_detail_facilities_new))
+                    Text(stringResource(R.string.action_new))
                 }
             }
         }
