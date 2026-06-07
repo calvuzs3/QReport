@@ -5,12 +5,14 @@ import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
+import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
 import net.calvuz.qreport.sync.data.remote.dto.ClientDto
 import net.calvuz.qreport.sync.data.remote.dto.ContactDto
 import net.calvuz.qreport.sync.data.remote.dto.ContractDto
 import net.calvuz.qreport.sync.data.remote.dto.FacilityDto
 import net.calvuz.qreport.sync.data.remote.dto.FacilityIslandDto
+import net.calvuz.qreport.sync.data.remote.dto.MaintenanceLogDto
 import net.calvuz.qreport.sync.data.remote.dto.MechanicalUnitDto
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -244,6 +246,54 @@ class SyncMapper @Inject constructor() {
         createdAt = dto.createdAt,
         updatedAt = dto.updatedAt,
         syncedAt = dto.syncedAt,
+        isDeleted = dto.isDeleted
+    )
+
+    // ===== MAINTENANCE LOG =====
+
+    fun maintenanceLogToDto(entity: MaintenanceLogEntity) = MaintenanceLogDto(
+        id = entity.id,
+        islandId = entity.islandId,
+        operationType = entity.operationType,
+        customOperationLabel = entity.customOperationLabel,
+        mechanicalUnitId = entity.mechanicalUnitId,
+        componentLabel = entity.componentLabel,
+        description = entity.description,
+        technicianName = entity.technicianName,
+        technicianCompany = entity.technicianCompany,
+        operatingHoursAtEvent = entity.operatingHoursAtEvent,
+        cycleCountAtEvent = entity.cycleCountAtEvent,
+        outcome = entity.outcome,
+        durationMinutes = entity.durationMinutes,
+        notes = entity.notes,
+        performedAt = entity.performedAt,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        syncedAt = entity.syncedAt,
+        isActive = entity.isActive,
+        isDeleted = entity.isDeleted
+    )
+
+    fun maintenanceLogToEntity(dto: MaintenanceLogDto) = MaintenanceLogEntity(
+        id = dto.id,
+        islandId = dto.islandId,
+        operationType = dto.operationType,
+        customOperationLabel = dto.customOperationLabel,
+        mechanicalUnitId = dto.mechanicalUnitId,
+        componentLabel = dto.componentLabel,
+        description = dto.description,
+        technicianName = dto.technicianName,
+        technicianCompany = dto.technicianCompany,
+        operatingHoursAtEvent = dto.operatingHoursAtEvent,
+        cycleCountAtEvent = dto.cycleCountAtEvent,
+        outcome = dto.outcome,
+        durationMinutes = dto.durationMinutes,
+        notes = dto.notes,
+        performedAt = dto.performedAt,
+        createdAt = dto.createdAt,
+        updatedAt = dto.updatedAt,
+        syncedAt = dto.syncedAt,
+        isActive = dto.isActive,
         isDeleted = dto.isDeleted
     )
 }

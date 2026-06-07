@@ -9,6 +9,7 @@ import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
+import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
 
 /**
@@ -72,6 +73,13 @@ interface SyncDao {
     """)
     suspend fun getMechanicalUnitsPendingSync(): List<MechanicalUnitEntity>
 
+    @Query("""
+        SELECT * FROM maintenance_logs
+        WHERE updated_at > COALESCE(synced_at, 0) AND is_deleted = 1
+        ORDER BY updated_at ASC
+    """)
+    suspend fun getMaintenanceLogsPendingSync(): List<MaintenanceLogEntity>
+
     // ===== MARK AS SYNCED — after a successful push =====
 
     /**
@@ -95,6 +103,9 @@ interface SyncDao {
 
     @Query("UPDATE mechanical_units SET synced_at = :now WHERE id IN (:ids)")
     suspend fun markMechanicalUnitsSynced(ids: List<String>, now: Long)
+
+    @Query("UPDATE maintenance_logs SET synced_at = :now WHERE id IN (:ids)")
+    suspend fun markMaintenanceLogsSynced(ids: List<String>, now: Long)
 
     // ===== UPSERT FROM SERVER — apply incoming records =====
 
@@ -121,6 +132,9 @@ interface SyncDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertMechanicalUnits(units: List<MechanicalUnitEntity>)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertMaintenanceLogs(logs: List<MaintenanceLogEntity>)
+
     // ===== DIAGNOSTICS =====
 
     /** Total number of records pending push across all client-management tables. */
@@ -131,7 +145,8 @@ interface SyncDao {
             (SELECT COUNT(*) FROM contracts WHERE updated_at > COALESCE(synced_at, 0)) +
             (SELECT COUNT(*) FROM facilities WHERE updated_at > COALESCE(synced_at, 0)) +
             (SELECT COUNT(*) FROM facility_islands WHERE updated_at > COALESCE(synced_at, 0)) +
-            (SELECT COUNT(*) FROM mechanical_units WHERE updated_at > COALESCE(synced_at, 0))
+            (SELECT COUNT(*) FROM mechanical_units WHERE updated_at > COALESCE(synced_at, 0)) +
+            (SELECT COUNT(*) FROM maintenance_logs WHERE updated_at > COALESCE(synced_at, 0))
     """)
     suspend fun countPendingSync(): Int
 }

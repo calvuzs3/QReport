@@ -26,7 +26,8 @@ data class SyncPayloadDto(
     val contracts: List<ContractDto> = emptyList(),
     val facilities: List<FacilityDto> = emptyList(),
     val facilityIslands: List<FacilityIslandDto> = emptyList(),
-    val mechanicalUnits: List<MechanicalUnitDto> = emptyList()
+    val mechanicalUnits: List<MechanicalUnitDto> = emptyList(),
+    val maintenanceLogs: List<MaintenanceLogDto> = emptyList()
 )
 
 @Serializable
@@ -147,5 +148,29 @@ data class MechanicalUnitDto(
     val createdAt: Long,
     val updatedAt: Long,
     val syncedAt: Long? = null,
+    val isDeleted: Boolean = false
+)
+
+@Serializable
+data class MaintenanceLogDto(
+    val id: String,
+    val islandId: String,
+    val operationType: String,
+    val customOperationLabel: String? = null,
+    val mechanicalUnitId: String? = null,
+    val componentLabel: String? = null,
+    val description: String,
+    val technicianName: String,
+    val technicianCompany: String? = null,
+    val operatingHoursAtEvent: Int? = null,
+    val cycleCountAtEvent: Long? = null,
+    val outcome: String,
+    val durationMinutes: Int? = null,
+    val notes: String? = null,
+    val performedAt: Long,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val syncedAt: Long? = null,
+    val isActive: Boolean = true,
     val isDeleted: Boolean = false
 )

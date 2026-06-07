@@ -7,9 +7,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardCheckupData
-import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardCheckupStatistics
-import net.calvuz.qreport.app.app.presentation.ui.home.model.DashboardClientStatistics
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
@@ -22,11 +19,39 @@ import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.days
 
+
+// =============================================================================
+// CHECKUP SUMMARY — computed from the checkup list in the ViewModel
+// =============================================================================
+
+data class DashboardCheckupStatistics(
+    val totalCheckUps: Int,
+    val activeCheckUps: Int,
+    val completedThisWeek: Int,
+    val averageCompletionTime: Int // in hours
+)
+
+data class DashboardCheckupData(
+    val recentCheckUps: List<CheckUp>,
+    val inProgressCheckUps: List<CheckUp>,
+    val draftCheckUps: List<CheckUp>,
+    val completedCheckUps: List<CheckUp>
+)
+
+// =============================================================================
+// CLIENT SUMMARY — computed from the client list in the ViewModel
+// =============================================================================
+
+data class DashboardClientStatistics(
+    val totalClient: Int,
+    val activeClient: Int
+)
+
 // =============================================================================
 // ISLAND SUMMARY — computed from the island list in the ViewModel
 // =============================================================================
 
-data class IslandDashboardStats(
+data class DashboardIslandStatistics(
     val total: Int = 0,
     val operational: Int = 0,
     val maintenanceSoon: Int = 0   // needs maintenance within 30 days
@@ -48,7 +73,7 @@ data class HomeUiState(
     val clientStats: DashboardClientStatistics? = null,
 
     // Islands
-    val islandStats: IslandDashboardStats = IslandDashboardStats(),
+    val islandStats: DashboardIslandStatistics = DashboardIslandStatistics(),
     val recentIslands: List<Island> = emptyList(),
 
     val error: UiText? = null
@@ -181,7 +206,7 @@ class HomeViewModel @Inject constructor(
                     val now = Clock.System.now()
                     val thirtyDaysFromNow = now + 30.days
 
-                    val stats = IslandDashboardStats(
+                    val stats = DashboardIslandStatistics(
                         total = islands.size,
                         operational = islands.count { it.isActive && !it.needsMaintenance() },
                         maintenanceSoon = islands.count { island ->

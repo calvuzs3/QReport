@@ -107,6 +107,9 @@ data class MaintenanceLogEntity(
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long,                            // epoch milliseconds
 
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null,
+
     @ColumnInfo(name = "is_active", defaultValue = "1")
     val isActive: Boolean = true,
 

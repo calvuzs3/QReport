@@ -181,9 +181,6 @@ private fun HomeHeader(onRefresh: () -> Unit, isLoading: Boolean, modifier: Modi
             Text(text = "QReport", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
             Text(text = stringResource(R.string.home_subtitle), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        IconButton(onClick = onRefresh, enabled = !isLoading) {
-            Icon(Icons.Default.Refresh, contentDescription = stringResource(R.string.home_action_refresh))
-        }
     }
 }
 

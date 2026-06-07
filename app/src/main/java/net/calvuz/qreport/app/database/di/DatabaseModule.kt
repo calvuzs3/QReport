@@ -64,6 +64,7 @@ object DatabaseModule {
                 performed_at            INTEGER NOT NULL,
                 created_at              INTEGER NOT NULL,
                 updated_at              INTEGER NOT NULL,
+                synced_at               INTEGER,
                 is_active               INTEGER NOT NULL DEFAULT 1,
                 is_deleted              INTEGER NOT NULL DEFAULT 0,
                 FOREIGN KEY (island_id) REFERENCES facility_islands(id)

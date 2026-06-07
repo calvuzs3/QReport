@@ -64,6 +64,7 @@ class SyncUseCase @Inject constructor(
                 append("${payload.contacts.size} contacts, ${payload.contracts.size} contracts, ")
                 append("${payload.facilities.size} facilities, ")
                 append("${payload.facilityIslands.size} islands, ${payload.mechanicalUnits.size} units")
+                append("${payload.maintenanceLogs.size} logs")
             })
 
             // 4. Push — server responds with pull payload in the same round-trip
@@ -72,6 +73,7 @@ class SyncUseCase @Inject constructor(
                     Timber.e("SyncUseCase: push failed: ${pushResult.error}")
                     return QrResult.Error(pushResult.error)
                 }
+
                 is QrResult.Success -> {
                     val response = pushResult.data
                     Timber.d("SyncUseCase: push accepted ${response.acceptedIds.size} records")
@@ -112,24 +114,50 @@ class SyncUseCase @Inject constructor(
             contacts = syncDao.getContactsPendingSync().map { syncMapper.contactToDto(it) },
             contracts = syncDao.getContractsPendingSync().map { syncMapper.contractToDto(it) },
             facilities = syncDao.getFacilitiesPendingSync().map { syncMapper.facilityToDto(it) },
-            facilityIslands = syncDao.getFacilityIslandsPendingSync().map { syncMapper.facilityIslandToDto(it) },
-            mechanicalUnits = syncDao.getMechanicalUnitsPendingSync().map { syncMapper.mechanicalUnitToDto(it) }
-        )
+            facilityIslands = syncDao.getFacilityIslandsPendingSync()
+                .map { syncMapper.facilityIslandToDto(it) },
+            mechanicalUnits = syncDao.getMechanicalUnitsPendingSync()
+                .map { syncMapper.mechanicalUnitToDto(it) },
+            maintenanceLogs = syncDao.getMaintenanceLogsPendingSync()
+                .map { syncMapper.maintenanceLogToDto(it) })
     }
 
     private suspend fun applyRemoteChanges(payload: SyncPayloadDto) {
-        if (payload.clients.isNotEmpty())
-            syncDao.upsertClients(payload.clients.map { syncMapper.clientToEntity(it) })
-        if (payload.contacts.isNotEmpty())
-            syncDao.upsertContacts(payload.contacts.map { syncMapper.contactToEntity(it) })
-        if (payload.contracts.isNotEmpty())
-            syncDao.upsertContracts(payload.contracts.map { syncMapper.contractToEntity(it) })
-        if (payload.facilities.isNotEmpty())
-            syncDao.upsertFacilities(payload.facilities.map { syncMapper.facilityToEntity(it) })
-        if (payload.facilityIslands.isNotEmpty())
-            syncDao.upsertFacilityIslands(payload.facilityIslands.map { syncMapper.facilityIslandToEntity(it) })
-        if (payload.mechanicalUnits.isNotEmpty())
-            syncDao.upsertMechanicalUnits(payload.mechanicalUnits.map { syncMapper.mechanicalUnitToEntity(it) })
+        if (payload.clients.isNotEmpty()) syncDao.upsertClients(payload.clients.map {
+            syncMapper.clientToEntity(
+                it
+            )
+        })
+        if (payload.contacts.isNotEmpty()) syncDao.upsertContacts(payload.contacts.map {
+            syncMapper.contactToEntity(
+                it
+            )
+        })
+        if (payload.contracts.isNotEmpty()) syncDao.upsertContracts(payload.contracts.map {
+            syncMapper.contractToEntity(
+                it
+            )
+        })
+        if (payload.facilities.isNotEmpty()) syncDao.upsertFacilities(payload.facilities.map {
+            syncMapper.facilityToEntity(
+                it
+            )
+        })
+        if (payload.facilityIslands.isNotEmpty()) syncDao.upsertFacilityIslands(payload.facilityIslands.map {
+            syncMapper.facilityIslandToEntity(
+                it
+            )
+        })
+        if (payload.mechanicalUnits.isNotEmpty()) syncDao.upsertMechanicalUnits(payload.mechanicalUnits.map {
+            syncMapper.mechanicalUnitToEntity(
+                it
+            )
+        })
+        if (payload.maintenanceLogs.isNotEmpty()) syncDao.upsertMaintenanceLogs(payload.maintenanceLogs.map {
+            syncMapper.maintenanceLogToEntity(
+                it
+            )
+        })
 
         Timber.d("SyncUseCase: applied remote changes to local DB")
     }
@@ -147,9 +175,10 @@ class SyncUseCase @Inject constructor(
             ?.let { syncDao.markFacilityIslandsSynced(it, now) }
         payload.mechanicalUnits.map { it.id }.takeIf { it.isNotEmpty() }
             ?.let { syncDao.markMechanicalUnitsSynced(it, now) }
+        payload.maintenanceLogs.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { syncDao.markMaintenanceLogsSynced(it, now) }
     }
 
     private fun countPulled(payload: SyncPayloadDto): Int =
-        payload.clients.size + payload.contacts.size + payload.contracts.size +
-                payload.facilities.size + payload.facilityIslands.size + payload.mechanicalUnits.size
+        payload.clients.size + payload.contacts.size + payload.contracts.size + payload.facilities.size + payload.facilityIslands.size + payload.mechanicalUnits.size + payload.maintenanceLogs.size
 }
