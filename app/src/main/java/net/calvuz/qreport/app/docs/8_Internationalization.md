@@ -350,13 +350,11 @@ sealed interface QrError: Error {
     // ✅ Network & Infrastructure
     enum class Network: QrError {
         REQUEST_TIMEOUT
-        // Future: CONNECTION_LOST, INVALID_RESPONSE, etc.
     }
     
     // ✅ Export & File Operations  
     enum class ExportingError: QrError {
         CANNOT_EXPORT_DRAFT
-        // Future: INSUFFICIENT_STORAGE, SHARING_FAILED, etc.
     }
     
     // ✅ CheckUp Domain (Business Logic + Technical)

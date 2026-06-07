@@ -221,7 +221,7 @@ class OpenFileUseCase @Inject constructor(
 
             if (!qreportDir.exists() && !qreportDir.mkdirs()) {
                 Timber.e("Failed to create Documents/QReport directory")
-                return QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
+                return QrResult.Error(QrError.FileError.DirectoryCreateError(Environment.DIRECTORY_DOCUMENTS))
             }
 
             // Copy source to target
@@ -243,8 +243,8 @@ class OpenFileUseCase @Inject constructor(
             QrResult.Success(targetFile.absolutePath)
 
         } catch (e: Exception) {
-            Timber.e(e, "Failed to copy export to Documents")
-            QrResult.Error(QrError.FileError.FILE_COPY)
+            Timber.e(e, "Failed to copy export to Documents: $internalPath")
+            QrResult.Error(QrError.FileError.FileCopyError(internalPath))
         }
     }
 }

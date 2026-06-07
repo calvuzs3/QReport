@@ -515,7 +515,7 @@ class ShareFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Create FileProvider URI failed: $filePath")
-            QrResult.Error(QrError.FileError.IO_ERROR)
+            QrResult.Error(QrError.FileError.IoError(e))
         }
     }
     override suspend fun validateFileForSharing(filePath: String): QrResult<ShareValidationResult, QrError> {

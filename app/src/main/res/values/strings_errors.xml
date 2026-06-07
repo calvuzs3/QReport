@@ -26,7 +26,7 @@
     <string name="err_create_intervention_island_not_found">Isola non trovata</string>
 
     <!-- Validation errors -->
-    <string name="err_validation_ids_doesnt_match">Gli id non corrispondono</string>
+    <string name="err_validation_ids_does_not_match">Gli id non corrispondono</string>
     <string name="err_validation_empty_field">Campo obbligatorio mancante</string>
     <string name="err_validation_duplicate_entry">Duplicato trovato</string>
     <string name="err_validation_email_already_taken">Email gia usata</string>
@@ -45,105 +45,6 @@
     <string name="err_db_not_found">L\'elemento richiesto non è stato trovato</string>
 
 
-    <!-- File Error Messages - Core File Operations -->
-
-    <!-- Directory Operations -->
-    <string name="err_file_directory_create">Errore durante la creazione della directory</string>
-    <string name="err_file_directory_access">Errore durante l\'accesso alla directory</string>
-    <string name="err_file_directory_delete">Errore durante l\'eliminazione della directory</string>
-    <string name="err_file_directory_not_found">Directory non trovata</string>
-    <string name="err_file_directory_not_empty">Impossibile eliminare: directory non vuota</string>
-    <string name="err_file_directory_permission_denied">Permessi insufficienti per accedere alla directory</string>
-
-    <!-- File Operations -->
-    <string name="err_file_create">Errore durante la creazione del file</string>
-    <string name="err_file_read">Errore durante la lettura del file</string>
-    <string name="err_file_write">Errore durante la scrittura del file</string>
-    <string name="err_file_delete">Errore durante l\'eliminazione del file</string>
-    <string name="err_file_copy">Errore durante la copia del file</string>
-    <string name="err_file_move">Errore durante lo spostamento del file</string>
-    <string name="err_file_rename">Errore durante la rinominazione del file</string>
-    <string name="err_file_access">Errore durante l\'accesso al file</string>
-    <string name="err_file_not_found">File non trovato</string>
-    <string name="err_file_already_exists">Il file esiste già</string>
-    <string name="err_file_locked">File bloccato o in uso</string>
-    <string name="err_file_corrupted">File corrotto o danneggiato</string>
-
-    <!-- Permissions -->
-    <string name="err_file_permission_denied">Permessi insufficienti per l\'operazione</string>
-    <string name="err_file_read_permission_denied">Permessi di lettura negati</string>
-    <string name="err_file_write_permission_denied">Permessi di scrittura negati</string>
-    <string name="err_file_execute_permission_denied">Permessi di esecuzione negati</string>
-
-    <!-- Storage Issues -->
-    <string name="err_file_insufficient_space">Spazio di archiviazione insufficiente</string>
-    <string name="err_file_disk_full">Disco pieno</string>
-    <string name="err_file_storage_unavailable">Spazio di archiviazione non disponibile</string>
-    <string name="err_file_quota_exceeded">Quota disco superata</string>
-
-    <!-- File Size & Limits -->
-    <string name="err_file_empty">File vuoto</string>
-    <string name="err_file_too_large">File troppo grande</string>
-    <string name="err_file_too_small">File troppo piccolo</string>
-    <string name="err_file_size_limit_exceeded">Limite dimensione file superato</string>
-    <string name="err_file_name_too_long">Nome file troppo lungo</string>
-    <string name="err_file_path_too_long">Percorso file troppo lungo</string>
-
-    <!-- File Format & Encoding -->
-    <string name="err_file_format_invalid">Formato file non valido</string>
-    <string name="err_file_encoding_error">Errore di codifica del file</string>
-    <string name="err_file_charset_unsupported">Set di caratteri non supportato</string>
-    <string name="err_file_binary_data_corrupted">Dati binari corrotti</string>
-
-    <!-- I/O Operations -->
-    <string name="err_file_io_error">Errore di input/output</string>
-    <string name="err_file_read_timeout">Timeout durante la lettura</string>
-    <string name="err_file_write_timeout">Timeout durante la scrittura</string>
-    <string name="err_file_operation_interrupted">Operazione interrotta</string>
-    <string name="err_file_concurrent_access">Accesso concorrente non permesso</string>
-
-    <!-- Network & External -->
-    <string name="err_file_network_unavailable">Rete non disponibile</string>
-    <string name="err_file_connection_lost">Connessione persa</string>
-    <string name="err_file_external_storage_removed">Memoria esterna rimossa</string>
-    <string name="err_file_device_busy">Dispositivo occupato</string>
-
-    <!-- Validation -->
-    <string name="err_file_path_invalid">Percorso file non valido</string>
-    <string name="err_file_name_invalid">Nome file non valido</string>
-    <string name="err_file_extension_invalid">Estensione file non valida</string>
-    <string name="err_file_checksum_mismatch">Checksum file non corrispondente</string>
-
-    <!-- Temporary & Cache -->
-    <string name="err_file_temp_file_creation_failed">Creazione file temporaneo fallita</string>
-    <string name="err_file_temp_dir_unavailable">Directory temporanea non disponibile</string>
-    <string name="err_file_cache_write_failed">Scrittura cache fallita</string>
-    <string name="err_file_cleanup_failed">Pulizia file fallita</string>
-
-    <!-- Locking & Synchronization -->
-    <string name="err_file_locked_by_other">File bloccato da altro processo</string>
-    <string name="err_file_lock_acquisition_failed">Acquisizione blocco file fallita</string>
-    <string name="err_file_unlock_failed">Rilascio blocco file fallito</string>
-
-    <!-- System Level -->
-    <string name="err_file_system_error">Errore di sistema</string>
-    <string name="err_file_resource_unavailable">Risorsa non disponibile</string>
-    <string name="err_file_handle_exhausted">Handle file esauriti</string>
-    <string name="err_file_filesystem_error">Errore del filesystem</string>
-    <string name="err_file_filesystem_readonly">Filesystem in sola lettura</string>
-
-    <!-- Operation Specific -->
-    <string name="err_file_copy_failed">Copia file fallita</string>
-    <string name="err_file_move_failed">Spostamento file fallito</string>
-    <string name="err_file_backup_failed">Backup file fallito</string>
-    <string name="err_file_restore_failed">Ripristino file fallito</string>
-    <string name="err_file_sync_failed">Sincronizzazione file fallita</string>
-
-    <!-- Metadata -->
-    <string name="err_file_metadata_read_failed">Lettura metadati fallita</string>
-    <string name="err_file_metadata_write_failed">Scrittura metadati fallita</string>
-    <string name="err_file_attributes_access_failed">Accesso attributi file fallito</string>
-    <string name="err_file_timestamp_update_failed">Aggiornamento timestamp fallito</string>
 
 
     <!-- Export Error Messages - Feature Export -->
@@ -187,7 +88,7 @@
     <!-- Listing & Metadata -->
     <string name="err_export_list_failed">Errore durante il caricamento della lista export</string>
     <string name="err_export_info_failed">Errore durante il recupero delle informazioni export</string>
-    <string name="err_export_metadata_failed">Errore durante la gestione dei metadati export</string>
+    <string name="err_export_metadata_failed">Errore durante la gestione dei metadata export</string>
     <string name="err_export_index_creation_failed">Errore durante la creazione dell\'indice export</string>
 
     <!-- Manifest & Tracking -->
@@ -236,10 +137,10 @@
     <string name="err_share_zip_creation_failed">Errore durante la creazione dell\'archivio ZIP</string>
 
     <string name="err_share_uri_creation_failed">Errore durante la creazione dell\'URI condivisibile</string>
-    <string name="err_share_fileprovider_failed">Errore di configurazione FileProvider</string>
+    <string name="err_share_file_provider_failed">Errore di configurazione FileProvider</string>
 
     <string name="err_share_validation_failed">Errore durante la validazione del file per condivisione</string>
-    <string name="err_share_metadata_failed">Errore durante l\'estrazione dei metadati del file</string>
+    <string name="err_share_metadata_failed">Errore durante l\'estrazione dei metadata del file</string>
 
     <string name="err_share_app_query_failed">Errore durante la ricerca delle app compatibili</string>
     <string name="err_share_permission_denied">Permessi di accesso allo storage negati</string>
@@ -261,7 +162,7 @@
     <string name="err_photo_thumbnail_access">Errore durante l\'accesso alla miniatura</string>
 
     <!-- Metadata & EXIF -->
-    <string name="err_photo_metadata_write">Errore durante la scrittura dei metadati foto</string>
+    <string name="err_photo_metadata_write">Errore durante la scrittura dei metadata foto</string>
     <string name="err_photo_exif_write">Errore durante la scrittura dei dati EXIF</string>
     <string name="err_photo_orientation_read">Errore durante la lettura dell\'orientamento foto</string>
 
@@ -309,7 +210,7 @@
     <string name="err_photo_thumbnail_delete">Errore durante l\'eliminazione della miniatura</string>
 
     <!-- Metadata & EXIF -->
-    <string name="err_photo_metadata_read">Errore durante la lettura dei metadati foto</string>
+    <string name="err_photo_metadata_read">Errore durante la lettura dei metadata foto</string>
     <string name="err_photo_exif_read">Errore durante la lettura dei dati EXIF</string>
 
     <!-- Validation -->
@@ -340,7 +241,7 @@
     <string name="err_backup_validate">Errore durante la validazione del backup</string>
     <string name="err_backup_corrupt">Il file di backup è danneggiato</string>
     <string name="err_backup_checksum_mismatch">Checksum del backup non corrispondente</string>
-    <string name="err_backup_metadata_missing">Metadati del backup mancanti</string>
+    <string name="err_backup_metadata_missing">Metadata mancanti nel backup</string>
     <string name="err_backup_structure_invalid">Struttura del backup non valida</string>
 
     <!-- Compression Operations -->
@@ -413,6 +314,98 @@
 
 
 
+    <!-- =====================================================================
+         File Error Messages — aligned to QrError.FileError sealed interface
+         Removed: copy_failed, move_failed (duplicates of copy/move)
+                  backup_failed, restore_failed, sync_failed (feature-level)
+                  metadata_*, attributes_*, timestamp_* (feature-level)
+                  open, list, get_size, not_exists, processing (QrError.File legacy)
+    ====================================================================== -->
+
+    <!-- Directory Operations -->
+    <string name="err_file_directory_create">Errore durante la creazione della directory</string>
+    <string name="err_file_directory_access">Errore durante l\'accesso alla directory</string>
+    <string name="err_file_directory_delete">Errore durante l\'eliminazione della directory</string>
+    <string name="err_file_directory_not_found">Directory non trovata</string>
+    <string name="err_file_directory_not_empty">Impossibile eliminare: directory non vuota</string>
+    <string name="err_file_directory_permission_denied">Permessi insufficienti per accedere alla directory</string>
+
+    <!-- File Operations -->
+    <string name="err_file_create">Errore durante la creazione del file</string>
+    <string name="err_file_read">Errore durante la lettura del file</string>
+    <string name="err_file_write">Errore durante la scrittura del file</string>
+    <string name="err_file_delete">Errore durante l\'eliminazione del file</string>
+    <string name="err_file_copy">Errore durante la copia del file</string>
+    <string name="err_file_move">Errore durante lo spostamento del file</string>
+    <string name="err_file_rename">Errore durante la rinominazione del file</string>
+    <string name="err_file_access">Errore durante l\'accesso al file</string>
+    <string name="err_file_not_found">File non trovato</string>
+    <string name="err_file_already_exists">Il file esiste già</string>
+    <string name="err_file_locked">File bloccato o in uso</string>
+    <string name="err_file_corrupted">File corrotto o danneggiato</string>
+
+    <!-- Permissions -->
+    <string name="err_file_permission_denied">Permessi insufficienti per l\'operazione</string>
+    <string name="err_file_read_permission_denied">Permessi di lettura negati</string>
+    <string name="err_file_write_permission_denied">Permessi di scrittura negati</string>
+    <string name="err_file_execute_permission_denied">Permessi di esecuzione negati</string>
+
+    <!-- Storage Issues -->
+    <string name="err_file_insufficient_space">Spazio di archiviazione insufficiente</string>
+    <string name="err_file_disk_full">Disco pieno</string>
+    <string name="err_file_storage_unavailable">Spazio di archiviazione non disponibile</string>
+    <string name="err_file_quota_exceeded">Quota disco superata</string>
+
+    <!-- File Size and Limits -->
+    <string name="err_file_empty">File vuoto</string>
+    <string name="err_file_too_large">File troppo grande</string>
+    <string name="err_file_too_small">File troppo piccolo</string>
+    <string name="err_file_size_limit_exceeded">Limite dimensione file superato</string>
+    <string name="err_file_name_too_long">Nome file troppo lungo</string>
+    <string name="err_file_path_too_long">Percorso file troppo lungo</string>
+
+    <!-- File Format and Encoding -->
+    <string name="err_file_format_invalid">Formato file non valido</string>
+    <string name="err_file_encoding_error">Errore di codifica del file</string>
+    <string name="err_file_charset_unsupported">Set di caratteri non supportato</string>
+    <string name="err_file_binary_data_corrupted">Dati binari corrotti</string>
+
+    <!-- I/O Operations -->
+    <string name="err_file_io_error">Errore di input/output</string>
+    <string name="err_file_read_timeout">Timeout durante la lettura</string>
+    <string name="err_file_write_timeout">Timeout durante la scrittura</string>
+    <string name="err_file_operation_interrupted">Operazione interrotta</string>
+    <string name="err_file_concurrent_access">Accesso concorrente non permesso</string>
+
+    <!-- Network and External Storage -->
+    <string name="err_file_network_unavailable">Rete non disponibile</string>
+    <string name="err_file_connection_lost">Connessione persa</string>
+    <string name="err_file_external_storage_removed">Memoria esterna rimossa</string>
+    <string name="err_file_device_busy">Dispositivo occupato</string>
+
+    <!-- Validation -->
+    <string name="err_file_path_invalid">Percorso file non valido</string>
+    <string name="err_file_name_invalid">Nome file non valido</string>
+    <string name="err_file_extension_invalid">Estensione file non valida</string>
+    <string name="err_file_checksum_mismatch">Checksum file non corrispondente</string>
+
+    <!-- Temporary and Cache -->
+    <string name="err_file_temp_file_creation_failed">Creazione file temporaneo fallita</string>
+    <string name="err_file_temp_dir_unavailable">Directory temporanea non disponibile</string>
+    <string name="err_file_cache_write_failed">Scrittura cache fallita</string>
+    <string name="err_file_cleanup_failed">Pulizia file fallita</string>
+
+    <!-- Locking -->
+    <string name="err_file_locked_by_other">File bloccato da altro processo</string>
+    <string name="err_file_lock_acquisition_failed">Acquisizione blocco file fallita</string>
+    <string name="err_file_unlock_failed">Rilascio blocco file fallito</string>
+
+    <!-- System Level -->
+    <string name="err_file_system_error">Errore di sistema</string>
+    <string name="err_file_resource_unavailable">Risorsa non disponibile</string>
+    <string name="err_file_handle_exhausted">Handle file esauriti</string>
+    <string name="err_file_filesystem_error">Errore del filesystem</string>
+    <string name="err_file_filesystem_readonly">Filesystem in sola lettura</string>
 
 
 

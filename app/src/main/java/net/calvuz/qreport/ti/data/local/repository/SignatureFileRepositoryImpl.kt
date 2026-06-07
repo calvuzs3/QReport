@@ -95,20 +95,20 @@ class SignatureFileRepositoryImpl @Inject constructor(
                     val androidBitmap = signatureBitmap.asAndroidBitmap()
                     if (androidBitmap.isRecycled) {
                         Timber.e("SignatureFileRepository: Signature bitmap is recycled")
-                        return QrResult.Error(QrError.FileError.IO_ERROR)
+                        return QrResult.Error(QrError.FileError.BinaryDataCorrupted)
                     }
 
                     // Save bitmap to file
                     val saveResult = saveBitmapToFile(androidBitmap, signatureFile)
                     when (saveResult) {
-                        is QrResult.Error -> QrResult.Error(QrError.FileError.FILE_WRITE) // saveResult
+                        is QrResult.Error -> QrResult.Error(QrError.FileError.FileWriteError(signatureFile.absolutePath))
                         is QrResult.Success -> {
                             // Verify file was created and has reasonable size
                             val fileSize = coreFileRepository.getFileSize(signatureFile.absolutePath)
                             when (fileSize) {
                                 is QrResult.Error -> {
                                     Timber.e("SignatureFileRepository: Could not verify saved file size")
-                                    QrResult.Error(QrError.FileError.FILE_WRITE)
+                                    QrResult.Error(QrError.FileError.FileWriteError(signatureFile.absolutePath))
                                 }
 
                                 is QrResult.Success -> {
@@ -118,7 +118,12 @@ class SignatureFileRepositoryImpl @Inject constructor(
                                     if (fileSizeMB > MAX_SIGNATURE_SIZE_MB) {
                                         Timber.w("SignatureFileRepository: Signature file too large: ${fileSizeMB}MB")
                                         coreFileRepository.deleteFile(signatureFile.absolutePath)
-                                        return QrResult.Error(QrError.FileError.FILE_WRITE)
+                                        return QrResult.Error(
+                                            QrError.FileError.FileTooLarge(
+                                                actualBytes = fileSize.data,
+                                                maxBytes = MAX_SIGNATURE_SIZE_MB * 1024 * 1024
+                                            )
+                                        )
                                     }
 
                                     Timber.d("SignatureFileRepository: ${signatureType.displayName} saved successfully - Size: ${fileSizeKB}KB")
@@ -131,7 +136,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error saving ${signatureType.displayName}")
-            QrResult.Error(QrError.FileError.FILE_WRITE)
+            QrResult.Error(QrError.FileError.FileWriteError(null))
         }
     }
 
@@ -148,14 +153,14 @@ class SignatureFileRepositoryImpl @Inject constructor(
                 )
 
                 if (!success) {
-                    QrResult.Error(QrError.FileError.FILE_WRITE)
+                    QrResult.Error(QrError.FileError.FileWriteError(file.absolutePath))
                 } else {
                     QrResult.Success(Unit)
                 }
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error saving bitmap to file: ${file.absolutePath}")
-            QrResult.Error(QrError.FileError.FILE_WRITE)
+            QrResult.Error(QrError.FileError.FileWriteError(file.absolutePath))
         }
     }
 
@@ -174,7 +179,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
 
             if (bitmap == null) {
                 Timber.e("SignatureFileRepository: Failed to decode signature bitmap from: $filePath")
-                return QrResult.Error(QrError.FileError.FILE_READ)
+                return QrResult.Error(QrError.FileError.FileReadError(filePath))
             }
 
             Timber.d("SignatureFileRepository: Loaded signature bitmap: ${bitmap.width}x${bitmap.height}")
@@ -182,7 +187,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error loading signature from: $filePath")
-            QrResult.Error(QrError.FileError.FILE_READ)
+            QrResult.Error(QrError.FileError.FileReadError(filePath))
         }
     }
 
@@ -210,7 +215,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             QrResult.Success(isValid)
         } catch (e: Exception) {
             Timber.w(e, "SignatureFileRepository: Error validating signature: $filePath")
-            QrResult.Error(QrError.FileError.IO_ERROR)
+            QrResult.Error(QrError.FileError.IoError(e))
         }
     }
 
@@ -240,7 +245,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error getting signatures for intervention: $interventionId")
-            QrResult.Error(QrError.FileError.FILE_READ)
+            QrResult.Error(QrError.FileError.FileReadError(interventionId))
         }
     }
 
@@ -249,7 +254,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             // Get signatures directory
             val signatureDirResult = coreFileRepository.getOrCreateDirectory(signatureDirectorySpec)
             when (signatureDirResult) {
-                is QrResult.Error -> return QrResult.Error(QrError.FileError.IO_ERROR) //signatureDirResult
+                is QrResult.Error -> return QrResult.Error(signatureDirResult.error)
                 is QrResult.Success -> {
                     val signatureDir = signatureDirResult.data
 
@@ -257,7 +262,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
                     val filesResult = coreFileRepository.listFiles(signatureDir, null)
 
                     when (filesResult) {
-                        is QrResult.Error -> return QrResult.Error(QrError.FileError.FILE_READ) //filesResult
+                        is QrResult.Error -> return QrResult.Error(filesResult.error)
                         is QrResult.Success -> {
                             val signatureInfos = filesResult.data
                                 .filter { coreFileInfo ->
@@ -276,7 +281,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error getting all signatures")
-            QrResult.Error(QrError.FileError.FILE_READ)
+            QrResult.Error(QrError.FileError.FileReadError(null))
         }
     }
 
@@ -320,7 +325,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
         return try {
             val signatureDirResult = coreFileRepository.getOrCreateDirectory(signatureDirectorySpec)
             when (signatureDirResult) {
-                is QrResult.Error -> return QrResult.Error(QrError.FileError.IO_ERROR) //signatureDirResult
+                is QrResult.Error -> return QrResult.Error(signatureDirResult.error)
                 is QrResult.Success -> {
                     val cleanupResult = coreFileRepository.cleanupOldFiles(signatureDirResult.data, olderThanDays)
                     when (cleanupResult) {
@@ -334,7 +339,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error during cleanup")
-            QrResult.Error(QrError.FileError.FILE_DELETE)
+            QrResult.Error(QrError.FileError.FileDeleteError(null))
         }
     }
 
@@ -368,7 +373,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error getting storage stats")
-            QrResult.Error(QrError.FileError.IO_ERROR)
+            QrResult.Error(QrError.FileError.IoError(e))
         }
     }
 
@@ -405,7 +410,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error verifying storage integrity")
-            QrResult.Error(QrError.FileError.IO_ERROR)
+            QrResult.Error(QrError.FileError.IoError(e))
         }
     }
 
@@ -413,14 +418,14 @@ class SignatureFileRepositoryImpl @Inject constructor(
         return try {
             val signatureDirResult = coreFileRepository.getOrCreateDirectory(signatureDirectorySpec)
             when (signatureDirResult) {
-                is QrResult.Error -> return QrResult.Error(QrError.FileError.FILE_READ) //signatureDirResult
+                is QrResult.Error -> return QrResult.Error(signatureDirResult.error)
                 is QrResult.Success -> {
                     coreFileRepository.getDirectorySize(signatureDirResult.data)
                 }
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error getting directory size")
-            QrResult.Error(QrError.FileError.IO_ERROR)
+            QrResult.Error(QrError.FileError.IoError(e))
         }
     }
 
@@ -446,7 +451,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error copying signature for export: $signaturePath")
-            QrResult.Error(QrError.FileError.FILE_COPY)
+            QrResult.Error(QrError.FileError.FileCopyError(signaturePath, null))
         }
     }
 
@@ -461,7 +466,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             // This is a maintenance operation to organize loose files
             val allSignaturesResult = getAllSignatures()
             when (allSignaturesResult) {
-                is QrResult.Error -> return QrResult.Error(QrError.FileError.FILE_READ) // allSignaturesResult
+                is QrResult.Error -> return QrResult.Error(allSignaturesResult.error)
                 is QrResult.Success -> {
                     var organizedCount = 0
 
@@ -498,7 +503,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error organizing signatures")
-            QrResult.Error(QrError.FileError.FILE_MOVE)
+            QrResult.Error(QrError.FileError.FileMoveError(null, null))
         }
     }
 
@@ -506,7 +511,7 @@ class SignatureFileRepositoryImpl @Inject constructor(
         return try {
             val allSignaturesResult = getAllSignatures()
             when (allSignaturesResult) {
-                is QrResult.Error -> return QrResult.Error(QrError.FileError.FILE_READ) // allSignaturesResult
+                is QrResult.Error -> return QrResult.Error(allSignaturesResult.error)
                 is QrResult.Success -> {
                     val signaturesByIntervention = allSignaturesResult.data.groupBy { it.interventionId }
                     QrResult.Success(signaturesByIntervention)
@@ -514,11 +519,11 @@ class SignatureFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "SignatureFileRepository: Error grouping signatures by intervention")
-            QrResult.Error(QrError.FileError.IO_ERROR)
+            QrResult.Error(QrError.FileError.IoError(e))
         }
     }
 
-     override suspend fun getSignaturesDirectory(): QrResult<String, QrError.FileError> {
-     return coreFileRepository.getOrCreateDirectory(signatureDirectorySpec)
- }
+    override suspend fun getSignaturesDirectory(): QrResult<String, QrError.FileError> {
+        return coreFileRepository.getOrCreateDirectory(signatureDirectorySpec)
+    }
 }

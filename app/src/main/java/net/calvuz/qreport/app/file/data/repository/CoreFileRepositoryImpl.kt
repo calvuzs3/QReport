@@ -19,24 +19,23 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Core file repository implementation
+ * Core file repository implementation.
  *
- * CONTIENE SOLO:
- * - File system operations generiche
- * - Directory management base
- * - Operazioni CRUD su file
+ * Contains ONLY:
+ * - Generic file system operations
+ * - Base directory management
+ * - File CRUD operations
  *
- * NON CONTIENE:
- * - Business logic di Backup
- * - Business logic di Export
- * - Logiche specifiche di feature
+ * Does NOT contain:
+ * - Backup business logic
+ * - Export business logic
+ * - Feature-specific logic
  */
 @Singleton
 class CoreFileRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context
 ) : CoreFileRepository {
 
-    /** Definitions */
     private val fileProviderAuthority = "${context.packageName}.fileprovider"
 
     // ===== DIRECTORY MANAGEMENT =====
@@ -44,11 +43,12 @@ class CoreFileRepositoryImpl @Inject constructor(
     override suspend fun getOrCreateDirectory(spec: DirectorySpec): QrResult<String, QrError.FileError> {
         return try {
             val dir = when (spec) {
-                DirectorySpec.Core.PHOTOS -> context.filesDir.resolve("photos")
-                DirectorySpec.Core.TEMP -> context.filesDir.resolve("temp")
-                DirectorySpec.Core.CACHE -> context.cacheDir
+                DirectorySpec.PHOTOS -> context.filesDir.resolve("photos")
+                DirectorySpec.TEMP -> context.filesDir.resolve("temp")
+                DirectorySpec.CACHE -> context.cacheDir
                 else -> {
-                    // Handle custom DirectorySpec - create path from name
+                    // Custom DirectorySpec: build path from name.
+                    // Names starting with "cache/" resolve under cacheDir.
                     val dirPath = spec.name
                     if (dirPath.startsWith("cache/")) {
                         context.cacheDir.resolve(dirPath.removePrefix("cache/"))
@@ -62,36 +62,34 @@ class CoreFileRepositoryImpl @Inject constructor(
                 val created = dir.mkdirs()
                 if (!created) {
                     Timber.e("Failed to create directory: ${dir.absolutePath}")
-                    return QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
+                    return Error(QrError.FileError.DirectoryCreateError(dir.absolutePath))
                 }
             }
 
             Timber.d("Directory ready: ${dir.absolutePath}")
-            QrResult.Success(dir.absolutePath)
+            Success(dir.absolutePath)
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.DIRECTORY_CREATE}: $spec")
-            QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
+            Timber.e(e, "DirectoryCreateError: $spec")
+            Error(QrError.FileError.DirectoryCreateError(spec.name))
         }
     }
 
     override suspend fun createSubDirectory(
-        baseDirectorySpec: DirectorySpec,
+        spec: DirectorySpec,
         subDirName: String
     ): QrResult<String, QrError.FileError> {
         return try {
-            val baseResult = getOrCreateDirectory(baseDirectorySpec)
-
-            when (baseResult) {
-                is QrResult.Error -> baseResult
-                is QrResult.Success -> {
+            when (val baseResult = getOrCreateDirectory(spec)) {
+                is Error -> baseResult
+                is Success -> {
                     val subDir = File(baseResult.data, subDirName)
 
                     if (!subDir.exists()) {
                         val created = subDir.mkdirs()
                         if (!created) {
                             Timber.e("Failed to create subdirectory: ${subDir.absolutePath}")
-                            return Error(QrError.FileError.DIRECTORY_CREATE)
+                            return Error(QrError.FileError.DirectoryCreateError(subDir.absolutePath))
                         }
                     }
 
@@ -101,8 +99,8 @@ class CoreFileRepositoryImpl @Inject constructor(
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.DIRECTORY_CREATE}: $subDirName")
-            QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
+            Timber.e(e, "DirectoryCreateError: $subDirName")
+            Error(QrError.FileError.DirectoryCreateError(subDirName))
         }
     }
 
@@ -118,27 +116,22 @@ class CoreFileRepositoryImpl @Inject constructor(
 
             if (!sourceFile.exists()) {
                 Timber.e("Source file not found: $sourcePath")
-                return QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                return Error(QrError.FileError.FileNotFound(sourcePath))
             }
 
             // Create destination directory if needed
-            destFile.parentFile?.let { parentDir ->
-                if (!parentDir.exists()) {
-                    parentDir.mkdirs()
-                }
-            }
+            destFile.parentFile?.let { if (!it.exists()) it.mkdirs() }
 
             sourceFile.copyTo(destFile, overwrite = true)
             Timber.d("File copied: $sourcePath → $destinationPath")
-
-            QrResult.Success(Unit)
+            Success(Unit)
 
         } catch (e: IOException) {
-            Timber.e(e, "${QrError.FileError.FILE_READ}: $sourcePath")
-            QrResult.Error(QrError.FileError.FILE_READ)
+            Timber.e(e, "FileCopyError: $sourcePath → $destinationPath")
+            Error(QrError.FileError.FileCopyError(sourcePath, destinationPath))
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.FILE_READ}: $sourcePath → $destinationPath")
-            QrResult.Error(QrError.FileError.FILE_COPY)
+            Timber.e(e, "FileCopyError: $sourcePath → $destinationPath")
+            Error(QrError.FileError.FileCopyError(sourcePath, destinationPath))
         }
     }
 
@@ -147,20 +140,14 @@ class CoreFileRepositoryImpl @Inject constructor(
         destinationPath: String
     ): QrResult<Unit, QrError.FileError> {
         return try {
-            // Copy first
-            val copyResult = copyFile(sourcePath, destinationPath)
-
-            when (copyResult) {
-                is QrResult.Error -> copyResult
-                is QrResult.Success -> {
-                    // Delete source after successful copy
-                    deleteFile(sourcePath)
-                }
+            when (val copyResult = copyFile(sourcePath, destinationPath)) {
+                is Error -> copyResult
+                is Success -> deleteFile(sourcePath)
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.FILE_MOVE}: $sourcePath → $destinationPath")
-            QrResult.Error(QrError.FileError.FILE_MOVE)
+            Timber.e(e, "FileMoveError: $sourcePath → $destinationPath")
+            Error(QrError.FileError.FileMoveError(sourcePath, destinationPath))
         }
     }
 
@@ -169,22 +156,22 @@ class CoreFileRepositoryImpl @Inject constructor(
             val file = File(filePath)
 
             if (!file.exists()) {
-                Timber.w("File to delete not found: $filePath")
-                return QrResult.Success(Unit) // Not an error - already deleted
+                Timber.w("File to delete not found (already deleted): $filePath")
+                return Success(Unit) // Idempotent — not an error
             }
 
             val deleted = file.delete()
             if (!deleted) {
                 Timber.e("Failed to delete file: $filePath")
-                return QrResult.Error(QrError.FileError.FILE_DELETE)
+                return Error(QrError.FileError.FileDeleteError(filePath))
             }
 
             Timber.d("File deleted: $filePath")
-            QrResult.Success(Unit)
+            Success(Unit)
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.FILE_DELETE}: $filePath")
-            QrResult.Error(QrError.FileError.FILE_DELETE)
+            Timber.e(e, "FileDeleteError: $filePath")
+            Error(QrError.FileError.FileDeleteError(filePath))
         }
     }
 
@@ -193,22 +180,22 @@ class CoreFileRepositoryImpl @Inject constructor(
             val dir = File(dirPath)
 
             if (!dir.exists()) {
-                Timber.w("Directory to delete not found: $dirPath")
-                return QrResult.Success(Unit) // Not an error - already deleted
+                Timber.w("Directory to delete not found (already deleted): $dirPath")
+                return Success(Unit) // Idempotent — not an error
             }
 
             val deleted = dir.deleteRecursively()
             if (!deleted) {
                 Timber.e("Failed to delete directory: $dirPath")
-                return QrResult.Error(QrError.FileError.FILE_DELETE)
+                return Error(QrError.FileError.DirectoryDeleteError(dirPath))
             }
 
             Timber.d("Directory deleted: $dirPath")
-            QrResult.Success(Unit)
+            Success(Unit)
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.FILE_DELETE}: $dirPath")
-            QrResult.Error(QrError.FileError.FILE_DELETE)
+            Timber.e(e, "DirectoryDeleteError: $dirPath")
+            Error(QrError.FileError.DirectoryDeleteError(dirPath))
         }
     }
 
@@ -216,7 +203,8 @@ class CoreFileRepositoryImpl @Inject constructor(
         return try {
             File(filePath).exists()
         } catch (e: Exception) {
-            Timber.w(e, "${QrError.File.FILE_NOT_EXISTS}: $filePath")
+            // Never propagate — callers depend on a safe boolean return
+            Timber.w(e, "FileAccessError: $filePath")
             false
         }
     }
@@ -226,14 +214,14 @@ class CoreFileRepositoryImpl @Inject constructor(
             val file = File(filePath)
 
             if (!file.exists()) {
-                return QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                return Error(QrError.FileError.FileNotFound(filePath))
             }
 
-            QrResult.Success(file.length())
+            Success(file.length())
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.IO_ERROR}: $filePath")
-            QrResult.Error(QrError.FileError.IO_ERROR)
+            Timber.e(e, "IoError: $filePath")
+            Error(QrError.FileError.IoError(e))
         }
     }
 
@@ -246,7 +234,7 @@ class CoreFileRepositoryImpl @Inject constructor(
 
             if (!dir.exists() || !dir.isDirectory) {
                 Timber.e("Directory not found: $dirPath")
-                return QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                return Error(QrError.FileError.DirectoryNotFound(dirPath))
             }
 
             val files = dir.listFiles()?.mapNotNull { file ->
@@ -259,25 +247,20 @@ class CoreFileRepositoryImpl @Inject constructor(
                         isDirectory = file.isDirectory,
                         extension = file.extension.takeIf { it.isNotEmpty() }
                     )
-
-                    // Apply filter if provided
-                    if (filter?.matches(fileInfo) != false) {
-                        fileInfo
-                    } else {
-                        null
-                    }
+                    // Apply filter — null filter means include all
+                    if (filter?.matches(fileInfo) != false) fileInfo else null
 
                 } catch (e: Exception) {
-                    Timber.w(e, "${QrError.File.IO_ERROR}: ${file.name}")
-                    null
+                    Timber.w(e, "IoError on entry: ${file.name}")
+                    null // Skip bad entries; do not fail the whole list
                 }
             } ?: emptyList()
 
-            QrResult.Success(files)
+            Success(files)
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.FILE_READ}: $dirPath")
-            QrResult.Error(QrError.FileError.FILE_READ)
+            Timber.e(e, "FileReadError: $dirPath")
+            Error(QrError.FileError.FileReadError(dirPath))
         }
     }
 
@@ -291,27 +274,26 @@ class CoreFileRepositoryImpl @Inject constructor(
             val cutoffTime = System.currentTimeMillis() - (olderThanDays * 24 * 60 * 60 * 1000L)
             var deletedCount = 0
 
-            val listResult = listFiles(dirPath)
-            when (listResult) {
-                is QrResult.Error -> QrResult.Error(listResult.error)
-                is QrResult.Success -> {
+            when (val listResult = listFiles(dirPath)) {
+                is Error -> Error(listResult.error)
+                is Success -> {
                     for (fileInfo in listResult.data) {
-                        if (fileInfo.lastModified < cutoffTime) {
+                        if (!fileInfo.isDirectory && fileInfo.lastModified < cutoffTime) {
                             when (deleteFile(fileInfo.path)) {
-                                is QrResult.Success -> deletedCount++
-                                is QrResult.Error -> Timber.w("${QrError.FileError.FILE_DELETE}: ${fileInfo.name}")
+                                is Success -> deletedCount++
+                                is Error -> Timber.w("FileDeleteError: ${fileInfo.name}")
                             }
                         }
                     }
 
                     Timber.d("Cleaned up $deletedCount old files from: $dirPath")
-                    QrResult.Success(deletedCount)
+                    Success(deletedCount)
                 }
             }
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.FILE_DELETE}: $dirPath")
-            QrResult.Error(QrError.FileError.FILE_DELETE)
+            Timber.e(e, "CleanupFailed: $dirPath")
+            Error(QrError.FileError.CleanupFailed)
         }
     }
 
@@ -320,65 +302,59 @@ class CoreFileRepositoryImpl @Inject constructor(
             val dir = File(dirPath)
 
             if (!dir.exists() || !dir.isDirectory) {
-                return QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                return Error(QrError.FileError.DirectoryNotFound(dirPath))
             }
 
             val totalSize = dir.walkTopDown()
                 .filter { it.isFile }
-                .map { it.length() }
-                .sum()
+                .sumOf { it.length() }
 
-            QrResult.Success(totalSize)
+            Success(totalSize)
 
         } catch (e: Exception) {
-            Timber.e(e, "${QrError.FileError.IO_ERROR}: $dirPath")
-            QrResult.Error(QrError.FileError.IO_ERROR)
+            Timber.e(e, "IoError: $dirPath")
+            Error(QrError.FileError.IoError(e))
         }
     }
 
     // ===== FILEPROVIDER SUPPORT =====
 
-    override suspend fun getFileProviderAuthority(): String {
-        return fileProviderAuthority
-    }
+    override suspend fun getFileProviderAuthority(): String = fileProviderAuthority
 
     override suspend fun createFileProviderUri(filePath: String): QrResult<Uri, QrError.FileError> {
         return try {
             val file = File(filePath)
             if (!file.exists()) {
                 Timber.e("File not found for FileProvider URI: $filePath")
-                return QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                return Error(QrError.FileError.FileNotFound(filePath))
             }
 
-            val uri = FileProvider.getUriForFile(context, getFileProviderAuthority(), file)
+            val uri = FileProvider.getUriForFile(context, fileProviderAuthority, file)
             Timber.d("Created FileProvider URI: $uri for file: $filePath")
-            QrResult.Success(uri)
+            Success(uri)
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to create FileProvider URI for: $filePath")
-            QrResult.Error(QrError.FileError.FILE_READ)
+            Error(QrError.FileError.FileAccessError(filePath))
         }
     }
 
     override suspend fun isFileProviderConfigured(): Boolean {
         return try {
-            // Test if FileProvider is properly configured by creating a temporary file
-            val tempDir = getOrCreateDirectory(DirectorySpec.Core.TEMP)
-            when (tempDir) {
-                is QrResult.Error -> false
-                is QrResult.Success -> {
+            when (val tempDir = getOrCreateDirectory(DirectorySpec.TEMP)) {
+                is Error -> false
+                is Success -> {
                     val testFile = File(tempDir.data, "test_fileprovider.tmp")
                     testFile.createNewFile()
-
                     val uriResult = createFileProviderUri(testFile.absolutePath)
                     testFile.delete()
 
                     when (uriResult) {
-                        is QrResult.Success -> {
+                        is Success -> {
                             Timber.d("FileProvider is properly configured")
                             true
                         }
-                        is QrResult.Error -> {
+                        is Error -> {
                             Timber.w("FileProvider not properly configured")
                             false
                         }

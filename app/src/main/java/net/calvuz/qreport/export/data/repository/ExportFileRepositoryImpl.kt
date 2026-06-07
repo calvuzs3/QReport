@@ -86,7 +86,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to get exports directory")
-            QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
+            QrResult.Error(QrError.FileError.DirectoryCreateError(ExportDirectories.EXPORTS.name))
         }
     }
 
@@ -121,7 +121,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to create export directory for checkup: $checkupId")
-            QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
+            QrResult.Error(QrError.FileError.DirectoryCreateError("exports/$checkupId"))
         }
     }
 
@@ -711,7 +711,7 @@ class ExportFileRepositoryImpl @Inject constructor(
                                 if (existsResult.data) {
                                     QrResult.Success(fallbackFile)
                                 } else {
-                                    QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                                    QrResult.Error(QrError.FileError.FileNotFound(fallbackFile))
                                 }
                             }
                         }
@@ -720,7 +720,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to find main export file in: $exportDirectory")
-            QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+            QrResult.Error(QrError.FileError.FileNotFound(exportDirectory))
         }
     }
 
@@ -736,7 +736,7 @@ class ExportFileRepositoryImpl @Inject constructor(
                 is QrResult.Error -> return QrResult.Error(existsResult.error)
                 is QrResult.Success -> {
                     if (!existsResult.data) {
-                        return QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                        return QrResult.Error(QrError.FileError.FileNotFound(filePath))
                     }
                 }
             }
@@ -786,7 +786,7 @@ class ExportFileRepositoryImpl @Inject constructor(
                 is QrResult.Error -> return QrResult.Error(existsResult.error)
                 is QrResult.Success -> {
                     if (!existsResult.data) {
-                        return QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                        return QrResult.Error(QrError.FileError.FileNotFound(filePath))
                     }
                 }
             }
@@ -887,143 +887,119 @@ class ExportFileRepositoryImpl @Inject constructor(
     }
 
     /**
-     * Helper: Create directory if it doesn't exist
-     * Sostituisce il metodo createDirectoryIfNotExists() che non esiste in CoreFileRepository
+     * Helper: Create directory if it doesn't exist.
+     * Delegates to CoreFileRepository.getOrCreateDirectory() which already handles
+     * the idempotent creation and error mapping internally.
      */
-    private suspend fun createDirectoryIfNotExists(dirPath: String): QrResult<String, QrError> {
-        return try {
-            val file = File(dirPath)
-            if (file.exists() && file.isDirectory) {
-                QrResult.Success(dirPath)
-            } else {
-                // Create directory with parents
-                val created = file.mkdirs()
-                if (created || file.exists()) {
-                    Timber.d("Created directory: $dirPath")
-                    QrResult.Success(dirPath)
-                } else {
-                    Timber.e("Failed to create directory: $dirPath")
-                    QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
-                }
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Exception creating directory: $dirPath")
-            QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
-        }
+    private suspend fun createDirectoryIfNotExists(dirPath: String): QrResult<String, QrError.FileError> {
+        return coreFileRepo.getOrCreateDirectory(DirectorySpec(dirPath))
     }
 
     /**
-     * Helper: Create empty file
-     * Sostituisce il metodo createFile() che non esiste in CoreFileRepository
+     * Helper: Create an empty file at the given path.
+     * CoreFileRepository does not expose createFile() directly — file content
+     * is always written by the caller. This helper only ensures the file exists
+     * so that subsequent write calls have a valid target.
      */
-    private suspend fun createFile(filePath: String): QrResult<String, QrError> {
+    private suspend fun createFile(filePath: String): QrResult<String, QrError.FileError> {
         return try {
             val file = File(filePath)
 
-            // Ensure parent directory exists
+            // Ensure parent directory exists via CoreFileRepository
             file.parentFile?.let { parentDir ->
                 if (!parentDir.exists()) {
-                    val created = parentDir.mkdirs()
-                    if (!created) {
-                        return QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
-                    }
+                    val dirResult = coreFileRepo.getOrCreateDirectory(DirectorySpec(parentDir.absolutePath))
+                    if (dirResult is QrResult.Error) return dirResult
                 }
             }
 
-            // Create file
             val created = file.createNewFile()
             if (created || file.exists()) {
                 Timber.d("Created file: $filePath")
                 QrResult.Success(filePath)
             } else {
                 Timber.e("Failed to create file: $filePath")
-                QrResult.Error(QrError.FileError.FILE_CREATE)
+                QrResult.Error(QrError.FileError.FileCreateError(filePath))
             }
         } catch (e: Exception) {
             Timber.e(e, "Exception creating file: $filePath")
-            QrResult.Error(QrError.FileError.FILE_CREATE)
+            QrResult.Error(QrError.FileError.FileCreateError(filePath))
         }
     }
 
     /**
-     * Helper: Write text content to file
-     * Sostituisce il metodo writeTextToFile() che non esiste in CoreFileRepository
+     * Helper: Write text content to file.
+     * CoreFileRepository handles paths and directories; actual content writing
+     * stays here as it is export-feature responsibility.
      */
     private suspend fun writeTextToFile(
         filePath: String,
         content: String
-    ): QrResult<Unit, QrError> {
+    ): QrResult<Unit, QrError.FileError> {
         return withContext(Dispatchers.IO) {
             try {
                 val file = File(filePath)
 
-                // Ensure parent directory exists
                 file.parentFile?.let { parentDir ->
                     if (!parentDir.exists()) {
-                        val created = parentDir.mkdirs()
-                        if (!created) {
-                            return@withContext QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
-                        }
+                        val dirResult = coreFileRepo.getOrCreateDirectory(DirectorySpec(parentDir.absolutePath))
+                        if (dirResult is QrResult.Error) return@withContext QrResult.Error(dirResult.error)
                     }
                 }
 
-                // Write content
                 file.writeText(content, Charsets.UTF_8)
                 Timber.d("Wrote text to file: $filePath (${content.length} chars)")
                 QrResult.Success(Unit)
 
             } catch (e: Exception) {
                 Timber.e(e, "Exception writing text to file: $filePath")
-                QrResult.Error(QrError.FileError.FILE_WRITE)
+                QrResult.Error(QrError.FileError.FileWriteError(filePath))
             }
         }
     }
 
     /**
-     * Helper: Write binary data to file
-     * Sostituisce il metodo writeBinaryToFile() che non esiste in CoreFileRepository
+     * Helper: Write binary data to file.
+     * CoreFileRepository handles paths and directories; binary writing
+     * stays here as it is export-feature responsibility.
      */
     private suspend fun writeBinaryToFile(
         filePath: String,
         data: ByteArray
-    ): QrResult<Unit, QrError> {
+    ): QrResult<Unit, QrError.FileError> {
         return withContext(Dispatchers.IO) {
             try {
                 val file = File(filePath)
 
-                // Ensure parent directory exists
                 file.parentFile?.let { parentDir ->
                     if (!parentDir.exists()) {
-                        val created = parentDir.mkdirs()
-                        if (!created) {
-                            return@withContext QrResult.Error(QrError.FileError.DIRECTORY_CREATE)
-                        }
+                        val dirResult = coreFileRepo.getOrCreateDirectory(DirectorySpec(parentDir.absolutePath))
+                        if (dirResult is QrResult.Error) return@withContext QrResult.Error(dirResult.error)
                     }
                 }
 
-                // Write binary data
                 file.writeBytes(data)
                 Timber.d("Wrote binary to file: $filePath (${data.size} bytes)")
                 QrResult.Success(Unit)
 
             } catch (e: Exception) {
                 Timber.e(e, "Exception writing binary to file: $filePath")
-                QrResult.Error(QrError.FileError.FILE_WRITE)
+                QrResult.Error(QrError.FileError.FileWriteError(filePath))
             }
         }
     }
 
     /**
-     * Helper: Wrap fileExists() result in QrResult
-     * CoreFileRepository.fileExists() ritorna Boolean, non QrResult
+     * Helper: Wrap fileExists() result in QrResult.
+     * CoreFileRepository.fileExists() returns Boolean; this wraps it
+     * for use in chains that expect QrResult.
      */
-    private suspend fun fileExistsWithResult(filePath: String): QrResult<Boolean, QrError> {
+    private suspend fun fileExistsWithResult(filePath: String): QrResult<Boolean, QrError.FileError> {
         return try {
-            val exists = coreFileRepo.fileExists(filePath)
-            QrResult.Success(exists)
+            QrResult.Success(coreFileRepo.fileExists(filePath))
         } catch (e: Exception) {
             Timber.e(e, "Exception checking file existence: $filePath")
-            QrResult.Error(QrError.FileError.FILE_ACCESS)
+            QrResult.Error(QrError.FileError.FileAccessError(filePath))
         }
     }
 }

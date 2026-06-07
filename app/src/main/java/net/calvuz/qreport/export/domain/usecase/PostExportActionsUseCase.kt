@@ -47,7 +47,7 @@ class PostExportActionsUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to open export")
-            QrResult.Error(QrError.FileError.FILE_READ)
+            QrResult.Error(QrError.FileError.FileReadError())
         }
     }
 
@@ -132,7 +132,7 @@ class PostExportActionsUseCase @Inject constructor(
                         QReportMimeTypes.WORD
                 }
                 wordFile?.let { QrResult.Success(it.absolutePath) }
-                    ?: QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                    ?: QrResult.Error(QrError.FileError.FileNotFound(exportPath))
             }
             exportResult.textResult != null -> {
                 val textDir = File(exportPath, "text")
@@ -140,7 +140,7 @@ class PostExportActionsUseCase @Inject constructor(
                         QReportMimeTypes.TEXT
                 }
                 textFile?.let { QrResult.Success(it.absolutePath) }
-                    ?: QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+                    ?: QrResult.Error(QrError.FileError.FileNotFound(exportPath))
             }
             // TODO: Aggiungere support per foto
             exportResult.photoFolderResult != null -> {
@@ -155,7 +155,7 @@ class PostExportActionsUseCase @Inject constructor(
                     QrResult.Success(zipFile.absolutePath)
                 }
             }
-            else -> QrResult.Error(QrError.FileError.FILE_NOT_FOUND)
+            else -> QrResult.Error(QrError.FileError.FileNotFound(exportPath))
         }
     }
 

@@ -326,105 +326,198 @@ interface QrError {
         data class ParseError(val message: String? = null) : NetworkError
     }
 
-    enum class FileError : QrError {
-        // ===== DIRECTORY OPERATIONS =====
-        DIRECTORY_CREATE,           // Errore creazione directory
-        DIRECTORY_ACCESS,           // Errore accesso directory
-        DIRECTORY_DELETE,           // Errore eliminazione directory
-        DIRECTORY_NOT_FOUND,        // Directory non trovata
-        DIRECTORY_NOT_EMPTY,        // Directory non vuota durante eliminazione
-        DIRECTORY_PERMISSION_DENIED, // Permessi insufficienti per directory
+    // Replace the existing `enum class FileError` in QrError.kt with this block.
+    //
+    // Migration notes for QrErrorExt.kt:
+    //   - All branches change from  `QrError.FileError.XYZ ->`
+    //                            to  `is QrError.FileError.XYZ ->`
+    //   - Branches that carry payload can now access it:
+    //       is QrError.FileError.IoError -> it.cause?.message ?: ...
+    //   - The compiler will flag every unhandled branch — follow the errors top to bottom.
 
-        // ===== FILE OPERATIONS =====
-        FILE_CREATE,                // Errore creazione file
-        FILE_READ,                  // Errore lettura file
-        FILE_WRITE,                 // Errore scrittura file
-        FILE_DELETE,                // Errore eliminazione file
-        FILE_COPY,                  // Errore copia file
-        FILE_MOVE,                  // Errore spostamento file
-        FILE_RENAME,                // Errore rinominazione file
-        FILE_ACCESS,                // Errore accesso file generico
-        FILE_NOT_FOUND,             // File non trovato
-        FILE_ALREADY_EXISTS,        // File già esistente
-        FILE_LOCKED,                // File bloccato/in uso
-        FILE_CORRUPTED,             // File corrotto
+    sealed interface FileError : QrError {
 
-        // ===== PERMISSIONS =====
-        PERMISSION_DENIED,          // Permessi insufficienti
-        READ_PERMISSION_DENIED,     // Permessi lettura negati
-        WRITE_PERMISSION_DENIED,    // Permessi scrittura negati
-        EXECUTE_PERMISSION_DENIED,  // Permessi esecuzione negati
+        // ── Directory operations ──────────────────────────────────────────────────
 
-        // ===== STORAGE ISSUES =====
-        INSUFFICIENT_SPACE,        // Spazio insufficiente
-        DISK_FULL,                 // Disco pieno
-        STORAGE_UNAVAILABLE,       // Storage non disponibile
-        QUOTA_EXCEEDED,            // Quota disco superata
+        /** mkdirs() returned false or threw. */
+        data class DirectoryCreateError(val path: String? = null) : FileError
 
-        // ===== FILE SIZE & LIMITS =====
-        FILE_EMPTY,                // File vuoto
-        FILE_TOO_LARGE,            // File troppo grande
-        FILE_TOO_SMALL,            // File troppo piccolo
-        SIZE_LIMIT_EXCEEDED,       // Limite dimensione superato
-        NAME_TOO_LONG,             // Nome file troppo lungo
-        PATH_TOO_LONG,             // Path troppo lungo
+        /** Directory exists but cannot be accessed. */
+        data class DirectoryAccessError(val path: String? = null) : FileError
 
-        // ===== FILE FORMAT & ENCODING =====
-        FORMAT_INVALID,            // Formato file non valido
-        ENCODING_ERROR,            // Errore encoding/decoding
-        CHARSET_UNSUPPORTED,       // Charset non supportato
-        BINARY_DATA_CORRUPTED,     // Dati binari corrotti
+        /** Directory deletion failed. */
+        data class DirectoryDeleteError(val path: String? = null) : FileError
 
-        // ===== I/O OPERATIONS =====
-        IO_ERROR,                  // Errore I/O generico
-        READ_TIMEOUT,              // Timeout lettura
-        WRITE_TIMEOUT,             // Timeout scrittura
-        OPERATION_INTERRUPTED,     // Operazione interrotta
-        CONCURRENT_ACCESS,         // Accesso concorrente non permesso
+        /** Expected directory was not found. */
+        data class DirectoryNotFound(val path: String? = null) : FileError
 
-        // ===== NETWORK & EXTERNAL =====
-        NETWORK_UNAVAILABLE,       // Rete non disponibile (per file remoti)
-        CONNECTION_LOST,           // Connessione persa
-        EXTERNAL_STORAGE_REMOVED,  // Storage esterno rimosso
-        DEVICE_BUSY,               // Dispositivo occupato
+        /** Deletion refused because directory is not empty. */
+        data object DirectoryNotEmpty : FileError
 
-        // ===== VALIDATION =====
-        PATH_INVALID,              // Path non valido
-        NAME_INVALID,              // Nome file non valido
-        EXTENSION_INVALID,         // Estensione non valida
-        CHECKSUM_MISMATCH,         // Checksum non corrispondente
+        /** Insufficient permissions to operate on a directory. */
+        data object DirectoryPermissionDenied : FileError
 
-        // ===== TEMPORARY & CACHE =====
-        TEMP_FILE_CREATION_FAILED, // Creazione file temporaneo fallita
-        TEMP_DIR_UNAVAILABLE,      // Directory temporanea non disponibile
-        CACHE_WRITE_FAILED,        // Scrittura cache fallita
-        CLEANUP_FAILED,            // Pulizia file fallita
+        // ── File operations ───────────────────────────────────────────────────────
 
-        // ===== LOCKING & SYNCHRONIZATION =====
-        FILE_LOCKED_BY_OTHER,      // File bloccato da altro processo
-        LOCK_ACQUISITION_FAILED,   // Acquisizione lock fallita
-        UNLOCK_FAILED,             // Rilascio lock fallito
+        /** File creation failed. */
+        data class FileCreateError(val path: String? = null) : FileError
 
-        // ===== SYSTEM LEVEL =====
-        SYSTEM_ERROR,              // Errore di sistema
-        RESOURCE_UNAVAILABLE,      // Risorsa non disponibile
-        HANDLE_EXHAUSTED,          // Handle file esauriti
-        FILESYSTEM_ERROR,          // Errore filesystem
-        FILESYSTEM_READONLY,       // Filesystem in sola lettura
+        /** File read failed. */
+        data class FileReadError(val path: String? = null) : FileError
 
-        // ===== OPERATION SPECIFIC =====
-        COPY_FAILED,               // Copia fallita
-        MOVE_FAILED,               // Spostamento fallito
-        BACKUP_FAILED,             // Backup fallito
-        RESTORE_FAILED,            // Ripristino fallito
-        SYNC_FAILED,               // Sincronizzazione fallita
+        /** File write failed. */
+        data class FileWriteError(val path: String? = null) : FileError
 
-        // ===== METADATA =====
-        METADATA_READ_FAILED,      // Lettura metadati fallita
-        METADATA_WRITE_FAILED,     // Scrittura metadati fallita
-        ATTRIBUTES_ACCESS_FAILED,  // Accesso attributi fallito
-        TIMESTAMP_UPDATE_FAILED    // Aggiornamento timestamp fallito
+        /** File deletion failed. */
+        data class FileDeleteError(val path: String? = null) : FileError
+
+        /** File copy failed. */
+        data class FileCopyError(val source: String? = null, val destination: String? = null) : FileError
+
+        /** File move failed. */
+        data class FileMoveError(val source: String? = null, val destination: String? = null) : FileError
+
+        /** File rename failed. */
+        data class FileRenameError(val path: String? = null) : FileError
+
+        /** Generic file access error. */
+        data class FileAccessError(val path: String? = null) : FileError
+
+        /** File was not found. */
+        data class FileNotFound(val path: String? = null) : FileError
+
+        /** A file with the same name already exists. */
+        data class FileAlreadyExists(val path: String? = null) : FileError
+
+        /** File is locked or in use. */
+        data class FileLocked(val path: String? = null) : FileError
+
+        /** File content is corrupted. */
+        data class FileCorrupted(val path: String? = null) : FileError
+
+        // ── Permissions ───────────────────────────────────────────────────────────
+
+        data object PermissionDenied : FileError
+        data object ReadPermissionDenied : FileError
+        data object WritePermissionDenied : FileError
+        data object ExecutePermissionDenied : FileError
+
+        // ── Storage ───────────────────────────────────────────────────────────────
+
+        /** Not enough free space to complete the operation. */
+        data class InsufficientSpace(val requiredBytes: Long? = null) : FileError
+
+        data object DiskFull : FileError
+        data object StorageUnavailable : FileError
+        data object QuotaExceeded : FileError
+
+        // ── File size & limits ────────────────────────────────────────────────────
+
+        data object FileEmpty : FileError
+
+        data class FileTooLarge(val actualBytes: Long? = null, val maxBytes: Long? = null) : FileError
+
+        data class FileTooSmall(val actualBytes: Long? = null, val minBytes: Long? = null) : FileError
+
+        data class SizeLimitExceeded(val limitBytes: Long? = null) : FileError
+
+        data class NameTooLong(val name: String? = null, val maxLength: Int? = null) : FileError
+
+        data object PathTooLong : FileError
+
+        // ── Format & encoding ─────────────────────────────────────────────────────
+
+        /** File format does not match the expected type. */
+        data class FormatInvalid(val expected: String? = null) : FileError
+
+        data class EncodingError(val charset: String? = null) : FileError
+
+        data class CharsetUnsupported(val charset: String? = null) : FileError
+
+        data object BinaryDataCorrupted : FileError
+
+        // ── I/O ───────────────────────────────────────────────────────────────────
+
+        /** Generic I/O error — use cause for diagnostics. */
+        data class IoError(val cause: Exception? = null) : FileError
+
+        data object ReadTimeout : FileError
+        data object WriteTimeout : FileError
+        data object OperationInterrupted : FileError
+        data object ConcurrentAccess : FileError
+
+        // ── Network & external storage ────────────────────────────────────────────
+
+        data object NetworkUnavailable : FileError
+        data object ConnectionLost : FileError
+        data object ExternalStorageRemoved : FileError
+        data object DeviceBusy : FileError
+
+        // ── Validation ────────────────────────────────────────────────────────────
+
+        data class PathInvalid(val path: String? = null) : FileError
+        data class NameInvalid(val name: String? = null) : FileError
+        data class ExtensionInvalid(val extension: String? = null) : FileError
+
+        /** Computed checksum does not match the expected value. */
+        data class ChecksumMismatch(val expected: String? = null, val actual: String? = null) : FileError
+
+        // ── Temporary & cache ─────────────────────────────────────────────────────
+
+        data class TempFileCreationFailed(val path: String? = null) : FileError
+        data object TempDirUnavailable : FileError
+        data object CacheWriteFailed : FileError
+        data object CleanupFailed : FileError
+
+        // ── Locking ───────────────────────────────────────────────────────────────
+
+        data class FileLockByOther(val path: String? = null) : FileError
+        data object LockAcquisitionFailed : FileError
+        data object UnlockFailed : FileError
+
+        // ── System ────────────────────────────────────────────────────────────────
+
+        data class SystemError(val cause: Exception? = null) : FileError
+        data object ResourceUnavailable : FileError
+        data object HandleExhausted : FileError
+        data object FilesystemError : FileError
+        data object FilesystemReadonly : FileError
     }
+//    enum class FileError : QrError {
+//
+//        // ===== DIRECTORY OPERATIONS =====
+//        DIRECTORY_CREATE,            // Directory creation failed
+//        DIRECTORY_ACCESS,            // Directory access failed
+//        DIRECTORY_DELETE,            // Directory deletion failed
+//        DIRECTORY_NOT_FOUND,         // Directory not found
+//        DIRECTORY_NOT_EMPTY,         // Directory not empty during deletion
+//        DIRECTORY_PERMISSION_DENIED, // Insufficient permissions for directory
+//
+//        // ===== FILE OPERATIONS =====
+//        FileError.FILE_,                 // File creation failed
+//        FILE_READ,                   // File read failed
+//        FILE_WRITE,                  // File write failed
+//        FILE_DELETE,                 // File deletion failed
+//        FILE_COPY,                   // File copy failed
+//        FILE_MOVE,                   // File move failed
+//        FILE_RENAME,                 // File rename failed
+//        FILE_ACCESS,                 // Generic file access error
+//        FILE_NOT_FOUND,              // File not found
+//        FILE_ALREADY_EXISTS,         // File already exists
+//        FILE_LOCKED,                 // File locked / in use
+//        FILE_CORRUPTED,              // File corrupted
+
+//
+//        // ===== I/O OPERATIONS =====
+//        IO_ERRzOR,                    // Generic I/O error
+
+//    }
+
+    // QrError.File has been removed.
+    // The two references in CoreFileRepositoryImpl have been migrated:
+    //   QrError.File.FILE_NOT_EXISTS  →  QrError.FileError.FILE_NOT_FOUND
+    //   QrError.File.IO_ERROR         →  QrError.FileError.IO_ERROR
+
 
 
     enum class ExportError : QrError {
@@ -641,11 +734,6 @@ interface QrError {
         PATH_RESOLUTION,           // Failed to resolve backup path
         STATS_CALCULATION,         // Failed to calculate backup stats
         SUMMARY_GENERATION         // Failed to generate backup summary
-    }
-
-
-    enum class File : QrError {
-        OPEN, READ, COPY, MOVE, LIST, CREATE, DELETE, NOT_FOUND, FILE_NOT_EXISTS, GET_FILE_SIZE, PROCESSING, IO_ERROR,
     }
 
     enum class Checkup : QrError {

@@ -57,7 +57,7 @@ class ShareFileUseCase @Inject constructor(
             val fileSizeBytes = file.length()
             if (fileSizeBytes == 0L) {
                 Timber.e("Exported file is empty: $filePath")
-                return@withContext QrResult.Error(QrError.FileError.FILE_EMPTY)
+                return@withContext QrResult.Error(QrError.FileError.FileEmpty)
             }
 
             // Warn for very large files (>100MB) but don't block
