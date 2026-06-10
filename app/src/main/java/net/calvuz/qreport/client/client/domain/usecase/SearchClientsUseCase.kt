@@ -23,7 +23,7 @@ class SearchClientsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(query: String): QrResult<List<Client>, QrError.ClientError> {
 
-        Timber.d("Searching clients by $query")
+        Timber.v("Searching clients by $query")
 
         val trimmed = query.trim()
 
@@ -32,20 +32,18 @@ class SearchClientsUseCase @Inject constructor(
             return QrResult.Error(QrError.ClientError.InvalidQueryLength())
         }
 
-        return clientRepository.searchClients(trimmed).fold(
-            onSuccess = { clients ->
-                Timber.d("Found ${clients.size} clients")
-                QrResult.Success(clients.sortedByRelevance(trimmed))
-             },
-            onFailure = {
-                Timber.d( "Failed to search clients: ${it.message}")
-                QrResult.Error(QrError.ClientError.LoadError(it.message)) }
-        )
+        return clientRepository.searchClients(trimmed).fold(onSuccess = { clients ->
+            Timber.d("Found ${clients.size} clients")
+            QrResult.Success(clients.sortedByRelevance(trimmed))
+        }, onFailure = {
+            Timber.e(it, "Failed to search clients by $query")
+            QrResult.Error(QrError.ClientError.LoadError(it.message))
+        })
     }
 
     fun searchFlow(query: String): Flow<List<Client>> {
 
-        Timber.d("Searching clients by $query")
+        Timber.v("Searching clients by $query")
 
         return clientRepository.searchClientsFlow(query.trim())
             .map { clients -> clients.sortedByRelevance(query.trim()) }
@@ -54,9 +52,11 @@ class SearchClientsUseCase @Inject constructor(
     // -------------------------------------------------------------------------
 
     private fun List<Client>.sortedByRelevance(query: String): List<Client> =
-        sortedWith(
-            compareBy<Client> { !it.companyName.equals(query, ignoreCase = true) }
-                .thenBy { !it.companyName.startsWith(query, ignoreCase = true) }
-                .thenBy { it.companyName.lowercase() }
-        )
+        sortedWith(compareBy<Client> {
+            !it.companyName.equals(
+                query,
+                ignoreCase = true
+            )
+        }.thenBy { !it.companyName.startsWith(query, ignoreCase = true) }
+            .thenBy { it.companyName.lowercase() })
 }

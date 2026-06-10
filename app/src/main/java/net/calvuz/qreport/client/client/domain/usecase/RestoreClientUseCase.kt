@@ -7,22 +7,20 @@ import timber.log.Timber
 import javax.inject.Inject
 
 /**
- * Deactivate a client, optionally cascading to its dependencies.
+ * Activate a client.
  *
- * @param clientId  ID of the client to delete
- * @param cascade   if true (default) deletes facilities and contacts first;
- *                  if false, fails when dependencies exist
+ * @param clientId  ID of the client to activate
  */
-class DeleteClientUseCase @Inject constructor(
+class RestoreClientUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
     private val checkClientExists: CheckClientExistsUseCase,
     private val checkClientDependencies: CheckClientDependenciesUseCase,
 ) {
     suspend operator fun invoke(
-        clientId: String, cascade: Boolean = true
+        clientId: String,
     ): QrResult<Unit, QrError.ClientError> {
 
-        Timber.v("Deleting client $clientId")
+        Timber.v("Activating client $clientId")
 
         // Check input
         if (clientId.isBlank()) {
@@ -36,20 +34,12 @@ class DeleteClientUseCase @Inject constructor(
             is QrResult.Success -> Unit
         }
 
-        // If not cascading, block when dependencies are present
-        if (!cascade) {
-            when (val dependencies = checkClientDependencies(clientId)) {
-                is QrResult.Error -> return dependencies
-                is QrResult.Success -> Unit
-            }
-        }
-
-        // Soft-delete the client itself
-        return clientRepository.deactivateClient(clientId).fold(onSuccess = {
-            Timber.d("Client $clientId successfully deleted")
+        // Restore the client itself
+        return clientRepository.activateClient(clientId).fold(onSuccess = {
+            Timber.d("Client $clientId successfully activated")
             QrResult.Success(Unit)
         }, onFailure = {
-            Timber.e(it, "Failed to delete client $clientId")
+            Timber.d("Failed to activate client: ${it.message}")
             QrResult.Error(QrError.ClientError.DeleteError(it.message))
         })
     }

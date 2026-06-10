@@ -1,6 +1,11 @@
 package net.calvuz.qreport.client.client.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 
@@ -46,19 +51,29 @@ interface ClientDao {
      * leaves the client still visible rather than orphaning records.
      */
     @Query("UPDATE mechanical_units SET is_active = 0, updated_at = :timestamp WHERE island_id IN (SELECT fi.id FROM facility_islands fi INNER JOIN facilities f ON fi.facility_id = f.id WHERE f.client_id = :clientId)")
-    suspend fun deactivateMechanicalUnitsByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun deactivateMechanicalUnitsByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE facility_id IN (SELECT id FROM facilities WHERE client_id = :clientId)")
-    suspend fun deactivateIslandsByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun deactivateIslandsByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE facilities SET is_active = 0, updated_at = :timestamp WHERE client_id = :clientId")
-    suspend fun deactivateFacilitiesByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun deactivateFacilitiesByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE contacts SET is_active = 0, updated_at = :timestamp WHERE client_id = :clientId")
-    suspend fun deactivateContactsByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun deactivateContactsByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE contracts SET is_active = 0, updated_at = :timestamp WHERE client_id = :clientId")
-    suspend fun deactivateContractsByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun deactivateContractsByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE clients SET is_active = 0, updated_at = :timestamp WHERE id = :clientId")
     suspend fun deactivateClient(clientId: String, timestamp: Long = System.currentTimeMillis())
@@ -68,57 +83,80 @@ interface ClientDao {
      * Called by [ClientRepositoryImpl.markClientDeleted].
      */
     @Query("UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp WHERE island_id IN (SELECT fi.id FROM facility_islands fi INNER JOIN facilities f ON fi.facility_id = f.id WHERE f.client_id = :clientId)")
-    suspend fun markMechanicalUnitsDeletedByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markMechanicalUnitsDeletedByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE facility_islands SET is_deleted = 1, updated_at = :timestamp WHERE facility_id IN (SELECT id FROM facilities WHERE client_id = :clientId)")
-    suspend fun markIslandsDeletedByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markIslandsDeletedByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE facilities SET is_deleted = 1, updated_at = :timestamp WHERE client_id = :clientId")
-    suspend fun markFacilitiesDeletedByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markFacilitiesDeletedByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE contacts SET is_active = 0, updated_at = :timestamp WHERE client_id = :clientId")
-    suspend fun markContactsDeletedByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markContactsDeletedByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE contracts SET is_active = 0, updated_at = :timestamp WHERE client_id = :clientId")
-    suspend fun markContractsDeletedByClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun markContractsDeletedByClient(
+        clientId: String, timestamp: Long = System.currentTimeMillis()
+    )
 
     @Query("UPDATE clients SET is_deleted = 1, updated_at = :timestamp WHERE id = :clientId")
     suspend fun markClientDeleted(clientId: String, timestamp: Long = System.currentTimeMillis())
 
+    // ===== RESURRECT =====
+
+    @Query("UPDATE clients SET is_active = 1, updated_at = :timestamp WHERE id = :clientId")
+    suspend fun activateClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+
     // ===== SEARCH & FILTER =====
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM clients 
         WHERE is_active = 1 
         AND (company_name LIKE '%' || :query || '%' 
              OR notes LIKE '%' || :query || '%' )
         ORDER BY company_name ASC
-    """)
+    """
+    )
     suspend fun searchClients(query: String): List<ClientEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM clients 
         WHERE (company_name LIKE '%' || :query || '%' 
              OR notes LIKE '%' || :query || '%' )
         ORDER BY company_name ASC
-    """)
+    """
+    )
     suspend fun searchAllClients(query: String): List<ClientEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM clients 
         WHERE is_active = 1 
         AND (company_name LIKE '%' || :query || '%' 
              OR notes LIKE '%' || :query || '%' )
         ORDER BY company_name ASC
-    """)
+    """
+    )
     fun searchClientsFlow(query: String): Flow<List<ClientEntity>>
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM clients 
         WHERE (company_name LIKE '%' || :query || '%' 
              OR notes LIKE '%' || :query || '%' )
         ORDER BY company_name ASC
-    """)
+    """
+    )
     fun searchAllClientsFlow(query: String): Flow<List<ClientEntity>>
 
     @Query("SELECT * FROM clients WHERE is_active = 1")
@@ -135,33 +173,41 @@ interface ClientDao {
     @Query("SELECT COUNT(*) FROM clients")
     suspend fun getTotalClientsCount(): Int
 
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM facilities f
         INNER JOIN clients c ON f.client_id = c.id
         WHERE c.id = :clientId AND c.is_active = 1 AND f.is_active = 1
-    """)
+    """
+    )
     suspend fun getFacilitiesCount(clientId: String): Int
 
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM contacts ct
         INNER JOIN clients c ON ct.client_id = c.id
         WHERE c.id = :clientId AND c.is_active = 1 AND ct.is_active = 1
-    """)
+    """
+    )
     suspend fun getContactsCount(clientId: String): Int
 
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM contracts ctr
         INNER JOIN clients c ON ctr.client_id = c.id
         WHERE c.id = :clientId AND c.is_active = 1 AND ctr.is_active = 1
-    """)
+    """
+    )
     suspend fun getContractsCount(clientId: String): Int
 
-    @Query("""
+    @Query(
+        """
         SELECT COUNT(*) FROM facility_islands fi
         INNER JOIN facilities f ON fi.facility_id = f.id
         INNER JOIN clients c ON f.client_id = c.id
         WHERE c.id = :clientId AND c.is_active = 1 AND f.is_active = 1 AND fi.is_active = 1
-    """)
+    """
+    )
     suspend fun getIslandsCount(clientId: String): Int
 
     // ===== VALIDATION =====
@@ -176,7 +222,8 @@ interface ClientDao {
 
     // ===== COMPLEX QUERIES =====
 
-    @Query("""
+    @Query(
+        """
         SELECT c.* FROM clients c
         WHERE c.is_active = 1
         AND EXISTS (
@@ -184,10 +231,12 @@ interface ClientDao {
             WHERE f.client_id = c.id AND f.is_active = 1
         )
         ORDER BY c.company_name ASC
-    """)
+    """
+    )
     suspend fun getActiveClientsWithFacilities(): List<ClientEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT c.* FROM clients c
         WHERE c.is_active = 1
         AND EXISTS (
@@ -195,10 +244,12 @@ interface ClientDao {
             WHERE ct.client_id = c.id AND ct.is_active = 1
         )
         ORDER BY c.company_name ASC
-    """)
+    """
+    )
     suspend fun getActiveClientsWithContacts(): List<ClientEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT c.* FROM clients c
         WHERE c.is_active = 1
         AND EXISTS (
@@ -206,10 +257,12 @@ interface ClientDao {
             WHERE ct.client_id = c.id AND ct.is_active = 1
         )
         ORDER BY c.company_name ASC
-    """)
+    """
+    )
     suspend fun getActiveClientsWithContracts(): List<ClientEntity>
 
-    @Query("""
+    @Query(
+        """
         SELECT c.* FROM clients c
         WHERE c.is_active = 1
         AND EXISTS (
@@ -218,7 +271,8 @@ interface ClientDao {
             WHERE f.client_id = c.id AND fi.is_active = 1 AND f.is_active = 1
         )
         ORDER BY c.company_name ASC
-    """)
+    """
+    )
     suspend fun getActiveClientsWithIslands(): List<ClientEntity>
 
     // ===== MAINTENANCE =====

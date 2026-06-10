@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.onWarningContainer
@@ -80,7 +80,7 @@ fun IslandHealthScreen(
         ) {
             when {
                 uiState.isLoading && !uiState.hasData ->
-                    LoadingState(modifier = Modifier.fillMaxSize())
+                    QrLoadingState(modifier = Modifier.fillMaxSize())
 
                 uiState.hasData ->
                     IslandHealthContent(

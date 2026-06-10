@@ -7,8 +7,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.client.client.data.local.dao.ClientDao
-import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import net.calvuz.qreport.client.client.data.local.repository.ClientRepositoryImpl
+import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import javax.inject.Singleton
 
 @Module

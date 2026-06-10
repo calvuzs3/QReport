@@ -14,14 +14,18 @@ interface FacilityRepository {
     suspend fun getFacilityById(id: String): Result<Facility?>
     suspend fun createFacility(facility: Facility): Result<Unit>
     suspend fun updateFacility(facility: Facility): Result<Unit>
-    suspend fun softDeleteFacility(id: String): Result<Unit>
 
     // ===== TWO-STAGE DELETE =====
 
     @Transaction
     suspend fun deactivateFacility(id: String): Result<Unit>
+
     @Transaction
     suspend fun markFacilityDeleted(id: String): Result<Unit>
+
+    // ===== RESTORE =====
+
+    suspend fun restoreFacility(id: String): Result<Unit>
 
     // ===== CLIENT RELATED =====
 
@@ -43,10 +47,9 @@ interface FacilityRepository {
     // ===== VALIDATION =====
 
     suspend fun isFacilityNameTakenForClient(
-        clientId: String,
-        name: String,
-        excludeId: String = ""
+        clientId: String, name: String, excludeId: String = ""
     ): Result<Boolean>
+
     suspend fun hasPrimaryFacility(clientId: String, excludeId: String = ""): Result<Boolean>
 
     // ===== STATISTICS =====

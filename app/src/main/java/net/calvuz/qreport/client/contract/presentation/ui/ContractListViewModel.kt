@@ -24,6 +24,8 @@ import kotlin.time.Duration.Companion.days
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
+import net.calvuz.qreport.client.contract.presentation.model.ContractFilter
+import net.calvuz.qreport.client.contract.presentation.model.ContractSortOrder
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -45,12 +47,6 @@ data class ContractListUiState(
     // Card Variant
     val cardVariant: ListViewMode = ListViewMode.FULL
 )
-
-/** ContractListScreen Filter */
-enum class ContractFilter { ACTIVE, INACTIVE, ALL }
-
-/** ContractListScreen SortOrder */
-enum class ContractSortOrder { EXPIRE_RECENT, EXPIRE_OLDEST, NAME }
 
 @HiltViewModel
 class ContractListViewModel @Inject constructor(

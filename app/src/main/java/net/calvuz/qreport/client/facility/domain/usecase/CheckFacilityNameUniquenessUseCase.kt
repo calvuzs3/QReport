@@ -16,28 +16,24 @@ class CheckFacilityNameUniquenessUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository
 ) {
     suspend operator fun invoke(
-        clientId: String,
-        name: String,
-        excludeId: String = ""
+        clientId: String, name: String, excludeId: String = ""
     ): QrResult<Unit, QrError.FacilityError> {
 
-        Timber.d("Checking facility name uniqueness: $name")
+        Timber.v("Checking facility name uniqueness: $name")
 
         if (name.isBlank()) {
             Timber.d("Facility name is blank")
             return QrResult.Error(QrError.FacilityError.MissingName())
         }
 
-        return facilityRepository.isFacilityNameTakenForClient(clientId, name, excludeId).fold(
-            onSuccess = { isTaken ->
-                Timber.d("Facility name taken: $isTaken")
+        return facilityRepository.isFacilityNameTakenForClient(clientId, name, excludeId)
+            .fold(onSuccess = { isTaken ->
+                Timber.d("Facility name ($name) is already taken")
                 if (isTaken) QrResult.Error(QrError.FacilityError.CreateError())
                 else QrResult.Success(Unit)
-            },
-            onFailure = {
-                Timber.d("Failed to check facility name uniqueness: ${it.message}")
+            }, onFailure = {
+                Timber.e(it, "Failed to check facility name ($name) uniqueness")
                 QrResult.Error(QrError.FacilityError.LoadError(it.message))
-            }
-        )
+            })
     }
 }

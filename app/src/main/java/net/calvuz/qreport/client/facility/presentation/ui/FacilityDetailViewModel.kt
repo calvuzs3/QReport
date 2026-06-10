@@ -5,10 +5,12 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
@@ -33,22 +35,9 @@ import javax.inject.Inject
  * following the same pattern as [ClientDetailTab].
  */
 enum class FacilityDetailTab(val labelResId: Int) {
-    ISLANDS(R.string.facility_detail_tab_islands),
-    MAINTENANCE(R.string.facility_detail_tab_maintenance),
-    INFO(R.string.facility_detail_tab_info),
-}
-
-enum class IslandFilter {
-    ALL, ACTIVE, INACTIVE, NEEDS_MAINTENANCE, UNDER_WARRANTY, BY_TYPE;
-
-    fun labelResId(): Int = when (this) {
-        ALL -> R.string.island_filter_all
-        ACTIVE -> R.string.island_filter_active
-        INACTIVE -> R.string.island_filter_inactive
-        NEEDS_MAINTENANCE -> R.string.island_filter_maintenance_due
-        UNDER_WARRANTY -> R.string.island_filter_under_warranty
-        BY_TYPE -> R.string.island_filter_by_type
-    }
+    ISLANDS(R.string.facility_detail_tab_islands), MAINTENANCE(R.string.facility_detail_tab_maintenance), INFO(
+        R.string.facility_detail_tab_info
+    ),
 }
 
 // =============================================================================
@@ -75,7 +64,6 @@ data class FacilityDetailUiState(
     val islands: List<Island> = emptyList(),
     val filteredIslands: List<Island> = emptyList(),
     val operationalSummary: FacilityOperationalSummary? = null,
-    val selectedIslandFilter: IslandFilter = IslandFilter.ALL,
     val islandsNeedingMaintenance: List<Island> = emptyList(),
     val islandsUnderWarranty: List<Island> = emptyList()
 
@@ -118,7 +106,10 @@ class FacilityDetailViewModel @Inject constructor(
     fun loadFacilityDetails(facilityId: String) {
         if (facilityId.isBlank()) {
             _uiState.update {
-                it.copy(isLoading = false, error = UiText.StringResource(R.string.err_facility_detail_invalid_id))
+                it.copy(
+                    isLoading = false,
+                    error = UiText.StringResource(R.string.err_facility_detail_invalid_id)
+                )
             }
             return
         }
@@ -134,11 +125,15 @@ class FacilityDetailViewModel @Inject constructor(
                     loadOperationalSummary(facilityId)
                     loadMaintenanceData(facilityId)
                 }
+
                 is QrResult.Error -> {
                     if (currentCoroutineContext().isActive) {
                         Timber.e("Failed to load facility: ${result.error}")
                         _uiState.update {
-                            it.copy(isLoading = false, error = UiText.StringResource(R.string.err_facility_detail_load))
+                            it.copy(
+                                isLoading = false,
+                                error = UiText.StringResource(R.string.err_facility_detail_load)
+                            )
                         }
                     }
                 }
@@ -153,45 +148,42 @@ class FacilityDetailViewModel @Inject constructor(
                 error = null,
                 facility = facility,
                 islands = islands,
-                filteredIslands = applyIslandFilter(islands, it.selectedIslandFilter)
             )
         }
     }
 
     private suspend fun loadOperationalSummary(facilityId: String) {
         try {
-            getIslandsByFacilityUseCase.getFacilityOperationalSummary(facilityId).fold(
-                onSuccess = { summary ->
+            getIslandsByFacilityUseCase.getFacilityOperationalSummary(facilityId)
+                .fold(onSuccess = { summary ->
                     if (currentCoroutineContext().isActive) {
                         _uiState.update { it.copy(operationalSummary = summary) }
                     }
-                },
-                onFailure = { Timber.w("Failed to load operational summary") }
-            )
-        } catch (_: CancellationException) { }
-        catch (e: Exception) { Timber.e(e, "Exception loading operational summary") }
+                }, onFailure = { Timber.w("Failed to load operational summary") })
+        } catch (_: CancellationException) {
+        } catch (e: Exception) {
+            Timber.e(e, "Exception loading operational summary")
+        }
     }
 
     private suspend fun loadMaintenanceData(facilityId: String) {
         try {
-            getIslandsByFacilityUseCase.getIslandsDueMaintenance(facilityId).fold(
-                onSuccess = { maintenance ->
+            getIslandsByFacilityUseCase.getIslandsDueMaintenance(facilityId)
+                .fold(onSuccess = { maintenance ->
                     if (currentCoroutineContext().isActive) {
                         _uiState.update { it.copy(islandsNeedingMaintenance = maintenance) }
                     }
-                },
-                onFailure = { Timber.w("Failed to load maintenance data") }
-            )
-            getIslandsByFacilityUseCase.getIslandsUnderWarranty(facilityId).fold(
-                onSuccess = { warranty ->
+                }, onFailure = { Timber.w("Failed to load maintenance data") })
+            getIslandsByFacilityUseCase.getIslandsUnderWarranty(facilityId)
+                .fold(onSuccess = { warranty ->
                     if (currentCoroutineContext().isActive) {
                         _uiState.update { it.copy(islandsUnderWarranty = warranty) }
                     }
-                },
-                onFailure = { Timber.w("Failed to load warranty data") }
-            )
-        } catch (_: CancellationException) { }
-        catch (e: Exception) { Timber.e(e, "Exception loading maintenance data") }
+                }, onFailure = { Timber.w("Failed to load warranty data") })
+        } catch (_: CancellationException) {
+        } catch (e: Exception) {
+            Timber.e(e, "Exception loading maintenance data")
+        }
     }
 
     // =========================================================================
@@ -210,13 +202,20 @@ class FacilityDetailViewModel @Inject constructor(
         val facilityId = _uiState.value.facilityId ?: return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isDeleting = true, deleteError = null, showDeleteConfirmation = false) }
+            _uiState.update {
+                it.copy(
+                    isDeleting = true,
+                    deleteError = null,
+                    showDeleteConfirmation = false
+                )
+            }
 
             when (val result = deleteFacilityUseCase(facilityId)) {
                 is QrResult.Success -> {
                     Timber.d("Facility deleted: $facilityId")
                     _uiState.update { it.copy(isDeleting = false, deleteSuccess = true) }
                 }
+
                 is QrResult.Error -> {
                     Timber.e("Failed to delete facility: ${result.error}")
                     _uiState.update {
@@ -245,6 +244,7 @@ class FacilityDetailViewModel @Inject constructor(
                     Timber.d("Island deleted: $islandId")
                     _uiState.value.facilityId?.let { loadFacilityDetails(it) }
                 }
+
                 is QrResult.Error -> {
                     Timber.e("Failed to delete island: ${result.error}")
                     _uiState.update {
@@ -257,11 +257,15 @@ class FacilityDetailViewModel @Inject constructor(
 
     fun markMaintenanceComplete(islandId: String) {
         viewModelScope.launch {
-            when (val result = updateMaintenanceUseCase(islandId = islandId, notes = "Maintenance completed via QReport")) {
+            when (val result = updateMaintenanceUseCase(
+                islandId = islandId,
+                notes = "Maintenance completed via QReport"
+            )) {
                 is QrResult.Success -> {
                     Timber.d("Maintenance marked complete: $islandId")
                     _uiState.value.facilityId?.let { loadFacilityDetails(it) }
                 }
+
                 is QrResult.Error -> {
                     Timber.e("Failed to mark maintenance: ${result.error}")
                     _uiState.update {
@@ -281,26 +285,6 @@ class FacilityDetailViewModel @Inject constructor(
             _uiState.update { it.copy(selectedTab = tab) }
         }
     }
-
-    fun updateIslandFilter(filter: IslandFilter) {
-        val currentIslands = _uiState.value.islands
-        _uiState.update {
-            it.copy(
-                selectedIslandFilter = filter,
-                filteredIslands = applyIslandFilter(currentIslands, filter)
-            )
-        }
-    }
-
-    private fun applyIslandFilter(islands: List<Island>, filter: IslandFilter): List<Island> =
-        when (filter) {
-            IslandFilter.ALL -> islands
-            IslandFilter.ACTIVE -> islands.filter { it.isActive }
-            IslandFilter.INACTIVE -> islands.filter { !it.isActive }
-            IslandFilter.NEEDS_MAINTENANCE -> islands.filter { it.needsMaintenance() }
-            IslandFilter.UNDER_WARRANTY -> islands.filter { it.warrantyExpiration?.let { exp -> exp > Clock.System.now() } == true }
-            IslandFilter.BY_TYPE -> islands
-        }
 
     // =========================================================================
     // ACTIONS / NAVIGATION HELPERS
@@ -328,17 +312,14 @@ class FacilityDetailViewModel @Inject constructor(
     fun getOperationalIslandsCount(): Int =
         _uiState.value.islands.count { it.isActive && !it.needsMaintenance() }
 
-    fun getTotalOperatingHours(): Int =
-        _uiState.value.islands.sumOf { it.operatingHours }
+    fun getTotalOperatingHours(): Int = _uiState.value.islands.sumOf { it.operatingHours }
 
-    fun getTotalCycles(): Long =
-        _uiState.value.islands.sumOf { it.cycleCount }
+    fun getTotalCycles(): Long = _uiState.value.islands.sumOf { it.cycleCount }
 
     fun hasCompleteSetup(): Boolean =
         _uiState.value.facility != null && _uiState.value.islands.isNotEmpty()
 
-    fun hasUrgentIssues(): Boolean =
-        _uiState.value.islandsNeedingMaintenance.isNotEmpty()
+    fun hasUrgentIssues(): Boolean = _uiState.value.islandsNeedingMaintenance.isNotEmpty()
 
     fun getIslandsStatsSummary(noIslandsText: String, loadingText: String): String {
         val summary = _uiState.value.operationalSummary

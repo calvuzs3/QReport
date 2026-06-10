@@ -18,7 +18,7 @@ class RevokePrimaryFacilityChangeUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(clientId: String): Result<Unit> {
 
-        Timber.d("Revoking primary facility change for client $clientId")
+        Timber.v("Revoking primary facility change for client $clientId")
 
         return try {
             val existing = facilityRepository.getPrimaryFacility(clientId)
@@ -31,6 +31,7 @@ class RevokePrimaryFacilityChangeUseCase @Inject constructor(
 
             Result.success(Unit)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to revoke primary facility change for client $clientId")
             Result.failure(e)
         }
     }

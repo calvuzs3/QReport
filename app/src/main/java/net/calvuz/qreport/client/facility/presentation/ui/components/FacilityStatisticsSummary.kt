@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.ListStatItem
+import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
 import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
 
 /**
@@ -43,17 +43,17 @@ fun FacilityStatisticsSummary(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Default.Business,
                 value = statistics.size.toString(),
                 label = stringResource(R.string.facility_stat_facilities)
             )
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Default.PrecisionManufacturing,
                 value = totalIslands.toString(),
                 label = stringResource(R.string.facility_stat_islands_total)
             )
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Default.CheckCircle,
                 value = activeIslands.toString(),
                 label = stringResource(R.string.facility_stat_islands_active),

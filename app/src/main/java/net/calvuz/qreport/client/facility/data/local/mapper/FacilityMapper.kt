@@ -56,20 +56,17 @@ class FacilityMapper @Inject constructor(
         isDeleted = false
     )
 
-    fun toDomainList(entities: List<FacilityEntity>): List<Facility> =
-        entities.map { toDomain(it) }
+    fun toDomainList(entities: List<FacilityEntity>): List<Facility> = entities.map { toDomain(it) }
 
-    fun toEntityList(domains: List<Facility>): List<FacilityEntity> =
-        domains.map { toEntity(it) }
+    fun toEntityList(domains: List<Facility>): List<FacilityEntity> = domains.map { toEntity(it) }
 
     // -------------------------------------------------------------------------
 
-    private fun parseFacilityType(typeString: String): FacilityType =
-        try {
-            FacilityType.valueOf(typeString)
-        } catch (_: IllegalArgumentException) {
-            FacilityType.OTHER // Fallback for legacy data
-        }
+    private fun parseFacilityType(typeString: String): FacilityType = try {
+        FacilityType.valueOf(typeString)
+    } catch (_: IllegalArgumentException) {
+        FacilityType.OTHER // Fallback for legacy data
+    }
 }
 
 // ─── Extension functions ──────────────────────────────────────────────────────

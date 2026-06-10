@@ -15,7 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun ListStatItem(
+fun QrListStatItem(
     icon: ImageVector,
     value: String,
     label: String,

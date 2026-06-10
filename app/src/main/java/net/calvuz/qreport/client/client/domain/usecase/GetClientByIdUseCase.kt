@@ -19,7 +19,7 @@ class GetClientByIdUseCase @Inject constructor(
         clientId: String
     ): QrResult<Client, QrError.ClientError> {
 
-        Timber.d("Getting client $clientId")
+        Timber.v("Getting client $clientId")
 
         // CHeck input
         if (clientId.isBlank()) {
@@ -28,21 +28,17 @@ class GetClientByIdUseCase @Inject constructor(
         }
 
         // Get
-        return clientRepository.getClientById(clientId).fold(
-            onSuccess = { client ->
-                if (client != null) {
-                    Timber.d("Client $clientId found")
-                    QrResult.Success(client)
-                }
-                else {
-                    Timber.d("Client $clientId not found")
-                    QrResult.Error(QrError.ClientError.NotFound())
-                }
-            },
-            onFailure = {
-                Timber.d( "Failed to get client $clientId: ${it.message}")
-                QrResult.Error(QrError.ClientError.LoadError(it.message))
+        return clientRepository.getClientById(clientId).fold(onSuccess = { client ->
+            if (client != null) {
+                Timber.d("Got Client $client")
+                QrResult.Success(client)
+            } else {
+                Timber.d("Client $clientId not found")
+                QrResult.Error(QrError.ClientError.NotFound())
             }
-        )
+        }, onFailure = {
+            Timber.e(it, "Failed to get client $clientId")
+            QrResult.Error(QrError.ClientError.LoadError(it.message))
+        })
     }
 }

@@ -15,7 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.ui.theme.onWarningContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.warningContainer
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
@@ -128,7 +128,7 @@ fun MaintenanceTabContent(
         // ── 3. Log list ──────────────────────────────────────────────────────
         when {
             isLoadingLogs -> item {
-                LoadingState(modifier = Modifier.height(120.dp))
+                QrLoadingState(modifier = Modifier.height(120.dp))
             }
 
             logs.isEmpty() -> item {

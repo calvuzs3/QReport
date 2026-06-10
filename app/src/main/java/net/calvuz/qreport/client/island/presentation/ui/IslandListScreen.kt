@@ -8,7 +8,6 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -16,7 +15,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
@@ -159,7 +158,7 @@ fun IslandListScreen(
             val currentError = uiState.error
 
             when {
-                uiState.isLoading -> LoadingState()
+                uiState.isLoading -> QrLoadingState()
 
                 currentError != null -> QReportErrorState(
                     error = currentError,

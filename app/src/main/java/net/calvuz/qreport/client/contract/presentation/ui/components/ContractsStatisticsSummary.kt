@@ -16,7 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.contract.domain.model.ContractStatistics
-import net.calvuz.qreport.app.app.presentation.components.ListStatItem
+import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
 
 @Composable
 fun ContractsStatisticsSummary(
@@ -35,14 +35,14 @@ fun ContractsStatisticsSummary(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             // ContractsError
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Default.AssignmentTurnedIn,
                 value = statistics.totalContracts.toString(),
                 label = "Contratti"
             )
 
             // Active
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Default.Star,
                 value = statistics.activeContracts.toString(),
                 label = "Attivi",
@@ -52,7 +52,7 @@ fun ContractsStatisticsSummary(
             )
 
             // Inactive
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Outlined.Star,
                 value = statistics.inactiveContracts.toString(),
                 label = "Inattivi",

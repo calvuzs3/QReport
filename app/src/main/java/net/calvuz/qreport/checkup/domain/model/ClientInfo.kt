@@ -3,12 +3,8 @@ package net.calvuz.qreport.checkup.domain.model
 import kotlinx.serialization.Serializable
 
 /**
- * Informazioni cliente
+ * Client Infos
  */
-@Deprecated(
-    message = "No longer use it",
-    level = DeprecationLevel.WARNING
-)
 @Serializable
 data class ClientInfo(
     val companyName: String,

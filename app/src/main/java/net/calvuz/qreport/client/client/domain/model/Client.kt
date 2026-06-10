@@ -21,16 +21,14 @@ data class Client(
     val id: String,
 
     // ===== DATA =====
-    val companyName: String,
-    val notes: String? = null,
+    val companyName: String, val notes: String? = null,
 
     // ===== LOCALIZATION =====
     val headquarters: Address? = null,  // Serialized as JSON in the DB
 
     // ===== METADATA =====
     val isActive: Boolean = true,       // false = soft-deleted
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val createdAt: Instant, val updatedAt: Instant
 ) {
     /** Convenience alias used throughout the UI. */
     val displayName: String get() = companyName

@@ -15,13 +15,15 @@ import net.calvuz.qreport.client.facility.presentation.ui.FacilityWithStats
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /** Facility List */
+@Suppress("ParamsComparedByRef")
 @Composable
 fun FacilityListContent(
     variant: ListViewMode,
     facilities: List<FacilityWithStats>,
     onFacilityClick: (String) -> Unit,
     onFacilityEdit: (String) -> Unit,
-    onFacilityDelete: ((String) -> Unit)? = null
+    onFacilityDelete: ((String) -> Unit)? = null,
+    onFacilityRestore: (String) -> Unit
 ) {
     val context: Context = LocalContext.current
 
@@ -42,6 +44,7 @@ fun FacilityListContent(
                 onDelete = if (onFacilityDelete != null) {
                     { onFacilityDelete(facilityWithStats.facility.id) }
                 } else null,
+                onRestore = { onFacilityRestore(facilityWithStats.facility.id) },
                 onOpenMaps = if (facilityWithStats.facility.address?.isComplete() ?: false) {
                     { MapUtils.openMapsWithAddress(context, facilityWithStats.facility.address) }
                 } else {

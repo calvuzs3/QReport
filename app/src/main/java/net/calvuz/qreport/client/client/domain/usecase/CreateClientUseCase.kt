@@ -18,7 +18,7 @@ class CreateClientUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(client: Client): QrResult<Unit, QrError.ClientError> {
 
-        Timber.d("Creating client $client")
+        Timber.v("Creating client $client")
 
         // Validate required fields
         when (val valid = validateClientData(client)) {
@@ -33,13 +33,12 @@ class CreateClientUseCase @Inject constructor(
         }
 
         // Create client
-        return clientRepository.createClient(client).fold(
-            onSuccess = {
-                Timber.d("Client ${client.id} successfully created ")
-                QrResult.Success(Unit) },
-            onFailure = {
-                Timber.d("Failed to create client: ${it.message}")
-                QrResult.Error(QrError.ClientError.CreateError(it.message)) }
-        )
+        return clientRepository.createClient(client).fold(onSuccess = {
+            Timber.d("Client ${client.id} successfully created ")
+            QrResult.Success(Unit)
+        }, onFailure = {
+            Timber.e(it, "Failed to create client ${client.id}")
+            QrResult.Error(QrError.ClientError.CreateError(it.message))
+        })
     }
 }

@@ -1,27 +1,47 @@
 package net.calvuz.qreport.client.client.presentation.ui.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AssignmentTurnedIn
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PrecisionManufacturing
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
+import net.calvuz.qreport.app.app.presentation.components.QrStatusChip
+import net.calvuz.qreport.app.app.presentation.components.QrStatusIndicator
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
-import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
-import net.calvuz.qreport.app.app.presentation.components.ListStatItem
-import net.calvuz.qreport.app.app.presentation.components.StatusIndicator
-import androidx.compose.ui.res.stringResource
-import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
-import net.calvuz.qreport.app.app.presentation.ui.theme.successContainer
-import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 /**
@@ -30,6 +50,7 @@ import net.calvuz.qreport.settings.domain.model.ListViewMode
  * Client main infos with stats
  */
 
+@Suppress("ParamsComparedByRef")
 @Composable
 fun ClientCard(
     modifier: Modifier = Modifier,
@@ -38,6 +59,7 @@ fun ClientCard(
     onClick: () -> Unit,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     variant: ListViewMode = ListViewMode.FULL
 ) {
@@ -51,16 +73,13 @@ fun ClientCard(
     ) {
         when (variant) {
             ListViewMode.FULL -> FullClientCard(
-                client = client,
-                stats = stats,
-                showActions = showActions,
-                onDelete = { showDeleteDialog = false },
-                onEdit = onEdit
+                client = client, stats = stats, showActions = showActions,
+//                onDelete = { showDeleteDialog = false },
+                onDelete = { showDeleteDialog = true }, onRestore = onRestore, onEdit = onEdit
             )
 
             ListViewMode.COMPACT -> CompactClientCard(
-                client = client,
-                stats = stats
+                client = client, onRestore = onRestore, stats = stats
             )
 
             ListViewMode.MINIMAL -> MinimalClientCard(client = client)
@@ -76,22 +95,22 @@ fun ClientCard(
                 onDelete()
                 showDeleteDialog = false
             },
-            onDismiss = { showDeleteDialog = false }
-        )
+            onDismiss = { showDeleteDialog = false })
     }
 }
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun FullClientCard(
     client: Client,
     stats: ClientStatistics?,
     showActions: Boolean,
     onDelete: (() -> Unit)?,
+    onRestore: (() -> Unit)? = null,
     onEdit: (() -> Unit)?
 ) {
     Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // Header row
         Row(
@@ -113,12 +132,23 @@ private fun FullClientCard(
                 Row {
                     if (onEdit != null) {
                         IconButton(
-                            onClick = onEdit,
-                            modifier = Modifier.size(48.dp)
+                            onClick = onEdit, modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = stringResource(R.string.client_card_action_edit),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    if (onDelete != null) {
+                        IconButton(
+                            onClick = onDelete, modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.action_delete),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp)
                             )
@@ -156,13 +186,13 @@ private fun FullClientCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                ListStatItem(
+                QrListStatItem(
                     icon = Icons.Default.Business,
                     value = stats.facilitiesCount.toString(),
                     label = stringResource(R.string.client_card_stat_facilities)
                 )
 
-                ListStatItem(
+                QrListStatItem(
                     icon = Icons.Default.PrecisionManufacturing,
                     value = stats.islandsCount.toString(),
                     label = stringResource(R.string.client_card_stat_islands)
@@ -172,13 +202,13 @@ private fun FullClientCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                ListStatItem(
+                QrListStatItem(
                     icon = Icons.Default.AssignmentTurnedIn,
                     value = stats.contractsCount.toString(),
                     label = stringResource(R.string.client_card_stat_contracts)
                 )
 
-                ListStatItem(
+                QrListStatItem(
                     icon = Icons.AutoMirrored.Default.Assignment,
                     value = stats.totalCheckUps.toString(),
                     label = stringResource(R.string.client_card_stat_checkups)
@@ -188,7 +218,7 @@ private fun FullClientCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                ListStatItem(
+                QrListStatItem(
                     icon = Icons.Default.People,
                     value = stats.contactsCount.toString(),
                     label = stringResource(R.string.client_card_stat_contacts)
@@ -203,7 +233,10 @@ private fun FullClientCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left
-            ClientStatusChip(isActive = client.isActive)
+//            ClientStatusChip(isActive = client.isActive, onRestore = onRestore)
+            QrStatusChip(isActive = client.isActive, onRestore = onRestore,
+                activeString = UiText.StringResource(R.string.client_card_status_active),
+                inactiveString = UiText.StringResource(R.string.client_card_status_inactive))
 
             // Right
             Text(
@@ -215,14 +248,13 @@ private fun FullClientCard(
     }
 }
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun CompactClientCard(
-    client: Client,
-    stats: ClientStatistics?
+    client: Client, onRestore: (() -> Unit)? = null, stats: ClientStatistics?
 ) {
     Column(
-        modifier = Modifier.padding(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Row(
 //            modifier = Modifier.padding(12.dp),
@@ -252,13 +284,13 @@ private fun CompactClientCard(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ListStatItem(
+                    QrListStatItem(
                         icon = Icons.Default.Business,
                         value = stats.facilitiesCount.toString(),
                         label = "",
                         compact = true
                     )
-                    ListStatItem(
+                    QrListStatItem(
                         icon = Icons.AutoMirrored.Default.Assignment,
                         value = stats.totalCheckUps.toString(),
                         label = "",
@@ -267,17 +299,17 @@ private fun CompactClientCard(
                 }
             }
 
-            StatusIndicator(isActive = client.isActive)
+            QrStatusIndicator(isActive = client.isActive, onRestore = onRestore)
         }
     }
 }
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun MinimalClientCard(client: Client) {
 
     Row(
-        modifier = Modifier.padding(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier.padding(8.dp), verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -289,36 +321,6 @@ private fun MinimalClientCard(client: Client) {
             )
         }
 
-        StatusIndicator(isActive = client.isActive)
+        QrStatusIndicator(isActive = client.isActive)
     }
-}
-
-@Composable
-private fun ClientStatusChip(
-    isActive: Boolean,
-    modifier: Modifier = Modifier
-) {
-    val (text, containerColor, labelColor) = if (isActive) {
-        Triple(
-            stringResource(R.string.client_card_status_active),
-            MaterialTheme.colorScheme.successContainer,
-            MaterialTheme.colorScheme.onSuccessContainer
-        )
-    } else {
-        Triple(
-            stringResource(R.string.client_card_status_inactive),
-            MaterialTheme.colorScheme.errorContainer,
-            MaterialTheme.colorScheme.onErrorContainer
-        )
-    }
-
-    AssistChip(
-        onClick = {},
-        label = { Text(text, style = MaterialTheme.typography.labelSmall) },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = containerColor,
-            labelColor = labelColor
-        ),
-        modifier = modifier
-    )
 }

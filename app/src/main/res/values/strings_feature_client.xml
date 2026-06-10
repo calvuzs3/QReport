@@ -51,6 +51,7 @@
     <string name="err_client_load_clients">Errore caricamento clienti</string>
     <string name="err_client_refresh">Errore aggiornamento clienti</string>
     <string name="err_client_inactivate">Errore eliminazione cliente</string>
+    <string name="err_client_restore">Errore ripristino cliente</string>
     <string name="err_client_search">Errore ricerca clienti</string>
     <string name="err_client_filter">Errore applicazione filtro</string>
     <string name="err_client_unexpected">Errore imprevisto</string>

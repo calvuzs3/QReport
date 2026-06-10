@@ -15,17 +15,14 @@ class GetActiveClientsWithFacilitiesUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(): QrResult<List<Client>, QrError.ClientError> {
 
-        Timber.d("Getting active clients with facilities")
+        Timber.v("Getting active clients with facilities")
 
-        return clientRepository.getActiveClientsWithFacilities().fold(
-            onSuccess = { clients ->
-                Timber.d("Active clients with facilities: ${clients.size}")
-                QrResult.Success(clients.sortedBy { it.companyName.lowercase() })
-            },
-            onFailure = {
-                Timber.d("Error getting active clients with facilities: ${it.message}")
-                QrResult.Error(QrError.ClientError.LoadError(it.message))
-            }
-        )
+        return clientRepository.getActiveClientsWithFacilities().fold(onSuccess = { clients ->
+            Timber.d("Active clients with facilities: ${clients.size}")
+            QrResult.Success(clients.sortedBy { it.companyName.lowercase() })
+        }, onFailure = {
+            Timber.e(it, "Error getting active clients with facilities")
+            QrResult.Error(QrError.ClientError.LoadError(it.message))
+        })
     }
 }

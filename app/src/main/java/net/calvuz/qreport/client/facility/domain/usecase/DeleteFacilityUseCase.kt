@@ -13,7 +13,7 @@ import javax.inject.Inject
 class DeleteFacilityUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository,
     private val islandRepository: IslandRepository,
-    private val checkFacilityExists: CheckFacilityExistsUseCase
+    private val getFacilityById: GetFacilityByIdUseCase
 ) {
 
     /**
@@ -27,7 +27,7 @@ class DeleteFacilityUseCase @Inject constructor(
         forceDeleteOnlyOneActive: Boolean = true    // Delete even if the only one (and so active)
     ): QrResult<Unit, QrError.FacilityError> {
 
-        Timber.d("Deleting facility $facilityId")
+        Timber.v("Deleting facility $facilityId")
 
         // Check input
         if (facilityId.isBlank()) {
@@ -35,31 +35,29 @@ class DeleteFacilityUseCase @Inject constructor(
             return QrResult.Error(QrError.FacilityError.NotFound())
         }
 
-        // 1. Verify exists
-        val facility = when (val result = checkFacilityExists(facilityId)) {
+        // Get data
+        val facility = when (val result = getFacilityById(facilityId)) {
             is QrResult.Error -> return QrResult.Error(result.error)
             is QrResult.Success -> result.data
         }
 
-        // 2. Business rule: cannot delete the only active facility for the client
+        // Business rule: cannot delete the only active facility for the client
         if (!forceDeleteOnlyOneActive) {
-            facilityRepository.getActiveFacilitiesByClient(facility.clientId).fold(
-                onSuccess = { active ->
+            facilityRepository.getActiveFacilitiesByClient(facility.clientId)
+                .fold(onSuccess = { active ->
                     if (active.size == 1 && active.first().id == facilityId) {
                         Timber.d("Cannot delete the only active facility for the client")
                         return QrResult.Error(
                             QrError.FacilityError.CannotDeleteLastFacility()
                         )
                     }
-                },
-                onFailure = {
+                }, onFailure = {
                     Timber.d(it, "Failed to get active facilities")
                     return QrResult.Error(QrError.FacilityError.LoadError(it.message))
-                }
-            )
+                })
         }
 
-        // 3. Check islands via repository (Facility no longer holds island IDs)
+        // Check islands via repository (Facility no longer holds island IDs)
         val islands = islandRepository.getIslandsByFacility(facilityId).getOrElse { emptyList() }
         val activeIslands = islands.filter { it.isActive }
 
@@ -70,40 +68,40 @@ class DeleteFacilityUseCase @Inject constructor(
             )
         }
 
-        // 4. Handle primary: assign to another active facility
+        // Handle primary: assign to another active facility
         if (facility.isPrimary) {
-            facilityRepository.getActiveFacilitiesByClient(facility.clientId).fold(
-                onSuccess = { active ->
+            facilityRepository.getActiveFacilitiesByClient(facility.clientId)
+                .fold(onSuccess = { active ->
                     val next = active.firstOrNull { it.id != facilityId }
                     if (next != null) {
                         facilityRepository.setPrimaryFacility(facility.clientId, next.id)
                     }
-                },
-                onFailure = {
-                Timber.d(it, "Failed to get active facilities {forceDeleteOnlyOneActive=$forceDeleteOnlyOneActive}")
-                }
-            )
+                }, onFailure = {
+                    Timber.d(
+                        it,
+                        "Failed to get active facilities {forceDeleteOnlyOneActive=$forceDeleteOnlyOneActive}"
+                    )
+                })
         }
 
-        // 5. Cascade deactivate islands if forceDelete
-        if (forceDelete && activeIslands.isNotEmpty())
-            facilityRepository.deactivateFacility(facilityId).fold(
-            onSuccess = {
-                Timber.d("Cascade deleting islands")
-                return QrResult.Success(Unit) },
-            onFailure = {
-                Timber.d(it, "Failed to cascade delete islands")
-                return QrResult.Error(QrError.FacilityError.DeleteError(it.message)) }
-        )
+        // Cascade deactivate islands if forceDelete
+        if (forceDelete && activeIslands.isNotEmpty()) facilityRepository.deactivateFacility(
+            facilityId
+        ).fold(onSuccess = {
+            Timber.d("Cascade deleting islands")
+            return QrResult.Success(Unit)
+        }, onFailure = {
+            Timber.d(it, "Failed to cascade delete islands")
+            return QrResult.Error(QrError.FacilityError.DeleteError(it.message))
+        })
 
-        // 6. Soft-delete facility
-        facilityRepository.deactivateFacility(facilityId).fold(
-            onSuccess = {
-                Timber.d("Soft-deleted facility")
-                return QrResult.Success(Unit) },
-            onFailure = {
-                Timber.d(it, "Failed to soft-delete facility")
-                return QrResult.Error(QrError.FacilityError.DeleteError(it.message)) }
-        )
+        // Deactivate facility
+        facilityRepository.deactivateFacility(facilityId).fold(onSuccess = {
+            Timber.d("Successfully deleted facility $facilityId")
+            return QrResult.Success(Unit)
+        }, onFailure = {
+            Timber.d(it, "Failed to delete facility $facilityId")
+            return QrResult.Error(QrError.FacilityError.DeleteError(it.message))
+        })
     }
 }

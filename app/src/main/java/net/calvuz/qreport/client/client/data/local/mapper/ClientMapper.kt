@@ -43,11 +43,9 @@ class ClientMapper @Inject constructor(
         updatedAt = domain.updatedAt.toEpochMilliseconds()
     )
 
-    fun toDomainList(entities: List<ClientEntity>): List<Client> =
-        entities.map { toDomain(it) }
+    fun toDomainList(entities: List<ClientEntity>): List<Client> = entities.map { toDomain(it) }
 
-    fun toEntityList(domains: List<Client>): List<ClientEntity> =
-        domains.map { toEntity(it) }
+    fun toEntityList(domains: List<Client>): List<ClientEntity> = domains.map { toEntity(it) }
 }
 
 // ─── Extension functions ──────────────────────────────────────────────────────

@@ -25,7 +25,7 @@ import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorDialog
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.settings.domain.model.ListViewMode
@@ -130,7 +130,7 @@ fun CheckUpListScreen(
 
             when {
                 uiState.isLoading -> {
-                    LoadingState()
+                    QrLoadingState()
                 }
 
                 currentError != null -> {

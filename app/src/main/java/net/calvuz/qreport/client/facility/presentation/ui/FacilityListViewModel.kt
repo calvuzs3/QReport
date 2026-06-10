@@ -16,12 +16,14 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.toUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilityWithIslandsUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.ObserveFacilitiesUseCase
+import net.calvuz.qreport.client.facility.domain.usecase.RestoreFacilityUseCase
 import net.calvuz.qreport.client.facility.presentation.model.ClientOption
 import net.calvuz.qreport.client.facility.presentation.model.FacilityFilter
 import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
@@ -32,26 +34,11 @@ import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
 
-data class FacilityListUiState(
-    val facilities: List<FacilityWithStats> = emptyList(),
-    val filteredFacilities: List<FacilityWithStats> = emptyList(),
-    val isLoading: Boolean = false,
-    val isRefreshing: Boolean = false,
-    val isDeletingFacility: String? = null,
-    val error: UiText? = null,              // UiText instead of raw String
-    val searchQuery: String = "",
-    val selectedFilter: FacilityFilter = FacilityPkg.selectedFilter,
-    val sortOrder: FacilitySortOrder = FacilityPkg.selectedSortOrder,
-    val clientId: String = "",
-    val cardVariant: ListViewMode = ListViewMode.FULL,
-    val availableClients: List<ClientOption> = listOf(ClientOption.ALL),
-    val selectedClient: ClientOption = ClientOption.ALL
-)
-
 @HiltViewModel
 class FacilityListViewModel @Inject constructor(
     private val observeFacilitiesUseCase: ObserveFacilitiesUseCase,
     private val deleteFacilityUseCase: DeleteFacilityUseCase,
+    private val restoreFacilityUseCase: RestoreFacilityUseCase,
     private val getFacilityWithIslandsUseCase: GetFacilityWithIslandsUseCase,
     private val observeClientsUseCase: ObserveClientsUseCase,
     private val appSettingsRepository: AppSettingsRepository
@@ -111,33 +98,33 @@ class FacilityListViewModel @Inject constructor(
 
             try {
                 observeFacilitiesUseCase(clientId).catch { exception ->
-                        if (exception is CancellationException) {
-                            Timber.d("Error in facilities flow")
-                            throw exception
-                        }
-                        if (currentCoroutineContext().isActive) {
-                            _uiState.update {
-                                it.copy(
-                                    isLoading = false,
-                                    isRefreshing = false,
-                                    error = UiText.StringResource(R.string.err_facility_load)
-                                )
-                            }
-                        }
-                    }.collect { facilities ->
-                        if (!currentCoroutineContext().isActive) return@collect
-                        val withStats = enrichWithStatistics(facilities)
-                        val currentState = _uiState.value
-                        _uiState.value = currentState.copy(
-                            facilities = withStats, filteredFacilities = applyFiltersAndSort(
-                                withStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.sortOrder
-                            ), isLoading = false, isRefreshing = false, error = null
-                        )
-                        Timber.d("Received ${facilities.size} facilities from Flow")
+                    if (exception is CancellationException) {
+                        Timber.d("Error in facilities flow")
+                        throw exception
                     }
+                    if (currentCoroutineContext().isActive) {
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                isRefreshing = false,
+                                error = UiText.StringResource(R.string.err_facility_load)
+                            )
+                        }
+                    }
+                }.collect { facilities ->
+                    if (!currentCoroutineContext().isActive) return@collect
+                    val withStats = enrichWithStatistics(facilities)
+                    val currentState = _uiState.value
+                    _uiState.value = currentState.copy(
+                        facilities = withStats, filteredFacilities = applyFiltersAndSort(
+                            withStats,
+                            currentState.searchQuery,
+                            currentState.selectedFilter,
+                            currentState.sortOrder
+                        ), isLoading = false, isRefreshing = false, error = null
+                    )
+                    Timber.d("Received ${facilities.size} facilities from Flow")
+                }
             } catch (_: CancellationException) {
                 Timber.d("Facilities observation cancelled")
             } catch (e: Exception) {
@@ -158,13 +145,35 @@ class FacilityListViewModel @Inject constructor(
     fun onListEvent(event: FacilityListEvent) {
         when (event) {
             is FacilityListEvent.DeleteFacility -> deleteFacility(event.facilityId)
+            is FacilityListEvent.RestoreFacility -> restoreFacility(event.facilityId)
             is FacilityListEvent.FilterChanged -> updateFilter(event.filter)
             is FacilityListEvent.SearchQueryChanged -> updateSearchQuery(event.query)
             is FacilityListEvent.SortOrderChanged -> updateSortOrder(event.sortOrder)
             is FacilityListEvent.CycleCardVariant -> cycleCardVariant()
+            is FacilityListEvent.SelectedClientChanged -> updateSelectedClient(event.client)
             is FacilityListEvent.DismissError -> dismissError()
             is FacilityListEvent.Refresh -> refresh()
-            is FacilityListEvent.SelectedClientChanged -> updateSelectedClient(event.client)
+        }
+    }
+
+    fun restoreFacility(facilityId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRestoringFacility = facilityId) }
+
+            when (val result = restoreFacilityUseCase(facilityId)) {
+                is QrResult.Success -> {
+                    // List updates automatically via Flow
+                }
+
+                is QrResult.Error -> {
+                    Timber.d("Failed to delete facility $facilityId")
+                    _uiState.update {
+                        it.copy(
+                            error = result.error.toUiText()
+                        )
+                    }
+                }
+            }.also { _uiState.update { it.copy(isRestoringFacility = null) } }
         }
     }
 
@@ -192,16 +201,14 @@ class FacilityListViewModel @Inject constructor(
                 }
 
                 is QrResult.Error -> {
-                    Timber.e("Failed to delete facility: ${result.error}")
+                    Timber.e("Failed to delete facility: $facilityId")
                     _uiState.update {
                         it.copy(
-                            error = UiText.StringResource(R.string.err_facility_delete)
+                            error = result.error.toUiText()
                         )
                     }
                 }
-            }
-
-            _uiState.update { it.copy(isDeletingFacility = null) }
+            }.also { _uiState.update { it.copy(isDeletingFacility = null) } }
         }
     }
 
@@ -301,11 +308,9 @@ class FacilityListViewModel @Inject constructor(
         val filtered = currentState.facilities.filter { facilityWithStats ->
             val f = facilityWithStats.facility
             f.name.contains(query, ignoreCase = true) || f.code?.contains(
-                query,
-                ignoreCase = true
+                query, ignoreCase = true
             ) == true || f.notes?.contains(
-                query,
-                ignoreCase = true
+                query, ignoreCase = true
             ) == true || f.address?.city?.contains(query, ignoreCase = true) == true
             // facilityType.displayName removed — use labelResId for display, not for search
         }
@@ -328,8 +333,7 @@ class FacilityListViewModel @Inject constructor(
         if (searchQuery.isNotBlank() && searchQuery.length <= 2) {
             filtered = filtered.filter { fws ->
                 fws.facility.name.contains(
-                    searchQuery,
-                    ignoreCase = true
+                    searchQuery, ignoreCase = true
                 ) || fws.facility.code?.contains(searchQuery, ignoreCase = true) == true
                 // facilityType.displayName removed
             }
@@ -376,6 +380,23 @@ class FacilityListViewModel @Inject constructor(
     }
 }
 
+data class FacilityListUiState(
+    val facilities: List<FacilityWithStats> = emptyList(),
+    val filteredFacilities: List<FacilityWithStats> = emptyList(),
+    val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
+    val isDeletingFacility: String? = null,
+    val isRestoringFacility: String? = null,
+    val error: UiText? = null,              // UiText instead of raw String
+    val searchQuery: String = "",
+    val selectedFilter: FacilityFilter = FacilityPkg.selectedFilter,
+    val sortOrder: FacilitySortOrder = FacilityPkg.selectedSortOrder,
+    val clientId: String = "",
+    val cardVariant: ListViewMode = ListViewMode.FULL,
+    val availableClients: List<ClientOption> = listOf(ClientOption.ALL),
+    val selectedClient: ClientOption = ClientOption.ALL
+)
+
 data class FacilityWithStats(
     val facility: Facility, val stats: FacilityStatistics
 )
@@ -385,12 +406,13 @@ data class FacilityStatistics(
 )
 
 sealed class FacilityListEvent {
+    data class DeleteFacility(val facilityId: String) : FacilityListEvent()
+    data class RestoreFacility(val facilityId: String) : FacilityListEvent()
     data class SearchQueryChanged(val query: String) : FacilityListEvent()
     data class FilterChanged(val filter: FacilityFilter) : FacilityListEvent()
     data class SortOrderChanged(val sortOrder: FacilitySortOrder) : FacilityListEvent()
     data class SelectedClientChanged(val client: ClientOption) : FacilityListEvent()
     object CycleCardVariant : FacilityListEvent()
-    data class DeleteFacility(val facilityId: String) : FacilityListEvent()
     object DismissError : FacilityListEvent()
     object Refresh : FacilityListEvent()
 }

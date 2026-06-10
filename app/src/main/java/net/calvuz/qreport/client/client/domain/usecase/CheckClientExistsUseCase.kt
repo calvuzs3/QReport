@@ -30,10 +30,10 @@ class CheckClientExistsUseCase @Inject constructor(
             onSuccess = { client ->
 
                 if (client != null && client.isActive) {
-                    Timber.d("Client $clientId exists")
+                    Timber.v("Client $clientId exists")
                     QrResult.Success(true)
                 } else if (client != null && !client.isActive) {
-                    Timber.d("Client $clientId exists but is inactive")
+                    Timber.v("Client $clientId exists but is inactive")
                     QrResult.Success(true)
                 } else {
                     Timber.d("Client $clientId not found or inactive")
@@ -41,7 +41,7 @@ class CheckClientExistsUseCase @Inject constructor(
                 }
             },
             onFailure = {
-                Timber.d("Failed to get client $clientId: ${it.message}")
+                Timber.e(it, "Failed to get client $clientId")
                 QrResult.Error(QrError.ClientError.LoadError(it.message))
             })
     }

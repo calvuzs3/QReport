@@ -54,7 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
@@ -174,7 +174,7 @@ fun IslandDetailScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             when {
-                uiState.isLoading -> LoadingState(
+                uiState.isLoading -> QrLoadingState(
                     modifier = Modifier.fillMaxSize(),
                     message = stringResource(R.string.island_detail_loading)
                 )

@@ -11,8 +11,7 @@ import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import javax.inject.Inject
 
 class ClientRepositoryImpl @Inject constructor(
-    private val clientDao: ClientDao,
-    private val clientMapper: ClientMapper
+    private val clientDao: ClientDao, private val clientMapper: ClientMapper
 ) : ClientRepository {
 
     // ===== CRUD OPERATIONS =====
@@ -101,6 +100,17 @@ class ClientRepositoryImpl @Inject constructor(
         clientDao.markClientDeleted(id, ts)
     }
 
+    // ===== RESURRECT =====
+
+    override suspend fun activateClient(id: String): Result<Unit> {
+        return try {
+            clientDao.activateClient(id)
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
     override fun getClientsFlow(): Flow<List<Client>> {
@@ -137,7 +147,9 @@ class ClientRepositoryImpl @Inject constructor(
 
     // ===== VALIDATION =====
 
-    override suspend fun isCompanyNameTaken(companyName: String, excludeId: String): Result<Boolean> {
+    override suspend fun isCompanyNameTaken(
+        companyName: String, excludeId: String
+    ): Result<Boolean> {
         return try {
             val isTaken = clientDao.isCompanyNameTaken(companyName, excludeId)
             Result.success(isTaken)
@@ -258,7 +270,8 @@ class ClientRepositoryImpl @Inject constructor(
 
     override suspend fun deleteInactiveClients(cutoffTimestamp: Instant): Result<Int> {
         return try {
-            val deletedCount = clientDao.permanentlyDeleteInactiveClients(cutoffTimestamp.toEpochMilliseconds())
+            val deletedCount =
+                clientDao.permanentlyDeleteInactiveClients(cutoffTimestamp.toEpochMilliseconds())
             Result.success(deletedCount)
         } catch (e: Exception) {
             Result.failure(e)

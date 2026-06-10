@@ -23,8 +23,13 @@ interface ClientRepository {
 
     @Transaction
     suspend fun deactivateClient(id: String): Result<Unit>
+
     @Transaction
     suspend fun markClientDeleted(id: String): Result<Unit>
+
+    // ===== RESURRECT =====
+
+    suspend fun activateClient(id: String): Result<Unit>
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 

@@ -40,9 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.DeleteConfirmationDialog
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectableItem
@@ -51,11 +50,14 @@ import net.calvuz.qreport.app.app.presentation.components.simple_selection.Selec
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
-import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.presentation.ui.components.ContactCard
 import androidx.compose.material.icons.filled.Star
+import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
+import net.calvuz.qreport.client.contact.presentation.model.ContactFilter
+import net.calvuz.qreport.client.contact.presentation.model.ContactPkg
+import net.calvuz.qreport.client.contact.presentation.model.ContactSortOrder
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -63,25 +65,6 @@ import timber.log.Timber
 
 // Contact-specific custom action ID
 private const val ACTION_SET_PRIMARY = "set_primary"
-
-@Composable
-fun ContactFilter.getDisplayName(): UiText {
-    return when (this) {
-        ContactFilter.ACTIVE -> (UiText.StringResource(R.string.contacts_list_filter_active))
-        ContactFilter.INACTIVE -> (UiText.StringResource(R.string.contacts_list_filter_inactive))
-        ContactFilter.PRIMARY_ONLY -> (UiText.StringResource(R.string.contacts_list_filter_primary_only))
-        ContactFilter.ALL -> (UiText.StringResource(R.string.contacts_list_filter_all))
-    }
-}
-
-@Composable
-fun ContactSortOrder.getDisplayName(): UiText {
-    return when (this) {
-        ContactSortOrder.NAME -> (UiText.StringResource(R.string.contacts_list_sort_name))
-        ContactSortOrder.CREATED_RECENT -> (UiText.StringResource(R.string.contacts_list_sort_created_recent))
-        ContactSortOrder.CREATED_OLDEST -> (UiText.StringResource(R.string.contacts_list_sort_created_oldest))
-    }
-}
 
 /**
  * Screen for client contact list
@@ -95,6 +78,7 @@ fun ContactSortOrder.getDisplayName(): UiText {
  * - Loading/error/empty states
  * - Primary contact indicator
  */
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactListScreen(
@@ -268,13 +252,23 @@ fun ContactListScreen(
                 )
 
                 // Filter chips
-                ActiveFiltersChipRow(
-                    selectedFilter = uiState.selectedFilter.getDisplayName().asString(),
-                    selectedSort = uiState.selectedSortOrder.getDisplayName().asString(),
-                    onClearFilter = { viewModel.updateFilter(ContactFilter.ACTIVE) },
+//                ActiveFiltersChipRow(
+//                    selectedFilter = uiState.selectedFilter.getDisplayName().asString(),
+//                    selectedSort = uiState.selectedSortOrder.getDisplayName().asString(),
+//                    onClearFilter = { viewModel.updateFilter(ContactFilter.ACTIVE) },
+//                    onClearSort = { viewModel.updateSortOrder(ContactSortOrder.CREATED_RECENT) },
+//                    avoidFilter = ContactFilter.ACTIVE.getDisplayName().asString(),
+//                    avoidSort = ContactSortOrder.CREATED_RECENT.getDisplayName().asString(),
+//                )
+
+                QReportFiltersChipRow (
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    selectedFilter = uiState.selectedFilter,
+                    avoidFilter = ContactPkg.selectedFilter,
+                    onClearFilter = { viewModel.updateFilter(ContactPkg.selectedFilter) },
+                    selectedSort = uiState.selectedSortOrder,
+                    avoidSort = ContactPkg.selectedSortOrder,
                     onClearSort = { viewModel.updateSortOrder(ContactSortOrder.CREATED_RECENT) },
-                    avoidFilter = ContactFilter.ACTIVE.getDisplayName().asString(),
-                    avoidSort = ContactSortOrder.CREATED_RECENT.getDisplayName().asString(),
                 )
             }
 
@@ -288,7 +282,7 @@ fun ContactListScreen(
                 // Content based on state
                 when {
                     uiState.isLoading -> {
-                        LoadingState()
+                        QrLoadingState()
                     }
 
                     uiState.filteredContacts.isEmpty() -> {
@@ -370,8 +364,10 @@ fun ContactListScreen(
 /**
  * Contact list with selection support
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun ContactListWithSelection(
+    modifier: Modifier = Modifier,
     contactsWithStats: List<ContactWithStats>,
     selectionManager: SimpleSelectionManager<Contact>,
     onNavigateToDetail: (String) -> Unit,
@@ -379,8 +375,7 @@ private fun ContactListWithSelection(
     onDeleteContact: (String) -> Unit,
     onSetPrimaryContact: (String) -> Unit,
     isSettingPrimary: String?,
-    variant: ListViewMode = ListViewMode.FULL,
-    modifier: Modifier = Modifier
+    variant: ListViewMode = ListViewMode.FULL
 ) {
     val selectionState by selectionManager.selectionState.collectAsState()
 

@@ -23,7 +23,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.error.presentation.UiText
@@ -284,7 +284,7 @@ fun TechnicalInterventionListScreen(
 
                 when {
                     uiState.isLoading -> {
-                        LoadingState(
+                        QrLoadingState(
                             message = stringResource(R.string.interventions_loading),
                         )
                     }

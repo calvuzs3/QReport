@@ -39,8 +39,8 @@ import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
-import net.calvuz.qreport.app.app.presentation.components.ListStatItem
-import net.calvuz.qreport.app.app.presentation.components.StatusIndicator
+import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
+import net.calvuz.qreport.app.app.presentation.components.QrStatusIndicator
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDateTime
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.app.util.NumberUtils.toItalianPercentage
@@ -236,14 +236,14 @@ private fun FullCheckupCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
-                ListStatItem(
+                QrListStatItem(
                     icon = Icons.Default.CheckCircle,
                     value = "${stats.okItems}/${stats.totalItems}",
                     label = stringResource(R.string.checkup_component_card_stat_ok)
                 )
 
                 if (stats.nokItems > 0) {
-                    ListStatItem(
+                    QrListStatItem(
                         icon = Icons.Default.Error,
                         value = stats.nokItems.toString(),
                         label = stringResource(R.string.checkup_component_card_stat_nok),
@@ -252,7 +252,7 @@ private fun FullCheckupCard(
                 }
 
                 if (stats.photosCount > 0) {
-                    ListStatItem(
+                    QrListStatItem(
                         icon = Icons.Default.PhotoCamera,
                         value = stats.photosCount.toString(),
                         label = stringResource(R.string.checkup_component_card_stat_photos)
@@ -311,13 +311,13 @@ private fun CompactCheckupCard(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ListStatItem(
+                QrListStatItem(
                     icon = Icons.Default.Business,
                     value = stats.okItems.toString(),
                     label = stringResource(R.string.checkup_component_card_stat_ok),
                     compact = true
                 )
-                ListStatItem(
+                QrListStatItem(
                     icon = Icons.AutoMirrored.Default.Assignment,
                     value = stats.pendingItems.toString(),
                     label = stringResource(R.string.checkup_component_card_stat_pending),
@@ -326,7 +326,7 @@ private fun CompactCheckupCard(
             }
         }
 
-        StatusIndicator(isActive = checkup.status == CheckUpStatus.COMPLETED)
+        QrStatusIndicator(isActive = checkup.status == CheckUpStatus.COMPLETED)
     }
 }
 
@@ -345,7 +345,7 @@ private fun MinimalCheckupCard(checkup: CheckUp) {
             )
         }
 
-        StatusIndicator(isActive = checkup.status == CheckUpStatus.COMPLETED)
+        QrStatusIndicator(isActive = checkup.status == CheckUpStatus.COMPLETED)
     }
 }
 

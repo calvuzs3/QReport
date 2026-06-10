@@ -2,7 +2,6 @@ package net.calvuz.qreport.client.facility.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import net.calvuz.qreport.client.client.domain.usecase.CheckClientExistsUseCase
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import timber.log.Timber
@@ -21,7 +20,7 @@ class ObserveFacilitiesUseCase @Inject constructor(
 ) {
     operator fun invoke(clientId: String? = null): Flow<List<Facility>> {
 
-        Timber.d("ObserveFacilitiesUseCase clientId=${clientId ?: "none"}")
+        Timber.v("Observing facilities for client (clientId=${clientId ?: "none"})")
 
         val flow = if (clientId.isNullOrBlank()) {
             facilityRepository.getAllFacilitiesFlow()
@@ -30,10 +29,7 @@ class ObserveFacilitiesUseCase @Inject constructor(
         }
 
         return flow.map { facilities ->
-            facilities.sortedWith(
-                compareByDescending<Facility> { it.isPrimary }
-                    .thenBy { it.name.lowercase() }
-            )
+            facilities.sortedWith(compareByDescending<Facility> { it.isPrimary }.thenBy { it.name.lowercase() })
         }
     }
 }

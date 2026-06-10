@@ -3,6 +3,7 @@ package net.calvuz.qreport.client.facility.domain.validator
 import net.calvuz.qreport.app.app.domain.model.Address
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.facility.domain.model.Facility
 import javax.inject.Inject
 
 /**
@@ -17,21 +18,17 @@ import javax.inject.Inject
  */
 class FacilityDataValidator @Inject constructor() {
 
-    operator fun invoke(
-        clientId: String,
-        name: String,
-        address: Address
-    ): QrResult<Unit, QrError.FacilityError> = when {
-        clientId.isBlank() ->
+    operator fun invoke(facility: Facility): QrResult<Unit, QrError.FacilityError> = when {
+        facility.clientId.isBlank() ->
             QrResult.Error(QrError.FacilityError.MissingClientId())
 
-        name.isBlank() ->
+        facility.name.isBlank() ->
             QrResult.Error(QrError.FacilityError.MissingName())
 
-        name.length < 2 ->
+        facility.name.length < 2 ->
             QrResult.Error(QrError.FacilityError.ValidationError.InvalidFacilityNameLength())
 
-        name.length > 100 ->
+        facility.name.length > 100 ->
             QrResult.Error(QrError.FacilityError.ValidationError.InvalidFacilityNameLength())
 
         else -> QrResult.Success(Unit)

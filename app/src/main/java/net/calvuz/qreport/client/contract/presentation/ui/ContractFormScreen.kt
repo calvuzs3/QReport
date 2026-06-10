@@ -46,7 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QrDatePickerField
 import net.calvuz.qreport.R
 
@@ -135,7 +135,7 @@ fun ContractFormScreen(
 
         // Content
         if (uiState.isLoading) {
-            LoadingState()
+            QrLoadingState()
         } else {
             ContractFormContent(
                 uiState = uiState,

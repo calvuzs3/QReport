@@ -13,6 +13,9 @@ class GetFacilitiesCountByClientUseCase @Inject constructor(
 ) {
 
     suspend operator fun invoke(clientId: String): QrResult<Int, QrError> {
+
+        Timber.v("Getting facilities count for client: $clientId")
+
         try {
 
             // Check input
@@ -27,18 +30,15 @@ class GetFacilitiesCountByClientUseCase @Inject constructor(
                 is QrResult.Error -> return QrResult.Error(clientCheck.error)
             }
 
-            return repository.getFacilitiesCountByClient(clientId).fold (
-            onSuccess = { count ->
-                    Timber.d("Retrieved $count contacts for client: $clientId")
-                     QrResult.Success(count)
-                },
-            onFailure = {
-                    Timber.e("Repository error for clientId $clientId: ${it.message}")
-                     QrResult.Error(QrError.FacilityError.LoadError(it.message))
-                }
-                        )
+            return repository.getFacilitiesCountByClient(clientId).fold(onSuccess = { count ->
+                Timber.d("Retrieved $count contacts for client: $clientId")
+                QrResult.Success(count)
+            }, onFailure = {
+                Timber.d(it, "Repository error for clientId $clientId")
+                QrResult.Error(QrError.FacilityError.LoadError(it.message))
+            })
         } catch (e: Exception) {
-            Timber.e(e, clientId)
+            Timber.e(e, "Get facilities count error for clientId $clientId")
             return QrResult.Error(QrError.SystemError.UnknownError())
         }
     }

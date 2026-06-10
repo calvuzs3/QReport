@@ -286,8 +286,7 @@ interface QrError {
 
         /** Imported file exceeds the allowed size limit. */
         data class FileTooLarge(
-            val actualBytes: Long,
-            val maxBytes: Long
+            val actualBytes: Long, val maxBytes: Long
         ) : IslandDocumentError
 
         // ── Business rules ────────────────────────────────────────────────────
@@ -416,10 +415,12 @@ interface QrError {
         data class FileDeleteError(val path: String? = null) : FileError
 
         /** File copy failed. */
-        data class FileCopyError(val source: String? = null, val destination: String? = null) : FileError
+        data class FileCopyError(val source: String? = null, val destination: String? = null) :
+            FileError
 
         /** File move failed. */
-        data class FileMoveError(val source: String? = null, val destination: String? = null) : FileError
+        data class FileMoveError(val source: String? = null, val destination: String? = null) :
+            FileError
 
         /** File rename failed. */
         data class FileRenameError(val path: String? = null) : FileError
@@ -459,9 +460,11 @@ interface QrError {
 
         data object FileEmpty : FileError
 
-        data class FileTooLarge(val actualBytes: Long? = null, val maxBytes: Long? = null) : FileError
+        data class FileTooLarge(val actualBytes: Long? = null, val maxBytes: Long? = null) :
+            FileError
 
-        data class FileTooSmall(val actualBytes: Long? = null, val minBytes: Long? = null) : FileError
+        data class FileTooSmall(val actualBytes: Long? = null, val minBytes: Long? = null) :
+            FileError
 
         data class SizeLimitExceeded(val limitBytes: Long? = null) : FileError
 
@@ -504,7 +507,8 @@ interface QrError {
         data class ExtensionInvalid(val extension: String? = null) : FileError
 
         /** Computed checksum does not match the expected value. */
-        data class ChecksumMismatch(val expected: String? = null, val actual: String? = null) : FileError
+        data class ChecksumMismatch(val expected: String? = null, val actual: String? = null) :
+            FileError
 
         // ── Temporary & cache ─────────────────────────────────────────────────────
 
@@ -561,7 +565,6 @@ interface QrError {
     // The two references in CoreFileRepositoryImpl have been migrated:
     //   QrError.File.FILE_NOT_EXISTS  →  QrError.FileError.FILE_NOT_FOUND
     //   QrError.File.IO_ERROR         →  QrError.FileError.IO_ERROR
-
 
 
     enum class ExportError : QrError {

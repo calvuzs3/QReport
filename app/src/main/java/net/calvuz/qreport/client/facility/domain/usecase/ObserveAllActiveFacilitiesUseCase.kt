@@ -20,23 +20,16 @@ class ObserveAllActiveFacilitiesUseCase @Inject constructor(
      */
     operator fun invoke(clientId: String? = null): Flow<List<Facility>> {
 
-        Timber.d("ClientId: ${clientId ?: "nullo"}")
+        Timber.v("Observing all active facilities (clientId=${clientId ?: "nullo"})")
 
         if (clientId.isNullOrBlank()) {
-            return facilityRepository.getAllActiveFacilitiesFlow()
-                .map { facilities ->
-                    facilities.sortedWith(
-                        compareByDescending<Facility> { it.isPrimary }
-                            .thenBy { it.name.lowercase() }
-                    )
+            return facilityRepository.getAllActiveFacilitiesFlow().map { facilities ->
+                    facilities.sortedWith(compareByDescending<Facility> { it.isPrimary }.thenBy { it.name.lowercase() })
                 }
         } else {
             return facilityRepository.getAllActiveFacilitiesByClientFlow(clientId)
                 .map { facilities ->
-                    facilities.sortedWith(
-                        compareByDescending<Facility> { it.isPrimary }
-                            .thenBy { it.name.lowercase() }
-                    )
+                    facilities.sortedWith(compareByDescending<Facility> { it.isPrimary }.thenBy { it.name.lowercase() })
                 }
         }
     }

@@ -15,8 +15,7 @@ import javax.inject.Inject
  * Utilizza Room DAO per persistenza e mapper per conversioni domain ↔ entity
  */
 class FacilityRepositoryImpl @Inject constructor(
-    private val facilityDao: FacilityDao,
-    private val facilityMapper: FacilityMapper
+    private val facilityDao: FacilityDao, private val facilityMapper: FacilityMapper
 ) : FacilityRepository {
 
     // ===== CRUD OPERATIONS =====
@@ -71,9 +70,11 @@ class FacilityRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun softDeleteFacility(id: String): Result<Unit> {
+    // ===== RESTORE =====
+
+    override suspend fun restoreFacility(id: String): Result<Unit> {
         return try {
-            facilityDao.softDeleteFacility(id)
+            facilityDao.restoreFacility(id)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
@@ -192,9 +193,7 @@ class FacilityRepositoryImpl @Inject constructor(
     // ===== VALIDATION =====
 
     override suspend fun isFacilityNameTakenForClient(
-        clientId: String,
-        name: String,
-        excludeId: String
+        clientId: String, name: String, excludeId: String
     ): Result<Boolean> {
         return try {
             val isTaken = facilityDao.isFacilityNameTakenForClient(clientId, name, excludeId)

@@ -3,9 +3,8 @@ package net.calvuz.qreport.client.island.domain.model
 import kotlinx.serialization.Serializable
 
 /**
- * Informazioni isola robotizzata
+ * Robotic cell infos
  */
-@Deprecated(message = "Do not use it", level = DeprecationLevel.WARNING)
 @Serializable
 data class IslandInfo(
     val serialNumber: String,

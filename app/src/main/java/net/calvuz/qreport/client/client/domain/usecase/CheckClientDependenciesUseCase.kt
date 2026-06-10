@@ -25,7 +25,7 @@ class CheckClientDependenciesUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(clientId: String): QrResult<Unit, QrError.ClientError> {
 
-        Timber.d("Checking dependencies for client $clientId")
+        Timber.v("Checking dependencies for client $clientId")
 
         var facilitiesCount: Int
         var contactsCount: Int

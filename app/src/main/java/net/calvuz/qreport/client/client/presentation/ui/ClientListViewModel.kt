@@ -7,7 +7,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.R
@@ -22,6 +25,7 @@ import net.calvuz.qreport.client.client.domain.usecase.GetActiveClientsWithIslan
 import net.calvuz.qreport.client.client.domain.usecase.GetClientStatisticsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.GetClientsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
+import net.calvuz.qreport.client.client.domain.usecase.RestoreClientUseCase
 import net.calvuz.qreport.client.client.domain.usecase.SearchClientsUseCase
 import net.calvuz.qreport.client.client.presentation.model.ClientFilter
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
@@ -55,6 +59,7 @@ class ClientListViewModel @Inject constructor(
     private val observeClientsUseCase: ObserveClientsUseCase,
     private val getClientStatisticsUseCase: GetClientStatisticsUseCase,
     private val deleteClientUseCase: DeleteClientUseCase,
+    private val restoreClientUseCase: RestoreClientUseCase,
     private val searchClientsUseCase: SearchClientsUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
@@ -79,8 +84,7 @@ class ClientListViewModel @Inject constructor(
         observeJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
-                observeClientsUseCase()
-                    .catch { exception ->
+                observeClientsUseCase().catch { exception ->
                         if (exception is CancellationException) throw exception
                         Timber.e(exception, "Error in observeClients flow")
                         if (currentCoroutineContext().isActive) {
@@ -90,23 +94,18 @@ class ClientListViewModel @Inject constructor(
                                 error = UiText.StringResource(R.string.err_client_load_clients)
                             )
                         }
-                    }
-                    .collect { clients ->
+                    }.collect { clients ->
                         if (!currentCoroutineContext().isActive) return@collect
                         val clientsWithStats = enrichWithStatistics(clients)
                         if (currentCoroutineContext().isActive) {
                             val currentState = _uiState.value
                             _uiState.value = currentState.copy(
-                                clients = clientsWithStats,
-                                filteredClients = applyFiltersAndSort(
+                                clients = clientsWithStats, filteredClients = applyFiltersAndSort(
                                     clientsWithStats,
                                     currentState.searchQuery,
                                     currentState.selectedFilter,
                                     currentState.selectedSortOrder
-                                ),
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = null
+                                ), isLoading = false, isRefreshing = false, error = null
                             )
                             Timber.d("Loaded ${clients.size} clients")
                         }
@@ -141,14 +140,37 @@ class ClientListViewModel @Inject constructor(
 
             when (val result = deleteClientUseCase(clientId)) {
                 is QrResult.Success -> {
-                    Timber.d("Client inactivated successfully")
+                    Timber.d("Client $clientId inactivated successfully")
                     // List updates automatically via observeClientsUseCase Flow
                 }
+
                 is QrResult.Error -> {
                     if (currentCoroutineContext().isActive) {
                         Timber.e("Failed to inactivate client: ${result.error}")
                         _uiState.value = _uiState.value.copy(
                             error = UiText.StringResource(R.string.err_client_inactivate)
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    fun restoreClient(clientId: String) {
+        viewModelScope.launch {
+            Timber.d("Restoring client: $clientId")
+
+            when (val result = restoreClientUseCase(clientId)) {
+                is QrResult.Success -> {
+                    Timber.d("Client $clientId restored successfully")
+                    // List updates automatically via observeClientsUseCase Flow
+                }
+
+                is QrResult.Error -> {
+                    if (currentCoroutineContext().isActive) {
+                        Timber.e("Failed to restore client: ${result.error}")
+                        _uiState.value = _uiState.value.copy(
+                            error = UiText.StringResource(R.string.err_client_restore)
                         )
                     }
                 }
@@ -168,8 +190,7 @@ class ClientListViewModel @Inject constructor(
                 currentState.selectedSortOrder
             )
             _uiState.value = currentState.copy(
-                searchQuery = query,
-                filteredClients = filteredAndSorted
+                searchQuery = query, filteredClients = filteredAndSorted
             )
         }
     }
@@ -185,8 +206,7 @@ class ClientListViewModel @Inject constructor(
         }.also {
             val currentState = _uiState.value
             _uiState.value = currentState.copy(
-                selectedFilter = filter,
-                filteredClients = applyFiltersAndSort(
+                selectedFilter = filter, filteredClients = applyFiltersAndSort(
                     currentState.clients,
                     currentState.searchQuery,
                     filter,
@@ -199,8 +219,7 @@ class ClientListViewModel @Inject constructor(
     fun updateSortOrder(clientSortOrder: ClientSortOrder) {
         val currentState = _uiState.value
         _uiState.value = currentState.copy(
-            selectedSortOrder = clientSortOrder,
-            filteredClients = applyFiltersAndSort(
+            selectedSortOrder = clientSortOrder, filteredClients = applyFiltersAndSort(
                 currentState.clients,
                 currentState.searchQuery,
                 currentState.selectedFilter,
@@ -242,7 +261,9 @@ class ClientListViewModel @Inject constructor(
         viewModelScope.launch {
             appSettingsRepository.getListViewMode(AppSettingsDataStore.LIST_KEY_CLIENTS)
                 .catch { e -> Timber.e(e, "Error observing card variant preference") }
-                .collect { viewMode -> _uiState.value = _uiState.value.copy(cardVariant = viewMode) }
+                .collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(cardVariant = viewMode)
+                }
         }
     }
 
@@ -266,8 +287,7 @@ class ClientListViewModel @Inject constructor(
                         val clientsWithStats = enrichWithStatistics(result.data)
                         val currentState = _uiState.value
                         _uiState.value = currentState.copy(
-                            searchQuery = query,
-                            filteredClients = applyFiltersAndSort(
+                            searchQuery = query, filteredClients = applyFiltersAndSort(
                                 clientsWithStats,
                                 query,
                                 currentState.selectedFilter,
@@ -277,6 +297,7 @@ class ClientListViewModel @Inject constructor(
                         Timber.d("Search completed with ${result.data.size} results")
                     }
                 }
+
                 is QrResult.Error -> {
                     if (currentCoroutineContext().isActive) {
                         Timber.e("Search failed: ${result.error}")
@@ -305,6 +326,7 @@ class ClientListViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is QrResult.Error -> {
                     if (currentCoroutineContext().isActive) {
                         Timber.e("Failed to load clients with filter: ${result.error}")
@@ -328,18 +350,17 @@ class ClientListViewModel @Inject constructor(
             ClientFilter.ACTIVE -> clients.filter { it.client.isActive }
             ClientFilter.INACTIVE -> clients.filter { !it.client.isActive }
             // WITH_* filters handled upstream by specialized use cases
-            ClientFilter.WITH_FACILITIES,
-            ClientFilter.WITH_CONTACTS,
-            ClientFilter.WITH_CONTRACTS,
-            ClientFilter.WITH_ISLANDS -> clients
+            ClientFilter.WITH_FACILITIES, ClientFilter.WITH_CONTACTS, ClientFilter.WITH_CONTRACTS, ClientFilter.WITH_ISLANDS -> clients
         }
 
         // Local filter for short queries (≤2 chars); longer queries go through SearchClientsUseCase
         if (searchQuery.isNotBlank() && searchQuery.length <= 2) {
             filtered = filtered.filter { clientWithStats ->
                 val client = clientWithStats.client
-                client.companyName.contains(searchQuery, ignoreCase = true) ||
-                        client.headquarters?.city?.contains(searchQuery, ignoreCase = true) == true
+                client.companyName.contains(
+                    searchQuery,
+                    ignoreCase = true
+                ) || client.headquarters?.city?.contains(searchQuery, ignoreCase = true) == true
             }
         }
 
@@ -365,6 +386,5 @@ class ClientListViewModel @Inject constructor(
 
 /** Client domain model paired with its computed display statistics. */
 data class ClientWithStats(
-    val client: Client,
-    val stats: ClientStatistics
+    val client: Client, val stats: ClientStatistics
 )

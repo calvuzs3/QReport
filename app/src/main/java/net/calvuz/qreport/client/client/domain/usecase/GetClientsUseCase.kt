@@ -21,7 +21,7 @@ class GetClientsUseCase @Inject constructor(
         activeOnly: Boolean = true
     ): QrResult<List<Client>, QrError.ClientError> {
 
-        Timber.d("Getting clients")
+        Timber.v("Get clients")
 
         val result = if (activeOnly) {
             clientRepository.getActiveClients()
@@ -29,15 +29,12 @@ class GetClientsUseCase @Inject constructor(
             clientRepository.getClients()
         }
 
-        return result.fold(
-            onSuccess = { clients ->
-                Timber.d("Retrieved ${clients.size} clients")
-                QrResult.Success(clients.sortedBy { it.companyName.lowercase() })
-            },
-            onFailure = {
-                Timber.d( "Failed to get clients: ${it.message}")
-                QrResult.Error(QrError.ClientError.LoadError(it.message))
-            }
-        )
+        return result.fold(onSuccess = { clients ->
+            Timber.d("Retrieved ${clients.size} clients")
+            QrResult.Success(clients.sortedBy { it.companyName.lowercase() })
+        }, onFailure = {
+            Timber.e(it, "Failed to get clients")
+            QrResult.Error(QrError.ClientError.LoadError(it.message))
+        })
     }
 }

@@ -23,7 +23,7 @@ import net.calvuz.qreport.checkup.domain.model.CheckUpIslandAssociation
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import timber.log.Timber
 
 /**
@@ -79,7 +79,7 @@ fun AssociationManagementDialog(
 
                 // Content
                 if (isLoading) {
-                    LoadingState(message= stringResource(R.string.checkup_component_association_dialog_loading))
+                    QrLoadingState(message= stringResource(R.string.checkup_component_association_dialog_loading))
 
                 } else {
                     LazyColumn(

@@ -1,6 +1,7 @@
 package net.calvuz.qreport.client.client.presentation.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -21,8 +22,12 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.EmptyTabContent
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
+import net.calvuz.qreport.app.util.DateTimeUtils.toItalianCreatedAt
+import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDateTime
+import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
+import net.calvuz.qreport.app.util.DateTimeUtils.toItalianRelativeDate
 import net.calvuz.qreport.client.client.presentation.model.ClientWithDetails
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
@@ -38,6 +43,7 @@ import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityCar
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientDetailScreen(
@@ -160,7 +166,7 @@ fun ClientDetailScreen(
         )
 
         when {
-            uiState.isLoading -> LoadingState()
+            uiState.isLoading -> QrLoadingState()
 
             uiState.error != null -> QReportErrorState(
                 error = uiState.error!!,
@@ -201,6 +207,7 @@ fun ClientDetailScreen(
 // DETAIL CONTENT
 // =============================================================================
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun ClientDetailContent(
     uiState: ClientDetailUiState,
@@ -284,6 +291,7 @@ private fun ClientDetailContent(
 // TAB: INFO
 // =============================================================================
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun InfoTabContent(
     modifier: Modifier = Modifier,
@@ -353,17 +361,20 @@ private fun InfoTabContent(
                     title = stringResource(R.string.client_detail_info_card_metadata),
                     icon = Icons.Default.Info
                 ) {
-                    InfoItem(
+                    DoubleInfoItem(
                         label = stringResource(R.string.client_detail_info_field_created),
-                        value = formatTimestamp(clientDetails.client.createdAt)
+                        valueStart = (clientDetails.client.createdAt.toItalianDateTime()),
+                        valueEnd = (clientDetails.client.createdAt.toItalianCreatedAt())
                     )
-                    InfoItem(
+                    DoubleInfoItem(
                         label = stringResource(R.string.client_detail_info_field_updated),
-                        value = formatTimestamp(clientDetails.client.updatedAt)
+                        valueStart = (clientDetails.client.updatedAt.toItalianDateTime()),
+                        valueEnd = (clientDetails.client.createdAt.toItalianLastModified())
                     )
-                    InfoItem(
+                    DoubleInfoItem(
                         label = stringResource(R.string.client_detail_info_field_status),
-                        value = if (clientDetails.client.isActive)
+                        valueStart="",
+                        valueEnd = if (clientDetails.client.isActive)
                             stringResource(R.string.client_detail_info_status_active)
                         else
                             stringResource(R.string.client_detail_info_status_inactive)
@@ -378,6 +389,7 @@ private fun InfoTabContent(
 // TAB: FACILITIES
 // =============================================================================
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun FacilitiesTabContent(
     facilitiesWithIslands: List<FacilityWithIslands>,
@@ -439,6 +451,7 @@ private fun FacilitiesTabContent(
                             variant = ListViewMode.COMPACT,
                             onClick = { onFacilityClick(facility.id) },
                             onEdit = { onEditFacility(facility.id) },
+                            onRestore = {},
                             showActions = true
                         )
                         // Islands preview — MINIMAL, max 5, indented
@@ -485,6 +498,7 @@ private fun FacilitiesTabContent(
 // TAB: CONTACTS
 // =============================================================================
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun ContactsTabContent(
     modifier: Modifier = Modifier,
@@ -576,6 +590,7 @@ private fun ContactsTabContent(
 // TAB: CONTRACTS
 // =============================================================================
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun ContractsTabContent(
     modifier: Modifier = Modifier,
@@ -691,22 +706,18 @@ private fun InfoCard(
 @Composable
 private fun InfoItem(label: String, value: String) {
     Column {
-        Text(text = label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text = label, style = MaterialTheme.typography.labelMedium)
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
-// =============================================================================
-// HELPERS
-// =============================================================================
-
 @Composable
-private fun formatTimestamp(timestamp: Instant): String {
-    val diffMillis = (Clock.System.now() - timestamp).inWholeMilliseconds
-    return when {
-        diffMillis < 60_000L -> stringResource(R.string.client_detail_time_now)
-        diffMillis < 3_600_000L -> stringResource(R.string.client_detail_time_minutes_ago, diffMillis / 60_000)
-        diffMillis < 86_400_000L -> stringResource(R.string.client_detail_time_hours_ago, diffMillis / 3_600_000)
-        else -> stringResource(R.string.client_detail_time_days_ago, diffMillis / 86_400_000)
+private fun DoubleInfoItem(label: String, valueStart: String, valueEnd: String) {
+    Column(modifier= Modifier.fillMaxWidth()) {
+        Text(text = label, style = MaterialTheme.typography.labelMedium)
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(text = valueStart, style = MaterialTheme.typography.bodyMedium)
+            Text(text = valueEnd, style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }

@@ -28,7 +28,7 @@ class GetClientWithDetailsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(clientId: String): QrResult<ClientWithDetails, QrError.ClientError> {
 
-        Timber.d("Getting client details for $clientId")
+        Timber.v("Getting client details for $clientId")
 
         if (clientId.isBlank()) {
             Timber.w("ClientId is blank")
@@ -43,20 +43,20 @@ class GetClientWithDetailsUseCase @Inject constructor(
 
         // 2. Load facilities — degrade gracefully
         val facilities = when (val result = getFacilitiesByClient(clientId)) {
-            is QrResult.Success ->                 result.data
-            is QrResult.Error ->                 emptyList()
+            is QrResult.Success -> result.data
+            is QrResult.Error -> emptyList()
         }
 
         // 3. Load contacts — degrade gracefully
         val contacts = when (val result = getContactsByClient(clientId)) {
             is QrResult.Success -> result.data
-            is QrResult.Error ->                emptyList()
+            is QrResult.Error -> emptyList()
         }
 
         // 4. Load contracts — degrade gracefully
         val contracts = when (val result = getContractsByClient(clientId)) {
             is QrResult.Success -> result.data
-            is QrResult.Error ->                emptyList()
+            is QrResult.Error -> emptyList()
         }
 
         // 5. Load islands per facility — degrade gracefully
@@ -79,7 +79,7 @@ class GetClientWithDetailsUseCase @Inject constructor(
             lastCheckUpDate = null  // TODO: integrate CheckUpRepository
         )
 
-        Timber.i("Loaded client details {facilities=${stats.facilitiesCount}, contacts=${stats.contactsCount}, contracts=${stats.contractsCount}, islands=${stats.islandsCount}}")
+        Timber.d("Loaded client details {facilities=${stats.facilitiesCount}, islands=${stats.islandsCount}, contacts=${stats.contactsCount}, contracts=${stats.contractsCount}}")
 
         return QrResult.Success(
             ClientWithDetails(

@@ -21,7 +21,7 @@ class GetClientStatisticsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(clientId: String): QrResult<ClientStatistics, QrError.ClientError> {
 
-        Timber.d("Getting statistics for client $clientId")
+        Timber.v("Getting statistics for client $clientId")
 
         if (clientId.isBlank()) {
             Timber.d("Client ID is blank")
@@ -52,7 +52,8 @@ class GetClientStatisticsUseCase @Inject constructor(
             // val checkUps = checkUpRepository?.getCheckUpsByClient(clientId)?.getOrElse { emptyList() } ?: emptyList()
             // Triple(checkUps.size, checkUps.count { it.status.isCompleted() }, checkUps.maxByOrNull { it.updatedAt }?.updatedAt)
             Triple(0, 0, null)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to get check-ups for client $clientId")
             Triple(0, 0, null)
         }
 

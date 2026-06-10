@@ -20,7 +20,7 @@ class ObserveClientsUseCase @Inject constructor(
 ) {
     operator fun invoke(activeOnly: Boolean = false): Flow<List<Client>> {
 
-        Timber.d("Observing clients (activeOnly=$activeOnly)")
+        Timber.v("Observing clients activeOnly=$activeOnly)")
 
         val flow = if (activeOnly) {
             clientRepository.getActiveClientsFlow()

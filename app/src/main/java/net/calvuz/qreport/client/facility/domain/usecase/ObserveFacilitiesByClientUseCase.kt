@@ -20,16 +20,12 @@ class ObserveFacilitiesByClientUseCase @Inject constructor(
      */
     operator fun invoke(clientId: String): Flow<List<Facility>> {
 
-        Timber.d("Observig facilities by ClientId: $clientId")
+        Timber.v("Observig facilities for client $clientId")
 
 
-        return facilityRepository.getFacilitiesByClientFlow(clientId)
-            .map { facilities ->
-                facilities.sortedWith(
-                    compareByDescending<Facility> { it.isPrimary }
-                        .thenByDescending { it.isActive }
-                        .thenBy { it.name.lowercase() }
-                )
+        return facilityRepository.getFacilitiesByClientFlow(clientId).map { facilities ->
+                facilities.sortedWith(compareByDescending<Facility> { it.isPrimary }.thenByDescending { it.isActive }
+                    .thenBy { it.name.lowercase() })
             }
     }
 }

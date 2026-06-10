@@ -101,6 +101,11 @@ interface FacilityDao {
         facilityId: String, timestamp: Long = System.currentTimeMillis()
     )
 
+    // ===== RESTORE =====
+
+    @Query("UPDATE facilities SET is_active = 1, updated_at = :timestamp WHERE id = :id")
+    suspend fun restoreFacility(id: String, timestamp: Long = System.currentTimeMillis())
+
     // ===== PRIMARY FACILITY MANAGEMENT =====
 
     @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_primary = 1 AND is_active = 1")

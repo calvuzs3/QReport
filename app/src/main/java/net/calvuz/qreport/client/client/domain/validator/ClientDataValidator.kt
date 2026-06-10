@@ -20,17 +20,13 @@ import javax.inject.Inject
 class ClientDataValidator @Inject constructor() {
 
     operator fun invoke(client: Client): QrResult<Unit, QrError.ClientError> = when {
-        client.id.isBlank() ->
-            QrResult.Error(QrError.ClientError.MissingCompanyName())
+        client.id.isBlank() -> QrResult.Error(QrError.ClientError.NotFound())
 
-        client.companyName.isBlank() ->
-            QrResult.Error(QrError.ClientError.MissingCompanyName())
+        client.companyName.isBlank() -> QrResult.Error(QrError.ClientError.MissingCompanyName())
 
-        client.companyName.length < 2 ->
-            QrResult.Error(QrError.ClientError.InvalidCompanyName())
+        client.companyName.length < 2 -> QrResult.Error(QrError.ClientError.InvalidCompanyName())
 
-        client.companyName.length > 255 ->
-            QrResult.Error(QrError.ClientError.InvalidCompanyName())
+        client.companyName.length > 255 -> QrResult.Error(QrError.ClientError.InvalidCompanyName())
 
         else -> QrResult.Success(Unit)
     }

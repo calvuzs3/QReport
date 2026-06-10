@@ -20,23 +20,20 @@ class GetFacilitiesByClientUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(clientId: String): QrResult<List<Facility>, QrError.FacilityError> {
 
-        Timber.d("Getting facilities for client $clientId")
+        Timber.v("Getting facilities for client $clientId")
 
         if (clientId.isBlank()) {
             Timber.d("Client ID is blank")
             return QrResult.Error(QrError.FacilityError.LoadError("Client ID is required"))
         }
 
-        facilityRepository.getFacilitiesByClient(clientId).fold(
-            onSuccess = { facilities ->
-                Timber.d("Loaded ${facilities.size} facilities for client $clientId")
-                return QrResult.Success(facilities.sortedByPrimaryThenName())
-            },
-            onFailure = {
-                Timber.d("Failed to load facilities for client $clientId: ${it.message}")
-                return QrResult.Error(QrError.FacilityError.LoadError(it.message))
-            }
-        )
+        facilityRepository.getFacilitiesByClient(clientId).fold(onSuccess = { facilities ->
+            Timber.d("Loaded facilities for client $clientId: ${facilities.size}")
+            return QrResult.Success(facilities.sortedByPrimaryThenName())
+        }, onFailure = {
+            Timber.d(it, "Failed to load facilities for client $clientId")
+            return QrResult.Error(QrError.FacilityError.LoadError(it.message))
+        })
     }
 
     suspend fun getActiveFacilitiesByClient(clientId: String): QrResult<List<Facility>, QrError.FacilityError> {
@@ -45,8 +42,7 @@ class GetFacilitiesByClientUseCase @Inject constructor(
         }
         return facilityRepository.getActiveFacilitiesByClient(clientId).fold(
             onSuccess = { QrResult.Success(it.sortedByPrimaryThenName()) },
-            onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) }
-        )
+            onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) })
     }
 
     suspend fun getPrimaryFacility(clientId: String): QrResult<Facility?, QrError.FacilityError> {
@@ -55,18 +51,15 @@ class GetFacilitiesByClientUseCase @Inject constructor(
         }
         return facilityRepository.getPrimaryFacility(clientId).fold(
             onSuccess = { QrResult.Success(it) },
-            onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) }
-        )
+            onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) })
     }
 
     suspend fun getFacilitiesByType(
-        clientId: String,
-        facilityType: FacilityType
-    ): QrResult<List<Facility>, QrError.FacilityError> =
-        when (val result = invoke(clientId)) {
-            is QrResult.Error -> result
-            is QrResult.Success -> QrResult.Success(result.data.filter { it.facilityType == facilityType })
-        }
+        clientId: String, facilityType: FacilityType
+    ): QrResult<List<Facility>, QrError.FacilityError> = when (val result = invoke(clientId)) {
+        is QrResult.Error -> result
+        is QrResult.Success -> QrResult.Success(result.data.filter { it.facilityType == facilityType })
+    }
 
     suspend fun getFacilitiesCount(clientId: String): QrResult<Int, QrError.FacilityError> {
         if (clientId.isBlank()) {
@@ -74,16 +67,12 @@ class GetFacilitiesByClientUseCase @Inject constructor(
         }
         return facilityRepository.getFacilitiesCountByClient(clientId).fold(
             onSuccess = { QrResult.Success(it) },
-            onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) }
-        )
+            onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) })
     }
 
     // -------------------------------------------------------------------------
 
     private fun List<Facility>.sortedByPrimaryThenName(): List<Facility> =
-        sortedWith(
-            compareByDescending<Facility> { it.isPrimary }
-                .thenByDescending { it.isActive }
-                .thenBy { it.name.lowercase() }
-        )
+        sortedWith(compareByDescending<Facility> { it.isPrimary }.thenByDescending { it.isActive }
+            .thenBy { it.name.lowercase() })
 }

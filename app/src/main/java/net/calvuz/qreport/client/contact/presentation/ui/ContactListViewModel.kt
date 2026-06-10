@@ -16,6 +16,8 @@ import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.usecase.GetContactsByClientUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.DeleteContactUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.SetPrimaryContactUseCase
+import net.calvuz.qreport.client.contact.presentation.model.ContactFilter
+import net.calvuz.qreport.client.contact.presentation.model.ContactSortOrder
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -52,15 +54,6 @@ data class ContactListUiState(
     val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
-/** ContactListScreen Filter */
-enum class ContactFilter {
-    ACTIVE, INACTIVE, PRIMARY_ONLY, ALL
-}
-
-/** ContactListScreen SortOrder */
-enum class ContactSortOrder {
-    CREATED_RECENT, CREATED_OLDEST, NAME
-}
 
 /**
  * ContactListScreen ViewModel

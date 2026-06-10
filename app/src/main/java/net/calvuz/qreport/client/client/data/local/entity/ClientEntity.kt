@@ -25,32 +25,23 @@ import androidx.room.PrimaryKey
     ]
 )
 data class ClientEntity(
-    @PrimaryKey
-    val id: String,
+    @PrimaryKey val id: String,
 
     // ===== DATA =====
-    @ColumnInfo(name = "company_name")
-    val companyName: String,
-    val notes: String?,
+    @ColumnInfo(name = "company_name") val companyName: String, val notes: String?,
 
     // ===== HEADQUARTERS JSON =====
-    @ColumnInfo(name = "headquarters_json")
-    val headquartersJson: String?, // Serialized JSON of Address object
+    @ColumnInfo(name = "headquarters_json") val headquartersJson: String?, // Serialized JSON of Address object
 
     // ===== METADATA =====
-    @ColumnInfo(name = "is_active")
-    val isActive: Boolean = true,
+    @ColumnInfo(name = "is_active") val isActive: Boolean = true,
 
-    @ColumnInfo(name = "created_at")
-    val createdAt: Long, // Timestamp in milliseconds
+    @ColumnInfo(name = "created_at") val createdAt: Long, // Timestamp in milliseconds
 
-    @ColumnInfo(name = "updated_at")
-    val updatedAt: Long, // Timestamp in milliseconds — updated on every local write
+    @ColumnInfo(name = "updated_at") val updatedAt: Long, // Timestamp in milliseconds — updated on every local write
 
     // ===== SYNC =====
-    @ColumnInfo(name = "synced_at")
-    val syncedAt: Long? = null, // null = never synced; set after successful server push
+    @ColumnInfo(name = "synced_at") val syncedAt: Long? = null, // null = never synced; set after successful server push
 
-    @ColumnInfo(name = "is_deleted")
-    val isDeleted: Boolean = false // Soft-delete: row hidden in UI, pushed to server
+    @ColumnInfo(name = "is_deleted") val isDeleted: Boolean = false // Soft-delete: row hidden in UI, pushed to server
 )

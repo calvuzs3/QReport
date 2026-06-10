@@ -19,28 +19,28 @@ class CheckCompanyNameUniquenessUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(client: Client): QrResult<Unit, QrError.ClientError> {
 
-        Timber.d("Checking uniqueness of client company name")
+        Timber.v("Checking uniqueness of client company name (${client.companyName})")
 
         if (client.companyName.isBlank()) {
             Timber.d("Client company name is blank")
             return QrResult.Error(QrError.ClientError.MissingCompanyName())
         }
 
-        return clientRepository.isCompanyNameTaken(client.companyName, client.id).fold(
-            onSuccess = { isTaken ->
+        return clientRepository.isCompanyNameTaken(client.companyName, client.id)
+            .fold(onSuccess = { isTaken ->
                 if (isTaken) {
-                    Timber.d("Client company name is already taken")
+                    Timber.d("Client company name (${client.companyName}) is already taken")
                     QrResult.Error(QrError.ClientError.CreateError())
-                }
-                else {
-                    Timber.d("Client company name is available")
+                } else {
+                    Timber.v("Client company name {${client.companyName}} is available")
                     QrResult.Success(Unit)
                 }
-            },
-            onFailure = {
-                Timber.d( "Failed to check uniqueness of client company name: ${it.message}")
+            }, onFailure = {
+                Timber.e(
+                    it,
+                    "Failed to check uniqueness of client company name (${client.companyName})"
+                )
                 QrResult.Error(QrError.ClientError.LoadError(it.message))
-            }
-        )
+            })
     }
 }

@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.Factory
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,13 +38,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.client.client.presentation.model.ClientFilter
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientSortOrder
@@ -160,7 +159,7 @@ fun ClientListScreen(
 
             when {
                 uiState.isLoading -> {
-                    LoadingState()
+                    QrLoadingState()
                 }
 
                 currentError != null -> {
@@ -204,36 +203,13 @@ fun ClientListScreen(
                         onCreateNewClient = onCreateNewClient,
                         onClientClick = onNavigateToClientDetail,
                         onClientEdit = onNavigateToEditClient,
-                        onClientDelete = viewModel::inactivateClient
+                        onClientDelete = viewModel::inactivateClient,
+                        onClientRestore = viewModel::restoreClient
                     )
                 }
-//                    ClientSummaryRow(
-//                        clients = uiState.filteredClients, onCreateNewClient = onCreateNewClient
-//                    )
-//                    ClientListContent(
-//                        clients = uiState.filteredClients,
-//                        variant = uiState.cardVariant,
-//                        onClientClick = onNavigateToClientDetail,
-//                        onClientEdit = onNavigateToEditClient,
-//                        onClientDelete = viewModel::inactivateClient
-//                    )
-                }
             }
-
-//            // FAB per nuovo cliente
-//            FloatingActionButton(
-//                onClick = onCreateNewClient,
-//                modifier = Modifier
-//                    .align(Alignment.BottomEnd)
-//                    .padding(16.dp)
-//            ) {
-//                Icon(
-//                    imageVector = Icons.Default.Add,
-//                    contentDescription = stringResource(R.string.client_screen_list_fab_new)
-//                )
-//            }
         }
-//    }
+    }
 }
 
 @Composable
@@ -243,19 +219,22 @@ private fun ListContent(
     onCreateNewClient: () -> Unit,
     onClientClick: (String, String) -> Unit,
     onClientEdit: (String) -> Unit,
-    onClientDelete: (String) -> Unit
+    onClientDelete: (String) -> Unit,
+    onClientRestore: (String) -> Unit
 ) {
-    Column() {
+    Column {
         ClientSummaryRow(clients, onCreateNewClient)
         ClientListContent(
             clients = clients,
             variant = variant,
             onClientClick = onClientClick,
             onClientEdit = onClientEdit,
-            onClientDelete = onClientDelete
+            onClientDelete = onClientDelete,
+            onClientRestore = onClientRestore
         )
     }
 }
+
 @Composable
 private fun ClientSummaryRow(
     clients: List<ClientWithStats>, onCreateNewClient: () -> Unit
@@ -288,7 +267,8 @@ private fun ClientListContent(
     variant: ListViewMode,
     onClientClick: (String, String) -> Unit,
     onClientEdit: (String) -> Unit,
-    onClientDelete: (String) -> Unit
+    onClientDelete: (String) -> Unit,
+    onClientRestore: (String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -298,14 +278,18 @@ private fun ClientListContent(
         items(
             items = clients, key = { it.client.id }) { clientWithStats ->
             ClientCard(
-                client = clientWithStats.client, stats = clientWithStats.stats, onClick = {
-                onClientClick(
-                    clientWithStats.client.id, clientWithStats.client.companyName
-                )
-            }, onEdit = { onClientEdit(clientWithStats.client.id) },
-                //onDelete = { onClientDelete(clientWithStats.client.id) },
-                onDelete = null, variant = variant
-            )
+                client = clientWithStats.client,
+                stats = clientWithStats.stats,
+                onClick = {
+                    onClientClick(
+                        clientWithStats.client.id, clientWithStats.client.companyName
+                    )
+                },
+                onEdit = { onClientEdit(clientWithStats.client.id) },
+//                onDelete = { onClientDelete(clientWithStats.client.id) },
+                onDelete = null,
+                variant = variant,
+                onRestore = { onClientRestore(clientWithStats.client.id) })
         }
     }
 }

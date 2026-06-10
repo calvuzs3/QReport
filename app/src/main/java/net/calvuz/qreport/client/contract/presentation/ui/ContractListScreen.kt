@@ -22,13 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.ErrorState
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
-import net.calvuz.qreport.app.error.presentation.UiText
 // Selection system imports
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.DeleteConfirmationDialog
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectableItem
@@ -37,29 +36,15 @@ import net.calvuz.qreport.app.app.presentation.components.simple_selection.Selec
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
 import net.calvuz.qreport.client.contract.domain.model.Contract
+import net.calvuz.qreport.client.contract.presentation.model.ContractFilter
+import net.calvuz.qreport.client.contract.presentation.model.ContractPkg
+import net.calvuz.qreport.client.contract.presentation.model.ContractSortOrder
 import net.calvuz.qreport.client.contract.presentation.ui.components.ContractCard
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 
-@Composable
-fun ContractFilter.getDisplayName(): UiText {
-    return when (this) {
-        ContractFilter.ALL -> (UiText.StringResource(R.string.contracts_list_filter_all))
-        ContractFilter.ACTIVE -> (UiText.StringResource(R.string.contracts_list_filter_active))
-        ContractFilter.INACTIVE -> (UiText.StringResource(R.string.contracts_list_filter_inactive))
-    }
-}
-
-@Composable
-fun ContractSortOrder.getDisplayName(): UiText {
-    return when (this) {
-        ContractSortOrder.NAME -> UiText.StringResource(R.string.contracts_list_sort_name)
-        ContractSortOrder.EXPIRE_OLDEST -> UiText.StringResource(R.string.contracts_list_sort_expire_oldest)
-        ContractSortOrder.EXPIRE_RECENT -> UiText.StringResource(R.string.contracts_list_sort_expire_recent)
-    }
-}
-
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContractListScreen(
@@ -299,14 +284,14 @@ fun ContractListScreen(
 
                 // Filter chips
                 if (uiState.selectedFilter != ContractFilter.ALL || uiState.selectedSortOrder != ContractSortOrder.NAME) {
-                    ActiveFiltersChipRow(
-                        selectedFilter = uiState.selectedFilter.getDisplayName().asString(),
-                        avoidFilter = ContractFilter.ACTIVE.getDisplayName().asString(),
-                        selectedSort = uiState.selectedSortOrder.getDisplayName().asString(),
-                        avoidSort = ContractSortOrder.EXPIRE_RECENT.getDisplayName().asString(),
-                        onClearFilter = { viewModel.updateFilter(ContractFilter.ACTIVE) },
-                        onClearSort = { viewModel.updateSortOrder(ContractSortOrder.EXPIRE_RECENT) },
-                        modifier = Modifier.padding(horizontal = 16.dp)
+                    QReportFiltersChipRow (
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        selectedFilter = uiState.selectedFilter,
+                        avoidFilter = ContractPkg.selectedFilter,
+                        onClearFilter = { viewModel.updateFilter(ContractPkg.selectedFilter) },
+                        selectedSort = uiState.selectedSortOrder,
+                        avoidSort = ContractPkg.selectedSortOrder,
+                        onClearSort = { viewModel.updateSortOrder(ContractPkg.selectedSortOrder) },
                     )
                 }
             }
@@ -322,7 +307,7 @@ fun ContractListScreen(
 
                 when {
                     uiState.isLoading -> {
-                        LoadingState()
+                        QrLoadingState()
                     }
 
                     currentError != null -> {
@@ -415,6 +400,7 @@ fun ContractListScreen(
 /**
  * ContractsError list with selection support (unchanged)
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun ContractsListWithSelection(
     contractsWithStats: List<ContractWithStats>,

@@ -22,31 +22,25 @@ class GetFacilityWithIslandsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(facilityId: String): QrResult<FacilityWithIslands, QrError.FacilityError> {
 
-        Timber.d("Getting facility $facilityId with islands")
+        Timber.v("Getting facility $facilityId with islands")
 
         if (facilityId.isBlank()) {
-
+            Timber.w("Facility ID is blank")
             return QrResult.Error(QrError.FacilityError.NotFound())
         }
 
         val facility = facilityRepository.getFacilityById(facilityId).fold(
             onSuccess = { it ?: return QrResult.Error(QrError.FacilityError.NotFound()) },
-            onFailure = { return QrResult.Error(QrError.FacilityError.LoadError(it.message)) }
-        )
+            onFailure = { return QrResult.Error(QrError.FacilityError.LoadError(it.message)) })
 
-        val islands = islandRepository.getIslandsByFacility(facilityId)
-            .getOrElse { emptyList() }
-            .sortedWith(
-                compareByDescending<Island> { it.isActive }
-                    .thenBy { it.islandType.name }
-                    .thenBy { (it.customName ?: it.serialNumber).lowercase() }
-            )
+        val islands = islandRepository.getIslandsByFacility(facilityId).getOrElse { emptyList() }
+            .sortedWith(compareByDescending<Island> { it.isActive }.thenBy { it.islandType.name }
+                .thenBy { (it.customName ?: it.serialNumber).lowercase() })
 
+        Timber.d("Loaded facility $facilityId with ${islands.size} islands")
         return QrResult.Success(
             FacilityWithIslands(
-                facility = facility,
-                islands = islands,
-                statistics = calculateStatistics(islands)
+                facility = facility, islands = islands, statistics = calculateStatistics(islands)
             )
         )
     }

@@ -21,7 +21,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.LoadingState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.onWarningContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.success
@@ -65,7 +65,7 @@ fun HomeScreen(
         HorizontalDivider()
 
         if (uiState.isLoading) {
-            LoadingState(modifier = Modifier.fillMaxSize())
+            QrLoadingState(modifier = Modifier.fillMaxSize())
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),

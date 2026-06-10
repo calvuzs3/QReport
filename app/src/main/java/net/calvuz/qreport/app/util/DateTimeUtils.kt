@@ -85,14 +85,12 @@ object DateTimeUtils {
      * Formatta data in modo relativo rispetto a oggi
      * Esempi: "Oggi", "Ieri", "Tra 5 giorni", "5 giorni fa", "15/11/2024"
      */
-    fun Instant.toRelativeDate(): String {
+    fun Instant.toItalianRelativeDate(): String {
         val now = Clock.System.now()
         val thisDate = this.toLocalDateTime(TimeZone.currentSystemDefault()).date
         val todayDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-        val daysDifference = thisDate.toEpochDays() - todayDate.toEpochDays()
-
-        return when (daysDifference) {
+        return when (val daysDifference = thisDate.toEpochDays() - todayDate.toEpochDays()) {
             0 -> "Oggi"
             1 -> "Domani"
             -1 -> "Ieri"
@@ -126,6 +124,29 @@ object DateTimeUtils {
     }
 
     /**
+     * Formatta data in modo relativo rispetto a oggi
+     */
+    fun Instant.toItalianCreatedAt(): String {
+        val now = Clock.System.now()
+        val diffMillis = (now - this).inWholeMilliseconds
+
+        return when {
+            diffMillis < 60000 -> "Creato ora"
+            diffMillis < 3600000 -> "Creato ${diffMillis / 60000} min fa"
+            diffMillis < 86400000 -> "Creato ${diffMillis / 3600000}h fa"
+            else -> {
+                val days = (this - Clock.System.now()).inWholeDays
+
+                return when {
+                    days == 1L -> "Creato ieri"
+                    days < 28 -> "Creato $days giorni fa"
+                    else -> "Creato il ${this.toItalianDate()}"
+                }
+            }
+        }
+    }
+
+    /**
      * Formatta per messaggi di scadenza
      * Esempi: "scade oggi", "scade domani", "scade il 15/11/2024", "scaduta il 10/11/2024"
      */
@@ -134,8 +155,8 @@ object DateTimeUtils {
 
         return when {
             this < now -> "scaduta il ${this.toItalianDate()}"
-            this.toRelativeDate() == "Oggi" -> "scade oggi"
-            this.toRelativeDate() == "Domani" -> "scade domani"
+            this.toItalianRelativeDate() == "Oggi" -> "scade oggi"
+            this.toItalianRelativeDate() == "Domani" -> "scade domani"
             else -> "scade il ${this.toItalianDate()}"
         }
     }

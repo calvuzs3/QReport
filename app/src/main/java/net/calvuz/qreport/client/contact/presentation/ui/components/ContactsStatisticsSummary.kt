@@ -9,7 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
-import net.calvuz.qreport.app.app.presentation.components.ListStatItem
+import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
 import net.calvuz.qreport.R
 
 /**
@@ -33,14 +33,14 @@ fun ContactsStatisticsSummary(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             // Contatti totali
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Default.Person,
                 value = statistics.totalContacts.toString(),
                 label = stringResource(R.string.contact_title)
             )
 
             // Contatti primari
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Default.Star,
                 value = statistics.primaryContacts.toString(),
                 label = stringResource(R.string.contact_primary_title),
@@ -50,7 +50,7 @@ fun ContactsStatisticsSummary(
             )
 
             // Contatti raggiungibili (con telefono o email)
-            ListStatItem(
+            QrListStatItem(
                 icon = Icons.Default.Phone,
                 value = (statistics.totalContacts - statistics.contactsWithoutContact).toString(),
                 label = stringResource(R.string.contact_reachable_title),

@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import net.calvuz.qreport.client.facility.domain.validator.FacilityDataValidator
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -15,19 +16,21 @@ import javax.inject.Inject
  */
 class UpdateFacilityUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository,
-    private val checkFacilityExists: CheckFacilityExistsUseCase,
-    private val checkFacilityNameUniqueness: CheckFacilityNameUniquenessUseCase
+    private val getFacilityById: GetFacilityByIdUseCase,
+    private val checkFacilityNameUniqueness: CheckFacilityNameUniquenessUseCase,
+    private val validateFields: FacilityDataValidator
 ) {
     suspend operator fun invoke(facility: Facility): QrResult<Unit, QrError.FacilityError> {
 
-        Timber.d("Updating facility: $facility")
+        Timber.v("Updating facility: $facility")
 
         // 1. Verify exists — error type matches so we can propagate directly
-        val original = when (val result = checkFacilityExists(facility.id)) {
+        val original = when (val result = getFacilityById(facility.id)) {
             is QrResult.Error -> {
                 Timber.d("Facility ${facility.id} not found")
                 return QrResult.Error(result.error)
             }
+
             is QrResult.Success -> result.data
         }
 
@@ -35,21 +38,25 @@ class UpdateFacilityUseCase @Inject constructor(
         if (facility.clientId != original.clientId) {
             Timber.d("Cannot change client of an existing facility")
             return QrResult.Error(
-                QrError.FacilityError.UpdateError("Cannot change client of an existing facility")
+                QrError.FacilityError.UpdateError()
             )
         }
 
         // 3. Validate fields
-        val fieldError = validateFields(facility)
-        if (fieldError != null) return fieldError
+        when (val fieldError = validateFields(facility)) {
+            is QrResult.Error -> return fieldError
+            is QrResult.Success -> Unit
+        }
 
         // 4. Check name uniqueness if name changed
         if (facility.name != original.name) {
-            when (val unique = checkFacilityNameUniqueness(facility.clientId, facility.name, facility.id)) {
+            when (val unique =
+                checkFacilityNameUniqueness(facility.clientId, facility.name, facility.id)) {
                 is QrResult.Error -> {
                     Timber.d("Facility name not unique: $unique")
                     return QrResult.Error(unique.error)
                 }
+
                 is QrResult.Success -> Unit
             }
         }
@@ -62,61 +69,45 @@ class UpdateFacilityUseCase @Inject constructor(
 
         // 6. Persist with refreshed timestamp
         val updated = facility.copy(updatedAt = Clock.System.now())
-        facilityRepository.updateFacility(updated).fold(
-            onSuccess = { return QrResult.Success(Unit) },
-            onFailure = {
+        facilityRepository.updateFacility(updated)
+            .fold(onSuccess = { return QrResult.Success(Unit) }, onFailure = {
                 Timber.d("Failed to update facility: ${it.message}")
-                return QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
-        )
-    }
-
-    // -------------------------------------------------------------------------
-
-    private fun validateFields(facility: Facility): QrResult<Unit, QrError.FacilityError>? = when {
-        facility.name.isBlank() ->
-            QrResult.Error(QrError.FacilityError.MissingName())
-        facility.name.length < 2 ->
-            QrResult.Error(QrError.FacilityError.UpdateError("Name too short (min 2 chars)"))
-        facility.name.length > 100 ->
-            QrResult.Error(QrError.FacilityError.UpdateError("Name too long (max 100 chars)"))
-        (facility.code?.length ?: 0) > 50 ->
-            QrResult.Error(QrError.FacilityError.UpdateError("Code too long (max 50 chars)"))
-        (facility.notes?.length ?: 0) > 500 ->
-            QrResult.Error(QrError.FacilityError.UpdateError("Notes too long (max 500 chars)"))
-        else -> null
+                return QrResult.Error(QrError.FacilityError.UpdateError(it.message))
+            })
     }
 
     private suspend fun handlePrimaryChange(
-        facility: Facility,
-        original: Facility
+        facility: Facility, original: Facility
     ): QrResult<Unit, QrError.FacilityError>? = when {
 
         // Promoting to primary: delegate to repository
-        facility.isPrimary && !original.isPrimary ->
-            facilityRepository.setPrimaryFacility(facility.clientId, facility.id).fold(
-                onSuccess = { null },
-                onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
-            )
+        facility.isPrimary && !original.isPrimary -> facilityRepository.setPrimaryFacility(
+            facility.clientId,
+            facility.id
+        ).fold(
+            onSuccess = { null },
+            onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) })
 
         // Demoting from primary: another active facility must exist
-        !facility.isPrimary && original.isPrimary ->
-            facilityRepository.getActiveFacilitiesByClient(facility.clientId).fold(
-                onSuccess = { active ->
-                    val others = active.filter { it.id != facility.id }
-                    when {
-                        others.isEmpty() ->
-                            QrResult.Error(QrError.FacilityError.UpdateError(
-                                "Cannot remove primary flag: no other active facility"
-                            ))
-                        else ->
-                            facilityRepository.setPrimaryFacility(facility.clientId, others.first().id).fold(
-                                onSuccess = { null },
-                                onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
-                            )
-                    }
-                },
-                onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) }
-            )
+        !facility.isPrimary && original.isPrimary -> facilityRepository.getActiveFacilitiesByClient(
+            facility.clientId
+        ).fold(onSuccess = { active ->
+            val others = active.filter { it.id != facility.id }
+            when {
+                others.isEmpty() -> QrResult.Error(
+                    QrError.FacilityError.UpdateError(
+                        "Cannot remove primary flag: no other active facility"
+                    )
+                )
+
+                else -> facilityRepository.setPrimaryFacility(
+                    facility.clientId,
+                    others.first().id
+                ).fold(
+                    onSuccess = { null },
+                    onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) })
+            }
+        }, onFailure = { QrResult.Error(QrError.FacilityError.UpdateError(it.message)) })
 
         else -> null
     }

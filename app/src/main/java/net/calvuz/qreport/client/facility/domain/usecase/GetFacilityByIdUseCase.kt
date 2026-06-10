@@ -19,7 +19,7 @@ class GetFacilityByIdUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(facilityId: String): QrResult<Facility, QrError.FacilityError> {
 
-        Timber.d("Getting facility $facilityId")
+        Timber.v("Getting facility $facilityId")
 
         if (facilityId.isBlank()) {
             Timber.d("Facility ID is blank")

@@ -22,23 +22,23 @@ class NewFacilityUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(facility: Facility): QrResult<Unit, QrError.FacilityError> {
 
-        Timber.d("Creating new facility: $facility")
+        Timber.v("Creating new facility $facility")
 
         // 1. Verify client exists
         when (checkClientExists(facility.clientId)) {
             is QrResult.Error -> {
-                Timber.d("Client ${facility.clientId} not found")
                 return QrResult.Error(QrError.FacilityError.MissingClientId())
             }
+
             is QrResult.Success -> Unit
         }
 
         // 2. Check name uniqueness
         when (val unique = checkFacilityNameUniqueness(facility.clientId, facility.name)) {
             is QrResult.Error -> {
-                Timber.d("Facility name not unique: $unique")
                 return unique
             }
+
             is QrResult.Success -> Unit
         }
 
@@ -50,13 +50,12 @@ class NewFacilityUseCase @Inject constructor(
         }
 
         // 4. Persist
-        facilityRepository.createFacility(facility).fold(
-            onSuccess = {
-                Timber.d("Created new facility: $facility")
-                return QrResult.Success(Unit) },
-            onFailure = {
-                Timber.d("Failed to create new facility: ${it.message}")
-                return QrResult.Error(QrError.FacilityError.CreateError(it.message)) }
-        )
+        facilityRepository.createFacility(facility).fold(onSuccess = {
+            Timber.d("Successfully created new facility")
+            return QrResult.Success(Unit)
+        }, onFailure = {
+            Timber.d(it, "Failed to create new facility")
+            return QrResult.Error(QrError.FacilityError.CreateError(it.message))
+        })
     }
 }
