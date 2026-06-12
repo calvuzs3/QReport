@@ -18,14 +18,15 @@ interface FacilityRepository {
     // ===== TWO-STAGE DELETE =====
 
     @Transaction
-    suspend fun deactivateFacility(id: String): Result<Unit>
+    suspend fun deactivateFacility(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     @Transaction
-    suspend fun markFacilityDeleted(id: String): Result<Unit>
+    suspend fun markFacilityDeleted(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     // ===== RESTORE =====
 
-    suspend fun restoreFacility(id: String): Result<Unit>
+    @Transaction
+    suspend fun restoreFacility(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     // ===== CLIENT RELATED =====
 

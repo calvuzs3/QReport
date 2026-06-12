@@ -126,8 +126,7 @@ fun FacilityDetailScreen(
         }, actions = {
             if (uiState.hasData) {
                 IconButton(
-                    onClick = viewModel::showDeleteConfirmation,
-                    enabled = !uiState.isDeleting
+                    onClick = viewModel::showDeleteConfirmation, enabled = !uiState.isDeleting
                 ) {
                     if (uiState.isDeleting) CircularProgressIndicator(
                         modifier = Modifier.size(
@@ -250,7 +249,7 @@ private fun FacilityDetailContent(
             )
 
             FacilityDetailTab.ISLANDS -> IslandsTabContent(
-                islands = uiState.filteredIslands,
+                islands = uiState.islands,
                 allIslands = uiState.islands,
                 onIslandClick = onIslandClick,
                 onViewAll = onViewAll,
@@ -303,8 +302,7 @@ private fun InfoTabContent(
             }
         }
         LazyColumn(
-            modifier = modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 InfoCard(
@@ -317,8 +315,7 @@ private fun InfoTabContent(
                     )
                     facility.code?.let {
                         InfoItem(
-                            stringResource(R.string.facility_detail_info_field_code),
-                            it
+                            stringResource(R.string.facility_detail_info_field_code), it
                         )
                     }
                     InfoItem(
@@ -327,8 +324,7 @@ private fun InfoTabContent(
                     )
                     facility.notes?.let {
                         InfoItem(
-                            stringResource(R.string.facility_detail_info_field_notes),
-                            it
+                            stringResource(R.string.facility_detail_info_field_notes), it
                         )
                     }
                     InfoItem(
@@ -403,9 +399,8 @@ private fun IslandsTabContent(
                 fontWeight = FontWeight.SemiBold
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (islands.isNotEmpty()) {
-                    OutlinedButton(onClick = onViewAll) { Text(stringResource(R.string.facility_detail_empty_action)) }
-                }
+                OutlinedButton(onClick = onViewAll) { Text(stringResource(R.string.facility_detail_empty_action)) }
+
                 Button(onClick = onCreateIsland) {
                     Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
@@ -462,8 +457,7 @@ private fun MaintenanceTabContent(
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             Card {
@@ -545,9 +539,7 @@ private fun MaintenanceTabContent(
 @Suppress("ParamsComparedByRef")
 @Composable
 private fun MaintenanceIslandItem(
-    island: Island,
-    onMarkComplete: (String) -> Unit,
-    onIslandClick: (String) -> Unit
+    island: Island, onMarkComplete: (String) -> Unit, onIslandClick: (String) -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -567,8 +559,7 @@ private fun MaintenanceIslandItem(
                 )
                 Text(text = island.nextScheduledMaintenance?.let {
                     stringResource(
-                        R.string.facility_detail_maintenance_expiry,
-                        formatTimestamp(it)
+                        R.string.facility_detail_maintenance_expiry, formatTimestamp(it)
                     )
                 } ?: stringResource(R.string.facility_detail_maintenance_not_scheduled),
                     style = MaterialTheme.typography.bodySmall,
@@ -578,8 +569,7 @@ private fun MaintenanceIslandItem(
                 OutlinedButton(onClick = { onMarkComplete(island.id) }) { Text(stringResource(R.string.facility_detail_maintenance_complete)) }
                 IconButton(onClick = { onIslandClick(island.id) }) {
                     Icon(
-                        Icons.Default.ChevronRight,
-                        contentDescription = null
+                        Icons.Default.ChevronRight, contentDescription = null
                     )
                 }
             }
@@ -609,8 +599,7 @@ private fun WarrantyIslandItem(island: Island, onIslandClick: (String) -> Unit) 
                 )
                 Text(text = island.warrantyExpiration?.let {
                     stringResource(
-                        R.string.facility_detail_warranty_expiry,
-                        formatTimestamp(it)
+                        R.string.facility_detail_warranty_expiry, formatTimestamp(it)
                     )
                 } ?: stringResource(R.string.facility_detail_warranty_not_set),
                     style = MaterialTheme.typography.bodySmall,
@@ -631,14 +620,11 @@ private fun WarrantyIslandItem(island: Island, onIslandClick: (String) -> Unit) 
 
 @Composable
 private fun InfoCard(
-    title: String,
-    icon: ImageVector,
-    content: @Composable ColumnScope.() -> Unit
+    title: String, icon: ImageVector, content: @Composable ColumnScope.() -> Unit
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -683,13 +669,11 @@ private fun formatTimestamp(timestamp: Instant): String {
     return when {
         diffMillis < 60_000L -> stringResource(R.string.facility_time_now)
         diffMillis < 3_600_000L -> stringResource(
-            R.string.facility_time_minutes_ago,
-            diffMillis / 60_000
+            R.string.facility_time_minutes_ago, diffMillis / 60_000
         )
 
         diffMillis < 86_400_000L -> stringResource(
-            R.string.facility_time_hours_ago,
-            diffMillis / 3_600_000
+            R.string.facility_time_hours_ago, diffMillis / 3_600_000
         )
 
         else -> stringResource(R.string.facility_time_days_ago, diffMillis / 86_400_000)

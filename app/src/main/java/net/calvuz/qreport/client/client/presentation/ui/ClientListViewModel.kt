@@ -64,6 +64,10 @@ class ClientListViewModel @Inject constructor(
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
+    companion object {
+        private const val KEY = AppSettingsDataStore.LIST_KEY_CLIENTS
+    }
+
     private val _uiState = MutableStateFlow(ClientListUiState())
     val uiState: StateFlow<ClientListUiState> = _uiState.asStateFlow()
 
@@ -206,7 +210,8 @@ class ClientListViewModel @Inject constructor(
         }.also {
             val currentState = _uiState.value
             _uiState.value = currentState.copy(
-                selectedFilter = filter, filteredClients = applyFiltersAndSort(
+                selectedFilter = filter,
+                filteredClients = applyFiltersAndSort(
                     currentState.clients,
                     currentState.searchQuery,
                     filter,
@@ -242,7 +247,7 @@ class ClientListViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                appSettingsRepository.setListViewMode(AppSettingsDataStore.LIST_KEY_CLIENTS, next)
+                appSettingsRepository.setListViewMode(KEY, next)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to persist card variant preference")
             }
@@ -259,7 +264,7 @@ class ClientListViewModel @Inject constructor(
 
     private fun observeCardVariant() {
         viewModelScope.launch {
-            appSettingsRepository.getListViewMode(AppSettingsDataStore.LIST_KEY_CLIENTS)
+            appSettingsRepository.getListViewMode(KEY)
                 .catch { e -> Timber.e(e, "Error observing card variant preference") }
                 .collect { viewMode ->
                     _uiState.value = _uiState.value.copy(cardVariant = viewMode)

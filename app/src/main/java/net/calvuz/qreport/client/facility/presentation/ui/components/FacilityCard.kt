@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.PrimaryBadge
 import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmRestoreDialog
 import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
 import net.calvuz.qreport.app.app.presentation.components.QrStatusChip
 import net.calvuz.qreport.app.app.presentation.components.QrStatusIndicator
@@ -68,6 +69,7 @@ fun FacilityCard(
     variant: ListViewMode,
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showRestoreDialog by remember { mutableStateOf(false) }
 
     Card(
         onClick = onClick,
@@ -80,31 +82,37 @@ fun FacilityCard(
                 facility = facility,
                 stats = stats,
                 showActions = showActions,
-                onDelete = if (onDelete != null) {
-                    { showDeleteDialog = true }
-                } else null,
-                onRestore = onRestore,
+                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null,
+                onRestore = if (onRestore != null) { { showRestoreDialog = true } } else null,
                 onEdit = onEdit,
-                onOpenMaps = onOpenMaps)
-
-            ListViewMode.COMPACT -> CompactFacilityCard(
-                facility = facility, stats = stats, onOpenMaps = onOpenMaps, onRestore = onRestore
+                onOpenMaps = onOpenMaps
             )
-
+            ListViewMode.COMPACT -> CompactFacilityCard(
+                facility = facility,
+                stats = stats,
+                onOpenMaps = onOpenMaps,
+                onRestore = if (onRestore != null) { { showRestoreDialog = true } } else null
+            )
             ListViewMode.MINIMAL -> MinimalFacilityCard(facility = facility)
         }
     }
 
-    // Delete confirmation dialog
     if (showDeleteDialog && onDelete != null) {
         QReportConfirmDeleteDialog(
             objectName = stringResource(R.string.facility_card_action_delete),
             objectDesc = facility.displayName,
-            onConfirm = {
-                onDelete()
-                showDeleteDialog = false
-            },
-            onDismiss = { showDeleteDialog = false })
+            onConfirm = { onDelete(); showDeleteDialog = false },
+            onDismiss = { showDeleteDialog = false }
+        )
+    }
+
+    if (showRestoreDialog && onRestore != null) {
+        QReportConfirmRestoreDialog(
+            objectName = stringResource(R.string.facility_card_object_name),
+            objectDesc = facility.displayName,
+            onConfirm = { onRestore(); showRestoreDialog = false },
+            onDismiss = { showRestoreDialog = false }
+        )
     }
 }
 
@@ -129,21 +137,21 @@ private fun FullFacilityCard(
         ) {
             SuggestionChip(
                 onClick = {}, label = {
-                Icon(
-                    imageVector = facility.facilityType.icon(),
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp)
+                    Icon(
+                        imageVector = facility.facilityType.icon(),
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(facility.facilityType.labelResId),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }, colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
                 )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = stringResource(facility.facilityType.labelResId),
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }, colors = SuggestionChipDefaults.suggestionChipColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                labelColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                iconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-            )
             )
 
             if (showActions) {

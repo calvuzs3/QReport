@@ -1,14 +1,50 @@
 package net.calvuz.qreport.client.client.presentation.ui
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.outlined.AssignmentTurnedIn
+import androidx.compose.material.icons.outlined.Factory
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -17,29 +53,29 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.EmptyTabContent
-import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianCreatedAt
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDateTime
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
-import net.calvuz.qreport.app.util.DateTimeUtils.toItalianRelativeDate
 import net.calvuz.qreport.client.client.presentation.model.ClientWithDetails
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactStatistics
+import net.calvuz.qreport.client.contact.presentation.model.ContactPkg
 import net.calvuz.qreport.client.contact.presentation.ui.components.ContactCard
 import net.calvuz.qreport.client.contact.presentation.ui.components.ContactsStatisticsSummary
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.model.ContractStatistics
+import net.calvuz.qreport.client.contract.presentation.model.ContractPkg
 import net.calvuz.qreport.client.contract.presentation.ui.components.ContractListItem
 import net.calvuz.qreport.client.contract.presentation.ui.components.ContractsStatisticsSummary
 import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
-import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityStatisticsSummary
+import net.calvuz.qreport.client.facility.presentation.model.FacilityPkg
 import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityCard
+import net.calvuz.qreport.client.facility.presentation.ui.components.FacilityStatisticsSummary
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
@@ -91,15 +127,13 @@ fun ClientDetailScreen(
             text = {
                 Text(
                     stringResource(
-                        R.string.client_detail_delete_dialog_message,
-                        uiState.companyName
+                        R.string.client_detail_delete_dialog_message, uiState.companyName
                     )
                 )
             },
             confirmButton = {
                 TextButton(
-                    onClick = viewModel::deleteClient,
-                    colors = ButtonDefaults.textButtonColors(
+                    onClick = viewModel::deleteClient, colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
@@ -110,60 +144,52 @@ fun ClientDetailScreen(
                 TextButton(onClick = viewModel::hideDeleteConfirmation) {
                     Text(stringResource(R.string.client_detail_delete_dialog_cancel))
                 }
-            }
-        )
+            })
     }
 
     Column(modifier = modifier.fillMaxSize()) {
 
-        TopAppBar(
-            title = {
-                Text(
-                    text = uiState.companyName.takeIf { it.isNotBlank() }
-                        ?: stringResource(R.string.client_detail_title_fallback),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+        TopAppBar(title = {
+            Text(text = uiState.companyName.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.client_detail_title_fallback),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis)
+        }, navigationIcon = {
+            IconButton(onClick = onNavigateBack) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBackIosNew,
+                    contentDescription = stringResource(R.string.client_detail_action_back)
                 )
-            },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBackIosNew,
-                        contentDescription = stringResource(R.string.client_detail_action_back)
-                    )
-                }
-            },
-            actions = {
-                if (uiState.hasData) {
-                    IconButton(
-                        onClick = viewModel::showDeleteConfirmation,
-                        enabled = !uiState.isDeleting
-                    ) {
-                        if (uiState.isDeleting) {
-                            CircularProgressIndicator(modifier = Modifier.size(18.dp))
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                tint = MaterialTheme.colorScheme.error,
-                                contentDescription = stringResource(R.string.client_detail_action_delete)
-                            )
-                        }
-                    }
-                    IconButton(onClick = { onNavigateToEdit(clientId) }) {
+            }
+        }, actions = {
+            if (uiState.hasData) {
+                IconButton(
+                    onClick = viewModel::showDeleteConfirmation, enabled = !uiState.isDeleting
+                ) {
+                    if (uiState.isDeleting) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp))
+                    } else {
                         Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = stringResource(R.string.client_detail_action_edit)
+                            imageVector = Icons.Default.Delete,
+                            tint = MaterialTheme.colorScheme.error,
+                            contentDescription = stringResource(R.string.client_detail_action_delete)
                         )
                     }
                 }
-                IconButton(onClick = viewModel::refreshData) {
+                IconButton(onClick = { onNavigateToEdit(clientId) }) {
                     Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.client_detail_action_refresh)
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = stringResource(R.string.client_detail_action_edit)
                     )
                 }
             }
-        )
+            IconButton(onClick = viewModel::refreshData) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = stringResource(R.string.client_detail_action_refresh)
+                )
+            }
+        })
 
         when {
             uiState.isLoading -> QrLoadingState()
@@ -178,7 +204,12 @@ fun ClientDetailScreen(
                 uiState = uiState,
                 onTabSelected = viewModel::selectTab,
                 onEdit = { onNavigateToEdit(clientId) },
-                onFacilityClick = { facilityId -> onNavigateToFacilityDetail(clientId, facilityId) },
+                onFacilityClick = { facilityId ->
+                    onNavigateToFacilityDetail(
+                        clientId,
+                        facilityId
+                    )
+                },
                 onIslandClick = onNavigateToIslandDetail,
                 onManageFacilities = { onNavigateToFacilityList(clientId) },
                 onCreateFacility = { onNavigateToCreateFacility(clientId) },
@@ -190,8 +221,7 @@ fun ClientDetailScreen(
                 onCreateContract = { onNavigateToCreateContract(clientId, clientName) },
                 onEditContract = onNavigateToEditContract,
                 onViewAllContracts = { onNavigateToContractList(clientId, clientName) },
-                onCreateCheckUp = { onNavigateToCreateCheckUp(clientId) }
-            )
+                onCreateCheckUp = { onNavigateToCreateCheckUp(clientId) })
 
             else -> EmptyState(
                 textTitle = stringResource(R.string.client_detail_empty_title),
@@ -239,15 +269,18 @@ private fun ClientDetailContent(
                     icon = {
                         Icon(
                             imageVector = when (tab) {
-                                ClientDetailTab.FACILITIES -> Icons.Default.Factory
-                                ClientDetailTab.CONTACTS -> Icons.Default.Contacts
-                                ClientDetailTab.CONTRACTS -> Icons.Outlined.AssignmentTurnedIn
+                                ClientDetailTab.FACILITIES -> FacilityPkg.icon
+                                ClientDetailTab.CONTACTS -> ContactPkg.icon
+                                ClientDetailTab.CONTRACTS -> ContractPkg.icon
                                 ClientDetailTab.INFO -> Icons.Default.Info
-                            },
-                            contentDescription = stringResource(tab.labelResId)
+                            }, contentDescription = when (tab) {
+                                ClientDetailTab.FACILITIES -> stringResource(FacilityPkg.titleResId)
+                                ClientDetailTab.CONTACTS -> stringResource(ContactPkg.titleResId)
+                                ClientDetailTab.CONTRACTS -> stringResource(ContractPkg.titleResId)
+                                ClientDetailTab.INFO -> stringResource(R.string.client_detail_info_title)
+                            }
                         )
-                    }
-                )
+                    })
             }
         }
 
@@ -257,6 +290,7 @@ private fun ClientDetailContent(
                 clientDetails = uiState.clientDetails!!,
                 onEdit = onEdit
             )
+
             ClientDetailTab.FACILITIES -> FacilitiesTabContent(
                 facilitiesWithIslands = uiState.facilitiesWithIslands,
                 onFacilityClick = onFacilityClick,
@@ -266,6 +300,7 @@ private fun ClientDetailContent(
                 onEditFacility = onEditFacility,
                 modifier = Modifier.weight(1f)
             )
+
             ClientDetailTab.CONTACTS -> ContactsTabContent(
                 contacts = uiState.contacts,
                 contactStatistics = uiState.contactStatistics,
@@ -275,6 +310,7 @@ private fun ClientDetailContent(
                 onEditContact = onEditContact,
                 modifier = Modifier.weight(1f)
             )
+
             ClientDetailTab.CONTRACTS -> ContractsTabContent(
                 contracts = uiState.contracts,
                 contractStatistics = uiState.contractStatistics,
@@ -294,13 +330,13 @@ private fun ClientDetailContent(
 @Suppress("ParamsComparedByRef")
 @Composable
 private fun InfoTabContent(
-    modifier: Modifier = Modifier,
-    clientDetails: ClientWithDetails,
-    onEdit: () -> Unit = {}
+    modifier: Modifier = Modifier, clientDetails: ClientWithDetails, onEdit: () -> Unit = {}
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -311,9 +347,7 @@ private fun InfoTabContent(
             )
             Button(onClick = onEdit) {
                 Icon(
-                    Icons.Default.Edit,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
+                    Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(stringResource(R.string.client_detail_info_action_edit))
@@ -321,8 +355,7 @@ private fun InfoTabContent(
         }
 
         LazyColumn(
-            modifier = modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item {
                 InfoCard(
@@ -373,11 +406,9 @@ private fun InfoTabContent(
                     )
                     DoubleInfoItem(
                         label = stringResource(R.string.client_detail_info_field_status),
-                        valueStart="",
-                        valueEnd = if (clientDetails.client.isActive)
-                            stringResource(R.string.client_detail_info_status_active)
-                        else
-                            stringResource(R.string.client_detail_info_status_inactive)
+                        valueStart = "",
+                        valueEnd = if (clientDetails.client.isActive) stringResource(R.string.client_detail_info_status_active)
+                        else stringResource(R.string.client_detail_info_status_inactive)
                     )
                 }
             }
@@ -402,23 +433,28 @@ private fun FacilitiesTabContent(
 ) {
     Column(modifier = modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(R.string.client_detail_facilities_header, facilitiesWithIslands.size),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                text = stringResource(
+                    R.string.client_detail_facilities_header,
+                    facilitiesWithIslands.size
+                ), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (facilitiesWithIslands.isNotEmpty()) {
-                    OutlinedButton(onClick = onManageFacilities) {
-                        Text(stringResource(R.string.client_detail_facilities_view_all))
-                    }
+                OutlinedButton(onClick = onManageFacilities) {
+                    Text(stringResource(R.string.client_detail_facilities_view_all))
                 }
                 Button(onClick = onCreateFacility) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(stringResource(R.string.action_new))
                 }
@@ -439,7 +475,9 @@ private fun FacilitiesTabContent(
             )
         } else {
             LazyColumn(
-                modifier = Modifier.weight(1f).padding(horizontal = 16.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 items(facilitiesWithIslands) { facilityWithIslands ->
@@ -457,7 +495,10 @@ private fun FacilitiesTabContent(
                         // Islands preview — MINIMAL, max 5, indented
                         if (facilityWithIslands.islands.isNotEmpty()) {
                             Text(
-                                text = stringResource(R.string.client_detail_facility_islands_header, facilityWithIslands.islands.size),
+                                text = stringResource(
+                                    R.string.client_detail_facility_islands_header,
+                                    facilityWithIslands.islands.size
+                                ),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(start = 12.dp, top = 4.dp)
@@ -476,7 +517,12 @@ private fun FacilitiesTabContent(
                                     onClick = { onFacilityClick(facility.id) },
                                     modifier = Modifier.padding(start = 8.dp)
                                 ) {
-                                    Text(stringResource(R.string.client_detail_facility_islands_more, facilityWithIslands.islands.size - 5))
+                                    Text(
+                                        stringResource(
+                                            R.string.client_detail_facility_islands_more,
+                                            facilityWithIslands.islands.size - 5
+                                        )
+                                    )
                                 }
                             }
                         } else {
@@ -511,7 +557,9 @@ private fun ContactsTabContent(
 ) {
     Column(modifier = modifier) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -527,7 +575,11 @@ private fun ContactsTabContent(
                     }
                 }
                 Button(onClick = onCreateContact) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(stringResource(R.string.client_detail_contacts_new))
                 }
@@ -563,17 +615,21 @@ private fun ContactsTabContent(
                 if (contacts.size > 5) {
                     item {
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
+                            modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             )
                         ) {
                             Box(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = stringResource(R.string.client_detail_contacts_more, contacts.size - 5),
+                                    text = stringResource(
+                                        R.string.client_detail_contacts_more,
+                                        contacts.size - 5
+                                    ),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -603,7 +659,9 @@ private fun ContractsTabContent(
 ) {
     Column(modifier = modifier) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -619,7 +677,11 @@ private fun ContractsTabContent(
                     }
                 }
                 Button(onClick = onCreateContract) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(stringResource(R.string.client_detail_contracts_new))
                 }
@@ -653,17 +715,21 @@ private fun ContractsTabContent(
                 if (contracts.size > 5) {
                     item {
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
+                            modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                             )
                         ) {
                             Box(
-                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = stringResource(R.string.client_detail_contracts_more, contracts.size - 5),
+                                    text = stringResource(
+                                        R.string.client_detail_contracts_more,
+                                        contracts.size - 5
+                                    ),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -688,15 +754,22 @@ private fun InfoCard(
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
             content()
         }
@@ -713,7 +786,7 @@ private fun InfoItem(label: String, value: String) {
 
 @Composable
 private fun DoubleInfoItem(label: String, valueStart: String, valueEnd: String) {
-    Column(modifier= Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth()) {
         Text(text = label, style = MaterialTheme.typography.labelMedium)
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(text = valueStart, style = MaterialTheme.typography.bodyMedium)

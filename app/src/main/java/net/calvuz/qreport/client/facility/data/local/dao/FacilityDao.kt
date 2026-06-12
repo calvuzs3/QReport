@@ -1,7 +1,6 @@
 package net.calvuz.qreport.client.facility.data.local.dao
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -25,20 +24,20 @@ interface FacilityDao {
     @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, name ASC")
     suspend fun getFacilitiesForClient(clientId: String): List<FacilityEntity>
 
+    @Query("SELECT * FROM facilities WHERE client_id = :clientId ORDER BY is_primary DESC, name ASC")
+    fun getFacilitiesForClientFlow(clientId: String): Flow<List<FacilityEntity>>
+
     @Query("SELECT * FROM facilities ORDER BY is_primary DESC, name ASC")
     fun getFacilitiesFlow(): Flow<List<FacilityEntity>>
+
+    @Query("SELECT * FROM facilities WHERE is_active = 1 ORDER BY name ASC")
+    suspend fun getActiveFacilities(): List<FacilityEntity>
 
     @Query("SELECT * FROM facilities WHERE is_active = 1 ORDER BY is_primary DESC, name ASC")
     fun getActiveFacilitiesFlow(): Flow<List<FacilityEntity>>
 
-    @Query("SELECT * FROM facilities WHERE client_id = :clientId ORDER BY is_primary DESC, name ASC")
-    fun getFacilitiesForClientFlow(clientId: String): Flow<List<FacilityEntity>>
-
     @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, name ASC")
-    fun getAllActiveFacilitiesForClientFlow(clientId: String): Flow<List<FacilityEntity>>
-
-    @Query("SELECT * FROM facilities WHERE is_active = 1 ORDER BY name ASC")
-    suspend fun getAllActiveFacilities(): List<FacilityEntity>
+    fun getActiveFacilitiesForClientFlow(clientId: String): Flow<List<FacilityEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFacility(facility: FacilityEntity)
@@ -48,12 +47,6 @@ interface FacilityDao {
 
     @Update
     suspend fun updateFacility(facility: FacilityEntity)
-
-    @Delete
-    suspend fun deleteFacility(facility: FacilityEntity)
-
-    @Query("UPDATE facilities SET is_active = 0, updated_at = :timestamp WHERE id = :id")
-    suspend fun softDeleteFacility(id: String, timestamp: Long = System.currentTimeMillis())
 
     // ===== DELETE — TWO-STAGE =====
 
@@ -105,6 +98,9 @@ interface FacilityDao {
 
     @Query("UPDATE facilities SET is_active = 1, updated_at = :timestamp WHERE id = :id")
     suspend fun restoreFacility(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE clients SET is_active = 1, updated_at = :timestamp WHERE id IN (SELECT client_id FROM facilities WHERE id = :facilityId) AND is_active = 0")
+    suspend fun restoreClientByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
 
     // ===== PRIMARY FACILITY MANAGEMENT =====
 

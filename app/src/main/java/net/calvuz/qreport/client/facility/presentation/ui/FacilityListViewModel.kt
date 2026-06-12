@@ -44,16 +44,17 @@ class FacilityListViewModel @Inject constructor(
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(FacilityListUiState())
-    val uiState: StateFlow<FacilityListUiState> = _uiState.asStateFlow()
-
-    // Tracks the active observation coroutine so switching clients never leaves stale collectors.
-    private var loadJob: Job? = null
-    private var currentClientId: String = ""
-
     companion object {
         private const val KEY = AppSettingsDataStore.LIST_KEY_FACILITIES
     }
+
+    private val _uiState = MutableStateFlow(FacilityListUiState())
+
+    val uiState: StateFlow<FacilityListUiState> = _uiState.asStateFlow()
+    // Tracks the active observation coroutine so switching clients never leaves stale collectors.
+    private var loadJob: Job? = null
+
+    private var currentClientId: String = ""
 
     init {
         Timber.d("FacilityListViewModel init")
@@ -81,11 +82,29 @@ class FacilityListViewModel @Inject constructor(
         loadFacilities()
     }
 
+    fun onListEvent(event: FacilityListEvent) {
+        when (event) {
+            is FacilityListEvent.DeleteFacility -> deleteFacility(event.facilityId)
+            is FacilityListEvent.RestoreFacility -> restoreFacility(event.facilityId)
+            is FacilityListEvent.FilterChanged -> updateFilter(event.filter)
+            is FacilityListEvent.SearchQueryChanged -> updateSearchQuery(event.query)
+            is FacilityListEvent.SortOrderChanged -> updateSortOrder(event.sortOrder)
+            is FacilityListEvent.CycleCardVariant -> cycleCardVariant()
+            is FacilityListEvent.SelectedClientChanged -> updateSelectedClient(event.client)
+            is FacilityListEvent.DismissError -> dismissError()
+            is FacilityListEvent.Refresh -> refresh()
+        }
+    }
+
+    // =========================================================================
+    // PRIVATE METHODS
+    // =========================================================================
+
     /**
      * Observes facilities via Room Flow.
      * Cancels any previous observation before starting a new one.
      */
-    fun loadFacilities() {
+    private fun loadFacilities() {
         loadJob?.cancel()
 
         val clientId = currentClientId.takeIf { it.isNotEmpty() }
@@ -142,45 +161,6 @@ class FacilityListViewModel @Inject constructor(
         }
     }
 
-    fun onListEvent(event: FacilityListEvent) {
-        when (event) {
-            is FacilityListEvent.DeleteFacility -> deleteFacility(event.facilityId)
-            is FacilityListEvent.RestoreFacility -> restoreFacility(event.facilityId)
-            is FacilityListEvent.FilterChanged -> updateFilter(event.filter)
-            is FacilityListEvent.SearchQueryChanged -> updateSearchQuery(event.query)
-            is FacilityListEvent.SortOrderChanged -> updateSortOrder(event.sortOrder)
-            is FacilityListEvent.CycleCardVariant -> cycleCardVariant()
-            is FacilityListEvent.SelectedClientChanged -> updateSelectedClient(event.client)
-            is FacilityListEvent.DismissError -> dismissError()
-            is FacilityListEvent.Refresh -> refresh()
-        }
-    }
-
-    fun restoreFacility(facilityId: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isRestoringFacility = facilityId) }
-
-            when (val result = restoreFacilityUseCase(facilityId)) {
-                is QrResult.Success -> {
-                    // List updates automatically via Flow
-                }
-
-                is QrResult.Error -> {
-                    Timber.d("Failed to delete facility $facilityId")
-                    _uiState.update {
-                        it.copy(
-                            error = result.error.toUiText()
-                        )
-                    }
-                }
-            }.also { _uiState.update { it.copy(isRestoringFacility = null) } }
-        }
-    }
-
-    // =========================================================================
-    // PRIVATE METHODS
-    // =========================================================================
-
     private fun refresh() {
         viewModelScope.launch {
             _uiState.update { it.copy(isRefreshing = true, error = null) }
@@ -212,13 +192,36 @@ class FacilityListViewModel @Inject constructor(
         }
     }
 
+    private fun restoreFacility(facilityId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRestoringFacility = facilityId) }
+
+            when (val result = restoreFacilityUseCase(facilityId)) {
+                is QrResult.Success -> {
+                    Timber.d("Successfully restored facility $facilityId")
+                    // List updates automatically via Flow
+                }
+
+                is QrResult.Error -> {
+                    Timber.d("Failed to delete facility $facilityId")
+                    _uiState.update {
+                        it.copy(
+                            error = result.error.toUiText()
+                        )
+                    }
+                }
+            }.also { _uiState.update { it.copy(isRestoringFacility = null) } }
+        }
+    }
+
     private fun updateSearchQuery(query: String) {
         val currentState = _uiState.value
         if (query.length >= 3) {
             performSearch(query)
         } else {
             _uiState.value = currentState.copy(
-                searchQuery = query, filteredFacilities = applyFiltersAndSort(
+                searchQuery = query,
+                filteredFacilities = applyFiltersAndSort(
                     currentState.facilities,
                     query,
                     currentState.selectedFilter,
@@ -231,8 +234,12 @@ class FacilityListViewModel @Inject constructor(
     private fun updateFilter(filter: FacilityFilter) {
         val currentState = _uiState.value
         _uiState.value = currentState.copy(
-            selectedFilter = filter, filteredFacilities = applyFiltersAndSort(
-                currentState.facilities, currentState.searchQuery, filter, currentState.sortOrder
+            selectedFilter = filter,
+            filteredFacilities = applyFiltersAndSort(
+                currentState.facilities,
+                currentState.searchQuery,
+                filter,
+                currentState.sortOrder
             )
         )
     }
@@ -249,7 +256,7 @@ class FacilityListViewModel @Inject constructor(
         )
     }
 
-    fun updateSelectedClient(client: ClientOption) {
+    private fun updateSelectedClient(client: ClientOption) {
         if (client == _uiState.value.selectedClient) return
         currentClientId = client.id
         _uiState.update { it.copy(selectedClient = client, clientId = client.id) }
@@ -267,7 +274,7 @@ class FacilityListViewModel @Inject constructor(
             try {
                 appSettingsRepository.setListViewMode(KEY, next)
             } catch (e: Exception) {
-                Timber.d("Failed to persist card variant preference: ${e.message}")
+                Timber.e(e,"Failed to persist card variant preference")
             }
         }
     }
@@ -314,11 +321,11 @@ class FacilityListViewModel @Inject constructor(
             ) == true || f.address?.city?.contains(query, ignoreCase = true) == true
             // facilityType.displayName removed — use labelResId for display, not for search
         }
-        _uiState.value = currentState.copy(
+        _uiState.update { it.copy (
             searchQuery = query, filteredFacilities = applyFiltersAndSort(
                 filtered, query, currentState.selectedFilter, currentState.sortOrder
             )
-        )
+        ) }
     }
 
     private fun applyFiltersAndSort(

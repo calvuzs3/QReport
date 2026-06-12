@@ -45,10 +45,12 @@ class DeleteClientUseCase @Inject constructor(
         }
 
         // Soft-delete the client itself
-        return clientRepository.deactivateClient(clientId).fold(onSuccess = {
+        return clientRepository.deactivateClient(clientId).fold(
+            onSuccess = {
             Timber.d("Client $clientId successfully deleted")
             QrResult.Success(Unit)
-        }, onFailure = {
+        },
+            onFailure = {
             Timber.e(it, "Failed to delete client $clientId")
             QrResult.Error(QrError.ClientError.DeleteError(it.message))
         })

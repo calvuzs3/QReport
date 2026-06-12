@@ -1,6 +1,11 @@
 package net.calvuz.qreport.client.contact.data.local.dao
 
-import androidx.room.*
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Transaction
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
@@ -14,14 +19,17 @@ interface ContactDao {
 
     // ===== BASIC CRUD =====
 
-    @Query("SELECT * FROM contacts WHERE id = :id AND is_active = 1 LIMIT 1")
+    @Query("SELECT * FROM contacts WHERE id = :id")
     suspend fun getContactById(id: String): ContactEntity?
 
     @Query("SELECT * FROM contacts WHERE id = :id")
     fun getContactByIdFlow(id: String): Flow<ContactEntity?>
 
-    @Query("SELECT * FROM contacts WHERE is_active = 1 ORDER BY first_name ASC")
-    suspend fun getAllContacts(): List<ContactEntity>
+    @Query("SELECT * FROM contacts ORDER BY first_name ASC")
+    suspend fun getContacts(): List<ContactEntity>
+
+    @Query("SELECT * FROM contacts ORDER BY first_name ASC")
+    fun getContactsFlow(): Flow<List<ContactEntity>>
 
     @Query("SELECT * FROM contacts WHERE is_active = 1 ORDER BY first_name ASC")
     suspend fun getActiveContacts(): List<ContactEntity>
@@ -29,14 +37,17 @@ interface ContactDao {
     @Query("SELECT * FROM contacts WHERE is_active = 1 ORDER BY first_name ASC")
     fun getAllActiveContactsFlow(): Flow<List<ContactEntity>>
 
-    @Query("SELECT * FROM contacts WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, first_name ASC")
+    @Query("SELECT * FROM contacts WHERE client_id = :clientId ORDER BY is_primary DESC, first_name ASC")
     suspend fun getContactsByClient(clientId: String): List<ContactEntity>
 
-    @Query("SELECT * FROM contacts WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, first_name ASC")
+    @Query("SELECT * FROM contacts WHERE client_id = :clientId ORDER BY is_primary DESC, first_name ASC")
     fun getContactsByClientFlow(clientId: String): Flow<List<ContactEntity>>
 
     @Query("SELECT * FROM contacts WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, first_name ASC")
     suspend fun getActiveContactsByClient(clientId: String): List<ContactEntity>
+
+    @Query("SELECT * FROM contacts WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, first_name ASC")
+    fun getActiveContactsByClientFlow(clientId: String): Flow<List<ContactEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertContact(contact: ContactEntity): Long
@@ -47,11 +58,6 @@ interface ContactDao {
     @Update
     suspend fun updateContact(contact: ContactEntity)
 
-    @Query("UPDATE contacts SET is_active = 0, updated_at = :timestamp WHERE id = :id")
-    suspend fun softDeleteContact(id: String, timestamp: Long)
-
-    @Query("DELETE FROM contacts WHERE id = :id")
-    suspend fun deleteContact(id: String)
 
     // ===== DELETE — TWO-STAGE =====
 
@@ -59,15 +65,20 @@ interface ContactDao {
      * Stage 1: deactivate a single contact.
      * Called by [ContactRepositoryImpl.deactivateContact].
      */
-    @Query("UPDATE contacts SET is_active = 0, updated_at = :timestamp WHERE id = :id")
+    @Query("UPDATE contacts SET is_active = 0, updated_at = :timestamp WHERE id = :id AND is_active = 1")
     suspend fun deactivateContact(id: String, timestamp: Long = System.currentTimeMillis())
 
     /**
      * Stage 2: mark a single contact as deleted for server sync.
      * Called by [ContactRepositoryImpl.markContactDeleted].
      */
-    @Query("UPDATE contacts SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
+    @Query("UPDATE contacts SET is_deleted = 1, updated_at = :timestamp WHERE id = :id AND is_deleted = 0")
     suspend fun markContactDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+
+    // ===== RESTORE =====
+
+    @Query("UPDATE contacts SET is_active = 1, is_deleted = 0, updated_at = :timestamp WHERE id = :id AND is_active = 0")
+    suspend fun restoreContact(id: String, timestamp: Long = System.currentTimeMillis())
 
     // ===== PRIMARY CONTACT MANAGEMENT =====
 
@@ -75,7 +86,11 @@ interface ContactDao {
     suspend fun getPrimaryContact(clientId: String): ContactEntity?
 
     @Transaction
-    suspend fun setPrimaryContact(clientId: String, contactId: String, now: Long = Clock.System.now().toEpochMilliseconds()) {
+    suspend fun setPrimaryContact(
+        clientId: String,
+        contactId: String,
+        now: Long = Clock.System.now().toEpochMilliseconds()
+    ) {
         // Remove primary flag from all contacts of this client
         clearPrimaryContacts(clientId, now)
         // Set new primary contact
@@ -84,14 +99,15 @@ interface ContactDao {
 
     @Query("UPDATE contacts SET is_primary = 0, updated_at = :now WHERE client_id = :clientId AND is_primary = 1")
 //        "UPDATE contacts SET is_primary = 0 WHERE client_id = :clientId")
-    suspend fun clearPrimaryContacts(clientId: String, now:Long)
+    suspend fun clearPrimaryContacts(clientId: String, now: Long)
 
     @Query("UPDATE contacts SET is_primary = :isPrimary, updated_at = :now WHERE id = :contactId")
     suspend fun setPrimaryContactFlag(contactId: String, isPrimary: Boolean, now: Long)
 
     // ===== SEARCH & FILTER =====
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM contacts 
         WHERE is_active = 1 
         AND (first_name LIKE '%' || :query || '%' 
@@ -102,7 +118,8 @@ interface ContactDao {
              OR role LIKE '%' || :query || '%'
              OR department LIKE '%' || :query || '%')
         ORDER BY is_primary DESC, first_name ASC
-    """)
+    """
+    )
     suspend fun searchContacts(query: String): List<ContactEntity>
 
     @Query("SELECT * FROM contacts WHERE role = :role AND is_active = 1 ORDER BY first_name ASC")
@@ -112,7 +129,10 @@ interface ContactDao {
     suspend fun getContactsByDepartment(department: String): List<ContactEntity>
 
     @Query("SELECT * FROM contacts WHERE client_id = :clientId AND preferred_contact_method = :contactMethod AND is_active = 1 ORDER BY is_primary DESC, first_name ASC")
-    suspend fun getContactsByPreferredMethod(clientId: String, contactMethod: String): List<ContactEntity>
+    suspend fun getContactsByPreferredMethod(
+        clientId: String,
+        contactMethod: String
+    ): List<ContactEntity>
 
     @Query("SELECT * FROM contacts WHERE email = :email AND is_active = 1 LIMIT 1")
     suspend fun getContactByEmail(email: String): ContactEntity?
@@ -142,24 +162,28 @@ interface ContactDao {
     @Query("SELECT DISTINCT department FROM contacts WHERE department IS NOT NULL AND department != '' AND is_active = 1 ORDER BY department ASC")
     suspend fun getAllDepartments(): List<String>
 
-    @Query("""
+    @Query(
+        """
         SELECT preferred_contact_method, COUNT(*) as count 
         FROM contacts 
         WHERE is_active = 1 AND preferred_contact_method IS NOT NULL 
         GROUP BY preferred_contact_method
-    """)
+    """
+    )
     suspend fun getContactMethodStats(): List<ContactMethodStatResult>
 
     // ===== ADVANCED QUERIES =====
 
-    @Query("""
+    @Query(
+        """
         SELECT * FROM contacts 
         WHERE is_active = 1 
         AND (phone IS NOT NULL AND phone != '' 
              OR mobile_phone IS NOT NULL AND mobile_phone != ''
              OR email IS NOT NULL AND email != '')
         ORDER BY is_primary DESC, first_name ASC
-    """)
+    """
+    )
     suspend fun getContactsWithAnyContactInfo(): List<ContactEntity>
 
     @Query("SELECT * FROM contacts WHERE client_id = :clientId AND is_primary = 1 AND is_active = 1 LIMIT 1")

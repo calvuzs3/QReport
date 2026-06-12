@@ -61,15 +61,6 @@ class GetFacilitiesByClientUseCase @Inject constructor(
         is QrResult.Success -> QrResult.Success(result.data.filter { it.facilityType == facilityType })
     }
 
-    suspend fun getFacilitiesCount(clientId: String): QrResult<Int, QrError.FacilityError> {
-        if (clientId.isBlank()) {
-            return QrResult.Error(QrError.FacilityError.LoadError("Client ID is required"))
-        }
-        return facilityRepository.getFacilitiesCountByClient(clientId).fold(
-            onSuccess = { QrResult.Success(it) },
-            onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) })
-    }
-
     // -------------------------------------------------------------------------
 
     private fun List<Facility>.sortedByPrimaryThenName(): List<Facility> =

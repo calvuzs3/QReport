@@ -3,29 +3,34 @@ package net.calvuz.qreport.client.contact.presentation.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.toUiText
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.contact.domain.model.Contact
-import net.calvuz.qreport.client.contact.domain.usecase.GetContactsByClientUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.DeleteContactUseCase
+import net.calvuz.qreport.client.contact.domain.usecase.ObserveContactsUseCase
+import net.calvuz.qreport.client.contact.domain.usecase.RestoreContactUseCase
 import net.calvuz.qreport.client.contact.domain.usecase.SetPrimaryContactUseCase
 import net.calvuz.qreport.client.contact.presentation.model.ContactFilter
+import net.calvuz.qreport.client.contact.presentation.model.ContactPkg
 import net.calvuz.qreport.client.contact.presentation.model.ContactSortOrder
+import net.calvuz.qreport.client.facility.presentation.model.ClientOption
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.collections.filter
-import kotlin.collections.map
-import kotlin.text.contains
 
 /** ContactListScreen UiState */
 data class ContactListUiState(
@@ -36,20 +41,20 @@ data class ContactListUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val isDeletingContact: String? = null,
-    val isSettingPrimary: String? = null,   // ID del contatto in corso di promozione a primario
-
-    // ===== NEW: Bulk Operations =====
-    val isBulkDeleting: Boolean = false,     // Bulk delete in progress
-    val bulkDeleteProgress: Int = 0,         // Progress counter for bulk operations
-    val bulkDeleteTotal: Int = 0,            // Total items to delete
-
+    val isRestoringContact: String? = null,
+    val isSettingPrimary: String? = null,
+    val isBulkDeleting: Boolean = false,
+    val bulkDeleteProgress: Int = 0,
+    val bulkDeleteTotal: Int = 0,
     // search and filter
     val searchQuery: String = "",
-    val selectedFilter: ContactFilter = ContactFilter.ACTIVE,
-    val selectedSortOrder: ContactSortOrder = ContactSortOrder.CREATED_RECENT,
+    val selectedFilter: ContactFilter = ContactPkg.selectedFilter,
+    val selectedSortOrder: ContactSortOrder = ContactPkg.selectedSortOrder,
+    // client selector
+    val availableClients: List<ClientOption> = listOf(ClientOption.ALL),
+    val selectedClient: ClientOption = ClientOption.ALL,
     // errors
     val error: UiText? = null,
-
     // Card Variant
     val cardVariant: ListViewMode = ListViewMode.FULL
 )
@@ -67,237 +72,175 @@ data class ContactListUiState(
  */
 @HiltViewModel
 class ContactListViewModel @Inject constructor(
-    private val getContactsByClientUseCase: GetContactsByClientUseCase,
+    private val observeContactsUseCase: ObserveContactsUseCase,
     private val deleteContactUseCase: DeleteContactUseCase,
+    private val restoreContactUseCase: RestoreContactUseCase,
     private val setPrimaryContactUseCase: SetPrimaryContactUseCase,
+    private val observeClientsUseCase: ObserveClientsUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContactListUiState())
     val uiState: StateFlow<ContactListUiState> = _uiState.asStateFlow()
 
+    // Cancels previous collector before starting a new one (client switch)
+    private var loadJob: kotlinx.coroutines.Job? = null
+
+    private var currentClientId: String = ""
+
+    init {
+        observeCardVariant()
+        loadClientsForDropdown()
+    }
+
     // ============================================================
     // PUBLIC METHODS
     // ============================================================
 
-    fun initializeForClient(clientId: String) {
-        if (clientId == _uiState.value.clientId) return // Già inizializzato per questo cliente
-
-        _uiState.value = _uiState.value.copy(clientId = clientId)
-        observeCardVariant()
-
-        loadContacts(clientId)
+    /** Load all contacts regardless of client — called when no clientId is provided. */
+    fun initialize() {
+        loadContacts()
     }
 
-    fun loadContacts(clientId: String) {
-        if (clientId.isBlank()) {
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = UiText.StringResource(R.string.err_contact_list_invalid_client_id)  // ✅ Fixed StringResources → StringResource
-            )
-            return
-        }
+    fun initializeForClient(clientId: String) {
+        if (clientId == currentClientId) return
+        currentClientId = clientId
+        _uiState.value = _uiState.value.copy(
+            clientId = clientId,
+            selectedClient = _uiState.value.availableClients.find { it.id == clientId }
+                ?: ClientOption.ALL)
+        loadContacts()
+    }
 
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                error = null,
-                clientId = clientId
-            )
+    // ============================================================
+    // PRIVATE — FLOW OBSERVATION
+    // ============================================================
 
+    /**
+     * Cancels any previous collector and starts a new one.
+     * [clientId] null → all contacts; non-null → filtered by client.
+     */
+    private fun loadContacts() {
+        loadJob?.cancel()
+
+        val clientId = currentClientId.takeIf { it.isNotEmpty() }
+        Timber.d("Observing contacts for client ${clientId ?: "all"}")
+
+        loadJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = !_uiState.value.isRefreshing, error = null
+            )
             try {
-                Timber.d("Loading contacts for client: $clientId")
+                observeContactsUseCase(clientId).catch { e ->
+                    Timber.d("Error in contacts flow")
+                    if (e is kotlinx.coroutines.CancellationException) throw e
 
-                when (val result = getContactsByClientUseCase(clientId)) {
-                    is QrResult.Success -> {
-                        val contacts = result.data
-
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping contacts processing - job cancelled")
-                            return@launch
-                        }
-
-                        // Enrich with statistics
-                        val contactsWithStats = enrichWithStatistics(contacts)
-
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                contactsWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.selectedSortOrder
-                            )
-
-                            _uiState.value = currentState.copy(
-                                contacts = contactsWithStats,
-                                filteredContacts = filteredAndSorted,
+                    if (currentCoroutineContext().isActive) {
+                        _uiState.update {
+                            it.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("Loaded ${contacts.size} contacts successfully")
-                        }
-                    }
-
-                    is QrResult.Error -> {
-                        if (currentCoroutineContext().isActive) {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = UiText.StringResources(  // ✅ Fixed StringResources → StringResource
-                                    R.string.err_contacts_list_load_contacts,
-                                    result.error
-                                )
+                                error = UiText.StringResource(R.string.err_facility_load)
                             )
                         }
                     }
+                }.collect { contacts ->
+                    if (!currentCoroutineContext().isActive) return@collect
+                    val enriched = enrichWithStatistics(contacts)
+                    val current = _uiState.value
+                    _uiState.value = current.copy(
+                        contacts = enriched, filteredContacts = applyFiltersAndSort(
+                            enriched,
+                            current.searchQuery,
+                            current.selectedFilter,
+                            current.selectedSortOrder
+                        ), isLoading = false, isRefreshing = false, error = null
+                    )
+                    Timber.d("Contacts flow: ${contacts.size} records (clientId=${clientId ?: "all"})")
                 }
-            } catch (_: CancellationException) {
-                Timber.d("ContactsError loading cancelled")
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                Timber.d("Contacts observation cancelled")
             } catch (e: Exception) {
-                Timber.e(e, "Exception loading contacts")
+                Timber.e(e, "Unexpected error observing contacts")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = UiText.StringResources(  // ✅ Fixed StringResources → StringResource
-                        R.string.err_contact_list_unexpected,
-                        e.message ?: ""
-                    )
+                    error = UiText.StringResource(R.string.err_contact_list_unexpected)
                 )
             }
         }
     }
 
     fun refresh() {
-        val clientId = _uiState.value.clientId
-        if (clientId.isEmpty()) return
-
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
-
-                Timber.d("Refreshing contacts for client: $clientId")
-                delay(500)
-
-                when (val result = getContactsByClientUseCase(clientId)) {
-                    is QrResult.Success -> {
-                        val contacts = result.data
-
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping refresh processing - job cancelled")
-                            return@launch
-                        }
-
-                        val contactsWithStats = enrichWithStatistics(contacts)
-
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                contactsWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.selectedSortOrder
-                            )
-
-                            _uiState.value = currentState.copy(
-                                contacts = contactsWithStats,
-                                filteredContacts = filteredAndSorted,
-                                isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("ContactsError refresh completed successfully")
-                        }
-                    }
-
-                    is QrResult.Error -> {
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e("Failed to refresh contacts: ${result.error}")
-                            _uiState.value = _uiState.value.copy(
-                                isRefreshing = false,
-                                error = UiText.StringResources(  // ✅ Fixed StringResources → StringResource
-                                    R.string.err_contact_list_refresh_failed,
-                                    result.error.toString()
-                                )
-                            )
-                        }
-                    }
-                }
-
-            } catch (_: CancellationException) {
-                Timber.d("Refresh cancelled")
-                if (currentCoroutineContext().isActive) {
-                    _uiState.value = _uiState.value.copy(isRefreshing = false)
-                }
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to refresh contacts")
-                    _uiState.value = _uiState.value.copy(
-                        isRefreshing = false,
-                        error = UiText.StringResources(  // ✅ Fixed StringResources → StringResource
-                            R.string.err_contact_list_refresh_unexpected,
-                            e.message ?: ""
-                        )
-                    )
-                }
-            }
+            _uiState.update { it.copy(isRefreshing = true, error = null) }
+            delay(500)
+            // Future: call remote sync here before restarting the observer
+            loadContacts()
         }
     }
 
     fun deleteContact(contactId: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isDeletingContact = contactId)
+            _uiState.update { it.copy(isDeletingContact = contactId) }
 
             try {
-                Timber.d("Deleting contact: $contactId")
+                Timber.d("Deleting contact $contactId")
 
-                when ( deleteContactUseCase(contactId)) {
+                when (val result = deleteContactUseCase(contactId)) {
                     is QrResult.Success -> {
-                        Timber.d("Contact deleted successfully: $contactId")
-
-                        // Remove contact from current list
-                        val currentContacts = _uiState.value.contacts
-                        val updatedContacts = currentContacts.filterNot {
-                            it.contact.id == contactId
-                        }
-
-                        val currentState = _uiState.value
-                        val filteredAndSorted = applyFiltersAndSort(
-                            updatedContacts,
-                            currentState.searchQuery,
-                            currentState.selectedFilter,
-                            currentState.selectedSortOrder
-                        )
-
-                        _uiState.value = currentState.copy(
-                            contacts = updatedContacts,
-                            filteredContacts = filteredAndSorted,
-                            isDeletingContact = null,
-                            error = null
-                        )
+                        Timber.d("Successfully deleted contact $contactId")
+                        // List updates automatically via Flow
                     }
 
                     is QrResult.Error -> {
-                        Timber.e("Failed to delete contact: $contactId")
-                        _uiState.value = _uiState.value.copy(
-                            isDeletingContact = null,
-                            error = UiText.StringResources(  // ✅ Fixed StringResources → StringResource
-                                R.string.err_contact_list_delete_failed,
-                                contactId
+                        Timber.e("Failed to delete contact $contactId")
+                        _uiState.update {
+                            it.copy(
+                                error = result.error.toUiText()
                             )
-                        )
+                        }
                     }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Exception deleting contact")
-                _uiState.value = _uiState.value.copy(
-                    isDeletingContact = null,
-                    error = UiText.StringResources(  // ✅ Fixed StringResources → StringResource
-                        R.string.err_contact_list_delete_unexpected,
-                        e.message ?: ""
+                _uiState.update {
+                    it.copy(
+                        error = UiText.StringResources(  // ✅ Fixed StringResources → StringResource
+                            R.string.err_contact_list_delete_unexpected, e.message ?: ""
+                        )
                     )
-                )
+                }
+            }.also { _uiState.value = _uiState.value.copy(isDeletingContact = null) }
+        }
+    }
+
+    fun restoreContact(contactId: String) {
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRestoringContact = contactId) }
+            try {
+
+                when (val result = restoreContactUseCase(contactId)) {
+                    is QrResult.Success -> {
+                        Timber.d("Successfully restored contact $contactId")
+                        // List updates automatically via observeContactsUseCase Flow
+                    }
+
+                    is QrResult.Error -> {
+                        Timber.e("Failed to restore contact $contactId")
+                        _uiState.update {
+                            it.copy(
+                                isRestoringContact = null,
+                                error = UiText.StringResources(R.string.err_contact_restore)
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Exception restoring contact")
+
+            }.also {
+                _uiState.update { it.copy(isRestoringContact = null )}
             }
         }
     }
@@ -307,11 +250,11 @@ class ContactListViewModel @Inject constructor(
         if (contactIds.isEmpty()) return
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isBulkDeleting = true,
-                bulkDeleteProgress = 0,
-                bulkDeleteTotal = contactIds.size
-            )
+            _uiState.update {
+                it.copy(
+                    isBulkDeleting = true, bulkDeleteProgress = 0, bulkDeleteTotal = contactIds.size
+                )
+            }
 
             try {
                 Timber.d("Starting bulk delete for ${contactIds.size} contacts")
@@ -324,12 +267,12 @@ class ContactListViewModel @Inject constructor(
                         when (val result = deleteContactUseCase(contactId)) {
                             is QrResult.Success -> {
                                 successCount++
-                                Timber.d("Contact deleted successfully: $contactId")
+                                Timber.d("Successfully deleted contact $contactId")
                             }
 
                             is QrResult.Error -> {
                                 failedIds.add(contactId)
-                                Timber.e("Failed to delete contact: $contactId - ${result.error}")
+                                Timber.e("Failed to delete contact $contactId - ${result.error}")
                             }
                         }
                     } catch (e: Exception) {
@@ -338,32 +281,16 @@ class ContactListViewModel @Inject constructor(
                     }
 
                     // Update progress
-                    _uiState.value = _uiState.value.copy(
-                        bulkDeleteProgress = index + 1
-                    )
+                    _uiState.update {
+                        it.copy(
+                            bulkDeleteProgress = index + 1
+                        )
+                    }
                 }
 
                 // Update UI with results
                 if (successCount > 0) {
-                    // Remove successfully deleted contacts from list
-                    val deletedIds = contactIds - failedIds.toSet()
-                    val currentContacts = _uiState.value.contacts
-                    val updatedContacts = currentContacts.filterNot {
-                        it.contact.id in deletedIds
-                    }
-
-                    val currentState = _uiState.value
-                    val filteredAndSorted = applyFiltersAndSort(
-                        updatedContacts,
-                        currentState.searchQuery,
-                        currentState.selectedFilter,
-                        currentState.selectedSortOrder
-                    )
-
-                    _uiState.value = currentState.copy(
-                        contacts = updatedContacts,
-                        filteredContacts = filteredAndSorted
-                    )
+                    // List updates automatically via Flow
                 }
 
                 // Show result message
@@ -372,13 +299,14 @@ class ContactListViewModel @Inject constructor(
                         // All deleted successfully
                         null
                     }
+
                     successCount == 0 -> {
                         // All failed
                         UiText.StringResources(
-                            R.string.err_contact_list_bulk_delete_all_failed,
-                            failedIds.size
+                            R.string.err_contact_list_bulk_delete_all_failed, failedIds.size
                         )
                     }
+
                     else -> {
                         // Partial success
                         UiText.StringResources(
@@ -389,26 +317,30 @@ class ContactListViewModel @Inject constructor(
                     }
                 }
 
-                _uiState.value = _uiState.value.copy(
-                    isBulkDeleting = false,
-                    bulkDeleteProgress = 0,
-                    bulkDeleteTotal = 0,
-                    error = errorMessage
-                )
+                _uiState.update {
+                    it.copy(
+                        error = errorMessage
+                    )
+                }
 
                 Timber.d("Bulk delete completed: $successCount success, ${failedIds.size} failed")
 
             } catch (e: Exception) {
                 Timber.e(e, "Exception during bulk delete")
-                _uiState.value = _uiState.value.copy(
-                    isBulkDeleting = false,
-                    bulkDeleteProgress = 0,
-                    bulkDeleteTotal = 0,
-                    error = UiText.StringResources(
-                        R.string.err_contact_list_bulk_delete_unexpected,
-                        e.message ?: ""
+                _uiState.update {
+                    it.copy(
+                        error = UiText.StringResources(
+                            R.string.err_contact_list_bulk_delete_unexpected, e.message ?: "")
+                        )
+                }
+            }.also {
+                _uiState.update {
+                    it.copy(
+                        isBulkDeleting = false,
+                        bulkDeleteProgress = 0,
+                        bulkDeleteTotal = 0
                     )
-                )
+                }
             }
         }
     }
@@ -419,16 +351,13 @@ class ContactListViewModel @Inject constructor(
         if (query.length >= 3) {
             performSearch(query)
         } else {
-            val filteredAndSorted = applyFiltersAndSort(
-                currentState.contacts,
-                query,
-                currentState.selectedFilter,
-                currentState.selectedSortOrder
-            )
-
             _uiState.value = currentState.copy(
-                searchQuery = query,
-                filteredContacts = filteredAndSorted
+                searchQuery = query, filteredContacts = applyFiltersAndSort(
+                    currentState.contacts,
+                    query,
+                    currentState.selectedFilter,
+                    currentState.selectedSortOrder
+                )
             )
         }
     }
@@ -436,31 +365,30 @@ class ContactListViewModel @Inject constructor(
     fun updateFilter(filter: ContactFilter) {
         val currentState = _uiState.value
         val filteredAndSorted = applyFiltersAndSort(
-            currentState.contacts,
-            currentState.searchQuery,
-            filter,
-            currentState.selectedSortOrder
+            currentState.contacts, currentState.searchQuery, filter, currentState.selectedSortOrder
         )
 
         _uiState.value = currentState.copy(
-            selectedFilter = filter,
-            filteredContacts = filteredAndSorted
+            selectedFilter = filter, filteredContacts = filteredAndSorted
         )
     }
 
     fun updateSortOrder(sortOrder: ContactSortOrder) {
         val currentState = _uiState.value
         val filteredAndSorted = applyFiltersAndSort(
-            currentState.contacts,
-            currentState.searchQuery,
-            currentState.selectedFilter,
-            sortOrder
+            currentState.contacts, currentState.searchQuery, currentState.selectedFilter, sortOrder
         )
 
         _uiState.value = currentState.copy(
-            selectedSortOrder = sortOrder,
-            filteredContacts = filteredAndSorted
+            selectedSortOrder = sortOrder, filteredContacts = filteredAndSorted
         )
+    }
+
+    fun updateSelectedClient(client: ClientOption) {
+        if (client == _uiState.value.selectedClient) return
+        currentClientId = client.id
+        _uiState.update { it.copy(selectedClient = client, clientId = client.id) }
+        loadContacts()
     }
 
     fun setPrimaryContact(contactId: String) {
@@ -488,15 +416,14 @@ class ContactListViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Exception setting primary contact")
-                _uiState.value = _uiState.value.copy(
+                _uiState.update { it.copy(
                     isSettingPrimary = null,
                     error = UiText.StringResources(  // ✅ Fixed StringResources → StringResource
-                        R.string.err_contact_list_unexpected,
-                        e.message ?: ""
+                        R.string.err_contact_list_unexpected, e.message ?: ""
                     )
-                )
-            } finally {
-                _uiState.value = _uiState.value.copy(isSettingPrimary = null)
+                ) }
+            }.also {
+                _uiState.update { it.copy(isSettingPrimary = null) }
             }
         }
     }
@@ -512,16 +439,11 @@ class ContactListViewModel @Inject constructor(
             ListViewMode.COMPACT -> ListViewMode.MINIMAL
             ListViewMode.MINIMAL -> ListViewMode.FULL
         }
-
-        // Update UI immediately
-        _uiState.value = _uiState.value.copy(cardVariant = next)
-
-        // Persist in background
+        _uiState.update { it.copy(cardVariant = next) }
         viewModelScope.launch {
             try {
                 appSettingsRepository.setListViewMode(
-                    AppSettingsDataStore.LIST_KEY_CONTACTS,
-                    next
+                    AppSettingsDataStore.LIST_KEY_CONTACTS, next
                 )
             } catch (e: Exception) {
                 Timber.e(e, "Failed to persist card variant preference")
@@ -530,12 +452,12 @@ class ContactListViewModel @Inject constructor(
     }
 
     fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
+        _uiState.update { it.copy(error = null) }
     }
 
-    // ============================================================
-    // PRIVATE METHODS
-    // ============================================================
+// ============================================================
+// PRIVATE METHODS
+// ============================================================
 
     /**
      * Observe the persisted card variant preference and apply it to UI state.
@@ -545,12 +467,31 @@ class ContactListViewModel @Inject constructor(
             appSettingsRepository.getListViewMode(AppSettingsDataStore.LIST_KEY_CONTACTS)
                 .catch { e ->
                     Timber.e(e, "Error observing card variant preference")
+                }.collect { viewMode ->
+                    _uiState.value = _uiState.value.copy(cardVariant = viewMode)
                 }
-                .collect { viewMode ->
-                    _uiState.value = _uiState.value.copy(
-                        cardVariant = viewMode
+        }
+    }
+
+    private fun loadClientsForDropdown() {
+        viewModelScope.launch {
+            try {
+                observeClientsUseCase().catch { e ->
+                    Timber.e(
+                        e, "Error loading clients for dropdown"
                     )
+                }.collect { clients ->
+                    val options = listOf(ClientOption.ALL) + clients.map { c ->
+                        ClientOption(id = c.id, companyName = c.companyName)
+                    }
+                    _uiState.value = _uiState.value.let { state ->
+                        val synced = options.find { it.id == state.clientId } ?: ClientOption.ALL
+                        state.copy(availableClients = options, selectedClient = synced)
+                    }
                 }
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to start client observation")
+            }
         }
     }
 
@@ -599,10 +540,7 @@ class ContactListViewModel @Inject constructor(
 
         // Apply sorting
         filtered = when (sortOrder) {
-            ContactSortOrder.NAME -> filtered.sortedWith(
-                compareByDescending<ContactWithStats> { it.contact.isPrimary }
-                    .thenBy { it.contact.fullName.lowercase() }
-            )
+            ContactSortOrder.NAME -> filtered.sortedWith(compareByDescending<ContactWithStats> { it.contact.isPrimary }.thenBy { it.contact.fullName.lowercase() })
 
             ContactSortOrder.CREATED_RECENT -> filtered.sortedByDescending { it.contact.createdAt }
             ContactSortOrder.CREATED_OLDEST -> filtered.sortedBy { it.contact.createdAt }
@@ -618,22 +556,19 @@ class ContactListViewModel @Inject constructor(
             val contact = contactWithStats.contact
 
             // ✅ CORRECTED: Use OR (||) logic instead of separate if statements
-            contact.fullName.contains(query, ignoreCase = true) ||
-                    (contact.email?.contains(query, ignoreCase = true) == true) ||
-                    (contact.phone?.contains(query, ignoreCase = true) == true) ||
-                    (contact.role?.contains(query, ignoreCase = true) == true)
+            contact.fullName.contains(query, ignoreCase = true) || (contact.email?.contains(
+                query, ignoreCase = true
+            ) == true) || (contact.phone?.contains(
+                query, ignoreCase = true
+            ) == true) || (contact.role?.contains(query, ignoreCase = true) == true)
         }
 
         val filteredAndSorted = applyFiltersAndSort(
-            filtered,
-            query,
-            currentState.selectedFilter,
-            currentState.selectedSortOrder
+            filtered, query, currentState.selectedFilter, currentState.selectedSortOrder
         )
 
         _uiState.value = currentState.copy(
-            searchQuery = query,
-            filteredContacts = filteredAndSorted
+            searchQuery = query, filteredContacts = filteredAndSorted
         )
     }
 }
@@ -643,8 +578,7 @@ class ContactListViewModel @Inject constructor(
 // ============================================================
 
 data class ContactWithStats(
-    val contact: Contact,
-    val stats: ContactsStatistics
+    val contact: Contact, val stats: ContactsStatistics
 )
 
 data class ContactsStatistics(

@@ -19,7 +19,6 @@ import androidx.compose.material.icons.outlined.AssignmentTurnedIn
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,7 +31,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,9 +53,12 @@ import net.calvuz.qreport.client.contact.presentation.ui.components.ContactCard
 import androidx.compose.material.icons.filled.Star
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
+import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
+import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.contact.presentation.model.ContactFilter
 import net.calvuz.qreport.client.contact.presentation.model.ContactPkg
 import net.calvuz.qreport.client.contact.presentation.model.ContactSortOrder
+import net.calvuz.qreport.client.facility.presentation.model.ClientOption
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -82,27 +83,25 @@ private const val ACTION_SET_PRIMARY = "set_primary"
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ContactListScreen(
-    clientId: String,
-    clientName: String,
+    modifier: Modifier = Modifier,
+    clientId: String? = null,
+    clientName: String = "",
     onNavigateBack: () -> Unit,
     onNavigateToCreateContact: (String) -> Unit,
     onNavigateToEditContact: (String) -> Unit,
     onNavigateToContactDetail: (String) -> Unit,
-    modifier: Modifier = Modifier,
     viewModel: ContactListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    // Simple selection manager
     val selectionManager = rememberSimpleSelectionManager<Contact>()
     val selectionState by selectionManager.selectionState.collectAsState()
 
-    // Delete confirmation dialog state
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Load contacts when screen opens
     LaunchedEffect(clientId) {
-        viewModel.initializeForClient(clientId)
+        if (!clientId.isNullOrBlank()) viewModel.initializeForClient(clientId)
+        else viewModel.initialize()
     }
 
     // Clear selection when loading
@@ -173,7 +172,11 @@ fun ContactListScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
-                                    text = clientName,
+                                    text = uiState.selectedClient
+                                        .takeIf { it != ClientOption.ALL }
+                                        ?.companyName
+                                        ?: clientName.takeIf { it.isNotBlank() }
+                                        ?: stringResource(R.string.contact_screen_list_subtitle_all),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
@@ -243,7 +246,6 @@ fun ContactListScreen(
 
             // Search bar and filters (hidden in selection mode)
             if (!selectionState.isInSelectionMode) {
-                // Search bar
                 QReportSearchBar(
                     query = uiState.searchQuery,
                     onQueryChange = viewModel::updateSearchQuery,
@@ -251,17 +253,15 @@ fun ContactListScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
 
-                // Filter chips
-//                ActiveFiltersChipRow(
-//                    selectedFilter = uiState.selectedFilter.getDisplayName().asString(),
-//                    selectedSort = uiState.selectedSortOrder.getDisplayName().asString(),
-//                    onClearFilter = { viewModel.updateFilter(ContactFilter.ACTIVE) },
-//                    onClearSort = { viewModel.updateSortOrder(ContactSortOrder.CREATED_RECENT) },
-//                    avoidFilter = ContactFilter.ACTIVE.getDisplayName().asString(),
-//                    avoidSort = ContactSortOrder.CREATED_RECENT.getDisplayName().asString(),
-//                )
+                QReportSelectorRow(
+                    entries = uiState.availableClients,
+                    selectedItem = uiState.selectedClient,
+                    onItemSelected = viewModel::updateSelectedClient,
+                    icon = ClientPkg.icon,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
 
-                QReportFiltersChipRow (
+                QReportFiltersChipRow(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     selectedFilter = uiState.selectedFilter,
                     avoidFilter = ContactPkg.selectedFilter,
@@ -310,7 +310,7 @@ fun ContactListScreen(
                             iconActionImageVector = Icons.Default.Add,
                             iconActionContentDescription = stringResource(R.string.contacts_list_action_add),
                             textAction = stringResource(R.string.contacts_list_action_add),
-                            onAction = { onNavigateToCreateContact(clientId) }
+                            onAction = { onNavigateToCreateContact(uiState.clientId) }
                         )
                     }
 
@@ -323,23 +323,9 @@ fun ContactListScreen(
                             onNavigateToDetail = onNavigateToContactDetail,
                             onNavigateToEdit = onNavigateToEditContact,
                             onDeleteContact = viewModel::deleteContact,
+                            onRestoreContact = viewModel::restoreContact,
                             onSetPrimaryContact = viewModel::setPrimaryContact,
                             modifier = Modifier.fillMaxSize()
-                        )
-                    }
-                }
-
-                // FAB (hidden in selection mode)
-                if (!selectionState.isInSelectionMode && !uiState.isLoading && uiState.error == null) {
-                    FloatingActionButton(
-                        onClick = { onNavigateToCreateContact(clientId) },
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(16.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.contacts_list_action_add)
                         )
                     }
                 }
@@ -373,6 +359,7 @@ private fun ContactListWithSelection(
     onNavigateToDetail: (String) -> Unit,
     onNavigateToEdit: (String) -> Unit,
     onDeleteContact: (String) -> Unit,
+    onRestoreContact: (String) -> Unit,
     onSetPrimaryContact: (String) -> Unit,
     isSettingPrimary: String?,
     variant: ListViewMode = ListViewMode.FULL
@@ -405,6 +392,9 @@ private fun ContactListWithSelection(
                     } else null,
                     onDelete = if (!selectionState.isInSelectionMode) {
                         { onDeleteContact(contactWithStats.contact.id) }
+                    } else null,
+                    onRestore = if (!selectionState.isInSelectionMode) {
+                        { onRestoreContact(contactWithStats.contact.id) }
                     } else null,
                     onSetPrimary = if (!selectionState.isInSelectionMode) {
                         { onSetPrimaryContact(contactWithStats.contact.id) }

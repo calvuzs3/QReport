@@ -40,10 +40,14 @@
     <string name="err_contact_list_delete_failed">Impossibile eliminare contatto: %s</string>
     <string name="err_contact_list_delete_unexpected">Errore eliminazione contatto: %s</string>
     <string name="err_contact_list_set_primary_failed">Impossibile impostare contatto primario: %s</string>
+    <string name="err_contact_restore">Errore ripristino contatto</string>
+
+    <string name="contact_restore_dialog_title">Ripristina contatto</string>
+    <string name="contact_restore_dialog_text">Sei sicuro di voler ripristinare il contatto %1$s? L\'operazione implica il ripristino dei genitori dell\'entità</string>
 
     <!-- Selection Common -->
     <string name="contact_screen_list_title">Contatti</string>
-
+    <string name="contact_screen_list_subtitle_all">Tutti</string>
 
 
     <string name="contact_title">Contatti</string>
@@ -124,9 +128,6 @@
     <string name="contact_screen_list_empty_error_message">Errore nel caricamento dati </string>
 
 
-
-
-
     <string name="contact_list_empty_title">Nessun Contatto</string>
     <string name="contact_list_empty_message">Non ci sono ancora Contatti per questo Cliente</string>
     <string name="contact_list_empty_search_title">Nessun risultato</string>
@@ -174,8 +175,6 @@
     <!-- Contact Pkg -->
     <string name="contact_pkg_title">Contatti</string>
     <string name="contact_pkg_description">Gestisci i contatti di un cliente</string>
-
-
 
 
 </resources>
