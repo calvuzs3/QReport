@@ -75,7 +75,7 @@ interface ClientDao {
         clientId: String, timestamp: Long = System.currentTimeMillis()
     )
 
-    @Query("UPDATE clients SET is_active = 0, updated_at = :timestamp WHERE id = :clientId")
+    @Query("UPDATE clients SET is_active = 0, updated_at = :timestamp WHERE id = :clientId AND is_active = 1")
     suspend fun deactivateClient(clientId: String, timestamp: Long = System.currentTimeMillis())
 
     /**
@@ -107,13 +107,13 @@ interface ClientDao {
         clientId: String, timestamp: Long = System.currentTimeMillis()
     )
 
-    @Query("UPDATE clients SET is_deleted = 1, updated_at = :timestamp WHERE id = :clientId")
+    @Query("UPDATE clients SET is_deleted = 1, updated_at = :timestamp WHERE id = :clientId AND is_deleted = 0")
     suspend fun markClientDeleted(clientId: String, timestamp: Long = System.currentTimeMillis())
 
-    // ===== RESURRECT =====
+    // ===== RESTORE =====
 
-    @Query("UPDATE clients SET is_active = 1, updated_at = :timestamp WHERE id = :clientId")
-    suspend fun activateClient(clientId: String, timestamp: Long = System.currentTimeMillis())
+    @Query("UPDATE clients SET is_active = 1, updated_at = :timestamp WHERE id = :clientId AND is_active = 0")
+    suspend fun restoreClient(clientId: String, timestamp: Long = System.currentTimeMillis())
 
     // ===== SEARCH & FILTER =====
 

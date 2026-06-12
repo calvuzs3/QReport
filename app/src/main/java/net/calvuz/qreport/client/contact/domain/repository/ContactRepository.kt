@@ -17,17 +17,20 @@ interface ContactRepository {
 
     // ===== CRUD OPERATIONS =====
 
-    suspend fun getAllContacts(): QrResult<List<Contact>, QrError>
+    suspend fun getContacts(): QrResult<List<Contact>, QrError>
     suspend fun getActiveContacts(): QrResult<List<Contact>, QrError>
     suspend fun getContactById(id: String): QrResult<Contact?, QrError>
     suspend fun createContact(contact: Contact): QrResult<Contact, QrError>
     suspend fun updateContact(contact: Contact): QrResult<Contact, QrError>
-    suspend fun deleteContact(id: String): QrResult<Unit, QrError>
 
     // ===== DELETE — TWO-STAGE =====
 
-    suspend fun deactivateContact(id: String, timestamp: Long = System.currentTimeMillis())
-    suspend fun markContactDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun deactivateContact(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
+    suspend fun markContactDeleted(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
+
+    // ===== RESTORE =====
+
+    suspend fun restoreContact(contactId: String, timestamp: Long = System.currentTimeMillis()): Result<Unit>
 
     // ===== CLIENT RELATED =====
 
@@ -38,7 +41,8 @@ interface ContactRepository {
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
-    fun getAllActiveContactsFlow(): Flow<List<Contact>>
+    fun getContactsFlow(): Flow<List<Contact>>
+    fun getActiveContactsFlow(): Flow<List<Contact>>
     fun getContactByIdFlow(id: String): Flow<Contact?>
 
     // ===== SEARCH & FILTER =====

@@ -104,7 +104,7 @@ class ClientRepositoryImpl @Inject constructor(
 
     override suspend fun activateClient(id: String): Result<Unit> {
         return try {
-            clientDao.activateClient(id)
+            clientDao.restoreClient(id)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

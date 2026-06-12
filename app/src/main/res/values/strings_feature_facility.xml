@@ -98,6 +98,12 @@
     <string name="facility_detail_delete_dialog_confirm">Elimina</string>
     <string name="facility_detail_delete_dialog_cancel">Annulla</string>
 
+    <string name="dialog_restore_title">Ripristina %1$s</string>
+    <string name="dialog_restore_message">Vuoi ripristinare &quot;%1$s&quot;?</string>
+    <string name="dialog_restore_confirm">Ripristina</string>
+    <string name="dialog_restore_cancel">Annulla</string>
+    <string name="facility_card_object_name">Stabilimento</string>
+
     <string name="facility_detail_tab_islands">Isole</string>
     <string name="facility_detail_tab_maintenance">Manutenzione</string>
     <string name="facility_detail_tab_info">Informazioni</string>

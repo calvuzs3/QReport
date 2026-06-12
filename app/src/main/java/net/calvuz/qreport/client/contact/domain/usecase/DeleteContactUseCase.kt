@@ -14,7 +14,7 @@ import javax.inject.Inject
  * - If the contact is primary and other active contacts exist, the first
  *   alphabetical active contact is promoted to primary before deletion.
  * - If the contact is the only one, deletion is still allowed — the client
- *   will have no contacts afterwards.
+ *   will have no contacts afterward.
  *
  * Primary contact logic is handled inline — no separate handler use case needed.
  */
@@ -22,41 +22,51 @@ class DeleteContactUseCase @Inject constructor(
     private val contactRepository: ContactRepository,
     private val checkContactExists: CheckContactExistsUseCase
 ) {
-    suspend operator fun invoke(contactId: String): QrResult<Unit, QrError> {
-        return try {
-            if (contactId.isBlank()) return QrResult.Error(QrError.ContactsError.NotFound())
 
-            Timber.d("Deleting contact: $contactId")
+    /**
+     * @param contactId ID of the contact to delete
+     * @param force     if true, ignores business rules and deletes the contact
+     */
+    suspend operator fun invoke(
+        contactId: String,
+        force: Boolean = false
+    ): QrResult<Unit, QrError.ContactsError> {
 
-            // 1. Verify contact exists and is active
-            val contact = when (val r = checkContactExists(contactId)) {
-                is QrResult.Success -> r.data
-                is QrResult.Error -> return QrResult.Error(r.error)
-            }
+        if (contactId.isBlank()) return QrResult.Error(QrError.ContactsError.NotFound())
 
-            // 2. If primary, reassign before deleting
+        Timber.v("Deleting contact $contactId")
+
+        // 1. Verify contact exists and is active
+        val contact = when (val r = checkContactExists(contactId)) {
+            is QrResult.Success -> r.data
+            is QrResult.Error -> return QrResult.Error(QrError.ContactsError.NotFound())
+        }
+
+        // 2. Business rule: if primary, reassign before deleting
+
             if (contact.isPrimary) {
                 when (val r = reassignPrimaryBeforeDeletion(contact)) {
-                    is QrResult.Error -> return QrResult.Error(r.error)
+                    is QrResult.Error -> {
+                        if (!force) {
+                            Timber.e("Failed to reassign primary {force=false}: ${r.error}")
+                            return QrResult.Error(QrError.ContactsError.CannotRemovePrimaryFlag())
+                        } else {
+                            Timber.d("Forcing deletion of primary contact $contactId")
+                        }
+                    }
                     is QrResult.Success -> Unit
                 }
             }
 
-            // 3. Soft delete
-            when (val r = contactRepository.deleteContact(contactId)) {
-                is QrResult.Success -> {
-                    Timber.d("Contact deleted: $contactId")
-                    QrResult.Success(Unit)
-                }
-                is QrResult.Error -> {
-                    Timber.e("Failed to delete contact $contactId: ${r.error}")
-                    QrResult.Error(r.error)
-                }
-            }
-        } catch (e: Exception) {
-            Timber.e(e, contactId)
-            QrResult.Error(QrError.SystemError.UnknownError())
-        }
+
+        // 3. Deactivate
+        return contactRepository.deactivateContact(contactId).fold(onSuccess = {
+            Timber.d("Successfully deactivated contact $contactId")
+            QrResult.Success(Unit)
+        }, onFailure = {
+            Timber.e("Failed to deactivate contact $contactId: ${it.message}")
+            QrResult.Error(QrError.ContactsError.DeleteError(it.message))
+        })
     }
 
     /**
@@ -71,16 +81,13 @@ class DeleteContactUseCase @Inject constructor(
             is QrResult.Error -> return QrResult.Error(r.error)
         }
 
-        val candidate = contacts
-            .filter { it.id != primary.id && it.isActive }
-            .sortedWith(
-                compareBy<Contact> { it.firstName.lowercase() }
-                    .thenBy { it.lastName?.lowercase() ?: "" }
-            )
-            .firstOrNull()
+        val candidate = contacts.filter { it.id != primary.id && it.isActive }
+            .sortedWith(compareBy<Contact> { it.firstName.lowercase() }.thenBy {
+                    it.lastName?.lowercase() ?: ""
+                }).firstOrNull()
 
         if (candidate == null) {
-            Timber.d("No other active contacts — primary left unassigned after deletion: ${primary.id}")
+            Timber.d("No other active contacts found")
             return QrResult.Success(Unit)
         }
 
@@ -89,6 +96,7 @@ class DeleteContactUseCase @Inject constructor(
                 Timber.d("Primary reassigned to ${candidate.id} before deleting ${primary.id}")
                 QrResult.Success(Unit)
             }
+
             is QrResult.Error -> {
                 Timber.e("Failed to reassign primary to ${candidate.id}: ${r.error}")
                 QrResult.Error(r.error)

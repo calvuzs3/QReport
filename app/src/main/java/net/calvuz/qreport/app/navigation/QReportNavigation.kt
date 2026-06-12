@@ -882,7 +882,6 @@ fun QReportNavigation(
                                 QReportRoutes.contractEditRoute(clientId, clientName, contractId)
                             )
                         },
-                        onNavigateToContractDetail = {}
                     )
                 }
 

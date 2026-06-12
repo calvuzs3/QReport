@@ -40,11 +40,15 @@ fun FacilityListContent(
                 facility = facilityWithStats.facility,
                 stats = facilityWithStats.stats,
                 onClick = { onFacilityClick(facilityWithStats.facility.id) },
-                onEdit = { onFacilityEdit(facilityWithStats.facility.id) },
-                onDelete = if (onFacilityDelete != null) {
+                onEdit = if (facilityWithStats.facility.isActive) {
+                    { onFacilityEdit(facilityWithStats.facility.id) }
+                } else null,
+                onDelete = if (onFacilityDelete != null && facilityWithStats.facility.isActive) {
                     { onFacilityDelete(facilityWithStats.facility.id) }
                 } else null,
-                onRestore = { onFacilityRestore(facilityWithStats.facility.id) },
+                onRestore = if (!facilityWithStats.facility.isActive) {
+                    { onFacilityRestore(facilityWithStats.facility.id) }
+                } else null,
                 onOpenMaps = if (facilityWithStats.facility.address?.isComplete() ?: false) {
                     { MapUtils.openMapsWithAddress(context, facilityWithStats.facility.address) }
                 } else {

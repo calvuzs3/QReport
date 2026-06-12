@@ -35,9 +35,9 @@ class AppSettingsDataStore @Inject constructor(
     companion object {
         // List screen keys
         const val LIST_KEY_CLIENTS = "clients"
-        const val LIST_KEY_FACILITIES = "facilities"
         const val LIST_KEY_CONTACTS = "contacts"
         const val LIST_KEY_CONTRACTS = "contracts"
+        const val LIST_KEY_FACILITIES = "facilities"
         const val LIST_KEY_ISLANDS = "islands"
         const val LIST_KEY_MECHANICAL_UNITS = "units"
         const val LIST_KEY_CHECKUPS = "checkups"

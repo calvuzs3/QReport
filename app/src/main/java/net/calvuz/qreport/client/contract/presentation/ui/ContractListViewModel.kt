@@ -63,7 +63,7 @@ class ContractListViewModel @Inject constructor(
     // ============================================================
 
     companion object {
-        private const val _KEY = AppSettingsDataStore.LIST_KEY_CONTRACTS
+        private const val KEY = AppSettingsDataStore.LIST_KEY_CONTRACTS
     }
 
     fun init() {
@@ -350,31 +350,29 @@ class ContractListViewModel @Inject constructor(
 
     fun updateFilter(filter: ContractFilter) {
         val currentState = _uiState.value
-        val filteredAndSorted = applyFiltersAndSort(
-            currentState.contracts,
-            currentState.searchQuery,
-            filter,
-            currentState.selectedSortOrder
-        )
 
         _uiState.value = currentState.copy(
             selectedFilter = filter,
-            filteredContracts = filteredAndSorted
+            filteredContracts = applyFiltersAndSort(
+                currentState.contracts,
+                currentState.searchQuery,
+                filter,
+                currentState.selectedSortOrder
+            )
         )
     }
 
     fun updateSortOrder(sortOrder: ContractSortOrder) {
         val currentState = _uiState.value
-        val filteredAndSorted = applyFiltersAndSort(
-            currentState.contracts,
-            currentState.searchQuery,
-            currentState.selectedFilter,
-            sortOrder
-        )
 
         _uiState.value = currentState.copy(
             selectedSortOrder = sortOrder,
-            filteredContracts = filteredAndSorted
+            filteredContracts = applyFiltersAndSort(
+                currentState.contracts,
+                currentState.searchQuery,
+                currentState.selectedFilter,
+                sortOrder
+            )
         )
     }
 
@@ -397,7 +395,7 @@ class ContractListViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 appSettingsRepository.setListViewMode(
-                    _KEY,
+                    KEY,
                     next
                 )
             } catch (e: Exception) {
@@ -425,7 +423,7 @@ class ContractListViewModel @Inject constructor(
      */
     private fun observeCardVariant() {
         viewModelScope.launch {
-            appSettingsRepository.getListViewMode(_KEY)
+            appSettingsRepository.getListViewMode(KEY)
                 .catch { e ->
                     Timber.e(e, "Error observing card variant preference")
                 }

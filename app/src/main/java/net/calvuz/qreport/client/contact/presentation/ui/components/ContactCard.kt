@@ -46,6 +46,9 @@ import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.model.ContactMethod
 import net.calvuz.qreport.app.app.presentation.components.DeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.PrimaryBadge
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmRestoreDialog
+import net.calvuz.qreport.app.app.presentation.components.QrStatusChip
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 @Composable
@@ -55,6 +58,7 @@ fun ContactCard(
     onClick: () -> Unit,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onEmail: () -> Unit = {},
     onSetPrimary: (() -> Unit)? = null,
@@ -63,6 +67,7 @@ fun ContactCard(
     variant: ListViewMode
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showOnRestoreDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -81,6 +86,7 @@ fun ContactCard(
                 contact = contact,
                 showActions = showActions,
                 onDeleteClick = if (onDelete != null) { { showDeleteDialog = true } } else null,
+                onRestore = if (onRestore != null) { { showOnRestoreDialog = true } } else null,
                 onEdit = onEdit,
                 onSetPrimary = onSetPrimary,
                 isSettingPrimary = isSettingPrimary,
@@ -106,6 +112,19 @@ fun ContactCard(
             onDismiss = { showDeleteDialog = false }
         )
     }
+
+    // Restore confirmation dialog
+    if (showOnRestoreDialog && onRestore != null) {
+        QReportConfirmRestoreDialog(
+            objectName = stringResource(R.string.contact_restore_dialog_title),
+            objectDesc = stringResource(R.string.contact_restore_dialog_text, contact.fullName),
+            onConfirm = {
+                onRestore()
+                showOnRestoreDialog = false
+            },
+            onDismiss = { showOnRestoreDialog = false },
+        )
+    }
 }
 
 @Composable
@@ -113,6 +132,7 @@ private fun FullContactCard(
     contact: Contact,
     showActions: Boolean = true,
     onDeleteClick: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
     onSetPrimary: (() -> Unit)? = null,
     isSettingPrimary: Boolean
@@ -206,13 +226,19 @@ private fun FullContactCard(
 
         if (!contact.isActive) {
             Row {
-                AssistChip(
-                    onClick = { },
-                    label = {
-                        Text(stringResource(R.string.label_active), style = MaterialTheme.typography.labelSmall)
-                    },
-                    enabled = false
+                QrStatusChip(
+                    isActive = false,
+                    onRestore = onRestore,
+                    activeString = UiText.StringResource(R.string.label_active),
+                            inactiveString = UiText.StringResource(R.string.label_assistchip_not_active),
                 )
+//                AssistChip(
+//                    onClick = if (onRestore!= null) { onRestore } else { {} },
+//                    label = {
+//                        Text(stringResource(R.string.label_active), style = MaterialTheme.typography.labelSmall)
+//                    },
+//                    enabled = false
+//                )
             }
         }
 

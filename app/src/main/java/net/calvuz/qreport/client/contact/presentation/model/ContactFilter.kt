@@ -6,15 +6,15 @@ import net.calvuz.qreport.app.error.presentation.UiText
 
 /** ContactListScreen Filter */
 enum class ContactFilter(val labelResId: Int) : QReportFilter {
-    ACTIVE(R.string.contacts_list_filter_active), INACTIVE(R.string.contacts_list_filter_inactive), PRIMARY_ONLY(
-        R.string.contacts_list_filter_primary_only
-    ),
-    ALL(R.string.contacts_list_filter_all);
+    ALL(R.string.contacts_list_filter_all),
+    ACTIVE(R.string.contacts_list_filter_active),
+    INACTIVE(R.string.contacts_list_filter_inactive),
+    PRIMARY_ONLY(R.string.contacts_list_filter_primary_only)    ;
 
     override fun getDisplayName(): UiText = when (this) {
+        ALL -> UiText.StringResources(R.string.contacts_list_filter_all)
         ACTIVE -> UiText.StringResources(R.string.contacts_list_filter_active)
         INACTIVE -> UiText.StringResources(R.string.contacts_list_filter_inactive)
         PRIMARY_ONLY -> UiText.StringResources(R.string.contacts_list_filter_primary_only)
-        ALL -> UiText.StringResources(R.string.contacts_list_filter_all)
     }
 }

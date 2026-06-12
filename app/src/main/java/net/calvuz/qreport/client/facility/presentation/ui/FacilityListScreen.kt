@@ -56,6 +56,7 @@ fun FacilityListScreen(
     viewModel: FacilityListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     val onListEvent: (FacilityListEvent) -> Unit = viewModel::onListEvent
 
     LaunchedEffect(clientId) {
@@ -121,7 +122,7 @@ fun FacilityListScreen(
         QReportSelectorRow(
             entries = uiState.availableClients,
             selectedItem = uiState.selectedClient,
-            onItemSelected = viewModel::updateSelectedClient,
+            onItemSelected = { onListEvent(FacilityListEvent.SelectedClientChanged(it)) },
             icon = ClientPkg.icon,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
@@ -138,6 +139,20 @@ fun FacilityListScreen(
             )
         }
 
+        // Hint: if current filter hides inactive facilities, show a suggestion to show them
+        val hasInactiveFacilities = uiState.facilities.any { !it.facility.isActive }
+        val filterHidesInactive = uiState.selectedFilter == FacilityFilter.ACTIVE ||
+                uiState.selectedFilter == FacilityPkg.selectedFilter
+        if (hasInactiveFacilities && filterHidesInactive) {
+            androidx.compose.material3.TextButton(
+                onClick = { onListEvent(FacilityListEvent.FilterChanged(FacilityFilter.ALL)) },
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) {
+//                Text(stringResource(R.string.facility_screen_list_show_inactive_hint))
+                Text(stringResource(R.string.facility_screen_list_title))
+            }
+        }
+
         QReportPullToRefresh(
             isRefreshing = uiState.isRefreshing,
             onRefresh = { onListEvent(FacilityListEvent.Refresh) },
@@ -151,7 +166,7 @@ fun FacilityListScreen(
 
                 currentError != null -> QReportErrorState(
                     error = currentError,
-                    onRetry = viewModel::loadFacilities,
+                    onRetry = {onListEvent(FacilityListEvent.DismissError)},
                     onDismiss = { onListEvent(FacilityListEvent.DismissError) })
 
                 uiState.filteredFacilities.isEmpty() -> {
@@ -187,7 +202,9 @@ fun FacilityListScreen(
                     onFacilityClick = onNavigateToFacilityDetail,
                     onFacilityEdit = onEditFacility,
                     onFacilityDelete = null,
-                    onFacilityRestore = viewModel::restoreFacility,
+                    onFacilityRestore = { facilityId ->
+                        onListEvent(FacilityListEvent.RestoreFacility(facilityId))
+                    }
                 )
             }
         }

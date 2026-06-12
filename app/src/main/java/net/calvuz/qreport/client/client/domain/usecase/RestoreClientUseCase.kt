@@ -14,7 +14,6 @@ import javax.inject.Inject
 class RestoreClientUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
     private val checkClientExists: CheckClientExistsUseCase,
-    private val checkClientDependencies: CheckClientDependenciesUseCase,
 ) {
     suspend operator fun invoke(
         clientId: String,

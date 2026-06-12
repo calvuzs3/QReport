@@ -1,13 +1,18 @@
 package net.calvuz.qreport.client.facility.data.local.repository
 
 import androidx.room.Transaction
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import net.calvuz.qreport.app.database.data.local.QReportDatabase
+import net.calvuz.qreport.client.client.data.local.dao.ClientDao
 import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import net.calvuz.qreport.client.facility.data.local.mapper.FacilityMapper
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import net.calvuz.qreport.client.island.data.local.dao.IslandDao
+import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import javax.inject.Inject
 
 /**
@@ -15,14 +20,19 @@ import javax.inject.Inject
  * Utilizza Room DAO per persistenza e mapper per conversioni domain ↔ entity
  */
 class FacilityRepositoryImpl @Inject constructor(
-    private val facilityDao: FacilityDao, private val facilityMapper: FacilityMapper
+    private val facilityDao: FacilityDao,
+    private val clientDao: ClientDao,
+    private val islandDao: IslandDao,
+    private val unitDao: MechanicalUnitDao,
+    private val facilityMapper: FacilityMapper,
+    private val database: QReportDatabase
 ) : FacilityRepository {
 
     // ===== CRUD OPERATIONS =====
 
     override suspend fun getAllFacilities(): Result<List<Facility>> {
         return try {
-            val entities = facilityDao.getAllActiveFacilities() // Nome DAO corretto
+            val entities = facilityDao.getActiveFacilities() // Nome DAO corretto
             val facilities = facilityMapper.toDomainList(entities)
             Result.success(facilities)
         } catch (e: Exception) {
@@ -32,7 +42,7 @@ class FacilityRepositoryImpl @Inject constructor(
 
     override suspend fun getActiveFacilities(): Result<List<Facility>> {
         return try {
-            val entities = facilityDao.getAllActiveFacilities()
+            val entities = facilityDao.getActiveFacilities()
             val facilities = facilityMapper.toDomainList(entities)
             Result.success(facilities)
         } catch (e: Exception) {
@@ -70,33 +80,53 @@ class FacilityRepositoryImpl @Inject constructor(
         }
     }
 
-    // ===== RESTORE =====
-
-    override suspend fun restoreFacility(id: String): Result<Unit> {
-        return try {
-            facilityDao.restoreFacility(id)
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
     // ===== TWO-STAGE DELETE =====
 
     @Transaction
-    override suspend fun deactivateFacility(id: String): Result<Unit> = runCatching {
-        val ts = System.currentTimeMillis()
-        facilityDao.deactivateMechanicalUnitsByFacility(id, ts)
-        facilityDao.deactivateIslandsByFacility(id, ts)
-        facilityDao.deactivateFacility(id, ts)
+    override suspend fun deactivateFacility(id: String, ts: Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val facility = facilityDao.getFacilityById(id) ?: error("Facility not found: $id")
+            val islands = islandDao.getIslandsForFacility(facility.id)
+
+            islands.forEach {island ->
+                val units = unitDao.getMechanicalUnitsForIsland(island.id)
+                units.forEach {unit ->
+                    unitDao.deactivateUnit(unit.id, ts) }
+
+                islandDao.deactivateIsland(island.id, ts)
+            }
+
+            facilityDao.deactivateFacility(id, ts)
+        }
     }
 
     @Transaction
-    override suspend fun markFacilityDeleted(id: String): Result<Unit> = runCatching {
-        val ts = System.currentTimeMillis()
-        facilityDao.markMechanicalUnitsDeletedByFacility(id, ts)
-        facilityDao.markIslandDeletedByFacility(id, ts)
-        facilityDao.markFacilityDeleted(id, ts)
+    override suspend fun markFacilityDeleted(id: String, ts: Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val facility = facilityDao.getFacilityById(id) ?: error("Facility not found: $id")
+            val islands = islandDao.getIslandsForFacility(facility.id)
+
+            islands.forEach {island ->
+                val units = unitDao.getMechanicalUnitsForIsland(island.id)
+                units.forEach {unit ->
+                    unitDao.markUnitDeleted(unit.id, ts) }
+
+                islandDao.markIslandDeleted(island.id, ts)
+            }
+            facilityDao.markFacilityDeleted(id, ts)
+        }
+    }
+
+    // ===== RESTORE =====
+
+    override suspend fun restoreFacility(id: String, ts :Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val facility = facilityDao.getFacilityById(id) ?: error("Facility not found: $id")
+            val client = clientDao.getClientById(facility.clientId) ?: error("Client not found: ${facility.clientId}")
+
+            facilityDao.restoreFacility(id, ts)
+            clientDao.restoreClient(client.id, ts)
+        }
     }
 
     // ===== CLIENT RELATED =====
@@ -157,7 +187,7 @@ class FacilityRepositoryImpl @Inject constructor(
 
     /** Flow operation - gets facilities by client */
     override fun getAllActiveFacilitiesByClientFlow(clientId: String): Flow<List<Facility>> {
-        return facilityDao.getAllActiveFacilitiesForClientFlow(clientId).map { entities ->
+        return facilityDao.getActiveFacilitiesForClientFlow(clientId).map { entities ->
             facilityMapper.toDomainList(entities)
         }
     }

@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.outlined.AssignmentTurnedIn
@@ -23,11 +22,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
-import net.calvuz.qreport.app.app.presentation.components.ErrorState
+import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
+import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
 // Selection system imports
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.DeleteConfirmationDialog
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectableItem
@@ -54,9 +55,6 @@ fun ContractListScreen(
     onNavigateBack: () -> Unit,
     onNavigateToCreateContract: (String) -> Unit,
     onNavigateToEditContract: (String) -> Unit,
-    onNavigateToContractDetail: (String) -> Unit,
-    onNavigateToRenewContract: (String) -> Unit = {},
-    onNavigateToBulkEdit: (List<String>) -> Unit = {},
     viewModel: ContractListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -69,7 +67,7 @@ fun ContractListScreen(
     // Delete confirmation dialog
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // Action handler for Technical Interventions
+    // Action handler
     val actionHandler = remember {
         ContractActionHandler(
             onEdit = { contracts ->
@@ -249,19 +247,21 @@ fun ContractListScreen(
                                 }
 
                                 // Filter menu
-                                FilterMenu(
+                                QReportFilterMenu(
                                     expanded = showFilterMenu,
+                                    entries = ContractFilter.entries,
                                     selectedFilter = uiState.selectedFilter,
                                     onFilterSelected = viewModel::updateFilter,
                                     onDismiss = { showFilterMenu = false }
                                 )
 
                                 // Sort menu
-                                SortMenu(
+                                QReportSortOrderMenu(
                                     expanded = showSortMenu,
-                                    selectedSort = uiState.selectedSortOrder,
-                                    onSortSelected = viewModel::updateSortOrder,
-                                    onDismiss = { showSortMenu = false }
+                                    entries = ContractSortOrder.entries,
+                                    selectedSortOrder = uiState.selectedSortOrder,
+                                    onSortOrderSelected = viewModel::updateSortOrder,
+                                    onDismiss = { showSortMenu = false },
                                 )
                             }
                         }
@@ -311,8 +311,8 @@ fun ContractListScreen(
                     }
 
                     currentError != null -> {
-                        ErrorState(
-                            error = currentError.asString(),
+                        QReportErrorState(
+                            error = currentError,
                             onRetry = viewModel::refresh,
                             onDismiss = viewModel::dismissError
                         )
@@ -434,60 +434,6 @@ private fun ContractsListWithSelection(
                     variant = variant
                 )
             }
-        }
-    }
-}
-
-
-// Keep existing filter and sort menus unchanged
-@Composable
-private fun FilterMenu(
-    expanded: Boolean,
-    selectedFilter: ContractFilter,
-    onFilterSelected: (ContractFilter) -> Unit,
-    onDismiss: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        ContractFilter.entries.forEach { filter ->
-            DropdownMenuItem(
-                text = { Text(filter.getDisplayName().asString()) },
-                onClick = {
-                    onFilterSelected(filter)
-                    onDismiss()
-                },
-                leadingIcon = if (selectedFilter == filter) {
-                    { Icon(Icons.Default.Check, contentDescription = null) }
-                } else null
-            )
-        }
-    }
-}
-
-@Composable
-private fun SortMenu(
-    expanded: Boolean,
-    selectedSort: ContractSortOrder,
-    onSortSelected: (ContractSortOrder) -> Unit,
-    onDismiss: () -> Unit
-) {
-    DropdownMenu(
-        expanded = expanded,
-        onDismissRequest = onDismiss
-    ) {
-        ContractSortOrder.entries.forEach { sortOrder ->
-            DropdownMenuItem(
-                text = { Text(sortOrder.getDisplayName().asString()) },
-                onClick = {
-                    onSortSelected(sortOrder)
-                    onDismiss()
-                },
-                leadingIcon = if (selectedSort == sortOrder) {
-                    { Icon(Icons.Default.Check, contentDescription = null) }
-                } else null
-            )
         }
     }
 }

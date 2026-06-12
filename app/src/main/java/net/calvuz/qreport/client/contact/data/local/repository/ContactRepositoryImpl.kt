@@ -1,10 +1,14 @@
 package net.calvuz.qreport.client.contact.data.local.repository
 
+import androidx.room.Transaction
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
+import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.client.data.local.dao.ClientDao
 import net.calvuz.qreport.client.contact.data.local.dao.ContactDao
 import net.calvuz.qreport.client.contact.data.local.mapper.ContactMapper
 import net.calvuz.qreport.client.contact.domain.model.Contact
@@ -15,15 +19,17 @@ import javax.inject.Inject
 
 class ContactRepositoryImpl @Inject constructor(
     private val contactDao: ContactDao,
-    private val contactMapper: ContactMapper
+    private val clientDao: ClientDao,
+    private val contactMapper: ContactMapper,
+    private val database: QReportDatabase
 ) : ContactRepository {
 
     // ===== CRUD OPERATIONS =====
 
-    override suspend fun getAllContacts(): QrResult<List<Contact>, QrError> {
+    override suspend fun getContacts(): QrResult<List<Contact>, QrError> {
         return try {
             Timber.d("ContactRepository: Getting all contacts")
-            val entities = contactDao.getActiveContacts() // Uses existing DAO method
+            val entities = contactDao.getContacts() // Uses existing DAO method
             val contacts = contactMapper.toDomainList(entities)
             Timber.d("ContactRepository: Retrieved ${contacts.size} contacts")
             QrResult.Success(contacts)
@@ -90,7 +96,7 @@ class ContactRepositoryImpl @Inject constructor(
             val entity = contactMapper.toEntity(contact)
             contactDao.updateContact(entity)
 
-                QrResult.Success(contact)
+            QrResult.Success(contact)
 
         } catch (e: Exception) {
             Timber.e(e, "ContactRepository: Exception updating contact: ${contact.id}")
@@ -98,31 +104,48 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun deleteContact(id: String): QrResult<Unit, QrError> {
-        return try {
-            if (id.isBlank())
-                return QrResult.Error(QrError.ValidationError.EmptyField(id))
-
-            contactDao.softDeleteContact(id, System.currentTimeMillis())
-
-                Timber.d("ContactRepository: Contact soft deleted successfully: $id")
-                QrResult.Success(Unit)
-
-        } catch (e: Exception) {
-            Timber.e(e, "ContactRepository: Exception soft deleting contact: $id")
-            QrResult.Error(QrError.DatabaseError.InsertFailed())
-        }
-    }
-
     // ===== DELETE — TWO-STAGE =====
 
-    override suspend fun deactivateContact(id: String, timestamp: Long ) {
-        contactDao.deactivateContact(id, timestamp)
-    }
+    override suspend fun deactivateContact(id: String, ts: Long): Result<Unit> =
+        runCatching {
+            database.withTransaction {
+                val contact = contactDao.getContactById(id) ?: error("Contact not found: $id")
+                val client = clientDao.getClientById(contact.clientId)
+                    ?: error("Client not found: ${contact.clientId}")
 
-    override suspend fun markContactDeleted(id: String, timestamp: Long ){
-        contactDao.markContactDeleted(id, timestamp)
-    }
+                contactDao.deactivateContact(id, ts)
+                clientDao.deactivateClient(client.id, ts)
+            }
+        }
+
+    override suspend fun markContactDeleted(id: String, ts: Long): Result<Unit> =
+        runCatching {
+            database.withTransaction {
+
+                val contact = contactDao.getContactById(id) ?: error("Contact not found: $id")
+                val client = clientDao.getClientById(contact.clientId) ?: error("Client not found: ${contact.clientId}")
+
+                contactDao.markContactDeleted(id, ts)
+                clientDao.markClientDeleted(client.id, ts)
+            }
+        }
+
+    // ===== RESTORE =====
+
+    @Transaction
+    override suspend fun restoreContact(contactId: String, timestamp: Long): Result<Unit> =
+        runCatching {
+            database.withTransaction {
+                // Reads inside the transaction — atomic with the writes
+                val contact =
+                    contactDao.getContactById(contactId) ?: error("Contact not found: $contactId")
+                val client = clientDao.getClientById(contact.clientId)
+                    ?: error("Client not found: ${contact.clientId}")
+
+                contactDao.restoreContact(contactId, timestamp)
+                clientDao.restoreClient(client.id, timestamp)
+            }
+        }
 
     // ===== CLIENT RELATED =====
 
@@ -134,7 +157,7 @@ class ContactRepositoryImpl @Inject constructor(
             }
 
             Timber.d("ContactRepository: Getting contacts for client: $clientId")
-            val entities = contactDao.getContactsByClient(clientId)
+            val entities = contactDao.getActiveContactsByClient(clientId)
             val contacts = contactMapper.toDomainList(entities)
             Timber.d("ContactRepository: Retrieved ${contacts.size} contacts for client: $clientId")
             QrResult.Success(contacts)
@@ -145,14 +168,14 @@ class ContactRepositoryImpl @Inject constructor(
     }
 
     override fun getContactsByClientFlow(clientId: String): Flow<List<Contact>> {
-        return contactDao.getContactsByClientFlow(clientId)
-            .map { entities ->
-                contactMapper.toDomainList(entities)
-            }
-            .catch { exception ->
-                Timber.e(exception, "ContactRepository: Exception in contacts flow for client: $clientId")
-                emit(emptyList()) // Graceful degradation
-            }
+        return contactDao.getContactsByClientFlow(clientId).map { entities ->
+            contactMapper.toDomainList(entities)
+        }.catch { exception ->
+            Timber.e(
+                exception, "ContactRepository: Exception in contacts flow for client: $clientId"
+            )
+            emit(emptyList()) // Graceful degradation
+        }
     }
 
     override suspend fun getActiveContactsByClient(clientId: String): QrResult<List<Contact>, QrError> {
@@ -168,7 +191,9 @@ class ContactRepositoryImpl @Inject constructor(
             Timber.d("ContactRepository: Retrieved ${contacts.size} active contacts for client: $clientId")
             QrResult.Success(contacts)
         } catch (e: Exception) {
-            Timber.e(e, "ContactRepository: Exception getting active contacts for client: $clientId")
+            Timber.e(
+                e, "ContactRepository: Exception getting active contacts for client: $clientId"
+            )
             QrResult.Error(QrError.DatabaseError.OperationFailed())
         }
     }
@@ -192,33 +217,40 @@ class ContactRepositoryImpl @Inject constructor(
 
             QrResult.Success(contact)
         } catch (e: Exception) {
-            Timber.e(e, "ContactRepository: Exception getting primary contact for client: $clientId")
+            Timber.e(
+                e, "ContactRepository: Exception getting primary contact for client: $clientId"
+            )
             QrResult.Error(QrError.DatabaseError.OperationFailed())
         }
     }
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
-    override fun getAllActiveContactsFlow(): Flow<List<Contact>> {
-        return contactDao.getAllActiveContactsFlow()
-            .map { entities ->
-                contactMapper.toDomainList(entities)
-            }
-            .catch { exception ->
-                Timber.e(exception, "ContactRepository: Exception in all active contacts flow")
-                emit(emptyList()) // Graceful degradation
-            }
+    override fun getContactsFlow(): Flow<List<Contact>> {
+        return contactDao.getContactsFlow().map { entities ->
+            contactMapper.toDomainList(entities)
+        }.catch { exception ->
+            Timber.e(exception, "ContactRepository: Exception in all contacts flow")
+            emit(emptyList()) // Graceful degradation
+        }
+    }
+
+    override fun getActiveContactsFlow(): Flow<List<Contact>> {
+        return contactDao.getAllActiveContactsFlow().map { entities ->
+            contactMapper.toDomainList(entities)
+        }.catch { exception ->
+            Timber.e(exception, "ContactRepository: Exception in all active contacts flow")
+            emit(emptyList()) // Graceful degradation
+        }
     }
 
     override fun getContactByIdFlow(id: String): Flow<Contact?> {
-        return contactDao.getContactByIdFlow(id)
-            .map { entity ->
-                entity?.let { contactMapper.toDomain(it) }
-            }
-            .catch { exception ->
-                Timber.e(exception, "ContactRepository: Exception in contact flow for id: $id")
-                emit(null) // Graceful degradation
-            }
+        return contactDao.getContactByIdFlow(id).map { entity ->
+            entity?.let { contactMapper.toDomain(it) }
+        }.catch { exception ->
+            Timber.e(exception, "ContactRepository: Exception in contact flow for id: $id")
+            emit(null) // Graceful degradation
+        }
     }
 
     // ===== SEARCH & FILTER =====
@@ -277,7 +309,9 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getContactsByPreferredMethod(clientId: String, contactMethod: ContactMethod): QrResult<List<Contact>, QrError> {
+    override suspend fun getContactsByPreferredMethod(
+        clientId: String, contactMethod: ContactMethod
+    ): QrResult<List<Contact>, QrError> {
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: getContactsByPreferredMethod called with blank clientId")
@@ -290,7 +324,10 @@ class ContactRepositoryImpl @Inject constructor(
             Timber.d("ContactRepository: Found ${contacts.size} contacts with preferred method $contactMethod for client: $clientId")
             QrResult.Success(contacts)
         } catch (e: Exception) {
-            Timber.e(e, "ContactRepository: Exception getting contacts by preferred method: $contactMethod for client: $clientId")
+            Timber.e(
+                e,
+                "ContactRepository: Exception getting contacts by preferred method: $contactMethod for client: $clientId"
+            )
             QrResult.Error(QrError.DatabaseError.OperationFailed())
         }
     }
@@ -345,7 +382,9 @@ class ContactRepositoryImpl @Inject constructor(
 
     // ===== VALIDATION =====
 
-    override suspend fun isEmailTaken(email: String, excludeId: String): QrResult<Boolean, QrError> {
+    override suspend fun isEmailTaken(
+        email: String, excludeId: String
+    ): QrResult<Boolean, QrError> {
         return try {
             if (email.isBlank()) {
                 Timber.w("ContactRepository: isEmailTaken called with blank email")
@@ -362,7 +401,9 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun isPhoneTaken(phone: String, excludeId: String): QrResult<Boolean, QrError> {
+    override suspend fun isPhoneTaken(
+        phone: String, excludeId: String
+    ): QrResult<Boolean, QrError> {
         return try {
             if (phone.isBlank()) {
                 Timber.w("ContactRepository: isPhoneTaken called with blank phone")
@@ -379,7 +420,9 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun hasPrimaryContact(clientId: String, excludeId: String): QrResult<Boolean, QrError> {
+    override suspend fun hasPrimaryContact(
+        clientId: String, excludeId: String
+    ): QrResult<Boolean, QrError> {
         return try {
             if (clientId.isBlank()) {
                 Timber.w("ContactRepository: hasPrimaryContact called with blank clientId")
@@ -392,7 +435,9 @@ class ContactRepositoryImpl @Inject constructor(
             Timber.d("ContactRepository: Client $clientId ${if (hasPrimary) "has" else "does not have"} primary contact")
             QrResult.Success(hasPrimary)
         } catch (e: Exception) {
-            Timber.e(e, "ContactRepository: Exception checking primary contact for client: $clientId")
+            Timber.e(
+                e, "ContactRepository: Exception checking primary contact for client: $clientId"
+            )
             QrResult.Error(QrError.DatabaseError.OperationFailed())
         }
     }
@@ -492,7 +537,9 @@ class ContactRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun setPrimaryContact(clientId: String, contactId: String): QrResult<Unit, QrError> {
+    override suspend fun setPrimaryContact(
+        clientId: String, contactId: String
+    ): QrResult<Unit, QrError> {
         return try {
             if (clientId.isBlank() || contactId.isBlank()) {
                 Timber.w("ContactRepository: setPrimaryContact called with blank clientId or contactId")
@@ -502,11 +549,14 @@ class ContactRepositoryImpl @Inject constructor(
             Timber.d("ContactRepository: Setting primary contact $contactId for client $clientId")
             contactDao.setPrimaryContact(clientId, contactId)
 
-                Timber.d("ContactRepository: Primary contact set successfully: $contactId for client: $clientId")
-                QrResult.Success(Unit)
+            Timber.d("ContactRepository: Primary contact set successfully: $contactId for client: $clientId")
+            QrResult.Success(Unit)
 
         } catch (e: Exception) {
-            Timber.e(e, "ContactRepository: Exception setting primary contact $contactId for client $clientId")
+            Timber.e(
+                e,
+                "ContactRepository: Exception setting primary contact $contactId for client $clientId"
+            )
             QrResult.Error(QrError.DatabaseError.InsertFailed())
         }
     }
@@ -545,7 +595,9 @@ class ContactRepositoryImpl @Inject constructor(
 
             QrResult.Success(contact)
         } catch (e: Exception) {
-            Timber.e(e, "ContactRepository: Exception getting primary contact for client: $clientId")
+            Timber.e(
+                e, "ContactRepository: Exception getting primary contact for client: $clientId"
+            )
             QrResult.Error(QrError.DatabaseError.OperationFailed())
         }
     }
@@ -562,8 +614,8 @@ class ContactRepositoryImpl @Inject constructor(
             Timber.d("ContactRepository: Touching contact: $id")
             contactDao.touchContact(id, System.currentTimeMillis())
 
-                Timber.d("ContactRepository: Contact touched successfully: $id")
-                QrResult.Success(Unit)
+            Timber.d("ContactRepository: Contact touched successfully: $id")
+            QrResult.Success(Unit)
 
         } catch (e: Exception) {
             Timber.e(e, "ContactRepository: Exception touching contact: $id")
