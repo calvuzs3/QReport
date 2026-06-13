@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.ti.presentation.ui
 
 import androidx.lifecycle.ViewModel
@@ -196,40 +197,6 @@ class DetailsFormViewModel @Inject constructor(
     }
 
     /**
-     * Save current form state to domain model
-     */
-    private fun saveCurrentState() {
-        val currentState = _state.value
-        val intervention = currentIntervention ?: return
-
-        viewModelScope.launch {
-            _state.update { it.copy(isSaving = true) }
-
-            val result = saveCurrentStateInternal(currentState, intervention)
-
-            when (result) {
-                is QrResult.Success -> {
-                    _state.update {
-                        it.copy(
-                            isSaving = false,
-                            isAutoSaved = true
-                        )
-                    }
-                }
-
-                is QrResult.Error -> {
-                    _state.update {
-                        it.copy(
-                            isSaving = false,
-                            errorMessage = result.error.asUiText()
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Internal save method that can be called synchronously
      */
     private suspend fun saveCurrentStateInternal(
@@ -377,13 +344,6 @@ class DetailsFormViewModel @Inject constructor(
             }
             QrResult.Error(QrError.InterventionError.DetailError.SaveError())
         }
-    }
-
-    /**
-     * Clear auto-save flag
-     */
-    fun clearAutoSaveFlag() {
-        _state.update { it.copy(isAutoSaved = false) }
     }
 
     /**

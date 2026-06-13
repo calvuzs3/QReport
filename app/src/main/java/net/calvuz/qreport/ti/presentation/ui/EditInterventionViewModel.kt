@@ -76,22 +76,6 @@ class EditInterventionViewModel @Inject constructor(
     fun clearSuccess() {
         _state.update { it.copy(successMessage = null) }
     }
-
-    /**
-     * Navigate back (auto-save handled by EditInterventionScreen)
-     */
-    fun navigateBack() {
-        Timber.d("EditInterventionViewModel: Triggering navigation back")
-        _state.update { it.copy(shouldNavigateBack = true) }
-    }
-
-
-    /**
-     * Reset navigation back flag
-     */
-    fun clearNavigateBack() {
-        _state.update { it.copy(shouldNavigateBack = false) }
-    }
 }
 
 /**

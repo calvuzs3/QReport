@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.client.document.sync.remote
 
 import kotlinx.serialization.SerialName
@@ -7,7 +8,7 @@ import kotlinx.serialization.Serializable
  * DTO for [net.calvuz.qreport.client.document.domain.model.Document]
  * in the entity sync JSON payload.
  *
- * Note: [filePath] is intentionally absent — paths are local to each device.
+ * Note: filePath is intentionally absent — paths are local to each device.
  * Each device resolves its own path via [DocumentDirectories.forScope()] after
  * receiving the metadata. The bytes travel through the separate file sync channel.
  *

@@ -45,7 +45,7 @@ object DatabaseModule {
             klass = QReportDatabase::class.java,
             name = QReportApplication.DATABASE_NAME
         )
-            .addCallback(QReportDatabase.Companion.CALLBACK)
+            .addCallback(QReportDatabase.CALLBACK)
             //.fallbackToDestructiveMigration()  // Only in development
             .addMigrations(
                 // Migrations go here...

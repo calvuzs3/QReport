@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Sync Login Screen -->
+    <string name="sync_login_screen_title">Accesso Server</string>
+    <string name="sync_login_screen_description">Inserisci le credenziali per accedere al server di sincronizzazione.</string>
+    <string name="sync_login_error_invalid_credentials">Credenziali non valide</string>
+    <string name="sync_login_error_generic">Errore durante il login</string>
+
+    <!-- Sync Settings Screen -->
+    <string name="sync_settings_screen_title">Sincronizzazione</string>
+    <string name="sync_settings_section_mode">Modalità</string>
+    <string name="sync_settings_mode_remote_title">Sincronizzazione remota</string>
+    <string name="sync_settings_mode_local_only">Solo locale — nessun server configurato</string>
+    <string name="sync_settings_mode_remote_enabled">Attiva — i dati verranno sincronizzati con il server</string>
+    <string name="sync_settings_section_server">Server</string>
+    <string name="sync_settings_server_url_label">Indirizzo server</string>
+    <string name="sync_settings_server_url_placeholder" translatable="false">https://tuamacchina.tuoserver.com</string>
+    <string name="sync_settings_section_account">Account</string>
+    <string name="sync_settings_syncing_in_progress">Sincronizzazione in corso…</string>
+    <string name="sync_settings_action_sync_now">Sincronizza ora</string>
+    <string name="sync_settings_action_full_sync">Sync completa (scarica tutto)</string>
+    <string name="sync_settings_action_login">Accedi al server</string>
+    <string name="sync_settings_section_status">Stato</string>
+    <string name="sync_settings_last_sync_label">Ultima sincronizzazione</string>
+    <string name="sync_settings_never_synced">Mai eseguita</string>
+    <string name="sync_settings_pending_changes_label">Modifiche in attesa</string>
+    <string name="sync_settings_pending_changes_count">%1$d record da sincronizzare</string>
+    <string name="sync_settings_section_device">Dispositivo</string>
+    <string name="sync_settings_device_id_label">ID Dispositivo</string>
+
+    <!-- Sync Settings ViewModel messages -->
+    <string name="sync_settings_error_load_status">Errore caricamento stato sync: %1$s</string>
+    <string name="sync_settings_error_unexpected">Errore inaspettato: %1$s</string>
+    <string name="sync_settings_error_save_url">Errore salvataggio URL: %1$s</string>
+    <string name="sync_settings_message_sync_completed">Sincronizzazione completata — inviati: %1$d, ricevuti: %2$d</string>
+
+    <!-- Shared sync errors -->
+    <string name="sync_error_session_expired">Sessione scaduta, effettua nuovamente il login</string>
+    <string name="sync_error_sync_disabled">Sincronizzazione disabilitata</string>
+    <string name="sync_error_generic">Errore sincronizzazione</string>
+
+</resources>

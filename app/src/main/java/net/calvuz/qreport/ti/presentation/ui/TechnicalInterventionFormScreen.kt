@@ -1,5 +1,5 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
-@file:Suppress("HardCodedStringLiteral", "UNUSED_PARAMETER")
+@file:Suppress("HardCodedStringLiteral", "ASSIGNED_VALUE_IS_NEVER_READ")
 package net.calvuz.qreport.ti.presentation.ui
 
 import androidx.activity.compose.BackHandler

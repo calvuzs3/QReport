@@ -13,7 +13,6 @@ import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.sync.app.SyncEvent
 import net.calvuz.qreport.sync.app.SyncEventBus
-import net.calvuz.qreport.sync.data.local.TokenStorage
 import net.calvuz.qreport.sync.domain.usecase.LoginUseCase
 import timber.log.Timber
 import javax.inject.Inject
@@ -21,7 +20,6 @@ import javax.inject.Inject
 @HiltViewModel
 class SyncLoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
-    private val tokenStorage: TokenStorage,
     private val syncEventBus: SyncEventBus
 ) : ViewModel() {
 
@@ -61,11 +59,6 @@ class SyncLoginViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun logout() {
-        tokenStorage.clearToken()
-        Timber.d("SyncLoginViewModel: logged out")
     }
 }
 

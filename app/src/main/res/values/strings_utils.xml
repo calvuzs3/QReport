@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- DateTimeUtils - relative date labels -->
+    <string name="date_today">Oggi</string>
+    <string name="date_tomorrow">Domani</string>
+    <string name="date_yesterday">Ieri</string>
+    <string name="date_in_days">Tra %1$d giorni</string>
+    <string name="date_days_ago">%1$d giorni fa</string>
+
+    <!-- DateTimeUtils - last modified labels -->
+    <string name="date_updated_now">Aggiornato ora</string>
+    <string name="date_updated_minutes_ago">Aggiornato %1$d min fa</string>
+    <string name="date_updated_hours_ago">Aggiornato %1$dh fa</string>
+    <string name="date_updated_yesterday">Aggiornato ieri</string>
+    <string name="date_updated_days_ago">Aggiornato %1$d giorni fa</string>
+    <string name="date_updated_on">Aggiornato il %1$s</string>
+
+    <!-- DateTimeUtils - created at labels -->
+    <string name="date_created_now">Creato ora</string>
+    <string name="date_created_minutes_ago">Creato %1$d min fa</string>
+    <string name="date_created_hours_ago">Creato %1$dh fa</string>
+    <string name="date_created_yesterday">Creato ieri</string>
+    <string name="date_created_days_ago">Creato %1$d giorni fa</string>
+    <string name="date_created_on">Creato il %1$s</string>
+
+    <!-- DateTimeUtils - expiry messages -->
+    <string name="date_expired_on">scaduta il %1$s</string>
+    <string name="date_expires_today">scade oggi</string>
+    <string name="date_expires_tomorrow">scade domani</string>
+    <string name="date_expires_on">scade il %1$s</string>
+
+    <!-- DateTimeUtils - maintenance messages -->
+    <string name="date_maintenance_overdue_today">dovuta oggi (in ritardo)</string>
+    <string name="date_maintenance_overdue_one_day">in ritardo di 1 giorno</string>
+    <string name="date_maintenance_overdue_days">in ritardo di %1$d giorni</string>
+    <string name="date_maintenance_due_today">dovuta oggi</string>
+    <string name="date_maintenance_due_tomorrow">dovuta domani</string>
+    <string name="date_maintenance_due_in_days">dovuta tra %1$d giorni</string>
+    <string name="date_maintenance_due_on">dovuta il %1$s</string>
+
+    <!-- DateTimeUtils - duration between -->
+    <string name="date_duration_one_day">1 giorno</string>
+    <string name="date_duration_days">%1$d giorni</string>
+    <string name="date_duration_one_week">1 settimana</string>
+    <string name="date_duration_weeks">%1$d settimane</string>
+    <string name="date_duration_one_month">1 mese</string>
+    <string name="date_duration_months">%1$d mesi</string>
+    <string name="date_duration_years">%1$d anni</string>
+
+</resources>
