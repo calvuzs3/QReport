@@ -12,10 +12,11 @@ class DeleteContractUseCase @Inject constructor(
 
 ) {
 
-    suspend operator fun invoke(contractId: String): QrResult<Int, QrError> {
+    @Suppress("HardCodedStringLiteral")
+    suspend operator fun invoke(contractId: String): QrResult<Unit, QrError> {
             return try {
 
-                Timber.d("Delete contract")
+                Timber.v("Delete contract $contractId")
 
                 // Check input
                 if (contractId.isBlank()) {
@@ -24,26 +25,26 @@ class DeleteContractUseCase @Inject constructor(
                 }
 
                 // Check contract exists
-                return when (val contact = checkContractExists(contractId)) {
+                return when (val contract = checkContractExists(contractId)) {
                     is QrResult.Success -> {
-                        return when (val result =contractRepository.deleteContractById(contractId)) {
-                            is QrResult.Success -> {
-                                Timber.d("Contract deleted successfully: ${contact.data}")
-                                QrResult.Success(result.data)
+                        contractRepository.deactivateContract(contractId).fold(
+                            {
+                                Timber.d("Successfully deleted contract $contractId")
+                                QrResult.Success(it)
+                            },
+                            {
+                                Timber.d("Contract delete error: $it")
+                                QrResult.Error(QrError.ContractsError.DeleteError())
                             }
-                            is QrResult.Error -> {
-                                Timber.d("Contract delete error: ${result.error}")
-                                QrResult.Error(result.error)
-                            }
-                        }
+                        )
                     }
                     is QrResult.Error -> {
-                        Timber.d("Contract delete error: ${contact.error}")
+                        Timber.d("Contract delete error: ${contract.error}")
                         QrResult.Error(QrError.ContractsError.DeleteError())
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e)
+                Timber.e(e, "Contract delete error")
                 QrResult.Error(QrError.ContractsError.DeleteError())
             }
     }

@@ -8,16 +8,20 @@ import javax.inject.Inject
 
 /**
  * Deactivate a client, optionally cascading to its dependencies.
- *
- * @param clientId  ID of the client to delete
- * @param cascade   if true (default) deletes facilities and contacts first;
- *                  if false, fails when dependencies exist
  */
+@Suppress("HardcodedStringLiteral")
 class DeleteClientUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
-    private val checkClientExists: CheckClientExistsUseCase,
     private val checkClientDependencies: CheckClientDependenciesUseCase,
 ) {
+    
+    /**
+     * Deactivate a client, optionally cascading to its dependencies.
+     *
+     * @param clientId  ID of the client to delete
+     * @param cascade   if true (default) deletes facilities and contacts first;
+     *                  if false, fails when dependencies exist
+     */
     suspend operator fun invoke(
         clientId: String, cascade: Boolean = true
     ): QrResult<Unit, QrError.ClientError> {
@@ -28,12 +32,6 @@ class DeleteClientUseCase @Inject constructor(
         if (clientId.isBlank()) {
             Timber.d("Client ID is blank")
             return QrResult.Error(QrError.ClientError.NotFound())
-        }
-
-        // Verify client exists
-        when (val exists = checkClientExists(clientId)) {
-            is QrResult.Error -> return QrResult.Error(exists.error)
-            is QrResult.Success -> Unit
         }
 
         // If not cascading, block when dependencies are present

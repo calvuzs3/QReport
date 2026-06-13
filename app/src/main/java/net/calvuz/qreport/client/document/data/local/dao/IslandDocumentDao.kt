@@ -1,3 +1,5 @@
+@file:Suppress("HardCodedStringLiteral")
+
 package net.calvuz.qreport.client.document.data.local.dao
 
 import androidx.room.Dao
@@ -83,7 +85,35 @@ interface IslandDocumentDao {
         facilityId: String,
         category: String
     ): Flow<List<IslandDocumentEntity>>
-
+    
+    // =========================================================================
+    // SUSPEND — multi record
+    // =========================================================================
+    
+    /** All active documents for a client, newest first. */
+    @Query("""
+        SELECT * FROM island_documents
+        WHERE client_id = :clientId AND is_deleted = 0
+        ORDER BY created_at DESC
+    """)
+    suspend fun getDocumentsForClient(clientId: String): List<IslandDocumentEntity>
+    
+    /** All active documents for a facility, newest first. */
+    @Query("""
+        SELECT * FROM island_documents
+        WHERE facility_id = :facilityId AND is_deleted = 0
+        ORDER BY created_at DESC
+    """)
+    suspend fun getDocumentsForFacility(facilityId: String): List<IslandDocumentEntity>
+    
+    /** All active documents for an island, newest first. */
+    @Query("""
+        SELECT * FROM island_documents
+        WHERE island_id = :islandId AND is_deleted = 0
+        ORDER BY created_at DESC
+    """)
+    suspend fun getDocumentsForIsland(islandId: String): List<IslandDocumentEntity>
+    
     // =========================================================================
     // SUSPEND — single record
     // =========================================================================

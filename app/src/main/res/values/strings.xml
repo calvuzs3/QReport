@@ -106,15 +106,22 @@
     <string name="action_close">Chiudi</string>
     <string name="action_dismiss">Chiudi</string>
     <string name="action_exit_selection">Chiudi selezione</string>
+    <string name="action_select_all">Seleziona tutto</string>
+    <string name="action_set_active">Attiva</string>
+    <string name="action_set_not_active">Disattiva</string>
     <string name="action_edit">Modifica</string>
     <string name="action_delete">Elimina</string>
+    <string name="action_restore">Ripristina</string>
     <string name="action_save">Salva</string>
     <string name="action_update">Aggiorna</string>
     <string name="action_cancel">Annulla</string>
     <string name="action_confirm">Conferma</string>
     <string name="action_confirm_delete">Elimina</string>
     <string name="action_export">Esporta</string>
+    <string name="action_archive">Archivia</string>
+    <string name="action_renew">Rinnova</string>
     <string name="action_share">Condividi</string>
+    <string name="action_mark_completed">Setta completato</string>
     <string name="action_take_photo">Scatta Foto</string>
     <string name="action_add_note">Aggiungi Nota</string>
     <string name="action_view_details">Visualizza Dettagli</string>
@@ -145,11 +152,14 @@
     <string name="label_creating">C1reazione</string>
     <string name="label_ordering">Ordinamento</string>
     <string name="label_filtering">Filtraggio</string>
-    <string name="label_assistchip_not_active">INATTIVO</string>
+    <string name="label_assist_chip_not_active">INATTIVO</string>
     <string name="label_maintenance">Manutenzione</string>
     <string name="label_assistance">Assistenza</string>
     <string name="label_priority">Priorità</string>
     <string name="label_active">Attivo</string>
+    <string name="label_actives">Attivi</string>
+    <string name="label_not_active">Non attivo</string>
+    <string name="label_not_actives">Non attivi</string>
     <string name="label_valid">Valido</string>
     <string name="label_invalid">Non Valido</string>
     <string name="label_preferred">Preferito</string>
@@ -187,6 +197,7 @@
     <string name="msg_export_error">Errore durante l\'export</string>
     <string name="msg_saving">Salvataggio in corso…</string>
     <string name="msg_loading">Caricamento…</string>
+    <string name="msg_delete_multi_confirmation">Cancellare %1$d elementi?</string>
 
     <!-- Errors -->
     <string name="error_generic">Si è verificato un errore</string>
@@ -241,7 +252,7 @@
     <string name="urgency_critical">Critica</string>
 
     <!-- Photo captions -->
-    <string name="photo_caption_hint">Aggiungi didascalia...</string>
+    <string name="photo_caption_hint">Aggiungi didascalia…</string>
     <string name="photo_timestamp">Scattata il %1$s</string>
     <string name="photo_filesize">Dimensione: %1$s</string>
 
@@ -256,7 +267,7 @@
 
     <!-- Content descriptions for screen readers -->
     <string name="cd_navigation_home">Naviga alla home</string>
-    <string name="cd_navigation_checkups">Naviga ai check-up</string>
+    <string name="cd_navigation_checkups">Naviga alla lista di check-up</string>
     <string name="cd_create_checkup">Crea nuovo check-up</string>
     <string name="cd_checkup_progress">Progresso check-up</string>
 

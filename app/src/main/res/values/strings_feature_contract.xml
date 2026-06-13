@@ -14,7 +14,7 @@
 
     <!-- Contract List Errors -->
     <string name="err_contracts_list_invalid_client_id">ID cliente non valido</string>
-    <string name="err_contracts_list_load_contacts">Errore caricamento Contratti: %s</string>
+    <string name="err_contracts_list_load_contracts">Errore caricamento Contratti: %s</string>
     <string name="err_contracts_list_unexpected">Errore imprevisto: %s</string>
     <string name="err_contracts_list_refresh_failed">Errore refresh: %s</string>
     <string name="err_contracts_list_refresh_unexpected">Errore refresh: %s</string>
@@ -22,6 +22,11 @@
     <string name="err_contracts_list_delete_unexpected">Errore imprevisto: %s</string>
     <string name="err_contracts_list_contract_not_found_for_renewal">Contratto non trovato per il rinnovo</string>
     <string name="err_contracts_list_renewal_failed">Errore rinnovo contratto: %s</string>
+    <!-- Contact List - Bulk Delete Results -->
+    <string name="err_contract_list_bulk_delete_all_failed">Impossibile eliminare %d contratti</string>
+    <string name="err_contract_list_bulk_delete_partial_failed">%1$d contratti eliminati, %2$d falliti</string>
+    <string name="err_contract_list_bulk_delete_unexpected">Errore durante eliminazione multipla: %s</string>
+
 
     <!-- Contract ValidationError Validation Errors -->
     <string name="err_contracts_contract_name_required">Nome contratto richiesto</string>
@@ -39,6 +44,9 @@
     <string name="contracts_list_title">Contratti</string>
     <string name="contracts_list_empty_state">Nessun contratto trovato</string>
     <string name="contracts_list_loading">Caricamento contratti…</string>
+    <string name="contracts_list_delete_confirmation_dates">Cancellare contratto di validità dal
+        %1$s al %2$s?</string>
+    <string name="contracts_list_delete_confirmation">Cancellare %1$d contratti?</string>
 
     <!-- Contract List Actions -->
     <string name="contracts_list_action_refresh">Aggiorna</string>
@@ -51,7 +59,8 @@
     <!-- Contract List Filters -->
     <string name="contracts_list_filter_all">Tutti</string>
     <string name="contracts_list_filter_active">Attivi</string>
-    <string name="contracts_list_filter_inactive">Scaduti</string>
+    <string name="contracts_list_filter_inactive">Inattivi</string>
+    <string name="contracts_list_filter_outdated">Scaduti</string>
 
     <!-- Contract List Sort -->
     <string name="contracts_list_sort_name">Nome</string>
@@ -60,6 +69,8 @@
 
     <!-- Contract Status -->
     <string name="contracts_status_active">Attivo</string>
+    <string name="contracts_status_not_active">Inattivo</string>
+    <string name="contracts_status_valid">Valido</string>
     <string name="contracts_status_expired">Scaduto</string>
     <string name="contracts_status_expiring_soon">In scadenza</string>
 
@@ -107,6 +118,7 @@
 
     <!-- LIST SCREEN -->
     <string name="contracts_screen_list_title">Contratti</string>
+    <string name="contracts_screen_list_subtitle_all">Tutti</string>
     <string name="contracts_screen_list_empty_title">Nessun Contatto</string>
     <string name="contracts_screen_list_empty_message">Non ci sono ancora Contratti per questo Cliente</string>
     <string name="contracts_screen_list_empty_no_results_title">Nessun risultato</string>

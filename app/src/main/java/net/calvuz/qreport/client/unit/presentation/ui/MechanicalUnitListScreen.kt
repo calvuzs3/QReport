@@ -6,14 +6,12 @@ import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
@@ -32,7 +30,7 @@ import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 import timber.log.Timber
 
-@OptIn(ExperimentalMaterial3Api::class)
+@Suppress("ParamsComparedByRef")@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MechanicalUnitListScreen(
     islandId: String,
@@ -43,9 +41,7 @@ fun MechanicalUnitListScreen(
     viewModel: MechanicalUnitListViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var pendingDeleteId by remember { mutableStateOf<String?>(null) }
-    var pendingDeleteName by remember { mutableStateOf("") }
-    val onEvent: (MechanicalUnitListEvent) -> Unit = viewModel::onEvent
+    val onListEvent: (MechanicalUnitListEvent) -> Unit = viewModel::onEvent
 
     LaunchedEffect(islandId) {
         Timber.d("MechanicalUnitListScreen islandId=$islandId")
@@ -75,7 +71,7 @@ fun MechanicalUnitListScreen(
                 var showFilterMenu by remember { mutableStateOf(false) }
                 var showSortMenu by remember { mutableStateOf(false) }
 
-                IconButton(onClick = { onEvent(MechanicalUnitListEvent.CycleCardVariant) }) {
+                IconButton(onClick = { onListEvent(MechanicalUnitListEvent.CycleCardVariant) }) {
                     Icon(uiState.cardVariant.getCardVariantIcon(), contentDescription = uiState.cardVariant.getCardVariantDescription())
                 }
                 IconButton(onClick = { showSortMenu = true }) {
@@ -88,14 +84,14 @@ fun MechanicalUnitListScreen(
                     expanded = showSortMenu,
                     entries = MechanicalUnitSortOrder.entries,
                     selectedSortOrder = uiState.sortOrder,
-                    onSortOrderSelected = { onEvent(MechanicalUnitListEvent.SortOrderChanged(it)) },
+                    onSortOrderSelected = { onListEvent(MechanicalUnitListEvent.SortOrderChanged(it)) },
                     onDismiss = { showSortMenu = false }
                 )
                 QReportFilterMenu(
                     expanded = showFilterMenu,
                     entries = MechanicalUnitFilter.entries,
                     selectedFilter = uiState.selectedFilter,
-                    onFilterSelected = { onEvent(MechanicalUnitListEvent.FilterChanged(it)) },
+                    onFilterSelected = { onListEvent(MechanicalUnitListEvent.FilterChanged(it)) },
                     onDismiss = { showFilterMenu = false }
                 )
             }
@@ -103,14 +99,14 @@ fun MechanicalUnitListScreen(
 
         QReportSearchBar(
             query = uiState.searchQuery,
-            onQueryChange = { onEvent(MechanicalUnitListEvent.SearchQueryChanged(it)) },
+            onQueryChange = { onListEvent(MechanicalUnitListEvent.SearchQueryChanged(it)) },
             placeholder = stringResource(R.string.unit_screen_list_search_placeholder)
         )
 
         QReportSelectorRow(
             entries = uiState.availableIslands,
             selectedItem = uiState.selectedIsland,
-            onItemSelected = { onEvent(MechanicalUnitListEvent.SelectedIslandChanges(it)) },
+            onItemSelected = { onListEvent(MechanicalUnitListEvent.SelectedIslandChanges(it)) },
             icon = Icons.Default.PrecisionManufacturing,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
@@ -120,7 +116,7 @@ fun MechanicalUnitListScreen(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 selectedFilter = uiState.selectedFilter,
                 avoidFilter = MechanicalUnitPkg.selectedFilter,
-                onClearFilter = {  onEvent(MechanicalUnitListEvent.FilterChanged(MechanicalUnitPkg.selectedFilter)) },
+                onClearFilter = {  onListEvent(MechanicalUnitListEvent.FilterChanged(MechanicalUnitPkg.selectedFilter)) },
                 selectedSort = uiState.sortOrder,
                 avoidSort = MechanicalUnitPkg.selectedSortOrder,
                 onClearSort = { viewModel.updateSortOrder(MechanicalUnitPkg.selectedSortOrder) }
@@ -129,7 +125,7 @@ fun MechanicalUnitListScreen(
 
         QReportPullToRefresh(
             isRefreshing = uiState.isRefreshing,
-            onRefresh = { onEvent(MechanicalUnitListEvent.Refresh) },
+            onRefresh = { onListEvent(MechanicalUnitListEvent.Refresh) },
             modifier = Modifier.fillMaxSize()
         ) {
 
@@ -140,8 +136,8 @@ fun MechanicalUnitListScreen(
 
                 currentError != null -> QReportErrorState(
                     error = currentError,
-                    onRetry = { onEvent(MechanicalUnitListEvent.Refresh) },
-                    onDismiss = { onEvent(MechanicalUnitListEvent.DismissError) }
+                    onRetry = { onListEvent(MechanicalUnitListEvent.Refresh) },
+                    onDismiss = { onListEvent(MechanicalUnitListEvent.DismissError) }
                 )
 
                 uiState.filteredUnits.isEmpty() -> {
@@ -173,30 +169,10 @@ fun MechanicalUnitListScreen(
                     units = uiState.filteredUnits,
                     variant = uiState.cardVariant,
                     onUnitClick = onNavigateToEdit,
-                    onUnitDelete = { unitId, unitName ->
-                        pendingDeleteId = unitId
-                        pendingDeleteName = unitName
-                    }
+                    onUnitDelete = { onListEvent(MechanicalUnitListEvent.DeleteUnit(it)) },
+                    onUnitRestore = { onListEvent(MechanicalUnitListEvent.RestoreUnit(it)) }
                 )
             }
-
-            FloatingActionButton(
-                onClick = onNavigateToAdd,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.unit_screen_list_fab_add))
-            }
         }
-    }
-
-    pendingDeleteId?.let { unitId ->
-        QReportConfirmDeleteDialog(
-            objectName = stringResource(R.string.unit_card_object_name),
-            objectDesc = pendingDeleteName,
-            onConfirm = { onEvent(MechanicalUnitListEvent.DeleteUnit(unitId)); pendingDeleteId = null; pendingDeleteName = "" },
-            onDismiss = { pendingDeleteId = null; pendingDeleteName = "" }
-        )
     }
 }

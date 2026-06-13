@@ -22,8 +22,8 @@ import javax.inject.Inject
 class GetClientWithDetailsUseCase @Inject constructor(
     private val getClientById: GetClientByIdUseCase,
     private val getFacilitiesByClient: GetFacilitiesByClientUseCase,
-    private val getContactsByClient: GetContactsByClientUseCase,
     private val getIslandsByFacility: GetIslandsByFacilityUseCase,
+    private val getContactsByClient: GetContactsByClientUseCase,
     private val getContractsByClient: GetContractsByClientUseCase,
 ) {
     suspend operator fun invoke(clientId: String): QrResult<ClientWithDetails, QrError.ClientError> {
@@ -42,26 +42,26 @@ class GetClientWithDetailsUseCase @Inject constructor(
         }
 
         // 2. Load facilities — degrade gracefully
-        val facilities = when (val result = getFacilitiesByClient(clientId)) {
+        val facilities = when (val result = getFacilitiesByClient.getActive(clientId)) {
             is QrResult.Success -> result.data
             is QrResult.Error -> emptyList()
         }
 
         // 3. Load contacts — degrade gracefully
-        val contacts = when (val result = getContactsByClient(clientId)) {
+        val contacts = when (val result = getContactsByClient.getActive(clientId)) {
             is QrResult.Success -> result.data
             is QrResult.Error -> emptyList()
         }
 
         // 4. Load contracts — degrade gracefully
-        val contracts = when (val result = getContractsByClient(clientId)) {
+        val contracts = when (val result = getContractsByClient.getActive (clientId)) {
             is QrResult.Success -> result.data
             is QrResult.Error -> emptyList()
         }
 
         // 5. Load islands per facility — degrade gracefully
         val facilitiesWithIslands = facilities.map { facility ->
-            val islands = when (val result = getIslandsByFacility(facility.id)) {
+            val islands = when (val result = getIslandsByFacility.getActive(facility.id)) {
                 is QrResult.Success -> result.data
                 is QrResult.Error -> emptyList()
             }

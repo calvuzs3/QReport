@@ -72,9 +72,16 @@ interface MaintenanceLogRepository {
 
     // ===== LIFECYCLE =====
 
-    suspend fun deactivateLog(id: String): Result<Unit>
+    /** Stage 1: sets isActive=false. No children to cascade. */
+    suspend fun deactivateLog(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
-    suspend fun markLogDeleted(id: String): Result<Unit>
+    /** Stage 2: sets isDeleted=true for server sync. */
+    suspend fun markLogDeleted(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
+
+    // ===== RESTORE =====
+
+    /** Re-activates the log and cascades to restore its parent island. */
+    suspend fun restoreLog(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     // ===== BACKUP =====
 

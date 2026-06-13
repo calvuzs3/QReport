@@ -10,14 +10,20 @@ import javax.inject.Inject
 /**
  * Reactive Flow of clients, sorted alphabetically.
  *
- * Flow use cases do not wrap in QrResult — errors propagate via Flow.catch
+ * Flow use cases do not wrap in QrResult — errors propagate via Flow.catch()
  * in the ViewModel, which is the established pattern for flows in this project.
- *
- * @param activeOnly if true (default) observes only active (non-deleted) clients
  */
 class ObserveClientsUseCase @Inject constructor(
     private val clientRepository: ClientRepository
 ) {
+    /**
+     * Reactive Flow of clients, sorted alphabetically.
+     *
+     * Flow use cases do not wrap in QrResult — errors propagate via Flow.catch()
+     * in the ViewModel, which is the established pattern for flows in this project.
+     *
+     * @param activeOnly if true (default) observes only active (non-deleted) clients
+     */
     operator fun invoke(activeOnly: Boolean = false): Flow<List<Client>> {
 
         Timber.v("Observing clients activeOnly=$activeOnly)")

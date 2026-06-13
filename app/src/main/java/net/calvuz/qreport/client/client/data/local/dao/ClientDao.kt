@@ -1,3 +1,5 @@
+@file:Suppress("HardcodedStringLiteral")
+
 package net.calvuz.qreport.client.client.data.local.dao
 
 import androidx.room.Dao
@@ -45,7 +47,7 @@ interface ClientDao {
 
     /**
      * Stage 1: deactivate client and cascade to all children.
-     * Called by [ClientRepositoryImpl.deactivateClient].
+     * Called by [ClientRepositoryImpl.deactivateClient()].
      *
      * Order: deepest children first, then parent — so a partial failure
      * leaves the client still visible rather than orphaning records.
@@ -80,7 +82,7 @@ interface ClientDao {
 
     /**
      * Stage 2: mark client and all children as deleted for server sync.
-     * Called by [ClientRepositoryImpl.markClientDeleted].
+     * Called by [ClientRepositoryImpl.markClientDeleted()].
      */
     @Query("UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp WHERE island_id IN (SELECT fi.id FROM facility_islands fi INNER JOIN facilities f ON fi.facility_id = f.id WHERE f.client_id = :clientId)")
     suspend fun markMechanicalUnitsDeletedByClient(

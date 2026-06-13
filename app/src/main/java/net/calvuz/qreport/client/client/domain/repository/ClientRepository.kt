@@ -22,14 +22,14 @@ interface ClientRepository {
     // ===== TWO-STAGE DELETE =====
 
     @Transaction
-    suspend fun deactivateClient(id: String): Result<Unit>
+    suspend fun deactivateClient(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     @Transaction
-    suspend fun markClientDeleted(id: String): Result<Unit>
+    suspend fun markClientDeleted(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     // ===== RESURRECT =====
 
-    suspend fun activateClient(id: String): Result<Unit>
+    suspend fun restoreClient(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 

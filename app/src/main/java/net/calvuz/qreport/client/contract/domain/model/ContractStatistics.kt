@@ -9,8 +9,8 @@ import kotlinx.serialization.Serializable
 class ContractStatistics(
     // ===== CONTATORI BASE =====
     val totalContracts: Int,
-    val activeContracts: Int,
-    val inactiveContracts: Int,
+    val validContracts: Int,
+    val outdatedContracts: Int,
 ) {
 
 
@@ -19,8 +19,8 @@ class ContractStatistics(
          */
         fun empty() = ContractStatistics(
             totalContracts = 0,
-            activeContracts = 0,
-            inactiveContracts = 0,
+            validContracts = 0,
+            outdatedContracts = 0,
         )
     }
 }

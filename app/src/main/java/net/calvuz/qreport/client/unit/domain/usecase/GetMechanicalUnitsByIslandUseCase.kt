@@ -42,7 +42,7 @@ class GetMechanicalUnitsByIslandUseCase @Inject constructor(
         // Get
         return repository.getUnitsByIsland(islandId).fold(
             onSuccess = {
-                Timber.d("Successfully retrived mechanical unit: $it")
+                Timber.d("Successfully retrieved mechanical unit: $it")
                 QrResult.Success(it) },
             onFailure = {
                 Timber.d("Error in retrieving mechanical unit: ${it.message}")

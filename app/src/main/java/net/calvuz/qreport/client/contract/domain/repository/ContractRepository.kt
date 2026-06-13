@@ -9,31 +9,34 @@ interface ContractRepository {
 
     // ===== CRUD OPERATIONS =====
 
-    suspend fun getAllContracts(): QrResult<List<Contract>, QrError>
-    suspend fun setActiveContractById(id: String): QrResult<Int, QrError>
-    suspend fun setInactiveContractById(id: String): QrResult<Int, QrError>
+    suspend fun getContracts(): QrResult<List<Contract>, QrError>
+    fun getContractsFlow(): Flow<List<Contract>>
+
+    fun getActiveContractsFlow(): Flow<List<Contract>>
+    suspend fun getContractById(id: String): QrResult<Contract?, QrError>
     suspend fun getActiveContracts(): QrResult<List<Contract>, QrError>
     suspend fun getExpiredContracts(): QrResult<List<Contract>, QrError>
-    suspend fun getContractById(id: String): QrResult<Contract?, QrError>
     suspend fun createContract(contract: Contract): QrResult<String, QrError>
     suspend fun updateContract(contract: Contract): QrResult<String, QrError>
     suspend fun deleteContractById(id: String): QrResult<Int, QrError>
 
     // ===== DELETE — TWO-STAGE =====
 
-    suspend fun deactivateContract(id: String, timestamp: Long = System.currentTimeMillis())
-    suspend fun markContractDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+    suspend fun deactivateContract(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
+    suspend fun markContractDeleted(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
+
+    // ===== RESTORE =====
+
+    suspend fun restoreContract(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     // ===== CLIENT RELATED =====
 
     suspend fun getContractsByClient(clientId: String): QrResult<List<Contract>, QrError>
+    fun getContractsByClientFlow(clientId: String): Flow<List<Contract>>
     suspend fun getActiveContractsByClient(clientId: String): QrResult<List<Contract>, QrError>
 
     // ===== FLOW OPERATIONS (REACTIVE) =====
 
-    suspend fun getAllActiveContractsFlow(): Flow<List<Contract>>
-    fun getContractByIdFlow(id: String): Flow<Contract?>
-    fun getContractsByClientFlow(clientId: String): Flow<List<Contract>>
 
     // ===== SEARCH & FILTER =====
 

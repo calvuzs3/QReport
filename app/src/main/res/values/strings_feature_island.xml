@@ -69,6 +69,7 @@
     <string name="err_island_create">Errore durante la creazione dell\'isola</string>
     <string name="err_island_update">Errore durante l\'aggiornamento dell\'isola</string>
     <string name="err_island_delete">Errore durante l\'eliminazione dell\'isola</string>
+    <string name="err_island_restore">Errore durante il ripristino dell\'isola</string>
     <string name="err_island_missing_serial">Il serial number è obbligatorio</string>
     <string name="err_island_missing_facility">ID stabilimento obbligatorio</string>
     <string name="err_island_invalid_field">Dati isola non validi</string>
@@ -255,7 +256,8 @@
     <!-- IslandCard -->
     <string name="island_card_delete_dialog_title">Elimina Isola</string>
     <string name="island_card_delete_dialog_message">Sei sicuro di voler eliminare l\'isola \'%1$s\'?</string>
-    <string name="island_card_delete_dialog_confirm">Elimina</string>
+    <string name="island_card_restore_dialog_title">Ripristino Isola</string>
+    <string name="island_card_restore_dialog_message">Sei sicuro di voler ripristinare l\'isola \'%1$s\'?</string>
     <string name="island_card_field_location">Ubicazione</string>
     <string name="island_card_field_model">Modello</string>
     <string name="island_card_field_installation">Installata</string>
@@ -303,7 +305,7 @@
     <string name="island_sort_by_type">Per tipo</string>
     <string name="island_sort_by_status">Per stato</string>
     <string name="island_sort_by_operating_hours">Per tipo</string>
-    <string name="island_sort_by_maintenance_date">Per data manutenzionetipo</string>
+    <string name="island_sort_by_maintenance_date">Per data manutenzione</string>
 
     <!-- ======================================================= -->
     <!-- OperationalStatsCard                                     -->

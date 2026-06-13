@@ -1,3 +1,5 @@
+@file:Suppress("HardcodedStringLiteral")
+
 package net.calvuz.qreport.client.facility.data.local.repository
 
 import androidx.room.Transaction
@@ -133,7 +135,7 @@ class FacilityRepositoryImpl @Inject constructor(
 
     override suspend fun getFacilitiesByClient(clientId: String): Result<List<Facility>> {
         return try {
-            val entities = facilityDao.getFacilitiesForClient(clientId) // Nome DAO corretto
+            val entities = facilityDao.getActiveFacilitiesByClient(clientId) // Nome DAO corretto
             val facilities = facilityMapper.toDomainList(entities)
             Result.success(facilities)
         } catch (e: Exception) {
@@ -144,7 +146,7 @@ class FacilityRepositoryImpl @Inject constructor(
     override suspend fun getActiveFacilitiesByClient(clientId: String): Result<List<Facility>> {
         return try {
             val entities =
-                facilityDao.getFacilitiesForClient(clientId) // Già filtrato per is_active
+                facilityDao.getActiveFacilitiesByClient(clientId) // Già filtrato per is_active
             val facilities = facilityMapper.toDomainList(entities)
             Result.success(facilities)
         } catch (e: Exception) {
@@ -180,14 +182,14 @@ class FacilityRepositoryImpl @Inject constructor(
 
     /** Flow operation - gets facilities by client */
     override fun getFacilitiesByClientFlow(clientId: String): Flow<List<Facility>> {
-        return facilityDao.getFacilitiesForClientFlow(clientId).map { entities ->
+        return facilityDao.getFacilitiesByClientFlow(clientId).map { entities ->
             facilityMapper.toDomainList(entities)
         }
     }
 
     /** Flow operation - gets facilities by client */
     override fun getAllActiveFacilitiesByClientFlow(clientId: String): Flow<List<Facility>> {
-        return facilityDao.getActiveFacilitiesForClientFlow(clientId).map { entities ->
+        return facilityDao.getActiveFacilitiesByClientFlow(clientId).map { entities ->
             facilityMapper.toDomainList(entities)
         }
     }

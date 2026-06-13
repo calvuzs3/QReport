@@ -194,7 +194,8 @@ fun IslandListScreen(
                     islands = uiState.filteredIslands,
                     variant = uiState.cardVariant,
                     onIslandClick = onNavigateToIslandDetail,
-                    onIslandDelete = { onListEvent(IslandListEvent.DeleteIsland(it)) }
+                    onIslandDelete = { onListEvent(IslandListEvent.DeleteIsland(it)) },
+                    onIslandRestore = { onListEvent(IslandListEvent.RestoreIsland(it))}
                 )
             }
         }

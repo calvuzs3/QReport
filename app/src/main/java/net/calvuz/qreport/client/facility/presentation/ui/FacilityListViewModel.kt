@@ -263,6 +263,7 @@ class FacilityListViewModel @Inject constructor(
         loadFacilities()
     }
 
+    @Suppress("HardCodedStringLiteral")
     private fun cycleCardVariant() {
         val next = when (_uiState.value.cardVariant) {
             ListViewMode.FULL -> ListViewMode.COMPACT
@@ -366,6 +367,7 @@ class FacilityListViewModel @Inject constructor(
 
     private fun createEmptyStats() = FacilityStatistics()
 
+    @Suppress("HardCodedStringLiteral")
     private fun loadClientsForDropdown() {
         viewModelScope.launch {
             try {
@@ -381,7 +383,7 @@ class FacilityListViewModel @Inject constructor(
                         }
                     }
             } catch (e: Exception) {
-                Timber.d("Failed to start client observation: ${e.message}")
+                Timber.e(e,"Failed to start client observation: ${e.message}")
             }
         }
     }

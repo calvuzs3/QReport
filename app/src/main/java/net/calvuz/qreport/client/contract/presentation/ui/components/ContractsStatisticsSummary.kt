@@ -14,7 +14,9 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.client.contract.domain.model.ContractStatistics
 import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
 
@@ -38,15 +40,15 @@ fun ContractsStatisticsSummary(
             QrListStatItem(
                 icon = Icons.Default.AssignmentTurnedIn,
                 value = statistics.totalContracts.toString(),
-                label = "Contratti"
+                label = stringResource(R.string.contracts_list_title)
             )
 
             // Active
             QrListStatItem(
                 icon = Icons.Default.Star,
-                value = statistics.activeContracts.toString(),
-                label = "Attivi",
-                color = if (statistics.activeContracts > 0)
+                value = statistics.validContracts.toString(),
+                label = stringResource(R.string.label_actives),
+                color = if (statistics.validContracts > 0)
                     MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -54,8 +56,8 @@ fun ContractsStatisticsSummary(
             // Inactive
             QrListStatItem(
                 icon = Icons.Outlined.Star,
-                value = statistics.inactiveContracts.toString(),
-                label = "Inattivi",
+                value = statistics.outdatedContracts.toString(),
+                label = stringResource(R.string.label_not_actives),
                 color = MaterialTheme.colorScheme.tertiary
             )
         }

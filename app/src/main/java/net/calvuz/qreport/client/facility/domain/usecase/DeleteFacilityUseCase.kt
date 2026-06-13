@@ -1,3 +1,5 @@
+@file:Suppress("HardCodedStringLiteral")
+
 package net.calvuz.qreport.client.facility.domain.usecase
 
 import net.calvuz.qreport.app.error.domain.model.QrError
@@ -20,14 +22,15 @@ class DeleteFacilityUseCase @Inject constructor(
      * Deactivate a facility, optionally cascading to its islands.
      *
      * @param forceDelete if true, deletes even when active islands exist
+     * @param forceDeleteOnlyOneActive if true, deletes even if the only one (and so active)
      */
     suspend operator fun invoke(
         facilityId: String,
-        forceDelete: Boolean = false,
+        forceDelete: Boolean = true,
         forceDeleteOnlyOneActive: Boolean = true    // Delete even if the only one (and so active)
     ): QrResult<Unit, QrError.FacilityError> {
 
-        Timber.v("Deleting facility $facilityId")
+        Timber.v("Deleting facility $facilityId, force=$forceDelete, forceOnlyOneActive=$forceDeleteOnlyOneActive")
 
         // Check input
         if (facilityId.isBlank()) {

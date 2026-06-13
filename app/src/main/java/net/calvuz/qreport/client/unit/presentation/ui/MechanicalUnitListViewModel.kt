@@ -5,19 +5,23 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
-import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
-import net.calvuz.qreport.client.unit.domain.usecase.DeleteMechanicalUnitUseCase
-import net.calvuz.qreport.client.unit.presentation.model.IslandOption
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.client.unit.domain.model.UnitType
+import net.calvuz.qreport.client.unit.domain.usecase.DeleteMechanicalUnitUseCase
 import net.calvuz.qreport.client.unit.domain.usecase.ObserveMechanicalUnitsUseCase
+import net.calvuz.qreport.client.unit.domain.usecase.RestoreUnitUseCase
+import net.calvuz.qreport.client.unit.presentation.model.IslandOption
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitFilter
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitPkg
 import net.calvuz.qreport.client.unit.presentation.model.MechanicalUnitSortOrder
@@ -35,6 +39,7 @@ data class MechanicalUnitListUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val isDeletingUnit: String? = null,
+    val isRestoringUnit: String? = null,
     val searchQuery: String = "",
     val selectedFilter: MechanicalUnitFilter = MechanicalUnitPkg.selectedFilter,
     val sortOrder: MechanicalUnitSortOrder = MechanicalUnitPkg.selectedSortOrder,
@@ -49,6 +54,7 @@ class MechanicalUnitListViewModel @Inject constructor(
     private val observeIslandsUseCase: ObserveIslandsUseCase,
     private val observeMechanicalUnitsUseCase: ObserveMechanicalUnitsUseCase,
     private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase,
+    private val restoreUnitUseCase: RestoreUnitUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
@@ -91,6 +97,7 @@ class MechanicalUnitListViewModel @Inject constructor(
             is MechanicalUnitListEvent.FilterChanged -> updateFilter(event.filter)
             is MechanicalUnitListEvent.SortOrderChanged -> updateSortOrder(event.sortOrder)
             is MechanicalUnitListEvent.DeleteUnit -> deleteUnit(event.unitId)
+            is MechanicalUnitListEvent.RestoreUnit -> restoreUnit(event.unitId)
             MechanicalUnitListEvent.DismissError -> dismissError()
             MechanicalUnitListEvent.Refresh -> refresh()
             MechanicalUnitListEvent.CycleCardVariant -> cycleCardVariant()
@@ -154,32 +161,43 @@ class MechanicalUnitListViewModel @Inject constructor(
     private fun deleteUnit(unitId: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isDeletingUnit = unitId) }
-            when (val delete = deleteMechanicalUnitUseCase(unitId)) {
+            when ( deleteMechanicalUnitUseCase(unitId)) {
                 is QrResult.Error -> {
-                    _uiState.update {
-                        it.copy(
-                            isDeletingUnit = null,
-                            error = delete.error.asUiText()
-                        )
+                    _uiState.update { it.copy(isDeletingUnit = null ) }
                         return@launch
-                    }
+                    
                 }
                 is QrResult.Success -> {
+                    _uiState.update { it.copy(isDeletingUnit = null ) }
                     return@launch
                 }
             }
-
-            _uiState.update { it.copy(isDeletingUnit = null) }
         }
     }
 
+    private fun restoreUnit(unitId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRestoringUnit = unitId) }
+            when (restoreUnitUseCase(unitId)) {
+                is QrResult.Error -> {
+                    _uiState.update { it.copy(isRestoringUnit = null) }
+                    return@launch
+                }
+                
+                is QrResult.Success -> {
+                    _uiState.update { it.copy(isRestoringUnit = null) }
+                    return@launch
+                }
+            }
+        }
+    }
+    
     private fun updateSearchQuery(query: String) {
         val current = _uiState.value
         if (query.length >= 3) {
             performSearch(query)
         } else {
-            _uiState.update {
-                it.copy(
+            _uiState.update {it.copy(
                     searchQuery = query,
                     filteredUnits = applyFiltersAndSort(current.allUnits, query, current.selectedFilter, current.sortOrder)
                 )
@@ -314,6 +332,7 @@ sealed class MechanicalUnitListEvent {
     data class FilterChanged(val filter: MechanicalUnitFilter) : MechanicalUnitListEvent()
     data class SortOrderChanged(val sortOrder: MechanicalUnitSortOrder) : MechanicalUnitListEvent()
     data class DeleteUnit(val unitId: String) : MechanicalUnitListEvent()
+    data class RestoreUnit(val unitId: String) : MechanicalUnitListEvent()
     object CycleCardVariant : MechanicalUnitListEvent()
     object Refresh : MechanicalUnitListEvent()
     object DismissError : MechanicalUnitListEvent()

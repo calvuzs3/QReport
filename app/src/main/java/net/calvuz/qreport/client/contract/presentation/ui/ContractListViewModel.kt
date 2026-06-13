@@ -1,36 +1,41 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.client.contract.presentation.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.isActive
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.contract.data.local.mapper.isValid
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.domain.usecase.DeleteContractUseCase
-import net.calvuz.qreport.client.contract.domain.usecase.GetContractsByClientUseCase
-import net.calvuz.qreport.app.result.domain.QrResult
-import timber.log.Timber
-import javax.inject.Inject
-import kotlin.time.Duration.Companion.days
-import net.calvuz.qreport.R
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
+import net.calvuz.qreport.client.contract.domain.usecase.ObserveContractsUseCase
 import net.calvuz.qreport.client.contract.presentation.model.ContractFilter
 import net.calvuz.qreport.client.contract.presentation.model.ContractSortOrder
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
+import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.contract.presentation.model.ContractPkg
+import net.calvuz.qreport.client.facility.presentation.model.ClientOption
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
+import timber.log.Timber
+import javax.inject.Inject
+import kotlin.coroutines.cancellation.CancellationException
 
-/** ContractListScreen UiState */
+// =============================================================================
+// UI STATE
+// =============================================================================
+
 data class ContractListUiState(
     val clientId: String = "",
     val contracts: List<ContractWithStats> = emptyList(),
@@ -41,416 +46,228 @@ data class ContractListUiState(
     val successMessage: UiText? = null,
     val error: UiText? = null,
     val searchQuery: String = "",
-    val selectedFilter: ContractFilter = ContractFilter.ACTIVE,
-    val selectedSortOrder: ContractSortOrder = ContractSortOrder.EXPIRE_RECENT,
-
-    // Card Variant
+    val selectedFilter: ContractFilter = ContractPkg.selectedFilter,
+    val selectedSortOrder: ContractSortOrder = ContractPkg.selectedSortOrder,
+    // Bulk
+    val isBulkDeleting: Boolean = false,
+    val bulkDeleteProgress: Int = 0,
+    val bulkDeleteTotal: Int = 0,
+    // Client selector
+    val availableClients: List<ClientOption> = listOf(ClientOption.ALL),
+    val selectedClient: ClientOption = ClientOption.ALL,
+    // Card variant
     val cardVariant: ListViewMode = ListViewMode.FULL
 )
 
+// =============================================================================
+// VIEW MODEL
+// =============================================================================
+
 @HiltViewModel
 class ContractListViewModel @Inject constructor(
-    private val getContractsByClientUseCase: GetContractsByClientUseCase,
+    private val observeContractsUseCase: ObserveContractsUseCase,
     private val deleteContractUseCase: DeleteContractUseCase,
+    private val observeClientsUseCase: ObserveClientsUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ContractListUiState())
     val uiState: StateFlow<ContractListUiState> = _uiState.asStateFlow()
 
-    // ============================================================
-    // PUBLIC METHODS
-    // ============================================================
+    private var loadJob: Job? = null
 
     companion object {
         private const val KEY = AppSettingsDataStore.LIST_KEY_CONTRACTS
     }
 
-    fun init() {
-        Timber.d("Contact list view model initialized")
-        // The Screen call the initialize
-        //initializeForClient(_uiState.value.clientId)
+    init {
+        observeCardVariant()
+        loadClientsForDropdown()
+    }
+
+    // =========================================================================
+    // PUBLIC
+    // =========================================================================
+
+    /** Load all contracts regardless of client — called when no clientId is provided. */
+    fun initialize() {
+        _uiState.value = _uiState.value.copy(clientId = "", selectedClient = ClientOption.ALL)
+        loadContracts(clientId = null)
     }
 
     fun initializeForClient(clientId: String) {
         if (clientId == _uiState.value.clientId) return
-
-        _uiState.value = _uiState.value.copy(clientId = clientId)
-        loadContracts(clientId)
+        _uiState.value = _uiState.value.copy(
+            clientId = clientId,
+            selectedClient = _uiState.value.availableClients.find { it.id == clientId }
+                ?: ClientOption.ALL
+        )
+        loadContracts(clientId = clientId)
     }
 
-    fun loadContracts(clientId: String) {
-        if (clientId.isBlank()) {
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                error = UiText.StringResource(R.string.err_contracts_list_invalid_client_id)
-            )
-            return
-        }
-
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                error = null,
-                clientId = clientId
-            )
-
-            try {
-                Timber.d("Loading contacts for client: $clientId")
-
-                getContractsByClientUseCase.observeContractsByClient(clientId)
-                    .catch { exception ->
-                        if (exception is CancellationException) throw exception
-                        Timber.e(exception, "Error in contacts flow")
-                        if (currentCoroutineContext().isActive) {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = UiText.StringResources(R.string.err_contracts_list_load_contacts, exception.message ?: "")
-                            )
-                        }
-                    }
-                    .collect { contacts ->
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping contacts processing - job cancelled")
-                            return@collect
-                        }
-
-                        // Enrich with statistics
-                        val contractsithStats = enrichWithStatistics(contacts)
-
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                contractsithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.selectedSortOrder
-                            )
-
-                            _uiState.value = currentState.copy(
-                                contracts = contractsithStats,
-                                filteredContracts = filteredAndSorted,
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("Loaded ${contacts.size} contracts successfully")
-                        }
-                    }
-            } catch (_: CancellationException) {
-                Timber.d("ContactsError loading cancelled")
-            } catch (e: Exception) {
-                Timber.e(e, "Exception loading contracts")
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = UiText.StringResources(R.string.err_contracts_list_unexpected, e.message ?: "")
-                )
-            }
-        }
+    fun updateSelectedClient(client: ClientOption) {
+        if (client == _uiState.value.selectedClient) return
+        _uiState.value = _uiState.value.copy(selectedClient = client, clientId = client.id)
+        loadContracts(clientId = client.id.takeIf { it.isNotBlank() })
     }
 
     fun refresh() {
-        val clientId = _uiState.value.clientId
-        if (clientId.isEmpty()) return
-
-        viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
-
-                Timber.d("Refreshing contracts for client: $clientId")
-                delay(500)
-
-                when (val result = getContractsByClientUseCase(clientId)) {
-
-                    is QrResult.Success -> {
-                        val contracts = result.data
-
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping refresh processing - job cancelled")
-                            return@launch
-                        }
-
-                        val contractsWithStats = enrichWithStatistics(contracts)
-
-                        if (currentCoroutineContext().isActive) {
-                            val currentState = _uiState.value
-                            val filteredAndSorted = applyFiltersAndSort(
-                                contractsWithStats,
-                                currentState.searchQuery,
-                                currentState.selectedFilter,
-                                currentState.selectedSortOrder
-                            )
-
-                            _uiState.value = currentState.copy(
-                                contracts = contractsWithStats,
-                                filteredContracts = filteredAndSorted,
-                                isRefreshing = false,
-                                error = null
-                            )
-
-                            Timber.d("ContractsError refresh completed successfully")
-                        }
-                    }
-
-                    is QrResult.Error -> {
-                        if (currentCoroutineContext().isActive) {
-                            Timber.e("Failed to refresh contracts")
-                            _uiState.value = _uiState.value.copy(
-                                isRefreshing = false,
-                                error = UiText.StringResources(R.string.err_contracts_list_refresh_failed, result.error)
-                            )
-                        }
-                        Timber.d("Error refreshing contracts: ${result.error}")
-                    }
-                }
-            } catch (_: CancellationException) {
-                Timber.d("Refresh cancelled")
-                if (currentCoroutineContext().isActive) {
-                    _uiState.value = _uiState.value.copy(isRefreshing = false)
-                }
-            } catch (e: Exception) {
-                if (currentCoroutineContext().isActive) {
-                    Timber.e(e, "Failed to refresh contracts")
-                    _uiState.value = _uiState.value.copy(
-                        isRefreshing = false,
-                        error = UiText.StringResources(R.string.err_contracts_list_refresh_unexpected, e.message ?: "")
-                    )
-                }
-            }
-        }
+        val clientId = _uiState.value.clientId.takeIf { it.isNotBlank() }
+        _uiState.value = _uiState.value.copy(isRefreshing = true)
+        loadContracts(clientId = clientId)
     }
-
-    fun delete(contractId: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isDeleting = contractId)
-
-            try {
-                when (deleteContractUseCase(contractId)) {
-                    is QrResult.Success -> {
-                        Timber.d("Contact deleted successfully: $contractId")
-                        refresh() // Show changes
-                    }
-
-                    is QrResult.Error -> {
-                        Timber.e("Failed to delete contract $contractId")
-                        _uiState.value = _uiState.value.copy(
-                            isDeleting = null,
-                            error = UiText.StringResources(R.string.err_contracts_list_delete_failed, contractId)
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Exception deleting contract")
-                _uiState.value = _uiState.value.copy(
-                    isDeleting = null,
-                    error = UiText.StringResources(R.string.err_contracts_list_unexpected, e.message ?: "")
-                )
-            } finally {
-                _uiState.value = _uiState.value.copy(isDeleting = null)
-            }
-        }
-    }
-
-    /**
-     * Handle contract renewal - creates a new contract based on the existing one
-     * This could be expanded to navigate to a renewal screen or show a renewal dialog
-     */
-    fun renew(contractId: String) {
-        viewModelScope.launch {
-            try {
-                val contract = _uiState.value.contracts
-                    .find { it.contract.id == contractId }
-                    ?.contract
-
-                if (contract != null) {
-                    Timber.d("Renewing contract: $contractId")
-                    // TODO: Implement contract renewal logic
-                    // This could involve:
-                    // 1. Navigate to contract creation with pre-filled data
-                    // 2. Show a renewal dialog
-                    // 3. Create a new contract with extended dates
-
-                    // For now, log the action
-                    Timber.d("Contract renewal requested for: ${contract.name}")
-                } else {
-                    Timber.e("Contract not found for renewal: $contractId")
-                    _uiState.value = _uiState.value.copy(
-                        error = UiText.StringResource(R.string.err_contracts_list_contract_not_found_for_renewal)
-                    )
-                }
-            } catch (e: Exception) {
-                Timber.e(e, "Exception renewing contract")
-                _uiState.value = _uiState.value.copy(
-                    error = UiText.StringResources(R.string.err_contracts_list_renewal_failed, e.message ?: "")
-                )
-            }
-        }
-    }
-
-    /**
-     * Get contract by ID - useful for action handlers
-     */
-    fun getContract(contractId: String): Contract? {
-        return _uiState.value.contracts
-            .find { it.contract.id == contractId }
-            ?.contract
-    }
-
-    /**
-     * Check if contract is eligible for renewal
-     */
-    fun isContractEligibleForRenewal(contractId: String): Boolean {
-        val contractWithStats = _uiState.value.contracts
-            .find { it.contract.id == contractId }
-
-        return contractWithStats?.let {
-            // Contract is eligible for renewal if:
-            // 1. It's expired OR
-            // 2. It expires within 30 days
-            val isExpired = it.stats.isExpired
-            val expiresWithin30Days = it.contract.endDate
-                .minus(30.days)
-                .let { thirtyDaysBeforeExpiry ->
-                    kotlinx.datetime.Clock.System.now() >= thirtyDaysBeforeExpiry
-                }
-
-            isExpired || expiresWithin30Days
-        } == true
-    }
-
-    fun setActive( contracts: Set<Contract>, active: Boolean) {
-        viewModelScope.launch {
-            // TODO: Implement active/inactive logic
-        }
-    }
-
-    // ===== Search and filter logic =====
 
     fun updateSearchQuery(query: String) {
-        val currentState = _uiState.value
-
-        if (query.length >= 3) {
-            updateSearchQuery(query)
-        } else {
-            val filteredAndSorted = applyFiltersAndSort(
-                currentState.contracts,
-                query,
-                currentState.selectedFilter,
-                currentState.selectedSortOrder
+        val current = _uiState.value
+        _uiState.value = current.copy(
+            searchQuery = query,
+            filteredContracts = applyFiltersAndSort(
+                current.contracts, query, current.selectedFilter, current.selectedSortOrder
             )
-
-            _uiState.value = currentState.copy(
-                searchQuery = query,
-                filteredContracts = filteredAndSorted
-            )
-        }
+        )
     }
 
     fun updateFilter(filter: ContractFilter) {
-        val currentState = _uiState.value
-
-        _uiState.value = currentState.copy(
+        val current = _uiState.value
+        _uiState.value = current.copy(
             selectedFilter = filter,
             filteredContracts = applyFiltersAndSort(
-                currentState.contracts,
-                currentState.searchQuery,
-                filter,
-                currentState.selectedSortOrder
+                current.contracts, current.searchQuery, filter, current.selectedSortOrder
             )
         )
     }
 
     fun updateSortOrder(sortOrder: ContractSortOrder) {
-        val currentState = _uiState.value
-
-        _uiState.value = currentState.copy(
+        val current = _uiState.value
+        _uiState.value = current.copy(
             selectedSortOrder = sortOrder,
             filteredContracts = applyFiltersAndSort(
-                currentState.contracts,
-                currentState.searchQuery,
-                currentState.selectedFilter,
-                sortOrder
+                current.contracts, current.searchQuery, current.selectedFilter, sortOrder
             )
         )
     }
+    
+    @Suppress("unused")
+    fun deleteContract(contractId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isDeleting = contractId)
+            when (val result = deleteContractUseCase(contractId)) {
+                is QrResult.Success -> Timber.d("Successfully deleted contract $contractId")
+                is QrResult.Error -> {
+                    Timber.e("Failed to delete contract $contractId: ${result.error}")
+                    _uiState.value = _uiState.value.copy(
+                        error = UiText.StringResource(R.string.err_contracts_list_delete_failed)
+                    )
+                }
+            }
+            _uiState.value = _uiState.value.copy(isDeleting = null)
+        }
+    }
 
-    /**
-     * Cycle through card display variants: FULL -> COMPACT -> MINIMAL -> FULL.
-     * The preference is persisted via [AppSettingsRepository].
-     */
+    fun renew(contractId: String) {
+        Timber.d("TODO: renew contract $contractId")
+    }
+
+    fun setActive(contracts: Set<Contract>, active: Boolean) {
+        Timber.d("TODO: setActive=$active for ${contracts.size} contracts")
+    }
+
     fun cycleCardVariant() {
-        val current = _uiState.value.cardVariant
-        val next = when (current) {
+        val next = when (_uiState.value.cardVariant) {
             ListViewMode.FULL -> ListViewMode.COMPACT
             ListViewMode.COMPACT -> ListViewMode.MINIMAL
             ListViewMode.MINIMAL -> ListViewMode.FULL
         }
-
-        // Update UI immediately
         _uiState.value = _uiState.value.copy(cardVariant = next)
-
-        // Persist in background
         viewModelScope.launch {
+            try { appSettingsRepository.setListViewMode(KEY, next) }
+            catch (e: Exception) { Timber.e(e, "Failed to persist card variant") }
+        }
+    }
+
+    fun dismissError() = run { _uiState.value = _uiState.value.copy(error = null) }
+    fun dismissSuccess() = run { _uiState.value = _uiState.value.copy(successMessage = null) }
+
+    // =========================================================================
+    // PRIVATE — FLOW OBSERVATION
+    // =========================================================================
+
+    private fun loadContracts(clientId: String?) {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = !_uiState.value.isRefreshing, error = null
+            )
             try {
-                appSettingsRepository.setListViewMode(
-                    KEY,
-                    next
-                )
+                observeContractsUseCase(clientId)
+                    .catch { e ->
+                        if (e is kotlinx.coroutines.CancellationException) throw e
+                        Timber.e(e, "Error in contracts flow")
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false, isRefreshing = false,
+                            error = UiText.StringResource(R.string.err_contracts_list_load_contracts)
+                        )
+                    }
+                    .collect { contracts ->
+                        val enriched = enrichWithStatistics(contracts)
+                        val current = _uiState.value
+                        _uiState.value = current.copy(
+                            contracts = enriched,
+                            filteredContracts = applyFiltersAndSort(
+                                enriched, current.searchQuery,
+                                current.selectedFilter, current.selectedSortOrder
+                            ),
+                            isLoading = false, isRefreshing = false, error = null
+                        )
+                        Timber.d("Contracts flow: ${contracts.size} records (clientId=${clientId ?: "all"})")
+                    }
+            } catch (_: CancellationException) {
+                Timber.d("Contracts observation cancelled")
             } catch (e: Exception) {
-                Timber.e(e, "Failed to persist card variant preference")
+                Timber.e(e, "Unexpected error observing contracts")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    error = UiText.StringResource(R.string.err_contracts_list_load_contracts)
+                )
             }
         }
     }
 
-    // ===== Error handling =====
-
-    fun dismissError() {
-        _uiState.value = _uiState.value.copy(error = null)
-    }
-
-    fun dismissSuccess() {
-        _uiState.value = _uiState.value.copy(successMessage = null)
-    }
-
-    // ============================================================
-    // PRIVATE METHODS
-    // ============================================================
-
-    /**
-     * Observe the persisted card variant preference and apply it to UI state.
-     */
     private fun observeCardVariant() {
         viewModelScope.launch {
             appSettingsRepository.getListViewMode(KEY)
-                .catch { e ->
-                    Timber.e(e, "Error observing card variant preference")
-                }
-                .collect { viewMode ->
-                    _uiState.value = _uiState.value.copy(
-                        cardVariant = viewMode
-                    )
-                }
+                .catch { e -> Timber.e(e, "Error observing card variant") }
+                .collect { viewMode -> _uiState.value = _uiState.value.copy(cardVariant = viewMode) }
         }
     }
 
-    private fun enrichWithStatistics(contracts: List<Contract>): List<ContractWithStats> {
-        return contracts.map { contract ->
-            val stats = try {
-                ContractsStatistics(
-                    isExpired = !contract.isValid()
-                )
+    private fun loadClientsForDropdown() {
+        viewModelScope.launch {
+            try {
+                observeClientsUseCase()
+                    .catch { e -> Timber.e(e, "Error loading clients for dropdown") }
+                    .collect { clients ->
+                        val options = listOf(ClientOption.ALL) + clients.map { c ->
+                            ClientOption(id = c.id, companyName = c.companyName)
+                        }
+                        _uiState.value = _uiState.value.let { state ->
+                            val synced = options.find { it.id == state.clientId } ?: ClientOption.ALL
+                            state.copy(availableClients = options, selectedClient = synced)
+                        }
+                    }
             } catch (e: Exception) {
-                Timber.e(e, "Exception getting stats for contact ${contract.id}")
-                ContractsStatistics(
-                    isExpired = false
-                )
+                Timber.e(e, "Failed to start client observation")
             }
-
-            ContractWithStats(contract = contract, stats = stats)
         }
     }
+
+    private fun enrichWithStatistics(contracts: List<Contract>): List<ContractWithStats> =
+        contracts.map { contract ->
+            ContractWithStats(
+                contract = contract,
+                stats = ContractsStatistics(isExpired = !contract.isValid())
+            )
+        }
 
     private fun applyFiltersAndSort(
         contracts: List<ContractWithStats>,
@@ -458,60 +275,139 @@ class ContractListViewModel @Inject constructor(
         filter: ContractFilter,
         sortOrder: ContractSortOrder
     ): List<ContractWithStats> {
-        var filtered = contracts
+        var result = contracts
 
-        // Apply status filter
-        filtered = when (filter) {
-            ContractFilter.ALL -> filtered
-            ContractFilter.ACTIVE -> filtered.filter { it.contract.isValid() }
-            ContractFilter.INACTIVE -> filtered.filter { !it.contract.isValid() }
+        result = when (filter) {
+            ContractFilter.ALL -> result
+            ContractFilter.ACTIVE -> result.filter { it.contract.isActive }
+            ContractFilter.INACTIVE -> result.filter { !it.contract.isActive }
+            ContractFilter.OUTDATED -> result.filter { !it.contract.isValid() }
         }
 
-        // Apply local search query (per query corte)
-        if (searchQuery.isNotBlank() && searchQuery.length <= 2) {
-            filtered = filtered.filter { contractWithStats ->
-                val contract = contractWithStats.contract
-                val nameMatch = contract.name?.contains(searchQuery, ignoreCase = true) ?: false
-                val descriptionMatch =
-                    contract.description?.contains(searchQuery, ignoreCase = true) ?: false
-                val startDateMatch =
-                    contract.startDate.toString().contains(searchQuery, ignoreCase = true)
-                val endDateMatch =
-                    contract.endDate.toString().contains(searchQuery, ignoreCase = true)
-
-                // Il contratto passa il filtro se almeno una delle condizioni è vera
-                nameMatch || descriptionMatch || startDateMatch || endDateMatch
+        if (searchQuery.isNotBlank()) {
+            result = result.filter { cws ->
+                cws.contract.name?.contains(searchQuery, ignoreCase = true) == true ||
+                        cws.contract.description?.contains(searchQuery, ignoreCase = true) == true ||
+                        cws.contract.startDate.toString().contains(searchQuery, ignoreCase = true) ||
+                        cws.contract.endDate.toString().contains(searchQuery, ignoreCase = true)
             }
         }
 
-        // Apply sorting
-        filtered = when (sortOrder) {
-            ContractSortOrder.NAME -> filtered.sortedBy { it.contract.name }
-            ContractSortOrder.EXPIRE_RECENT -> filtered.sortedBy { it.contract.endDate }
-            ContractSortOrder.EXPIRE_OLDEST -> filtered.sortedByDescending { it.contract.endDate }
+        return when (sortOrder) {
+            ContractSortOrder.NAME -> result.sortedBy { it.contract.name }
+            ContractSortOrder.EXPIRE_RECENT -> result.sortedBy { it.contract.endDate }
+            ContractSortOrder.EXPIRE_OLDEST -> result.sortedByDescending { it.contract.endDate }
         }
+    }
 
-        return filtered
+    // ===== NEW: Bulk Delete Implementation =====
+
+    fun bulkDeleteContracts(contractIds: List<String>) {
+        if (contractIds.isEmpty()) return
+
+        viewModelScope.launch {
+            _uiState.update {
+                it.copy(
+                    isBulkDeleting = true, bulkDeleteProgress = 0, bulkDeleteTotal = contractIds.size
+                )
+            }
+
+            try {
+                Timber.d("Starting bulk delete for ${contractIds.size} contracts")
+
+                var successCount = 0
+                val failedIds = mutableListOf<String>()
+
+                contractIds.forEachIndexed { index, contactId ->
+                    try {
+                        when (val result = deleteContractUseCase(contactId)) {
+                            is QrResult.Success -> {
+                                successCount++
+                                Timber.d("Successfully deleted contract $contactId")
+                            }
+
+                            is QrResult.Error -> {
+                                failedIds.add(contactId)
+                                Timber.e("Failed to delete contact $contactId - ${result.error}")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        failedIds.add(contactId)
+                        Timber.e(e, "Exception deleting contact: $contactId")
+                    }
+
+                    // Update progress
+                    _uiState.update {
+                        it.copy(
+                            bulkDeleteProgress = index + 1
+                        )
+                    }
+                }
+
+                // Show result message
+                val errorMessage = when {
+                    failedIds.isEmpty() -> {
+                        // All deleted successfully
+                        null
+                    }
+
+                    successCount == 0 -> {
+                        // All failed
+                        UiText.StringResources(
+                            R.string.err_contract_list_bulk_delete_all_failed, failedIds.size
+                        )
+                    }
+
+                    else -> {
+                        // Partial success
+                        UiText.StringResources(
+                            R.string.err_contract_list_bulk_delete_partial_failed,
+                            successCount,
+                            failedIds.size
+                        )
+                    }
+                }
+
+                _uiState.update {
+                    it.copy(
+                        error = errorMessage
+                    )
+                }
+
+                Timber.d("Bulk delete completed: $successCount success, ${failedIds.size} failed")
+
+            } catch (e: Exception) {
+                Timber.e(e, "Exception during bulk delete")
+                _uiState.update {
+                    it.copy(
+                        error = UiText.StringResources(
+                            R.string.err_contract_list_bulk_delete_unexpected, e.message ?: "")
+                    )
+                }
+            }.also {
+                _uiState.update {
+                    it.copy(
+                        isBulkDeleting = false,
+                        bulkDeleteProgress = 0,
+                        bulkDeleteTotal = 0
+                    )
+                }
+            }
+        }
     }
 }
 
-// ============================================================
+// =============================================================================
 // DATA CLASSES
-// ============================================================
+// =============================================================================
 
-data class ContractWithStats(
-    val contract: Contract,
-    val stats: ContractsStatistics
-)
+data class ContractWithStats(val contract: Contract, val stats: ContractsStatistics)
+data class ContractsStatistics(val isExpired: Boolean)
 
-data class ContractsStatistics(
-    val isExpired: Boolean
-)
+// =============================================================================
+// ACTION HANDLER
+// =============================================================================
 
-
-/**
- * Technical Intervention specific action handler
- */
 class ContractActionHandler(
     private val onEdit: (Set<Contract>) -> Unit,
     private val onDelete: (Set<Contract>) -> Unit,
@@ -519,8 +415,8 @@ class ContractActionHandler(
     private val onSetActive: (Set<Contract>) -> Unit,
     private val onSetInactive: (Set<Contract>) -> Unit,
     private val onArchive: (Set<Contract>) -> Unit,
-//    private val onExport: (Set<Contract>) -> Unit,
-    private val onSelectAll: () -> Unit
+    private val onSelectAll: () -> Unit,
+    val onPerformDelete: (Set<Contract>) -> Unit
 ) : SimpleSelectionActionHandler<Contract> {
 
     override fun onActionClick(action: SelectionAction, selectedItems: Set<Contract>) {
@@ -530,52 +426,29 @@ class ContractActionHandler(
             SelectionAction.Renew -> onRenew(selectedItems)
             SelectionAction.SetActive -> onSetActive(selectedItems)
             SelectionAction.SetInactive -> onSetInactive(selectedItems)
-            SelectionAction.Archive -> {onArchive(selectedItems)}
-//            SelectionAction.Export -> onExport(selectedItems)
+            SelectionAction.Archive -> onArchive(selectedItems)
             SelectionAction.SelectAll -> onSelectAll()
-
-
-//            SelectionAction.MarkCompleted -> {
-//                // Handle mark completed - set status to COMPLETED
-//                // You would implement this in ViewModel
-//            }
-
-            is SelectionAction.Custom -> {
-                // Handle any custom actions
-                when (action.actionId) {
-                    "renew" -> { /* handle duplicate */
-                    }
-                }
-            }
-
-            else -> {}
+            is SelectionAction.Custom -> Unit
+            else -> Unit
         }
     }
 
-    override fun isActionEnabled(
-        action: SelectionAction,
-        selectedItems: Set<Contract>
-    ): Boolean {
-        return when (action) {
-            SelectionAction.Edit -> selectedItems.size == 1 // Edit only for single selection
-            SelectionAction.Delete -> selectedItems.isNotEmpty() && selectedItems.all {
-                // Can delete only ..
-                true
-            }
-
-            SelectionAction.SetActive -> selectedItems.isNotEmpty()
-            SelectionAction.SetInactive -> selectedItems.isNotEmpty()
+    override fun isActionEnabled(action: SelectionAction, selectedItems: Set<Contract>): Boolean =
+        when (action) {
+            SelectionAction.Edit -> selectedItems.size == 1
+            SelectionAction.Delete,
+            SelectionAction.SetActive,
+            SelectionAction.SetInactive,
             SelectionAction.Archive -> selectedItems.isNotEmpty()
             SelectionAction.SelectAll -> true
-            is SelectionAction.Custom -> true // Custom logic per action
+            is SelectionAction.Custom -> true
             else -> false
         }
-    }
 
-    override fun getDeleteConfirmationMessage(selectedItems: Set<Contract>): String {
-        return when (selectedItems.size) {
-            1 -> "Delete contract ${selectedItems.first().startDate}-${selectedItems.first().endDate}?"
-            else -> "Delete ${selectedItems.size} contracts?"
+    override fun getDeleteConfirmationMessage(selectedItems: Set<Contract>): UiText =
+        when (selectedItems.size) {
+            1 -> UiText.StringResources(R.string.contracts_list_delete_confirmation_dates,
+                selectedItems.first().startDate, selectedItems.first().endDate)
+            else -> UiText.StringResources(R.string.contracts_list_delete_confirmation, selectedItems.size)
         }
-    }
 }

@@ -4,7 +4,6 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.contact.domain.model.Contact
 import net.calvuz.qreport.client.contact.domain.repository.ContactRepository
-import net.calvuz.qreport.client.client.domain.usecase.CheckClientExistsUseCase
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -13,7 +12,6 @@ import javax.inject.Inject
  */
 class GetContactsByClientUseCase @Inject constructor(
     private val contactRepository: ContactRepository,
-    private val checkClientExists: CheckClientExistsUseCase
 ) {
 
     /**
@@ -24,6 +22,7 @@ class GetContactsByClientUseCase @Inject constructor(
      */
     suspend operator fun invoke(clientId: String): QrResult<List<Contact>, QrError> {
         return try {
+            Timber.v("Getting contacts for client $clientId")
 
             // Check input
             if (clientId.isBlank()) {
@@ -31,27 +30,11 @@ class GetContactsByClientUseCase @Inject constructor(
                 return QrResult.Error(QrError.ContactsError.MissingClientId())
             }
 
-            // Check client exists
-            when (val clientCheck = checkClientExists(clientId)) {
-                is QrResult.Error -> {
-                    Timber.w("Client does not exist: $clientId")
-                    return QrResult.Error(clientCheck.error)
-                }
-                is QrResult.Success -> Unit
-            }
-
-            // Get contacts
+            // Get
             when (val result = contactRepository.getContactsByClient(clientId)) {
                 is QrResult.Success -> {
-                    val contacts = result.data
-                    val sortedContacts = contacts.sortedWith(
-                        compareBy<Contact> { !it.isPrimary } // Primary prima (false viene prima di true)
-                            .thenBy { it.firstName.lowercase() } // Poi alfabetico per nome
-                            .thenBy { it.lastName?.lowercase() ?: "" } // Poi per cognome
-                    )
-
-                    Timber.d("Retrieved ${sortedContacts.size} contacts for client: $clientId")
-                    QrResult.Success(sortedContacts)
+                    Timber.d("Successfully retrieved contacts for client $clientId: ${result.data.size}")
+                    QrResult.Success(result.data.sortedByNameThenLastname())
                 }
 
                 is QrResult.Error -> {
@@ -65,6 +48,31 @@ class GetContactsByClientUseCase @Inject constructor(
             QrResult.Error(QrError.SystemError.UnknownError())
         }
     }
+
+    suspend fun getActive(clientId: String): QrResult<List<Contact>, QrError> {
+        Timber.v("Getting active contacts for client $clientId")
+
+        if (clientId.isBlank()) {
+            return QrResult.Error(QrError.ContactsError.MissingClientId())
+        }
+        return when (val result = contactRepository.getActiveContactsByClient(clientId)) {
+            is QrResult.Success -> {
+               Timber.d("Successfully retrieved active contacts for client $clientId: ${result.data.size}")
+                QrResult.Success(result.data.sortedByNameThenLastname())
+            }
+
+            is QrResult.Error -> {
+                Timber.d("Repository error for clientId $clientId: ${result.error}")
+                QrResult.Error(result.error)
+            }
+        }
+    }
+
+    private fun List<Contact>.sortedByNameThenLastname(): List<Contact> =
+        sortedWith(
+            compareBy<Contact> { it.firstName.lowercase() }
+                .thenBy { it.lastName?.lowercase()}
+        )
 
 //    /**
 //     * ✅ METHOD 2/8: Osserva tutti i contatti di un cliente (Flow reattivo)

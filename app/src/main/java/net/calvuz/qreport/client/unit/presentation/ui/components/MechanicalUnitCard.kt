@@ -14,13 +14,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
-import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
+import net.calvuz.qreport.app.app.presentation.components.QReportConfirmRestoreDialog
+import net.calvuz.qreport.app.app.presentation.components.QrCardFooter
+import net.calvuz.qreport.app.app.presentation.components.QrCardFooterData
+import net.calvuz.qreport.app.app.presentation.components.QrStatusIndicator
 import net.calvuz.qreport.app.app.presentation.ui.theme.success
-import net.calvuz.qreport.app.app.presentation.ui.theme.successContainer
-import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
+@Suppress("ParamsComparedByRef", "HardCodedStringLiteral", "ASSIGNED_VALUE_IS_NEVER_READ")
 @Composable
 fun MechanicalUnitCard(
     modifier: Modifier = Modifier,
@@ -28,10 +30,12 @@ fun MechanicalUnitCard(
     onClick: () -> Unit,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
     showActions: Boolean = true,
     variant: ListViewMode = ListViewMode.FULL
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showRestoreDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -44,13 +48,15 @@ fun MechanicalUnitCard(
                 unit = unit,
                 showActions = showActions,
                 onEdit = onEdit,
-                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null
+                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null,
+                onRestore = if (onRestore != null) { { showRestoreDialog = true } } else null
             )
             ListViewMode.COMPACT -> CompactMechanicalUnitCard(
                 unit = unit,
                 showActions = showActions,
                 onEdit = onEdit,
-                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null
+                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null,
+                onRestore = if (onRestore != null) { { showRestoreDialog = true } } else null
             )
             ListViewMode.MINIMAL -> MinimalMechanicalUnitCard(unit)
         }
@@ -64,18 +70,28 @@ fun MechanicalUnitCard(
             onDismiss = { showDeleteDialog = false }
         )
     }
+    
+    if (showRestoreDialog && onRestore != null) {
+        QReportConfirmRestoreDialog(
+            objectName = stringResource(R.string.unit_card_object_name),
+            objectDesc = unit.name,
+            onConfirm = { onRestore(); showRestoreDialog = false },
+            onDismiss = { showRestoreDialog = false }
+        )
+    }
 }
 
 // =============================================================================
 // FULL — tutti i dettagli, bottoni grandi per uso con guanti
 // =============================================================================
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun FullMechanicalUnitCard(
     unit: MechanicalUnit,
     showActions: Boolean,
     onEdit: (() -> Unit)?,
-    onDelete: (() -> Unit)?
+    onDelete: (() -> Unit)?,
+    onRestore: (() -> Unit)?
 ) {
     Column(
         modifier = Modifier.padding(16.dp),
@@ -141,21 +157,28 @@ private fun FullMechanicalUnitCard(
         }
 
         // ── Footer: timestamp a sinistra, stato a destra ─────────────────────
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = stringResource(
-                    R.string.unit_card_last_modified,
-                    unit.updatedAt.toItalianLastModified()
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        QrCardFooter(
+            QrCardFooterData(
+                date = unit.updatedAt,
+                isActive = unit.isActive,
+                onRestore = onRestore
             )
-            UnitStatusBadge(isActive = unit.isActive)
-        }
+        )
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = stringResource(
+//                    R.string.unit_card_last_modified,
+//                    unit.updatedAt.toItalianLastModified()
+//                ),
+//                style = MaterialTheme.typography.bodySmall,
+//                color = MaterialTheme.colorScheme.onSurfaceVariant
+//            )
+//            UnitStatusBadge(isActive = unit.isActive)
+//        }
     }
 }
 
@@ -163,12 +186,13 @@ private fun FullMechanicalUnitCard(
 // COMPACT — una riga header + subtitle, bottoni standard
 // =============================================================================
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun CompactMechanicalUnitCard(
     unit: MechanicalUnit,
     showActions: Boolean,
     onEdit: (() -> Unit)?,
-    onDelete: (() -> Unit)?
+    onDelete: (() -> Unit)?,
+    onRestore: (() -> Unit)?
 ) {
     Row(
         modifier = Modifier
@@ -210,7 +234,11 @@ private fun CompactMechanicalUnitCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            UnitStatusIcon(isActive = unit.isActive)
+            QrStatusIndicator(
+                isActive = unit.isActive,
+                onRestore = onRestore
+            )
+            
             if (showActions) {
                 UnitActionButtons(onEdit = onEdit, onDelete = onDelete, large = false)
             }
@@ -222,7 +250,7 @@ private fun CompactMechanicalUnitCard(
 // MINIMAL — solo nome e stato
 // =============================================================================
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun MinimalMechanicalUnitCard(unit: MechanicalUnit) {
     Row(
         modifier = Modifier
@@ -274,30 +302,30 @@ private fun DetailRow(label: String, value: String, maxLines: Int = 1) {
     }
 }
 
-/**
- * Chip testuale per la scheda full — "Attiva" / "Non attiva".
- */
-@Composable
-private fun UnitStatusBadge(isActive: Boolean) {
-    val (text, colors) = if (isActive) {
-        stringResource(R.string.unit_card_status_active) to
-                SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = MaterialTheme.colorScheme.successContainer,
-                    labelColor = MaterialTheme.colorScheme.onSuccessContainer
-                )
-    } else {
-        stringResource(R.string.unit_card_status_inactive) to
-                SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    labelColor = MaterialTheme.colorScheme.onErrorContainer
-                )
-    }
-    SuggestionChip(
-        onClick = {},
-        label = { Text(text, style = MaterialTheme.typography.labelSmall) },
-        colors = colors
-    )
-}
+///**
+// * Chip testuale per la scheda full — "Attiva" / "Non attiva".
+// */
+//@Composable
+//private fun UnitStatusBadge(isActive: Boolean) {
+//    val (text, colors) = if (isActive) {
+//        stringResource(R.string.unit_card_status_active) to
+//                SuggestionChipDefaults.suggestionChipColors(
+//                    containerColor = MaterialTheme.colorScheme.successContainer,
+//                    labelColor = MaterialTheme.colorScheme.onSuccessContainer
+//                )
+//    } else {
+//        stringResource(R.string.unit_card_status_inactive) to
+//                SuggestionChipDefaults.suggestionChipColors(
+//                    containerColor = MaterialTheme.colorScheme.errorContainer,
+//                    labelColor = MaterialTheme.colorScheme.onErrorContainer
+//                )
+//    }
+//    SuggestionChip(
+//        onClick = {},
+//        label = { Text(text, style = MaterialTheme.typography.labelSmall) },
+//        colors = colors
+//    )
+//}
 
 /**
  * Icona stato per COMPACT e MINIMAL.

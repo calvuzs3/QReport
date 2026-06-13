@@ -54,6 +54,7 @@ import androidx.compose.material.icons.filled.Star
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.contact.presentation.model.ContactFilter
 import net.calvuz.qreport.client.contact.presentation.model.ContactPkg
@@ -65,6 +66,7 @@ import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 import timber.log.Timber
 
 // Contact-specific custom action ID
+@Suppress("HardCodedStringLiteral")
 private const val ACTION_SET_PRIMARY = "set_primary"
 
 /**
@@ -142,7 +144,7 @@ fun ContactListScreen(
     // Define actions
     val setPrimaryAction = SelectionAction.Custom(
         icon = Icons.Default.Star,
-        label = stringResource(R.string.action_set_as_primary),
+        label = UiText.StringResources(R.string.action_set_as_primary),
         isDestructive = false,
         actionId = ACTION_SET_PRIMARY
     )
@@ -462,10 +464,13 @@ class ContactActionHandler(
         }
     }
 
-    override fun getDeleteConfirmationMessage(selectedItems: Set<Contact>): String {
+    override fun getDeleteConfirmationMessage(selectedItems: Set<Contact>): UiText {
         return when (selectedItems.size) {
-            1 -> "Eliminare il contatto ${selectedItems.first().fullName}?"
-            else -> "Eliminare ${selectedItems.size} contatti?"
+            1 -> UiText.StringResources(R.string.contact_list_delete_confirmation_body,
+                selectedItems
+                .first().fullName)
+            else -> UiText.StringResources(R.string.contact_list_delete_multi_confirmation_body,
+                selectedItems)
         }
     }
 

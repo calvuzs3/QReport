@@ -11,12 +11,13 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 fun MechanicalUnitListContent(
     units: List<MechanicalUnit>,
     variant: ListViewMode,
     onUnitClick: (String) -> Unit,
-    onUnitDelete: (unitId: String, unitName: String) -> Unit
+    onUnitDelete: (String) -> Unit,
+    onUnitRestore: (String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -31,7 +32,8 @@ fun MechanicalUnitListContent(
                 unit = unit,
                 onClick = { onUnitClick(unit.id) },
                 onEdit = { onUnitClick(unit.id) },
-                onDelete = { onUnitDelete(unit.id, unit.name) },
+                onDelete = { onUnitDelete(unit.id) },
+                onRestore = { onUnitRestore(unit.id) },
                 variant = variant
             )
         }

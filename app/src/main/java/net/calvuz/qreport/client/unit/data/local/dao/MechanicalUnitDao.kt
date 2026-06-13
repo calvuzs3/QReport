@@ -1,3 +1,5 @@
+@file:Suppress("HardcodedStringLiteral")
+
 package net.calvuz.qreport.client.unit.data.local.dao
 
 import androidx.room.Dao
@@ -20,7 +22,19 @@ interface MechanicalUnitDao {
     """
     )
     fun getForIslandFlow(islandId: String): Flow<List<MechanicalUnitEntity>>
-
+    
+    @Query("SELECT * FROM mechanical_units ORDER BY unit_type ASC, name ASC"    )
+    fun getMechanicalUnitFlow(): Flow<List<MechanicalUnitEntity>>
+    
+    @Query(
+        """
+        SELECT * FROM mechanical_units
+        WHERE island_id = :islandId
+        ORDER BY unit_type ASC, name ASC
+    """
+    )
+    fun getMechanicalUnitByIslandFlow(islandId: String): Flow<List<MechanicalUnitEntity>>
+    
     @Query(
         """
         SELECT * FROM mechanical_units
@@ -40,7 +54,7 @@ interface MechanicalUnitDao {
     fun getAllActiveMechanicalUnitByIslandFlow(islandId: String): Flow<List<MechanicalUnitEntity>>
 
     @Query("SELECT * FROM mechanical_units WHERE id = :id")
-    suspend fun getById(id: String): MechanicalUnitEntity?
+    suspend fun getUnitById(id: String): MechanicalUnitEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(unit: MechanicalUnitEntity)
@@ -57,13 +71,21 @@ interface MechanicalUnitDao {
     // ===== DELETE — TWO-STAGE =====
 
     /** Stage 1: deactivate a single unit. No children to cascade. */
-    @Query("UPDATE mechanical_units SET is_active = 0, updated_at = :timestamp WHERE id = :id")
+    @Query("UPDATE mechanical_units SET is_active = 0, updated_at = :timestamp WHERE id = :id " +
+            "AND is_active = 1")
     suspend fun deactivateUnit(id: String, timestamp: Long = System.currentTimeMillis())
 
     /** Stage 2: mark a single unit as deleted for server sync. */
-    @Query("UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
+    @Query("UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp WHERE id = :id " +
+            "AND is_deleted = 0")
     suspend fun markUnitDeleted(id: String, timestamp: Long = System.currentTimeMillis())
 
+    // ===== RESTORE =====
+    
+    @Query("UPDATE mechanical_units SET is_active = 1, updated_at = :timestamp WHERE id = :id " +
+            "AND is_active = 0")
+    suspend fun restoreUnit(id: String, timestamp: Long = System.currentTimeMillis())
+    
     // ============================================================
     // BACKUP METHODS
     // ============================================================

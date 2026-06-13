@@ -19,6 +19,7 @@ import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandWithUnitsUseCase
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
+import net.calvuz.qreport.client.island.domain.usecase.RestoreIslandUseCase
 import net.calvuz.qreport.client.island.presentation.model.IslandFilter
 import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
@@ -34,6 +35,7 @@ data class FacilityIslandListUiState(
     val isLoading: Boolean = false,
     val isRefreshing: Boolean = false,
     val isDeletingIsland: String? = null,
+    val isRestoringIsland: String? = null,
     val allIslands: List<Island> = emptyList(),
     val filteredIslands: List<IslandWithStats> = emptyList(),
     val searchQuery: String = "",
@@ -60,6 +62,7 @@ data class IslandStatistics(
 class IslandListViewModel @Inject constructor(
     private val getIslandWithUnitsUseCase: GetIslandWithUnitsUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
+    private val restoreIslandUseCase: RestoreIslandUseCase,
     private val observeIslandsUseCase: ObserveIslandsUseCase,
     private val observeAllActiveFacilitiesUseCase: ObserveAllActiveFacilitiesUseCase,
     private val appSettingsRepository: AppSettingsRepository
@@ -94,9 +97,10 @@ class IslandListViewModel @Inject constructor(
     }
 
     fun onListEvent(event: IslandListEvent) {
-        Timber.d("IslandListEvent: $event")
+        Timber.v("IslandListEvent: $event")
         when (event) {
             is IslandListEvent.DeleteIsland -> deleteIsland(event.islandId)
+            is IslandListEvent.RestoreIsland -> restoreIsland(event.islandId)
             is IslandListEvent.FilterChanged -> updateFilter(event.filter)
             is IslandListEvent.SearchQueryChanged -> updateSearchQuery(event.query)
             is IslandListEvent.SortOrderChanged -> updateSortOrder(event.sortOrder)
@@ -197,6 +201,21 @@ class IslandListViewModel @Inject constructor(
                 }
             }
             _uiState.update { it.copy(isDeletingIsland = null) }
+        }
+    }
+
+    private fun restoreIsland(islandId: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isRestoringIsland = islandId) }
+            when (val result = restoreIslandUseCase(islandId)) {
+                is QrResult.Success -> Timber.d("Successfully restored island $islandId")
+                is QrResult.Error -> {
+                    Timber.e("Failed to restore island: ${result.error}")
+                    _uiState.update {
+                        it.copy(error = UiText.StringResource(R.string.err_island_restore))
+                    }
+                }
+            }
         }
     }
 
@@ -378,6 +397,7 @@ sealed class IslandListEvent {
     data class SelectedIslandChanged(val facility: FacilityOption) : IslandListEvent()
     object CycleCardVariant : IslandListEvent()
     data class DeleteIsland(val islandId: String) : IslandListEvent()
+    data class RestoreIsland(val islandId: String) : IslandListEvent()
     object DismissError : IslandListEvent()
     object Refresh : IslandListEvent()
 }

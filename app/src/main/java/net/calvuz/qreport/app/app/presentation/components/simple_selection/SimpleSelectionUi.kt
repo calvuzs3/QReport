@@ -65,7 +65,7 @@ fun <T> SelectionTopBar(
                     ) {
                         Icon(
                             imageVector = action.icon,
-                            contentDescription = action.label,
+                            contentDescription = action.label.asString(),
                             tint = if (action.isDestructive && isEnabled) {
                                 MaterialTheme.colorScheme.error
                             } else if (isEnabled) {
@@ -97,7 +97,7 @@ fun <T> SelectionTopBar(
                                 val isEnabled = actionHandler.isActionEnabled(action, selectionState.selectedItems)
 
                                 DropdownMenuItem(
-                                    text = { Text(action.label) },
+                                    text = { Text(action.label.asString()) },
                                     leadingIcon = {
                                         Icon(
                                             imageVector = action.icon,
@@ -270,7 +270,7 @@ fun <T> DeleteConfirmationDialog(
                 Text(stringResource(R.string.action_confirm))
             },
             text = {
-                Text(actionHandler.getDeleteConfirmationMessage(selectedItems))
+                Text(actionHandler.getDeleteConfirmationMessage(selectedItems).asString())
             },
             confirmButton = {
                 Button(

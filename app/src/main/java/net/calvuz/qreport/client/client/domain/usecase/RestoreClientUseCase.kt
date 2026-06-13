@@ -8,13 +8,16 @@ import javax.inject.Inject
 
 /**
  * Activate a client.
- *
- * @param clientId  ID of the client to activate
  */
 class RestoreClientUseCase @Inject constructor(
     private val clientRepository: ClientRepository,
     private val checkClientExists: CheckClientExistsUseCase,
 ) {
+    /**
+     * Activate a client.
+     *
+     * @param clientId  ID of the client to activate
+     */
     suspend operator fun invoke(
         clientId: String,
     ): QrResult<Unit, QrError.ClientError> {
@@ -34,7 +37,7 @@ class RestoreClientUseCase @Inject constructor(
         }
 
         // Restore the client itself
-        return clientRepository.activateClient(clientId).fold(onSuccess = {
+        return clientRepository.restoreClient(clientId).fold(onSuccess = {
             Timber.d("Client $clientId successfully activated")
             QrResult.Success(Unit)
         }, onFailure = {

@@ -5,10 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBackIosNew
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.AssignmentTurnedIn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,22 +22,19 @@ import net.calvuz.qreport.app.app.presentation.components.EmptyState
 import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QReportFilterMenu
 import net.calvuz.qreport.app.app.presentation.components.QReportFiltersChipRow
-import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.app.app.presentation.components.QReportPullToRefresh
 import net.calvuz.qreport.app.app.presentation.components.QReportSearchBar
+import net.calvuz.qreport.app.app.presentation.components.QReportSelectorRow
 import net.calvuz.qreport.app.app.presentation.components.QReportSortOrderMenu
-// Selection system imports
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.DeleteConfirmationDialog
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectableItem
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionTopBar
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.rememberSimpleSelectionManager
+import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
+import net.calvuz.qreport.app.app.presentation.components.simple_selection.*
+import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.contract.domain.model.Contract
 import net.calvuz.qreport.client.contract.presentation.model.ContractFilter
 import net.calvuz.qreport.client.contract.presentation.model.ContractPkg
 import net.calvuz.qreport.client.contract.presentation.model.ContractSortOrder
 import net.calvuz.qreport.client.contract.presentation.ui.components.ContractCard
+import net.calvuz.qreport.client.facility.presentation.model.ClientOption
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.presentation.model.getCardVariantDescription
 import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
@@ -50,219 +44,122 @@ import net.calvuz.qreport.settings.presentation.model.getCardVariantIcon
 @Composable
 fun ContractListScreen(
     modifier: Modifier = Modifier,
-    clientId: String,
-    clientName: String,
+    clientId: String? = null,
+    clientName: String = "",
     onNavigateBack: () -> Unit,
     onNavigateToCreateContract: (String) -> Unit,
     onNavigateToEditContract: (String) -> Unit,
     viewModel: ContractListViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
     val context = LocalContext.current
 
-    // Simple selection manager
     val selectionManager = rememberSimpleSelectionManager<Contract>()
     val selectionState by selectionManager.selectionState.collectAsState()
-
-    // Delete confirmation dialog
     var showDeleteDialog by remember { mutableStateOf(false) }
-
-    // Action handler
-    val actionHandler = remember {
-        ContractActionHandler(
-            onEdit = { contracts ->
-                if (contracts.size == 1) {
-                    onNavigateToEditContract(contracts.first().id)
-                    selectionManager.clearSelection()
-                }
-            },
-            onDelete = {
-                showDeleteDialog = true
-            },
-            onRenew = { contracts ->
-                if (contracts.size == 1) {
-                    viewModel.renew(contracts.first().id)
-                    selectionManager.clearSelection()
-                }
-            },
-            onSetActive = { contracts ->
-                viewModel.setActive(contracts, true)
-                selectionManager.clearSelection()
-            },
-            onSetInactive = { contracts ->
-                viewModel.setActive(contracts, false)
-                selectionManager.clearSelection()
-            },
-            onArchive = { contracts ->
-                viewModel.setActive(contracts, false)
-                selectionManager.clearSelection()
-            },
-//            onExport = { contracts ->
-//                viewModel.exportInterventions(contracts)
-//                selectionManager.clearSelection()
-//            },
-            onSelectAll = {
-                selectionManager.selectAll(uiState.filteredContracts.map { it.contract })
-            }
-        )
-    }
-    // Define actions
-    val primaryActions = listOf(
-        SelectionAction.Edit,
-        SelectionAction.Delete
-    )
-
-    val secondaryActions = listOf(
-        SelectionAction.SelectAll,
-        SelectionAction.Renew,
-        SelectionAction.SetActive,
-        SelectionAction.SetInactive,
-        SelectionAction.Archive,
-//        SelectionAction.Export,
-//        SelectionAction.MarkCompleted
-    )
-
-    // Snackbar host state
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Clear selection when navigating away or data changes significantly
-    LaunchedEffect(uiState.isLoading) {
-        if (uiState.isLoading) {
-            selectionManager.clearSelection()
-        }
+    LaunchedEffect(clientId) {
+        if (!clientId.isNullOrBlank()) viewModel.initializeForClient(clientId)
+        else viewModel.initialize()
     }
 
+    LaunchedEffect(uiState.isLoading) {
+        if (uiState.isLoading) selectionManager.clearSelection()
+    }
 
-    // Show error messages
     LaunchedEffect(uiState.error) {
-        uiState.error?.let { errorMessage ->
-            snackbarHostState.showSnackbar(
-                message = errorMessage.asString(context),
-                duration = SnackbarDuration.Long
-            )
+        uiState.error?.let {
+            snackbarHostState.showSnackbar(it.asString(context), duration = SnackbarDuration.Long)
             viewModel.dismissError()
         }
     }
 
-    // Show success messages
     LaunchedEffect(uiState.successMessage) {
-        uiState.successMessage?.let { message ->
-            snackbarHostState.showSnackbar(
-                message = message.asString(context),
-                duration = SnackbarDuration.Short
-            )
+        uiState.successMessage?.let {
+            snackbarHostState.showSnackbar(it.asString(context), duration = SnackbarDuration.Short)
             viewModel.dismissSuccess()
         }
     }
 
-    // Load contracts when screen opens
-    LaunchedEffect(clientId) {
-        viewModel.initializeForClient(clientId)
+    val actionHandler = remember (uiState.filteredContracts){
+        ContractActionHandler(
+            onEdit = { contracts ->
+                if (contracts.size == 1) { onNavigateToEditContract(contracts.first().id); selectionManager.clearSelection() }
+            },
+            onDelete = { showDeleteDialog = true },
+            onPerformDelete = { contracts ->
+                viewModel.bulkDeleteContracts(contracts.map { it.id })
+                selectionManager.clearSelection()
+            },
+            onRenew = { contracts ->
+                if (contracts.size == 1) { viewModel.renew(contracts.first().id); selectionManager.clearSelection() }
+            },
+            onSetActive = { viewModel.setActive(it, true); selectionManager.clearSelection() },
+            onSetInactive = { viewModel.setActive(it, false); selectionManager.clearSelection() },
+            onArchive = { viewModel.setActive(it, false); selectionManager.clearSelection() },
+            onSelectAll = { selectionManager.selectAll(uiState.filteredContracts.map { it.contract }) }
+        )
     }
 
+    val primaryActions = listOf(SelectionAction.Edit, SelectionAction.Delete)
+    val secondaryActions = listOf(
+        SelectionAction.SelectAll, SelectionAction.Renew,
+        SelectionAction.SetActive, SelectionAction.SetInactive, SelectionAction.Archive
+    )
 
     Box(modifier = modifier.fillMaxSize()) {
         Column {
             SelectionTopBar(
                 normalTopBar = {
-                    // Top App Bar with selection-aware title and debug mode toggle
                     TopAppBar(
                         title = {
                             Column {
                                 Text(
-                                    text = if (selectionState.isInSelectionMode) {
-                                        stringResource(
-                                            R.string.selection_summary,
-                                            selectionState.selectedCount
-                                        )
-                                    } else {
-                                        stringResource(R.string.contracts_screen_list_title)
-                                    },
+                                    text = stringResource(R.string.contracts_screen_list_title),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
                                 if (!selectionState.isInSelectionMode) {
                                     Text(
-                                        text = clientName,
+                                        text = uiState.selectedClient
+                                            .takeIf { it != ClientOption.ALL }?.companyName
+                                            ?: clientName.takeIf { it.isNotBlank() }
+                                            ?: stringResource(R.string.contracts_screen_list_subtitle_all),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        maxLines = 1, overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
                         },
                         navigationIcon = {
-                            IconButton(
-                                onClick = {
-                                    if (selectionState.isInSelectionMode) {
-                                        selectionManager.clearSelection()
-                                    } else {
-                                        onNavigateBack()
-                                    }
-                                }
-                            ) {
+                            IconButton(onClick = {
+                                if (selectionState.isInSelectionMode) selectionManager.clearSelection()
+                                else onNavigateBack()
+                            }) {
                                 Icon(
-                                    imageVector = if (selectionState.isInSelectionMode) {
-                                        Icons.Default.Close
-                                    } else {
-                                        Icons.Default.ArrowBackIosNew
-                                    },
-                                    contentDescription = if (selectionState.isInSelectionMode) {
-                                        stringResource(R.string.clear_selection)
-                                    } else {
-                                        stringResource(R.string.action_back)
-                                    }
+                                    imageVector = if (selectionState.isInSelectionMode) Icons.Default.Close else Icons.Default.ArrowBackIosNew,
+                                    contentDescription = stringResource(R.string.action_back)
                                 )
                             }
                         },
                         actions = {
                             if (!selectionState.isInSelectionMode) {
-                                // Normal mode - show filter and sort
                                 var showFilterMenu by remember { mutableStateOf(false) }
                                 var showSortMenu by remember { mutableStateOf(false) }
 
-                                // View mode toggle button
                                 IconButton(onClick = viewModel::cycleCardVariant) {
-                                    Icon(
-                                        imageVector = uiState.cardVariant.getCardVariantIcon(),
-                                        contentDescription = uiState.cardVariant.getCardVariantDescription()
-                                    )
+                                    Icon(uiState.cardVariant.getCardVariantIcon(), uiState.cardVariant.getCardVariantDescription())
                                 }
-
-                                // Sort button
                                 IconButton(onClick = { showSortMenu = true }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Default.Sort,
-                                        contentDescription = stringResource(R.string.label_ordering)
-                                    )
+                                    Icon(Icons.AutoMirrored.Default.Sort, stringResource(R.string.label_ordering))
                                 }
-
-                                // Filter button
                                 IconButton(onClick = { showFilterMenu = true }) {
-                                    Icon(
-                                        imageVector = Icons.Default.FilterList,
-                                        contentDescription = stringResource(R.string.label_filtering)
-                                    )
+                                    Icon(Icons.Default.FilterList, stringResource(R.string.label_filtering))
                                 }
-
-                                // Filter menu
-                                QReportFilterMenu(
-                                    expanded = showFilterMenu,
-                                    entries = ContractFilter.entries,
-                                    selectedFilter = uiState.selectedFilter,
-                                    onFilterSelected = viewModel::updateFilter,
-                                    onDismiss = { showFilterMenu = false }
-                                )
-
-                                // Sort menu
-                                QReportSortOrderMenu(
-                                    expanded = showSortMenu,
-                                    entries = ContractSortOrder.entries,
-                                    selectedSortOrder = uiState.selectedSortOrder,
-                                    onSortOrderSelected = viewModel::updateSortOrder,
-                                    onDismiss = { showSortMenu = false },
-                                )
+                                QReportFilterMenu(expanded = showFilterMenu, entries = ContractFilter.entries, selectedFilter = uiState.selectedFilter, onFilterSelected = viewModel::updateFilter, onDismiss = { showFilterMenu = false })
+                                QReportSortOrderMenu(expanded = showSortMenu, entries = ContractSortOrder.entries, selectedSortOrder = uiState.selectedSortOrder, onSortOrderSelected = viewModel::updateSortOrder, onDismiss = { showSortMenu = false })
                             }
                         }
                     )
@@ -274,66 +171,61 @@ fun ContractListScreen(
             )
 
             if (!selectionState.isInSelectionMode) {
-                // Search bar
                 QReportSearchBar(
                     query = uiState.searchQuery,
                     onQueryChange = viewModel::updateSearchQuery,
                     placeholder = stringResource(R.string.contracts_screen_list_search_contract_placeholder),
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
 
-                // Filter chips
-                if (uiState.selectedFilter != ContractFilter.ALL || uiState.selectedSortOrder != ContractSortOrder.NAME) {
-                    QReportFiltersChipRow (
+                QReportSelectorRow(
+                    entries = uiState.availableClients,
+                    selectedItem = uiState.selectedClient,
+                    onItemSelected = viewModel::updateSelectedClient,
+                    icon = ClientPkg.icon,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                )
+
+                if (uiState.selectedFilter != ContractPkg.selectedFilter || uiState.selectedSortOrder != ContractPkg.selectedSortOrder) {
+                    QReportFiltersChipRow(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         selectedFilter = uiState.selectedFilter,
                         avoidFilter = ContractPkg.selectedFilter,
                         onClearFilter = { viewModel.updateFilter(ContractPkg.selectedFilter) },
                         selectedSort = uiState.selectedSortOrder,
                         avoidSort = ContractPkg.selectedSortOrder,
-                        onClearSort = { viewModel.updateSortOrder(ContractPkg.selectedSortOrder) },
+                        onClearSort = { viewModel.updateSortOrder(ContractPkg.selectedSortOrder) }
                     )
                 }
             }
 
-            // Content area with pull-to-refresh
             QReportPullToRefresh(
                 isRefreshing = uiState.isRefreshing,
                 onRefresh = viewModel::refresh,
                 modifier = Modifier.fillMaxSize()
             ) {
-
                 val currentError = uiState.error
-
                 when {
-                    uiState.isLoading -> {
-                        QrLoadingState()
-                    }
+                    uiState.isLoading -> QrLoadingState()
 
-                    currentError != null -> {
-                        QReportErrorState(
-                            error = currentError,
-                            onRetry = viewModel::refresh,
-                            onDismiss = viewModel::dismissError
-                        )
-                    }
+                    currentError != null -> QReportErrorState(
+                        error = currentError,
+                        onRetry = viewModel::refresh,
+                        onDismiss = viewModel::dismissError
+                    )
 
                     uiState.filteredContracts.isEmpty() -> {
                         val (title, message) = when {
                             uiState.contracts.isEmpty() ->
-                                stringResource(R.string.contracts_screen_list_empty_title) to stringResource(
-                                    R.string.contracts_screen_list_empty_message
-                                )
-
+                                stringResource(R.string.contracts_screen_list_empty_title) to
+                                        stringResource(R.string.contracts_screen_list_empty_message)
                             uiState.selectedFilter != ContractFilter.ALL ->
                                 stringResource(R.string.contracts_screen_list_empty_no_results_title) to
-                                        stringResource(
-                                            R.string.contracts_screen_list_empty_no_result_message,
-                                            uiState.selectedFilter.getDisplayName().asString()
-                                        )
-
-                            else -> stringResource(R.string.contracts_screen_list_empty_error_title) to
-                                    stringResource(R.string.checkup_screen_list_empty_error_message)
+                                        stringResource(R.string.contracts_screen_list_empty_no_result_message,
+                                            uiState.selectedFilter.getDisplayName().asString())
+                            else ->
+                                stringResource(R.string.contracts_screen_list_empty_error_title) to
+                                        stringResource(R.string.checkup_screen_list_empty_error_message)
                         }
                         EmptyState(
                             textTitle = title,
@@ -343,63 +235,44 @@ fun ContractListScreen(
                             iconActionImageVector = Icons.Default.Add,
                             iconActionContentDescription = stringResource(R.string.contracts_screen_list_empty_action_add),
                             textAction = stringResource(R.string.contracts_screen_list_empty_action_add),
-                            onAction = { onNavigateToCreateContract(clientId) }
+                            onAction = { onNavigateToCreateContract(uiState.clientId) }
                         )
                     }
 
-                    else -> {
-                        // ContractsError list - NO padding bottom because floating indicator doesn't cover the list
-                        ContractsListWithSelection(
-                            contractsWithStats = uiState.filteredContracts,
-                            variant = uiState.cardVariant,
-                            selectionManager = selectionManager,
-                            onNavigateToEdit = onNavigateToEditContract
-                        )
-                    }
+                    else -> ContractsListWithSelection(
+                        contractsWithStats = uiState.filteredContracts,
+                        variant = uiState.cardVariant,
+                        selectionManager = selectionManager,
+                        onNavigateToEdit = onNavigateToEditContract
+                    )
                 }
             }
         }
 
-        // FAB for new contract (hidden in selection mode)
         if (!selectionState.isInSelectionMode) {
             FloatingActionButton(
-                onClick = { onNavigateToCreateContract(clientId) },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
+                onClick = { onNavigateToCreateContract(uiState.clientId) },
+                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.contracts_screen_list_empty_action_add)
-                )
+                Icon(Icons.Default.Add, stringResource(R.string.contracts_screen_list_empty_action_add))
             }
         }
 
-        // Delete confirmation dialog
         DeleteConfirmationDialog(
             isVisible = showDeleteDialog,
             selectedItems = selectionState.selectedItems,
             actionHandler = actionHandler,
             onConfirm = {
-                actionHandler.onActionClick(SelectionAction.Delete, selectionState.selectedItems)
+                actionHandler.onPerformDelete(selectionState.selectedItems)
                 selectionManager.clearSelection()
             },
-            onDismiss = {
-                showDeleteDialog = false
-            }
+            onDismiss = { showDeleteDialog = false }
         )
 
-        // Snackbar host
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier = Modifier.align(Alignment.BottomCenter)
-        )
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
     }
 }
 
-/**
- * ContractsError list with selection support (unchanged)
- */
 @Suppress("ParamsComparedByRef")
 @Composable
 private fun ContractsListWithSelection(
@@ -414,25 +287,9 @@ private fun ContractsListWithSelection(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        items(
-            items = contractsWithStats,
-            key = { it.contract.id }
-        ) { contractWithStats ->
-            SelectableItem(
-                item = contractWithStats.contract,
-                selectionManager = selectionManager,
-                onNormalClick = { contract ->
-                    onNavigateToEdit(contract.id)
-                },
-            ) { isSelected ->
-
-                ContractCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    contract = contractWithStats.contract,
-                    stats = contractWithStats.stats,
-                    isSelected = isSelected,
-                    variant = variant
-                )
+        items(items = contractsWithStats, key = { it.contract.id }) { cws ->
+            SelectableItem(item = cws.contract, selectionManager = selectionManager, onNormalClick = { onNavigateToEdit(it.id) }) { isSelected ->
+                ContractCard(modifier = Modifier.fillMaxWidth(), contract = cws.contract, stats = cws.stats, isSelected = isSelected, variant = variant)
             }
         }
     }

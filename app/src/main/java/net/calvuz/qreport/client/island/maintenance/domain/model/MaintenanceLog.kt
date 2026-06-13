@@ -1,8 +1,8 @@
 package net.calvuz.qreport.client.island.maintenance.domain.model
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
+import net.calvuz.qreport.client.unit.domain.model.MechanicalUnit
 
 /**
  * A single maintenance or technical intervention performed on a robotic island.
@@ -80,10 +80,4 @@ data class MaintenanceLog(
     fun effectiveComponentLabel(unitName: String?): String? =
         unitName ?: componentLabel
 
-    /**
-     * Returns true if this log targets a specific component,
-     * either via FK or free text.
-     */
-    fun hasComponentTarget(): Boolean =
-        mechanicalUnitId != null || !componentLabel.isNullOrBlank()
 }

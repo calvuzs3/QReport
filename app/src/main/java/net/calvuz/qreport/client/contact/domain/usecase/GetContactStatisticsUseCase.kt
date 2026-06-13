@@ -27,30 +27,22 @@ class GetContactStatisticsUseCase @Inject constructor(
      * @param clientId ID del cliente
      * @return QrResult.Success con ContactStatistics, QrResult.Error per errori
      */
+    @Suppress("HardCodedStringLiteral")
     suspend operator fun invoke(clientId: String): QrResult<ContactStatistics, QrError> {
         return try {
-            // Validazione input
+            Timber.v("Calculating contact statistics for client: $clientId")
+
+            // Check input
             if (clientId.isBlank()) {
                 Timber.w("ClientId is blank")
                 return QrResult.Error(QrError.ValidationError.EmptyField(clientId))
             }
 
-            Timber.d("Calculating statistics for client: $clientId")
-
             // Recupera tutti i contatti del cliente usando il use case specifico
             when (val contactsResult = getContactsByClientUseCase(clientId)) {
                 is QrResult.Success -> {
-                    val contacts = contactsResult.data
-
-                    val statistics = if (contacts.isEmpty()) {
-                        Timber.d("No contacts found for client $clientId, returning empty statistics")
-                        ContactStatistics.empty()
-                    } else {
-                        Timber.d("Calculating statistics for ${contacts.size} contacts")
-                        calculateStatistics(contacts)
-                    }
-
-                    QrResult.Success(statistics)
+                    Timber.d("Successfully retrieved contacts for client $clientId: ${contactsResult.data.size}")
+                    QrResult.Success(calculateStatistics(contactsResult.data))
                 }
 
                 is QrResult.Error -> {
@@ -68,6 +60,8 @@ class GetContactStatisticsUseCase @Inject constructor(
      * Calcola statistiche dettagliate sui contatti
      */
     private fun calculateStatistics(contacts: List<Contact>): ContactStatistics {
+        if (contacts.isEmpty()) return ContactStatistics.empty()
+
         val activeContacts = contacts.filter { it.isActive }
         val inactiveContacts = contacts.filter { !it.isActive }
         val primaryContacts = contacts.filter { it.isPrimary }
@@ -117,7 +111,7 @@ class GetContactStatisticsUseCase @Inject constructor(
 
         val incompleteProfiles = contacts.size - completeProfiles
 
-        Timber.d("GetContactStatisticsUseCase: Statistics calculated - Total: ${contacts.size}, Active: ${activeContacts.size}, Complete profiles: $completeProfiles")
+        Timber.d("Statistics calculated - Total: ${contacts.size}, Active: ${activeContacts.size}, Complete profiles: $completeProfiles")
 
         return ContactStatistics(
             totalContacts = contacts.size,

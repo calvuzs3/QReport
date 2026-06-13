@@ -6,6 +6,8 @@
     <string name="debug_mode_active">Modalità Debug</string>
     <string name="debug_mode_toggle">Toggle Debug Mode</string>
     <string name="intervention_edit_title">Modifica intervento</string>
+    <string name="intervention_delete_precise_confirmation">Eliminare l\'intervento %1$s?</string>
+    <string name="intervention_delete_confirmation">Eliminare %1$d interventi?</string>
 
     <!-- Filters -->
     <string name="interventions_filter_all">Tutti</string>

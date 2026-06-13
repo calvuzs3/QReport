@@ -15,6 +15,8 @@ import javax.inject.Inject
 class GetClientByIdUseCase @Inject constructor(
     private val clientRepository: ClientRepository
 ) {
+    
+    @Suppress("HardCodedStringLiteral")
     suspend operator fun invoke(
         clientId: String
     ): QrResult<Client, QrError.ClientError> {
@@ -30,7 +32,7 @@ class GetClientByIdUseCase @Inject constructor(
         // Get
         return clientRepository.getClientById(clientId).fold(onSuccess = { client ->
             if (client != null) {
-                Timber.d("Got Client $client")
+                Timber.d("Got $client")
                 QrResult.Success(client)
             } else {
                 Timber.d("Client $clientId not found")

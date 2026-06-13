@@ -11,12 +11,14 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.island.presentation.ui.IslandWithStats
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
+@Suppress("ParamsComparedByRef")
 @Composable
 fun IslandListContent(
     islands: List<IslandWithStats>,
     variant: ListViewMode,
     onIslandClick: (String) -> Unit,
-    onIslandDelete: (String) -> Unit
+    onIslandDelete: (String) -> Unit,
+    onIslandRestore: (String) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -24,15 +26,17 @@ fun IslandListContent(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(
-            items = islands,
-            key = { it.island.id }
-        ) { islandWithStats ->
+            items = islands, key = { it.island.id }) { islandWithStats ->
             IslandCard(
                 island = islandWithStats.island,
                 onClick = { onIslandClick(islandWithStats.island.id) },
-                onDelete = { onIslandDelete(islandWithStats.island.id) },
-                variant = variant
-            )
+                onDelete = if (islandWithStats.island.isActive) {
+                    { onIslandDelete(islandWithStats.island.id) }
+                } else null,
+                onRestore = if (!islandWithStats.island.isActive) {
+                    { onIslandRestore(islandWithStats.island.id) }
+                } else null,
+                variant = variant)
         }
     }
 }

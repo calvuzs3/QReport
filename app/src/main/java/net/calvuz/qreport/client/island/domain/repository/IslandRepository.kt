@@ -20,7 +20,15 @@ interface IslandRepository {
     // ===== DELETE — TWO-STAGE =====
 
     @Transaction
-    suspend fun deactivateIsland(id: String): Result<Unit>
+    suspend fun deactivateIsland(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
+    
+    @Transaction
+    suspend fun markIslandDeleted(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
+    
+    // ===== RESTORE =====
+    
+    @Transaction
+    suspend fun restoreIsland(id: String, ts: Long = System.currentTimeMillis()): Result<Unit>
 
     // ===== FACILITY RELATED =====
 
@@ -70,5 +78,4 @@ interface IslandRepository {
 
     suspend fun createIslands(islands: List<Island>): Result<Unit>
     suspend fun bulkUpdateMaintenanceDates(updates: Map<String, Instant>): Result<Unit>
-    suspend fun markIslandDeleted(id: String): Result<Unit>
 }

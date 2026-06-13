@@ -206,8 +206,7 @@ fun ClientDetailScreen(
                 onEdit = { onNavigateToEdit(clientId) },
                 onFacilityClick = { facilityId ->
                     onNavigateToFacilityDetail(
-                        clientId,
-                        facilityId
+                        clientId, facilityId
                     )
                 },
                 onIslandClick = onNavigateToIslandDetail,
@@ -237,7 +236,7 @@ fun ClientDetailScreen(
 // DETAIL CONTENT
 // =============================================================================
 
-@Suppress("ParamsComparedByRef")
+@Suppress("ParamsComparedByRef", "HardCodedStringLiteral")
 @Composable
 private fun ClientDetailContent(
     uiState: ClientDetailUiState,
@@ -252,7 +251,7 @@ private fun ClientDetailContent(
     onEditContact: (String) -> Unit,
     onCreateContact: () -> Unit,
     onViewAllContacts: () -> Unit,
-    onCreateCheckUp: () -> Unit,
+    @Suppress("unused") onCreateCheckUp: () -> Unit,
     onCreateContract: () -> Unit,
     onEditContract: (String) -> Unit,
     onViewAllContracts: () -> Unit,
@@ -441,8 +440,7 @@ private fun FacilitiesTabContent(
         ) {
             Text(
                 text = stringResource(
-                    R.string.client_detail_facilities_header,
-                    facilitiesWithIslands.size
+                    R.string.client_detail_facilities_header, facilitiesWithIslands.size
                 ), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -569,10 +567,8 @@ private fun ContactsTabContent(
                 fontWeight = FontWeight.SemiBold
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (contacts.isNotEmpty()) {
-                    OutlinedButton(onClick = onViewAllContacts) {
-                        Text(stringResource(R.string.client_detail_contacts_view_all))
-                    }
+                OutlinedButton(onClick = onViewAllContacts) {
+                    Text(stringResource(R.string.client_detail_contacts_view_all))
                 }
                 Button(onClick = onCreateContact) {
                     Icon(
@@ -627,8 +623,7 @@ private fun ContactsTabContent(
                             ) {
                                 Text(
                                     text = stringResource(
-                                        R.string.client_detail_contacts_more,
-                                        contacts.size - 5
+                                        R.string.client_detail_contacts_more, contacts.size - 5
                                     ),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -671,10 +666,8 @@ private fun ContractsTabContent(
                 fontWeight = FontWeight.SemiBold
             )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (contracts.isNotEmpty()) {
-                    OutlinedButton(onClick = onViewAllContracts) {
-                        Text(stringResource(R.string.client_detail_contracts_view_all))
-                    }
+                OutlinedButton(onClick = onViewAllContracts) {
+                    Text(stringResource(R.string.client_detail_contracts_view_all))
                 }
                 Button(onClick = onCreateContract) {
                     Icon(
@@ -727,8 +720,7 @@ private fun ContractsTabContent(
                             ) {
                                 Text(
                                     text = stringResource(
-                                        R.string.client_detail_contracts_more,
-                                        contracts.size - 5
+                                        R.string.client_detail_contracts_more, contracts.size - 5
                                     ),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant

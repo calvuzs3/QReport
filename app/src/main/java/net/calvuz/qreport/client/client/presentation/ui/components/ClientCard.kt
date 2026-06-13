@@ -36,10 +36,9 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
 import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
-import net.calvuz.qreport.app.app.presentation.components.QrStatusChip
+import net.calvuz.qreport.app.app.presentation.components.QrCardFooter
+import net.calvuz.qreport.app.app.presentation.components.QrCardFooterData
 import net.calvuz.qreport.app.app.presentation.components.QrStatusIndicator
-import net.calvuz.qreport.app.error.presentation.UiText
-import net.calvuz.qreport.app.util.DateTimeUtils.toItalianLastModified
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
 import net.calvuz.qreport.settings.domain.model.ListViewMode
@@ -50,7 +49,7 @@ import net.calvuz.qreport.settings.domain.model.ListViewMode
  * Client main infos with stats
  */
 
-@Suppress("ParamsComparedByRef")
+@Suppress("ParamsComparedByRef", "HardCodedStringLiteral", "ASSIGNED_VALUE_IS_NEVER_READ")
 @Composable
 fun ClientCard(
     modifier: Modifier = Modifier,
@@ -227,24 +226,13 @@ private fun FullClientCard(
         }
 
         // Last modified
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left
-//            ClientStatusChip(isActive = client.isActive, onRestore = onRestore)
-            QrStatusChip(isActive = client.isActive, onRestore = onRestore,
-                activeString = UiText.StringResource(R.string.client_card_status_active),
-                inactiveString = UiText.StringResource(R.string.client_card_status_inactive))
-
-            // Right
-            Text(
-                text = client.updatedAt.toItalianLastModified(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+        QrCardFooter(
+            data = QrCardFooterData(
+                isActive = client.isActive,
+                date = client.updatedAt,
+                onRestore = onRestore,
             )
-        }
+        )
     }
 }
 

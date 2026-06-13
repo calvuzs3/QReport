@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.PrecisionManufacturing
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -64,6 +66,7 @@ import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
+import net.calvuz.qreport.client.island.presentation.model.IslandPkg
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
@@ -220,12 +223,8 @@ private fun FacilityDetailContent(
                 Tab(
                     selected = uiState.selectedTab == tab,
                     onClick = { onTabSelected(tab) },
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(stringResource(tab.labelResId))
+                    icon = {
+                        BadgedBox(badge = {
                             count?.let {
                                 Badge {
                                     Text(
@@ -235,6 +234,15 @@ private fun FacilityDetailContent(
                                     )
                                 }
                             }
+                        }) {
+                            Icon(
+                                imageVector = when (tab) {
+                                    FacilityDetailTab.ISLANDS -> IslandPkg.icon
+                                    FacilityDetailTab.MAINTENANCE -> Icons.Default.Build
+                                    FacilityDetailTab.INFO -> Icons.Default.Info
+                                },
+                                contentDescription = stringResource(tab.labelResId)
+                            )
                         }
                     })
             }
@@ -274,11 +282,11 @@ private fun FacilityDetailContent(
 // TAB: INFO
 // =============================================================================
 
-@Suppress("ParamsComparedByRef")
+@Suppress("ParamsComparedByRef", "HardCodedStringLiteral")
 @Composable
 private fun InfoTabContent(
     facility: Facility,
-    operationalSummary: FacilityOperationalSummary?,
+    @Suppress("unused") operationalSummary: FacilityOperationalSummary?,
     onEdit: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -466,6 +474,7 @@ private fun MaintenanceTabContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Row(
+                        modifier= Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
@@ -505,6 +514,7 @@ private fun MaintenanceTabContent(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Row(
+                        modifier=Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {

@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.client.contract.presentation.ui.components
 
 import androidx.compose.foundation.layout.*
@@ -42,8 +43,10 @@ data class ContractCardData(
 /**
  * Content provider implementation for TechnicalIntervention
  */
-class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
 
+class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
+    
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun HeaderSection(item: ContractCardData) {
         CardComponents.HeaderRow(
@@ -51,7 +54,8 @@ class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
 
             )
     }
-
+    
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun MainSection(item: ContractCardData) {
         Text(
@@ -63,7 +67,8 @@ class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
             style = MaterialTheme.typography.bodyMedium,
         )
     }
-
+    
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun DetailsSection(item: ContractCardData) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -101,7 +106,8 @@ class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
             }
         }
     }
-
+    
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun FooterSection(item: ContractCardData) {
         Row(
@@ -123,6 +129,7 @@ class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
     }
 
     // Override compact to remove details section
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun CompactContent(item: ContractCardData, isSelected: Boolean, modifier: Modifier) {
         Column(modifier = modifier) {
@@ -153,7 +160,7 @@ class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
     }
 
     // Override minimal to show just intervention number and customer
-    @Composable
+    @Suppress("ParamsComparedByRef")@Composable
     override fun MinimalContent(item: ContractCardData, modifier: Modifier) {
         Row(
             modifier = modifier.fillMaxWidth(),
@@ -181,14 +188,14 @@ class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
 /**
  * Convenience composable for TechnicalIntervention cards
  */
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 fun ContractCard(
+    modifier: Modifier = Modifier,
     contract: Contract,
     variant: ListViewMode,
     stats: ContractsStatistics,
     isSelected: Boolean = false,
-    isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    isLoading: Boolean = false
 ) {
     val data = ContractCardData(contract, stats)
     val contentProvider = ContractContentProvider()
@@ -204,15 +211,40 @@ fun ContractCard(
 }
 
 /**
- * Extension function for even easier usage
+ * Builder pattern usage example
  */
+@Suppress("ParamsComparedByRef", "unused")
 @Composable
-fun Contract.asCard(
+
+fun ContractCardBuilder(
+    modifier: Modifier = Modifier,
+    contract: Contract,
     stats: ContractsStatistics,
     variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
-    isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    isLoading: Boolean = false
+) {
+    val data = ContractCardData(contract, stats)
+    
+    data.cardBuilder()
+        .variant(variant)
+        .selected(isSelected)
+        .loading(isLoading)
+        .modifier(modifier)
+        .build(ContractContentProvider())
+}
+
+/**
+ * Extension function for even easier usage
+ */
+@Composable
+@Suppress("unused")
+fun Contract.AsCard(
+    modifier: Modifier = Modifier,
+    stats: ContractsStatistics,
+    variant: ListViewMode = ListViewMode.FULL,
+    isSelected: Boolean = false,
+    isLoading: Boolean = false
 ) {
     ContractCard(
         contract = this,
@@ -222,28 +254,6 @@ fun Contract.asCard(
         isLoading = isLoading,
         modifier = modifier
     )
-}
-
-/**
- * Builder pattern usage example
- */
-@Composable
-fun ContractCardBuilder(
-    contract: Contract,
-    stats: ContractsStatistics,
-    variant: ListViewMode = ListViewMode.FULL,
-    isSelected: Boolean = false,
-    isLoading: Boolean = false,
-    modifier: Modifier = Modifier
-) {
-    val data = ContractCardData(contract, stats)
-
-    data.cardBuilder()
-        .variant(variant)
-        .selected(isSelected)
-        .loading(isLoading)
-        .modifier(modifier)
-        .build(ContractContentProvider())
 }
 
 /**
@@ -260,13 +270,13 @@ private fun ContractStatusChip(
             when (valid) {
 
                 true -> Triple(
-                    stringResource(R.string.contracts_status_active),
+                    stringResource(R.string.contracts_status_valid),
                     MaterialTheme.colorScheme.primary,
                     MaterialTheme.colorScheme.onPrimary
                 )
 
                 false -> Triple(
-                    stringResource(R.string.contracts_status_active),
+                    stringResource(R.string.contracts_status_expired),
                     MaterialTheme.colorScheme.warningContainer,
                     MaterialTheme.colorScheme.onWarningContainer
                 )
@@ -274,7 +284,7 @@ private fun ContractStatusChip(
         }
 
         else -> Triple(
-            stringResource(R.string.contracts_status_expired),
+            stringResource(R.string.contracts_status_not_active),
             MaterialTheme.colorScheme.secondary,
             MaterialTheme.colorScheme.onSecondary
         )
@@ -301,7 +311,7 @@ private fun ContractItem(
     icon: ImageVector,
     label: String,
     value: String,
-    onClick: () -> Unit,
+    @Suppress("unused") onClick: () -> Unit,
     isValid: Boolean
 ) {
     Row(

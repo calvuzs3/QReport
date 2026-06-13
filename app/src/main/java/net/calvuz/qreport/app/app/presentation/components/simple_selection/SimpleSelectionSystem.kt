@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.app.app.presentation.components.simple_selection
 
 import androidx.compose.material.icons.Icons
@@ -15,6 +16,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.R
 
 /**
  * Simple Selection System - Gmail Style
@@ -34,7 +37,7 @@ data class SimpleSelectionState<T>(
     val isInSelectionMode: Boolean = false
 ) {
     val selectedCount: Int get() = selectedItems.size
-    val hasSelection: Boolean get() = selectedItems.isNotEmpty()
+    @Suppress("unused") val hasSelection: Boolean get() = selectedItems.isNotEmpty()
 
     fun isSelected(item: T): Boolean = selectedItems.contains(item)
 }
@@ -79,7 +82,8 @@ class SimpleSelectionManager<T> {
     fun clearSelection() {
         _selectionState.value = SimpleSelectionState()
     }
-
+    
+    @Suppress("unused")
     fun removeFromSelection(items: Set<T>) {
         val newSelectedItems = _selectionState.value.selectedItems - items
         _selectionState.value = _selectionState.value.copy(
@@ -94,7 +98,7 @@ class SimpleSelectionManager<T> {
  */
 @Composable
 fun <T> rememberSimpleSelectionManager(): SimpleSelectionManager<T> {
-    return remember { SimpleSelectionManager<T>() }
+    return remember { SimpleSelectionManager() }
 }
 
 /**
@@ -102,69 +106,70 @@ fun <T> rememberSimpleSelectionManager(): SimpleSelectionManager<T> {
  */
 sealed class SelectionAction {
     abstract val icon: ImageVector
-    abstract val label: String
+    abstract val label: UiText
     abstract val isDestructive: Boolean
 
     // Common actions
     data object Edit : SelectionAction() {
         override val icon = Icons.Default.Edit
-        override val label = "Edit"
+        override val label = UiText.StringResources(R.string.action_edit)
         override val isDestructive = false
     }
 
     data object Delete : SelectionAction() {
         override val icon = Icons.Default.Delete
-        override val label = "Delete"
+        override val label = UiText.StringResources(R.string.action_delete)
         override val isDestructive = true
     }
 
     data object SelectAll : SelectionAction() {
         override val icon = Icons.Default.SelectAll
-        override val label = "Select All"
+        override val label = UiText.StringResources(R.string.action_select_all)
         override val isDestructive = false
     }
 
     // Technical Intervention specific actions
     data object SetActive : SelectionAction() {
         override val icon = Icons.Default.PlayArrow
-        override val label = "Set Active"
+        override val label = UiText.StringResources(R.string.action_set_active)
         override val isDestructive = false
     }
 
     data object SetInactive : SelectionAction() {
         override val icon = Icons.Default.Pause
-        override val label = "Set Inactive"
+        override val label = UiText.StringResources(R.string.action_set_not_active)
         override val isDestructive = false
     }
 
     data object Export : SelectionAction() {
         override val icon = Icons.Default.Download
-        override val label = "Export"
+        override val label = UiText.StringResources(R.string.action_export)
         override val isDestructive = false
     }
 
     data object Archive : SelectionAction() {
         override val icon = Icons.Default.Archive
-        override val label = "Archive"
+        override val label = UiText.StringResources(R.string.action_archive)
         override val isDestructive = false
     }
 
     data object Renew : SelectionAction() {
         override val icon = Icons.Default.NewLabel
-        override val label = "Rinnova"
+        override val label = UiText.StringResources(R.string.action_renew)
         override val isDestructive = false
     }
-
+    
+    @Suppress("unused")
     data object MarkCompleted : SelectionAction() {
         override val icon = Icons.Default.CheckCircle
-        override val label = "Mark Completed"
+        override val label = UiText.StringResources(R.string.action_mark_completed)
         override val isDestructive = false
     }
 
     // Custom action for feature-specific needs
     data class Custom(
         override val icon: ImageVector,
-        override val label: String,
+        override val label: UiText,
         override val isDestructive: Boolean = false,
         val actionId: String
     ) : SelectionAction()
@@ -176,8 +181,8 @@ sealed class SelectionAction {
 interface SimpleSelectionActionHandler<T> {
     fun onActionClick(action: SelectionAction, selectedItems: Set<T>)
     fun isActionEnabled(action: SelectionAction, selectedItems: Set<T>): Boolean = true
-    fun getDeleteConfirmationMessage(selectedItems: Set<T>): String =
-        "Delete ${selectedItems.size} items?"
+    fun getDeleteConfirmationMessage(selectedItems: Set<T>): UiText = UiText.StringResources(
+        R.string.msg_delete_multi_confirmation, selectedItems.size)
 }
 
 /**

@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.ti.presentation.ui
 
 import androidx.lifecycle.ViewModel
@@ -628,10 +629,12 @@ class TechnicalInterventionActionHandler(
         }
     }
 
-    override fun getDeleteConfirmationMessage(selectedItems: Set<TechnicalIntervention>): String {
+    override fun getDeleteConfirmationMessage(selectedItems: Set<TechnicalIntervention>): UiText {
         return when (selectedItems.size) {
-            1 -> "Eliminare l'intervento ${selectedItems.first().interventionNumber}?"
-            else -> "Eliminare ${selectedItems.size} interventi?"
+            1 -> UiText.StringResources(R.string.intervention_delete_precise_confirmation,
+                selectedItems.first().interventionNumber)
+            else -> UiText.StringResources(R.string.intervention_delete_confirmation,
+                selectedItems.size)
         }
     }
 

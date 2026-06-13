@@ -1,20 +1,29 @@
+@file:Suppress("HardcodedStringLiteral")
+
 package net.calvuz.qreport.client.island.data.local.repository
 
 import androidx.room.Transaction
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.app.database.data.local.QReportDatabase
+import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandDao
 import net.calvuz.qreport.client.island.data.local.mapper.IslandMapper
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import javax.inject.Inject
 
 class IslandRepositoryImpl @Inject constructor(
+    private val facilityDao: FacilityDao,
     private val islandDao: IslandDao,
-    private val islandMapper: IslandMapper
+    private val unitDao: MechanicalUnitDao,
+    private val islandMapper: IslandMapper,
+    private val database: QReportDatabase
 ) : IslandRepository {
 
     // ===== CRUD OPERATIONS =====
@@ -95,17 +104,42 @@ class IslandRepositoryImpl @Inject constructor(
     // DELETE — TWO-STAGE
 
     @Transaction
-    override suspend fun deactivateIsland(id: String): Result<Unit> = runCatching {
-        val ts = System.currentTimeMillis()
-        islandDao.deactivateMechanicalUnitsByIsland(id, ts)
-        islandDao.deactivateIsland(id, ts)
+    override suspend fun deactivateIsland(id: String, ts: Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val island = islandDao.getIslandById(id) ?: error("Island not found: $id")
+            val units = unitDao.getMechanicalUnitsForIsland(island.id)
+            
+            units.forEach { unit ->
+                unitDao.deactivateUnit(unit.id, ts)
+            }
+            islandDao.deactivateIsland(id, ts)
+        }
     }
 
     @Transaction
-    override suspend fun markIslandDeleted(id: String): Result<Unit> = runCatching {
-        val ts = System.currentTimeMillis()
-        islandDao.markMechanicalUnitsDeletedByIsland(id, ts)
-        islandDao.markIslandDeleted(id, ts)
+    override suspend fun markIslandDeleted(id: String, ts: Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val island = islandDao.getIslandById(id) ?: error("Island not found: $id")
+            val units = unitDao.getMechanicalUnitsForIsland(island.id)
+            
+            units.forEach { unit ->
+                unitDao.markUnitDeleted(unit.id, ts)
+            }
+            islandDao.markIslandDeleted(id, ts)
+        }
+    }
+
+    // ===== RESTORE =====
+    
+    @Transaction
+    override suspend fun restoreIsland(id: String, ts: Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val island = islandDao.getIslandById(id) ?: error("Island not found: $id")
+            val facility = facilityDao.getFacilityById(island.facilityId) ?: error("Facility not found: ${island.facilityId}")
+            
+            islandDao.restoreIsland(id, ts)
+            facilityDao.restoreFacility(facility.id, ts)
+        }
     }
 
     // ===== FACILITY RELATED =====

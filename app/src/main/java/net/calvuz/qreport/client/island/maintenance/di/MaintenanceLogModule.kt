@@ -7,9 +7,10 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
-import net.calvuz.qreport.client.island.maintenance.data.repository.MaintenanceLogRepositoryImpl
+import net.calvuz.qreport.client.island.maintenance.data.local.repository.MaintenanceLogRepositoryImpl
 import net.calvuz.qreport.client.island.maintenance.domain.repository.MaintenanceLogRepository
 import javax.inject.Singleton
+import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 
 /**
  * Hilt module for the MaintenanceLog feature.

@@ -1,4 +1,5 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
+@file:Suppress("HardCodedStringLiteral")
 
 package net.calvuz.qreport.app.app.presentation.ui.home
 
@@ -32,9 +33,10 @@ import net.calvuz.qreport.checkup.presentation.components.CheckupStatusChip
 import net.calvuz.qreport.checkup.presentation.model.CheckupPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.presentation.model.IslandPkg
 import net.calvuz.qreport.client.island.presentation.model.icon
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
     onNavigateToClients: () -> Unit,
@@ -42,8 +44,8 @@ fun HomeScreen(
     onNavigateToIslands: () -> Unit,
     onNavigateToIslandDetail: (facilityId: String, islandId: String) -> Unit,
     onNavigateToTechnicalInterventions: () -> Unit,
-    onNavigateToNewCheckUp: () -> Unit,
-    onNavigateToCheckUpDetail: (String) -> Unit,
+    @Suppress("unused") onNavigateToNewCheckUp: () -> Unit,
+    @Suppress("unused") onNavigateToCheckUpDetail: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -126,7 +128,7 @@ fun HomeScreen(
                     val islandWarning = uiState.islandStats.maintenanceSoon > 0
                     DashboardSectionCard(
                         tileTitle = stringResource(R.string.home_section_islands),
-                        tileIcon = Icons.Default.PrecisionManufacturing,
+                        tileIcon = IslandPkg.icon,
                         accentColor = if (islandWarning) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.success,
                         onTileClick = onNavigateToIslands,
                         chips = {
@@ -178,7 +180,7 @@ fun HomeScreen(
 // =============================================================================
 
 @Composable
-private fun HomeHeader(onRefresh: () -> Unit, isLoading: Boolean, modifier: Modifier = Modifier) {
+private fun HomeHeader(@Suppress("unused") onRefresh: () -> Unit, @Suppress("unused") isLoading: Boolean, modifier: Modifier = Modifier) {
     Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Column {
             Text(text = "QReport", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -194,14 +196,14 @@ private fun HomeHeader(onRefresh: () -> Unit, isLoading: Boolean, modifier: Modi
 /**
  * Dashboard section card — uniform appearance across all sections.
  *
- * The tile header always uses [MaterialTheme.colorScheme.surfaceContainerHigh]
+ * The tile header always uses [MaterialTheme.colorScheme.surfaceContainerHigh()]
  * so all sections look consistent in both light and dark theme.
  * [accentColor] is applied only to the icon, giving each section
  * its distinct identity without overwhelming color variation.
  *
  * ┌─────────────────────────────────────┐
  * │ [Icon  Title            Apri →    ] │  ← tile: surfaceContainerHigh
- * │  [chip][chip][chip]                 │
+ * │  [chip][chip][content]                 │
  * │ ─────────────────────────────────── │
  * │  preview row 1                      │
  * └─────────────────────────────────────┘
@@ -287,7 +289,7 @@ private fun PreviewEmptyRow(message: String) {
     )
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun CheckUpPreviewRow(checkUp: CheckUp, onClick: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), onClick = onClick, shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
         Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -300,7 +302,7 @@ private fun CheckUpPreviewRow(checkUp: CheckUp, onClick: () -> Unit) {
     }
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun IslandPreviewRow(island: Island, onClick: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), onClick = onClick, shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
         Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

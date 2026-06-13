@@ -1,17 +1,28 @@
+@file:Suppress("HardcodedStringLiteral")
+
 package net.calvuz.qreport.client.client.data.local.repository
 
-import androidx.room.Transaction
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.client.client.data.local.dao.ClientDao
 import net.calvuz.qreport.client.client.data.local.mapper.ClientMapper
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
+import net.calvuz.qreport.client.contact.data.local.dao.ContactDao
+import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
+import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import javax.inject.Inject
 
 class ClientRepositoryImpl @Inject constructor(
-    private val clientDao: ClientDao, private val clientMapper: ClientMapper
+    private val clientDao: ClientDao,
+    private val facilityDao: FacilityDao,
+    private val contactsDao: ContactDao,
+    private val contractsDao: ContractDao,
+    private val clientMapper: ClientMapper,
+    private val database: QReportDatabase
 ) : ClientRepository {
 
     // ===== CRUD OPERATIONS =====
@@ -78,33 +89,51 @@ class ClientRepositoryImpl @Inject constructor(
 
     // ===== TWO-STAGE DELETE =====
 
-    @Transaction
-    override suspend fun deactivateClient(id: String): Result<Unit> = runCatching {
-        val ts = System.currentTimeMillis()
-        clientDao.deactivateMechanicalUnitsByClient(id, ts)
-        clientDao.deactivateIslandsByClient(id, ts)
-        clientDao.deactivateFacilitiesByClient(id, ts)
-        clientDao.deactivateContactsByClient(id, ts)
-        clientDao.deactivateContractsByClient(id, ts)
-        clientDao.deactivateClient(id, ts)
+    override suspend fun deactivateClient(id: String, ts: Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val client  = clientDao.getClientById(id) ?: error("Client not found: $id")
+            val facilities = facilityDao.getActiveFacilitiesByClient(client.id)
+            val contacts = contactsDao.getActiveContactsByClient(client.id)
+            val contracts = contractsDao.getActiveContractsByClientId(client.id)
+
+            contacts.forEach { contact ->
+                contactsDao.deactivateContact(contact.id, ts)
+            }
+            contracts.forEach { contract ->
+                contractsDao.deactivateContract(contract.id, ts)
+            }
+            facilities.forEach { facility ->
+                facilityDao.deactivateFacility(facility.id, ts)
+            }
+            clientDao.deactivateClient(id, ts)
+        }
     }
 
-    @Transaction
-    override suspend fun markClientDeleted(id: String): Result<Unit> = runCatching {
-        val ts = System.currentTimeMillis()
-        clientDao.markMechanicalUnitsDeletedByClient(id, ts)
-        clientDao.markIslandsDeletedByClient(id, ts)
-        clientDao.markFacilitiesDeletedByClient(id, ts)
-        clientDao.markContactsDeletedByClient(id, ts)
-        clientDao.markContractsDeletedByClient(id, ts)
-        clientDao.markClientDeleted(id, ts)
+    override suspend fun markClientDeleted(id: String, ts: Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val client = clientDao.getClientById(id) ?: error("Client not found: $id")
+            val facilities = facilityDao.getFacilitiesByClient(client.id)
+            val contacts = contactsDao.getContactsByClient(client.id)
+            val contracts = contractsDao.getContractsByClientId(client.id)
+
+            facilities.forEach { facility ->
+                facilityDao.markFacilityDeleted(facility.id, ts)
+            }
+            contacts.forEach { contact ->
+                contactsDao.markContactDeleted(contact.id, ts)
+            }
+            contracts.forEach { contract ->
+                contractsDao.markContractDeleted(contract.id, ts)
+            }
+            clientDao.markClientDeleted(id, ts)
+        }
     }
 
     // ===== RESURRECT =====
 
-    override suspend fun activateClient(id: String): Result<Unit> {
+    override suspend fun restoreClient(id: String, ts: Long): Result<Unit> {
         return try {
-            clientDao.restoreClient(id)
+            clientDao.restoreClient(id, ts)
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

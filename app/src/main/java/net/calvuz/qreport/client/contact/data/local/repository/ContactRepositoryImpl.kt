@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.client.contact.data.local.repository
 
 import androidx.room.Transaction
@@ -108,26 +109,12 @@ class ContactRepositoryImpl @Inject constructor(
 
     override suspend fun deactivateContact(id: String, ts: Long): Result<Unit> =
         runCatching {
-            database.withTransaction {
-                val contact = contactDao.getContactById(id) ?: error("Contact not found: $id")
-                val client = clientDao.getClientById(contact.clientId)
-                    ?: error("Client not found: ${contact.clientId}")
-
-                contactDao.deactivateContact(id, ts)
-                clientDao.deactivateClient(client.id, ts)
-            }
+                clientDao.deactivateClient(id, ts)
         }
 
     override suspend fun markContactDeleted(id: String, ts: Long): Result<Unit> =
         runCatching {
-            database.withTransaction {
-
-                val contact = contactDao.getContactById(id) ?: error("Contact not found: $id")
-                val client = clientDao.getClientById(contact.clientId) ?: error("Client not found: ${contact.clientId}")
-
                 contactDao.markContactDeleted(id, ts)
-                clientDao.markClientDeleted(client.id, ts)
-            }
         }
 
     // ===== RESTORE =====

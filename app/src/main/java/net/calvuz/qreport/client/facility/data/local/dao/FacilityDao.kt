@@ -1,3 +1,5 @@
+@file:Suppress("HardcodedStringLiteral")
+
 package net.calvuz.qreport.client.facility.data.local.dao
 
 import androidx.room.Dao
@@ -9,6 +11,7 @@ import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
+import net.calvuz.qreport.client.facility.data.local.repository.FacilityRepositoryImpl
 
 @Dao
 interface FacilityDao {
@@ -20,24 +23,27 @@ interface FacilityDao {
 
     @Query("SELECT * FROM facilities WHERE id = :id")
     fun getFacilityByIdFlow(id: String): Flow<FacilityEntity?>
-
-    @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, name ASC")
-    suspend fun getFacilitiesForClient(clientId: String): List<FacilityEntity>
-
+    
     @Query("SELECT * FROM facilities WHERE client_id = :clientId ORDER BY is_primary DESC, name ASC")
-    fun getFacilitiesForClientFlow(clientId: String): Flow<List<FacilityEntity>>
-
+    suspend fun getFacilitiesByClient(clientId: String): List<FacilityEntity>
+    
+    @Query("SELECT * FROM facilities WHERE client_id = :clientId ORDER BY is_primary DESC, name ASC")
+    fun getFacilitiesByClientFlow(clientId: String): Flow<List<FacilityEntity>>
+    
+    @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, name ASC")
+    suspend fun getActiveFacilitiesByClient(clientId: String): List<FacilityEntity>
+    
+    @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, name ASC")
+    fun getActiveFacilitiesByClientFlow(clientId: String): Flow<List<FacilityEntity>>
+    
     @Query("SELECT * FROM facilities ORDER BY is_primary DESC, name ASC")
     fun getFacilitiesFlow(): Flow<List<FacilityEntity>>
-
+    
     @Query("SELECT * FROM facilities WHERE is_active = 1 ORDER BY name ASC")
     suspend fun getActiveFacilities(): List<FacilityEntity>
 
     @Query("SELECT * FROM facilities WHERE is_active = 1 ORDER BY is_primary DESC, name ASC")
     fun getActiveFacilitiesFlow(): Flow<List<FacilityEntity>>
-
-    @Query("SELECT * FROM facilities WHERE client_id = :clientId AND is_active = 1 ORDER BY is_primary DESC, name ASC")
-    fun getActiveFacilitiesForClientFlow(clientId: String): Flow<List<FacilityEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFacility(facility: FacilityEntity)
@@ -98,9 +104,6 @@ interface FacilityDao {
 
     @Query("UPDATE facilities SET is_active = 1, updated_at = :timestamp WHERE id = :id")
     suspend fun restoreFacility(id: String, timestamp: Long = System.currentTimeMillis())
-
-    @Query("UPDATE clients SET is_active = 1, updated_at = :timestamp WHERE id IN (SELECT client_id FROM facilities WHERE id = :facilityId) AND is_active = 0")
-    suspend fun restoreClientByFacility(facilityId: String, timestamp: Long = System.currentTimeMillis())
 
     // ===== PRIMARY FACILITY MANAGEMENT =====
 

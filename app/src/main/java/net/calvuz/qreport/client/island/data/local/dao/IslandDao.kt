@@ -1,3 +1,5 @@
+@file:Suppress("HardcodedStringLiteral")
+
 package net.calvuz.qreport.client.island.data.local.dao
 
 import androidx.room.*
@@ -75,9 +77,6 @@ interface IslandDao {
     @Query("UPDATE facility_islands SET is_active = 0, updated_at = :timestamp WHERE id = :id")
     suspend fun deactivateIsland(id: String, timestamp: Long = System.currentTimeMillis())
 
-    @Query("UPDATE mechanical_units SET is_active = 0, updated_at = :timestamp WHERE island_id = :islandId")
-    suspend fun deactivateMechanicalUnitsByIsland(islandId: String, timestamp: Long = System.currentTimeMillis())
-
     /**
      * Stage 2 (standalone): mark a single island and its MechanicalUnits as deleted.
      * Called by [markIslandDeleted].
@@ -85,9 +84,11 @@ interface IslandDao {
     @Query("UPDATE facility_islands SET is_deleted = 1, updated_at = :timestamp WHERE id = :id")
     suspend fun markIslandDeleted(id: String, timestamp: Long = System.currentTimeMillis())
 
-    @Query("UPDATE mechanical_units SET is_deleted = 1, updated_at = :timestamp WHERE island_id = :islandId")
-    suspend fun markMechanicalUnitsDeletedByIsland(islandId: String, timestamp: Long = System.currentTimeMillis())
-
+    // ===== RESTORE =====
+    
+    @Query("UPDATE facility_islands SET is_active = 1, updated_at = :timestamp WHERE id = :id")
+    suspend fun restoreIsland(id: String, timestamp: Long = System.currentTimeMillis())
+    
     // ===== SEARCH & FILTER =====
 
     @Query("""

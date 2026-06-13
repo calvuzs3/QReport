@@ -20,7 +20,6 @@ import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material.icons.outlined.Star
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,20 +46,21 @@ import net.calvuz.qreport.client.contact.domain.model.ContactMethod
 import net.calvuz.qreport.app.app.presentation.components.DeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.PrimaryBadge
 import net.calvuz.qreport.app.app.presentation.components.QReportConfirmRestoreDialog
-import net.calvuz.qreport.app.app.presentation.components.QrStatusChip
-import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.app.presentation.components.QrCardFooter
+import net.calvuz.qreport.app.app.presentation.components.QrCardFooterData
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
+@Suppress("ParamsComparedByRef", "HardCodedStringLiteral", "ASSIGNED_VALUE_IS_NEVER_READ")
 @Composable
 fun ContactCard(
     modifier: Modifier = Modifier,
     contact: Contact,
-    onClick: () -> Unit,
     showActions: Boolean = true,
+    @Suppress("unused") onClick: (() -> Unit)?= null,
     onDelete: (() -> Unit)? = null,
     onRestore: (() -> Unit)? = null,
     onEdit: (() -> Unit)? = null,
-    onEmail: () -> Unit = {},
+    @Suppress("unused") onEmail: (() -> Unit)? = null,
     onSetPrimary: (() -> Unit)? = null,
     isSettingPrimary: Boolean = false,
     isSelected: Boolean = false,
@@ -127,7 +127,7 @@ fun ContactCard(
     }
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun FullContactCard(
     contact: Contact,
     showActions: Boolean = true,
@@ -224,24 +224,6 @@ private fun FullContactCard(
             }
         }
 
-        if (!contact.isActive) {
-            Row {
-                QrStatusChip(
-                    isActive = false,
-                    onRestore = onRestore,
-                    activeString = UiText.StringResource(R.string.label_active),
-                            inactiveString = UiText.StringResource(R.string.label_assistchip_not_active),
-                )
-//                AssistChip(
-//                    onClick = if (onRestore!= null) { onRestore } else { {} },
-//                    label = {
-//                        Text(stringResource(R.string.label_active), style = MaterialTheme.typography.labelSmall)
-//                    },
-//                    enabled = false
-//                )
-            }
-        }
-
         // ROLE
         contact.role?.let { role ->
             ContactRoleItem(
@@ -301,10 +283,19 @@ private fun FullContactCard(
                 isPrimary = contact.preferredContactMethod == ContactMethod.PHONE
             )
         }
+
+        QrCardFooter(
+            data = QrCardFooterData(
+                date = contact.updatedAt,
+                isActive = contact.isActive,
+                onRestore = onRestore
+            ),
+
+        )
     }
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun CompactContactCard(
     contact: Contact,
     onCall: () -> Unit = { },
@@ -360,12 +351,24 @@ private fun CompactContactCard(
                         onClick = onCall,
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Call,
-                            contentDescription = stringResource(R.string.action_call),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Call,
+                                contentDescription = stringResource(R.string.action_call),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = phone,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }
@@ -377,11 +380,23 @@ private fun CompactContactCard(
                         onClick = onEmail,
                         modifier = Modifier.size(36.dp)
                     ) {
-                        Icon(
-                            Icons.Default.Email,
-                            contentDescription = stringResource(R.string.action_send_email),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Email,
+                                contentDescription = stringResource(R.string.action_send_email),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = email,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                 }
             }
@@ -389,7 +404,7 @@ private fun CompactContactCard(
     }
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun MinimalContactCard(contact: Contact) {
     Row(
         modifier = Modifier.padding(8.dp),

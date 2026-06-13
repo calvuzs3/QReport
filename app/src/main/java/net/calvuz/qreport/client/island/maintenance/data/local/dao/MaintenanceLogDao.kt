@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
+import net.calvuz.qreport.client.island.maintenance.domain.usecase.GetIslandHealthSummaryUseCase
 
 /**
  * DAO for the maintenance_logs table.
@@ -19,6 +20,7 @@ import net.calvuz.qreport.client.island.maintenance.data.local.entity.Maintenanc
  * no external dependencies.
  */
 @Dao
+@Suppress("HardCodedStringLiteral")
 interface MaintenanceLogDao {
 
     // ===== REACTIVE QUERIES =====
@@ -187,17 +189,27 @@ interface MaintenanceLogDao {
     @Query("""
         UPDATE maintenance_logs
         SET is_active = 0, updated_at = :timestamp
-        WHERE id = :id
+        WHERE id = :id AND is_active = 1
     """)
-    suspend fun deactivateLog(id: String, timestamp: Long)
+    suspend fun deactivateLog(id: String, timestamp: Long = System.currentTimeMillis())
 
     /** Stage 2: mark as deleted for server sync / purge. */
     @Query("""
         UPDATE maintenance_logs
         SET is_deleted = 1, updated_at = :timestamp
-        WHERE id = :id
+        WHERE id = :id AND is_deleted = 0
     """)
-    suspend fun markLogDeleted(id: String, timestamp: Long)
+    suspend fun markLogDeleted(id: String, timestamp: Long = System.currentTimeMillis())
+
+    // ===== RESTORE =====
+
+    /** Re-activate a previously deactivated log. */
+    @Query("""
+        UPDATE maintenance_logs
+        SET is_active = 1, updated_at = :timestamp
+        WHERE id = :id AND is_active = 0
+    """)
+    suspend fun restoreLog(id: String, timestamp: Long = System.currentTimeMillis())
 
     // ===== BACKUP =====
 

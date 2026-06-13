@@ -49,6 +49,8 @@
     <string name="contact_screen_list_title">Contatti</string>
     <string name="contact_screen_list_subtitle_all">Tutti</string>
 
+    <string name="contact_list_delete_confirmation_body">Eliminare il contatto %1$s?</string>
+    <string name="contact_list_delete_multi_confirmation_body">Eliminare %1$d contatti?</string>
 
     <string name="contact_title">Contatti</string>
 

@@ -1,9 +1,11 @@
-package net.calvuz.qreport.client.island.maintenance.data.repository
+package net.calvuz.qreport.client.island.maintenance.data.local.repository
 
+import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.app.database.data.local.QReportDatabase
+import net.calvuz.qreport.client.island.data.local.dao.IslandDao
 import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
 import net.calvuz.qreport.client.island.maintenance.data.local.dao.OperationTypeCount
 import net.calvuz.qreport.client.island.maintenance.data.local.mapper.toDomain
@@ -16,7 +18,9 @@ import javax.inject.Singleton
 
 @Singleton
 class MaintenanceLogRepositoryImpl @Inject constructor(
-    private val dao: MaintenanceLogDao
+    private val dao: MaintenanceLogDao,
+    private val islandDao: IslandDao,
+    private val database: QReportDatabase
 ) : MaintenanceLogRepository {
 
     // ===== REACTIVE =====
@@ -105,15 +109,28 @@ class MaintenanceLogRepositoryImpl @Inject constructor(
 
     // ===== LIFECYCLE =====
 
-    override suspend fun deactivateLog(id: String): Result<Unit> =
+    override suspend fun deactivateLog(id: String, ts: Long): Result<Unit> =
         runCatching {
-            dao.deactivateLog(id, Clock.System.now().toEpochMilliseconds())
+            dao.deactivateLog(id, ts)
         }
 
-    override suspend fun markLogDeleted(id: String): Result<Unit> =
+    override suspend fun markLogDeleted(id: String, ts: Long): Result<Unit> =
         runCatching {
-            dao.markLogDeleted(id, Clock.System.now().toEpochMilliseconds())
+            dao.markLogDeleted(id, ts)
         }
+
+    // ===== RESTORE =====
+
+    @Suppress("HardCodedStringLiteral")
+    override suspend fun restoreLog(id: String, ts: Long): Result<Unit> = runCatching {
+        database.withTransaction {
+            val log = dao.getLogById(id) ?: error("Log not found: $id")
+            val island = islandDao.getIslandById(log.islandId) ?: error("Island not found: ${log.islandId}")
+
+            dao.restoreLog(id, ts)
+            islandDao.restoreIsland(island.id, ts)
+        }
+    }
 
     // ===== BACKUP =====
 

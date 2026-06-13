@@ -15,6 +15,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
+import net.calvuz.qreport.app.app.presentation.components.QrCardFooter
+import net.calvuz.qreport.app.app.presentation.components.QrCardFooterData
+import net.calvuz.qreport.app.app.presentation.components.QrStatusIndicator
 import net.calvuz.qreport.app.app.presentation.ui.theme.onSuccessContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.onWarningContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.success
@@ -25,6 +28,7 @@ import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
 import net.calvuz.qreport.client.island.presentation.model.icon
 import net.calvuz.qreport.settings.domain.model.ListViewMode
+import net.calvuz.qreport.client.unit.presentation.ui.components.MechanicalUnitCard
 
 /**
  * Island Card — three variants (FULL / COMPACT / MINIMAL).
@@ -36,6 +40,7 @@ import net.calvuz.qreport.settings.domain.model.ListViewMode
  *
  * Delete confirmation is handled internally — no local dialog state needed by callers.
  */
+@Suppress("ParamsComparedByRef", "HardCodedStringLiteral", "ASSIGNED_VALUE_IS_NEVER_READ")
 @Composable
 fun IslandCard(
     modifier: Modifier = Modifier,
@@ -43,10 +48,12 @@ fun IslandCard(
     onClick: () -> Unit,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
+    onRestore: (() -> Unit)? = null,
     showActions: Boolean = true,
     variant: ListViewMode = ListViewMode.FULL
 ) {
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    @Suppress("unused") var showDeleteDialog by remember { mutableStateOf(false) }
+    @Suppress("unused") var showRestoreDialog by remember { mutableStateOf(false) }
 
     Card(
         onClick = onClick,
@@ -59,13 +66,15 @@ fun IslandCard(
                 island = island,
                 showActions = showActions,
                 onEdit = onEdit,
-                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null
+                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null,
+                onRestore = if (onRestore != null) { { showRestoreDialog = true } } else null
             )
             ListViewMode.COMPACT -> CompactIslandCard(
                 island = island,
                 showActions = showActions,
                 onEdit = onEdit,
-                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null
+                onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null,
+                onRestore = if (onRestore != null) { { showRestoreDialog = true } } else null
             )
             ListViewMode.MINIMAL -> MinimalIslandCard(island)
         }
@@ -81,11 +90,32 @@ fun IslandCard(
                     onClick = { onDelete(); showDeleteDialog = false },
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text(stringResource(R.string.island_card_delete_dialog_confirm))
+                    Text(stringResource(R.string.action_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+    
+    if (showRestoreDialog && onRestore != null) {
+        AlertDialog(
+            onDismissRequest = { showRestoreDialog = false },
+            title = { Text(stringResource(R.string.island_card_restore_dialog_title)) },
+            text = { Text(stringResource(R.string.island_card_restore_dialog_message, island.customName ?: island.serialNumber)) },
+            confirmButton = {
+                TextButton(
+                    onClick = { onRestore(); showRestoreDialog = false },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text(stringResource(R.string.action_restore))
+                    }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRestoreDialog = false }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }
@@ -97,12 +127,14 @@ fun IslandCard(
 // FULL
 // =============================================================================
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun FullIslandCard(
     island: Island,
-    showActions: Boolean,
+    showActions: Boolean = false,
     onEdit: (() -> Unit)?,
-    onDelete: (() -> Unit)?
+    onDelete: (() -> Unit)?,
+    onRestore: (() -> Unit)?
 ) {
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // ── Header ────────────────────────────────────────────────────────────
@@ -202,6 +234,13 @@ private fun FullIslandCard(
             )
             IslandStatusBadge(status = island.islandOperationalStatus)
         }
+        QrCardFooter(
+            data = QrCardFooterData(
+                date = island.updatedAt,
+                isActive = island.isActive,
+                onRestore = onRestore
+            )
+        )
     }
 }
 
@@ -209,12 +248,14 @@ private fun FullIslandCard(
 // COMPACT
 // =============================================================================
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun CompactIslandCard(
     island: Island,
-    showActions: Boolean,
+    showActions: Boolean = false,
     onEdit: (() -> Unit)?,
-    onDelete: (() -> Unit)?
+    onDelete: (() -> Unit)?,
+    onRestore: (() -> Unit)?
 ) {
     Row(
         modifier = Modifier
@@ -257,10 +298,14 @@ private fun CompactIslandCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            IslandStatusIcon(status = island.islandOperationalStatus)
-            if (showActions) {
-                IslandActionButtons(onEdit = onEdit, onDelete = onDelete, large = false)
-            }
+            QrStatusIndicator(
+                isActive = island.isActive,
+                onRestore = onRestore
+            )
+        }
+        
+        if (showActions) {
+            IslandActionButtons(onEdit = onEdit, onDelete = onDelete, large = false)
         }
     }
 }
@@ -269,6 +314,7 @@ private fun CompactIslandCard(
 // MINIMAL
 // =============================================================================
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun MinimalIslandCard(island: Island) {
     Row(
@@ -307,6 +353,7 @@ private fun IslandDetailRow(icon: ImageVector, label: String, value: String) {
     }
 }
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun IslandOperationalStats(island: Island) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))) {
@@ -323,6 +370,7 @@ private fun IslandOperationalStats(island: Island) {
     }
 }
 
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun IslandMaintenanceRow(island: Island) {
     val isDue = island.needsMaintenance()

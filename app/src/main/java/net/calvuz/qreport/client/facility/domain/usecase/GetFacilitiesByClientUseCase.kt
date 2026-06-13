@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.client.facility.domain.usecase
 
 import net.calvuz.qreport.app.error.domain.model.QrError
@@ -36,16 +37,26 @@ class GetFacilitiesByClientUseCase @Inject constructor(
         })
     }
 
-    suspend fun getActiveFacilitiesByClient(clientId: String): QrResult<List<Facility>, QrError.FacilityError> {
+    
+    suspend fun getActive(clientId: String): QrResult<List<Facility>, QrError.FacilityError> {
+        Timber.v("Getting active facilities for client $clientId")
+
         if (clientId.isBlank()) {
             return QrResult.Error(QrError.FacilityError.LoadError("Client ID is required"))
         }
         return facilityRepository.getActiveFacilitiesByClient(clientId).fold(
-            onSuccess = { QrResult.Success(it.sortedByPrimaryThenName()) },
-            onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) })
+            onSuccess = { facilities ->
+                Timber.d("Loaded active facilities for client $clientId: ${facilities.size}")
+                QrResult.Success(facilities.sortedByPrimaryThenName())
+            },
+            onFailure = {
+                Timber.d(it, "Failed to load active facilities for client $clientId")
+                QrResult.Error(QrError.FacilityError.LoadError(it.message))
+            })
     }
-
-    suspend fun getPrimaryFacility(clientId: String): QrResult<Facility?, QrError.FacilityError> {
+    
+    @Suppress("unused")
+    suspend fun getPrimary(clientId: String): QrResult<Facility?, QrError.FacilityError> {
         if (clientId.isBlank()) {
             return QrResult.Error(QrError.FacilityError.LoadError("Client ID is required"))
         }
@@ -53,8 +64,9 @@ class GetFacilitiesByClientUseCase @Inject constructor(
             onSuccess = { QrResult.Success(it) },
             onFailure = { QrResult.Error(QrError.FacilityError.LoadError(it.message)) })
     }
-
-    suspend fun getFacilitiesByType(
+    
+    @Suppress("unused")
+    suspend fun getByType(
         clientId: String, facilityType: FacilityType
     ): QrResult<List<Facility>, QrError.FacilityError> = when (val result = invoke(clientId)) {
         is QrResult.Error -> result

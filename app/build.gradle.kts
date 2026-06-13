@@ -1,6 +1,7 @@
 // QReport - build.gradle.kts (app level)
 // Versione: 1.0 - Ottobre 2025
 // Namespace: net.calvuz.qreport
+@file:Suppress("HardCodedStringLiteral")
 
 plugins {
     alias(libs.plugins.android.application)
@@ -24,7 +25,7 @@ android {
 
         // Version
         versionCode = 1
-        versionName = "0.11.2"
+        versionName = "0.11.3"
 
         // ✅ AGGIORNATO test runner per Hilt
         testInstrumentationRunner = "net.calvuz.qreport.CustomTestRunner"

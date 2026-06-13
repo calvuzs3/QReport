@@ -6,7 +6,6 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
@@ -21,11 +20,12 @@ import javax.inject.Inject
  */
 class GetIslandsByFacilityUseCase @Inject constructor(
     private val islandRepository: IslandRepository,
-    private val facilityRepository: FacilityRepository
 ) {
+    
+    @Suppress("HardCodedStringLiteral")
     suspend operator fun invoke(facilityId: String): QrResult<List<Island>, QrError.IslandError> {
 
-        Timber.d("Get island by facility id")
+        Timber.d("Get islands for facility $facilityId")
 
         // Check input
         if (facilityId.isBlank()) {
@@ -33,42 +33,41 @@ class GetIslandsByFacilityUseCase @Inject constructor(
             return QrResult.Error(QrError.IslandError.FacilityNotFound())
         }
 
-        // Check facility exists
-        facilityRepository.getFacilityById(facilityId).fold(
-            onSuccess = { facility ->
-                if (facility == null || !facility.isActive) {
-                    Timber.d("Facility not found: $facilityId")
-                    return QrResult.Error(QrError.IslandError.FacilityNotFound())
-                }
-            },
-            onFailure = {
-                Timber.d("Error loading islands: ${it.message}")
-                return QrResult.Error(QrError.IslandError.LoadError(it.message)) }
-        )
-
         // Get
         islandRepository.getIslandsByFacility(facilityId).fold(
-            onSuccess = { islands -> return QrResult.Success(islands.sortedByTypeThenName())
+            onSuccess = { islands ->
+                Timber.d("Loaded islands for facility $facilityId: ${islands.size}")
+                return QrResult.Success(islands.sortedByTypeThenName())
             },
-            onFailure = { return QrResult.Error(QrError.IslandError.LoadError(it.message)) }
+            onFailure = {
+                Timber.d(it, "Failed to load islands for facility $facilityId")
+                return QrResult.Error(QrError.IslandError.LoadError(it.message)) }
         )
+    }
+
+    @Suppress("HardCodedStringLiteral")
+    suspend fun getActive(facilityId: String): QrResult<List<Island>, QrError.IslandError> {
+        Timber.v("Getting active islands for facility $facilityId")
+
+        return if (facilityId.isBlank()) {
+            Timber.d("Facility id is blank")
+            QrResult.Error(QrError.IslandError.FacilityNotFound())
+        } else {
+            islandRepository.getActiveIslandsByFacility(facilityId).fold(
+                onSuccess = { islands ->
+                    Timber.d("Loaded active islands for facility $facilityId: ${islands.size}")
+                    QrResult.Success(islands.sortedByTypeThenName())
+                },
+                onFailure = {
+                    Timber.d(it, "Failed to load active islands for facility $facilityId")
+                    QrResult.Error(QrError.IslandError.LoadError(it.message))
+                })
+        }
     }
 
     fun observeIslandsByFacility(facilityId: String): Flow<List<Island>> =
         islandRepository.getAllActiveIslandsByFacilityFlow(facilityId)
             .map { islands -> islands.sortedByTypeThenName() }
-
-    suspend fun getActiveIslandsByFacility(facilityId: String): QrResult<List<Island>, QrError.IslandError> =
-        when (val all = invoke(facilityId)) {
-            is QrResult.Error -> all
-            is QrResult.Success -> QrResult.Success(all.data.filter { it.isActive })
-        }
-
-    suspend fun getIslandsByType(facilityId: String, islandType: IslandType): QrResult<List<Island>, QrError.IslandError> =
-        when (val all = invoke(facilityId)) {
-            is QrResult.Error -> all
-            is QrResult.Success -> QrResult.Success(all.data.filter { it.islandType == islandType })
-        }
 
     suspend fun getIslandsDueMaintenance(
         facilityId: String,
