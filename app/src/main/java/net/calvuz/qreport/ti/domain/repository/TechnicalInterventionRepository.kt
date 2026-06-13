@@ -1,5 +1,6 @@
 package net.calvuz.qreport.ti.domain.repository
 
+import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.ti.domain.model.InterventionStatus
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 
@@ -14,4 +15,10 @@ interface TechnicalInterventionRepository {
     suspend fun getInterventionsByStatus(status: InterventionStatus): Result<List<TechnicalIntervention>>
     suspend fun updateIntervention(intervention: TechnicalIntervention): Result<Unit>
     suspend fun deleteIntervention(id: String): Result<Unit>
+
+    // ===== REACTIVE QUERIES (FLOW) =====
+    fun getAllInterventionsFlow(): Flow<List<TechnicalIntervention>>
+    fun getInterventionsByStatusFlow(status: InterventionStatus): Flow<List<TechnicalIntervention>>
+    fun getActiveInterventionsFlow(): Flow<List<TechnicalIntervention>>
+    fun getCompletedInterventionsFlow(): Flow<List<TechnicalIntervention>>
 }

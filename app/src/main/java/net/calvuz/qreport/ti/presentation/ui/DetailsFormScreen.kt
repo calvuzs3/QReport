@@ -13,11 +13,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 
 /**
  * Form screen for editing intervention details:
@@ -40,6 +42,7 @@ fun DetailsFormScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -48,7 +51,7 @@ fun DetailsFormScreen(
         // Dirty state indicator
         if (state.isDirty) {
             DirtyStateIndicator(
-                message = "Modifiche non salvate",
+                message = stringResource(R.string.intervention_general_unsaved_changes),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -78,7 +81,7 @@ fun DetailsFormScreen(
                         tint = MaterialTheme.colorScheme.onErrorContainer
                     )
                     Text(
-                        text = errorMessage,
+                        text = errorMessage.asString(),
                         color = MaterialTheme.colorScheme.onErrorContainer
                     )
                 }
@@ -147,7 +150,7 @@ private fun InterventionDescriptionSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Descrizione Intervento",
+                    text = stringResource(R.string.intervention_details_section_description),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -157,8 +160,8 @@ private fun InterventionDescriptionSection(
             OutlinedTextField(
                 value = description,
                 onValueChange = onDescriptionChange,
-                label = { Text("Descrizione Tecnica") },
-                placeholder = { Text("Descrivi l'intervento tecnico effettuato...") },
+                label = { Text(stringResource(R.string.intervention_details_description_label)) },
+                placeholder = { Text(stringResource(R.string.intervention_details_description_placeholder)) },
                 minLines = 5,
                 maxLines = 10,
                 modifier = Modifier.fillMaxWidth()
@@ -196,7 +199,7 @@ private fun MaterialsUsedSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Materiali Utilizzati",
+                    text = stringResource(R.string.intervention_details_section_materials),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -211,16 +214,16 @@ private fun MaterialsUsedSection(
                 OutlinedTextField(
                     value = ddtNumber,
                     onValueChange = onDdtNumberChange,
-                    label = { Text("Numero DDT") },
-                    placeholder = { Text("es. DDT001/2024") },
+                    label = { Text(stringResource(R.string.intervention_details_ddt_number_label)) },
+                    placeholder = { Text(stringResource(R.string.intervention_details_ddt_number_placeholder)) },
                     modifier = Modifier.weight(1f)
                 )
 
                 OutlinedTextField(
                     value = ddtDate,
                     onValueChange = onDdtDateChange,
-                    label = { Text("Data DDT") },
-                    placeholder = { Text("dd/MM/yyyy") },
+                    label = { Text(stringResource(R.string.intervention_details_ddt_date_label)) },
+                    placeholder = { Text(stringResource(R.string.intervention_details_ddt_date_placeholder)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f)
                 )
@@ -230,7 +233,7 @@ private fun MaterialsUsedSection(
 
             // Material Items (Fixed 6 rows)
             Text(
-                text = "Materiali (max 6 righe)",
+                text = stringResource(R.string.intervention_details_materials_max_rows),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -248,7 +251,7 @@ private fun MaterialsUsedSection(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Materiale ${index + 1}",
+                            text = stringResource(R.string.intervention_details_material_item_label, index + 1),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -263,7 +266,7 @@ private fun MaterialsUsedSection(
                                     val currentDescription = if (index < materialItems.size) materialItems[index].description else ""
                                     onMaterialItemChange(index, newQuantity, currentDescription)
                                 },
-                                label = { Text("Qtà") },
+                                label = { Text(stringResource(R.string.intervention_details_material_quantity_label)) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 modifier = Modifier.width(80.dp)
                             )
@@ -274,8 +277,8 @@ private fun MaterialsUsedSection(
                                     val currentQuantity = if (index < materialItems.size) materialItems[index].quantity else ""
                                     onMaterialItemChange(index, currentQuantity, newDescription)
                                 },
-                                label = { Text("Descrizione") },
-                                placeholder = { Text("Descrivi il materiale...") },
+                                label = { Text(stringResource(R.string.field_description)) },
+                                placeholder = { Text(stringResource(R.string.intervention_details_material_description_placeholder)) },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -311,7 +314,7 @@ private fun ExternalReportSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Report Esterno",
+                    text = stringResource(R.string.intervention_details_section_external_report),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -321,8 +324,8 @@ private fun ExternalReportSection(
             OutlinedTextField(
                 value = reportNumber,
                 onValueChange = onReportNumberChange,
-                label = { Text("Numero Report") },
-                placeholder = { Text("Numero report ditta esterna") },
+                label = { Text(stringResource(R.string.intervention_details_report_number_label)) },
+                placeholder = { Text(stringResource(R.string.intervention_details_report_number_placeholder)) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -354,7 +357,7 @@ private fun CompletionSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Stato Completamento",
+                    text = stringResource(R.string.intervention_details_section_completion),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -386,15 +389,16 @@ private fun CompletionSection(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = if (isComplete) "Intervento Completato" else "Intervento in Corso",
+                            text = if (isComplete) stringResource(R.string.intervention_details_completed_title)
+                            else stringResource(R.string.intervention_details_in_progress_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
                             text = if (isComplete)
-                                "L'intervento è stato completato con successo"
+                                stringResource(R.string.intervention_details_completed_description)
                             else
-                                "L'intervento è ancora in corso",
+                                stringResource(R.string.intervention_details_in_progress_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -483,7 +487,7 @@ private fun AutoSaveIndicator(
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Salvataggio in corso...",
+                text = stringResource(R.string.msg_saving),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )

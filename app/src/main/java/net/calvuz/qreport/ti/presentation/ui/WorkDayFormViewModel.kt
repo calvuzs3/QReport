@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.ti.presentation.ui
 
 import androidx.lifecycle.ViewModel
@@ -7,7 +8,10 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.ti.domain.model.*
 import net.calvuz.qreport.ti.domain.usecase.GetTechnicalInterventionByIdUseCase
@@ -62,7 +66,7 @@ class WorkDayFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "Errore nel caricamento: ${result.error}"
+                            errorMessage = result.error.asUiText()
                         )
                     }
                 }
@@ -377,7 +381,7 @@ class WorkDayFormViewModel @Inject constructor(
         }
 
         if (intervention == null) {
-            _state.update { it.copy(errorMessage = "Intervento non caricato") }
+            _state.update { it.copy(errorMessage = UiText.StringResource(R.string.err_intervention_no_intervention_loaded)) }
             onComplete(false)
             return
         }
@@ -403,7 +407,7 @@ class WorkDayFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = "Errore nel salvataggio: ${result.error}"
+                            errorMessage = result.error.asUiText()
                         )
                     }
                     // Still navigate back even on error
@@ -430,9 +434,8 @@ class WorkDayFormViewModel @Inject constructor(
 
         if (intervention == null) {
             Timber.e("autoSaveOnTabChange: No intervention loaded")
-            val error = "No intervention loaded"
-            _state.update { it.copy(errorMessage = error) }
-            return QrResult.Error(QrError.InterventionError.WorkDayError.SaveError(error))
+            _state.update { it.copy(errorMessage = UiText.StringResource(R.string.err_intervention_no_intervention_loaded)) }
+            return QrResult.Error(QrError.InterventionError.WorkDayError.SaveError())
         }
 
         return try {
@@ -458,7 +461,7 @@ class WorkDayFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = "Errore nel salvataggio: ${result.error}"
+                            errorMessage = result.error.asUiText()
                         )
                     }
                     QrResult.Error(result.error)
@@ -466,11 +469,10 @@ class WorkDayFormViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "autoSaveOnTabChange: Exception during save")
-            val error = "Errore nel salvataggio: ${e.message}"
             _state.update {
                 it.copy(
                     isSaving = false,
-                    errorMessage = error
+                    errorMessage = QrError.InterventionError.WorkDayError.SaveError(e.message).asUiText()
                 )
             }
             QrResult.Error(QrError.InterventionError.WorkDayError.SaveError())
@@ -505,13 +507,6 @@ class WorkDayFormViewModel @Inject constructor(
     }
 
     /**
-     * Check if this tab has unsaved changes
-     */
-    fun hasUnsavedChanges(): Boolean {
-        return _state.value.isDirty
-    }
-
-    /**
      * Internal save method that handles both new and existing work days.
      */
     private suspend fun saveCurrentStateInternal(
@@ -519,6 +514,12 @@ class WorkDayFormViewModel @Inject constructor(
         intervention: TechnicalIntervention
     ): QrResult<TechnicalIntervention, QrError> {
         return try {
+            // Re-fetch the latest data to avoid overwriting changes saved from other tabs
+            val baseIntervention = when (val freshResult = getTechnicalInterventionByIdUseCase(intervention.id)) {
+                is QrResult.Success -> freshResult.data
+                is QrResult.Error -> intervention
+            }
+
             // Convert form state to WorkDay domain model
             val workDay = WorkDay(
                 date = parseDateFromDisplay(currentState.date) ?: Clock.System.now(),
@@ -549,7 +550,7 @@ class WorkDayFormViewModel @Inject constructor(
             )
 
             // Update intervention with new/updated work day
-            val updatedWorkDays = intervention.workDays.toMutableList()
+            val updatedWorkDays = baseIntervention.workDays.toMutableList()
 
             if (currentWorkDayIndex != null && currentWorkDayIndex!! < updatedWorkDays.size) {
                 // Update existing work day at index
@@ -563,7 +564,7 @@ class WorkDayFormViewModel @Inject constructor(
                 Timber.d("Added new work day at index $currentWorkDayIndex")
             }
 
-            val updatedIntervention = intervention.copy(
+            val updatedIntervention = baseIntervention.copy(
                 workDays = updatedWorkDays
             )
 
@@ -623,6 +624,7 @@ class WorkDayFormViewModel @Inject constructor(
                 ""
             }
         } catch (e: Exception) {
+            Timber.d(e, "Error formatting date for display")
             ""
         }
     }
@@ -644,6 +646,7 @@ class WorkDayFormViewModel @Inject constructor(
             val isoDate = String.format("%04d-%02d-%02d", year, month, day)
             Instant.parse("${isoDate}T00:00:00Z")
         } catch (e: Exception) {
+            Timber.d(e, "Error parsing date from display")
             null
         }
     }
@@ -686,7 +689,7 @@ data class WorkDayFormState(
     val transferToAirport: Boolean = false,
     val lodging: Boolean = false,
 
-    val errorMessage: String? = null
+    val errorMessage: UiText? = null
 )
 
 /**

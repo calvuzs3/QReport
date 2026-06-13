@@ -1,11 +1,13 @@
-package net.calvuz.qreport.client.document.data.repository
+@file:Suppress("HardCodedStringLiteral")
+package net.calvuz.qreport.client.document.data.local.repository
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import net.calvuz.qreport.client.document.data.local.dao.IslandDocumentDao
-import net.calvuz.qreport.client.document.data.mapper.IslandDocumentMapper
+import net.calvuz.qreport.client.document.data.local.dao.DocumentDao
+import net.calvuz.qreport.client.document.data.local.entity.DocumentEntity
+import net.calvuz.qreport.client.document.data.mapper.DocumentMapper
 import net.calvuz.qreport.client.document.domain.model.DocumentCategory
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import net.calvuz.qreport.client.document.domain.repository.DocumentRepository
 import timber.log.Timber
 import javax.inject.Inject
@@ -15,59 +17,59 @@ import javax.inject.Singleton
  * Implementation of [DocumentRepository].
  *
  * Responsibilities:
- *  - Translate between [IslandDocument] (domain) and [IslandDocumentEntity] (data)
- *    via [IslandDocumentMapper].
- *  - Delegate all persistence to [IslandDocumentDao].
+ *  - Translate between [Document] (domain) and [DocumentEntity] (data)
+ *    via [DocumentMapper].
+ *  - Delegate all persistence to [DocumentDao].
  *  - Wrap every suspend operation in runCatching → Result.
  *
  * Does NOT contain business logic — that belongs in use cases.
  */
 @Singleton
 class DocumentRepositoryImpl @Inject constructor(
-    private val dao: IslandDocumentDao
+    private val dao: DocumentDao
 ) : DocumentRepository {
 
     // =========================================================================
     // REACTIVE
     // =========================================================================
 
-    override fun getDocumentsForIslandFlow(islandId: String): Flow<List<IslandDocument>> =
+    override fun getDocumentsForIslandFlow(islandId: String): Flow<List<Document>> =
         dao.getDocumentsForIslandFlow(islandId)
-            .map { IslandDocumentMapper.toDomainList(it) }
+            .map { DocumentMapper.toDomainList(it) }
 
-    override fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<IslandDocument>> =
+    override fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<Document>> =
         dao.getDocumentsForFacilityFlow(facilityId)
-            .map { IslandDocumentMapper.toDomainList(it) }
+            .map { DocumentMapper.toDomainList(it) }
 
-    override fun getDocumentsForClientFlow(clientId: String): Flow<List<IslandDocument>> =
+    override fun getDocumentsForClientFlow(clientId: String): Flow<List<Document>> =
         dao.getDocumentsForClientFlow(clientId)
-            .map { IslandDocumentMapper.toDomainList(it) }
+            .map { DocumentMapper.toDomainList(it) }
 
-    override fun getGlobalDocumentsFlow(): Flow<List<IslandDocument>> =
+    override fun getGlobalDocumentsFlow(): Flow<List<Document>> =
         dao.getGlobalDocumentsFlow()
-            .map { IslandDocumentMapper.toDomainList(it) }
+            .map { DocumentMapper.toDomainList(it) }
 
     override fun getDocumentsForIslandByCategoryFlow(
         islandId: String,
         category: DocumentCategory
-    ): Flow<List<IslandDocument>> =
+    ): Flow<List<Document>> =
         dao.getDocumentsForIslandByCategoryFlow(islandId, category.name)
-            .map { IslandDocumentMapper.toDomainList(it) }
+            .map { DocumentMapper.toDomainList(it) }
 
     override fun getDocumentsForFacilityByCategoryFlow(
         facilityId: String,
         category: DocumentCategory
-    ): Flow<List<IslandDocument>> =
+    ): Flow<List<Document>> =
         dao.getDocumentsForFacilityByCategoryFlow(facilityId, category.name)
-            .map { IslandDocumentMapper.toDomainList(it) }
+            .map { DocumentMapper.toDomainList(it) }
 
     // =========================================================================
     // SUSPEND — read
     // =========================================================================
 
-    override suspend fun getDocumentById(id: String): Result<IslandDocument?> =
+    override suspend fun getDocumentById(id: String): Result<Document?> =
         runCatching {
-            dao.getDocumentById(id)?.let { IslandDocumentMapper.toDomain(it) }
+            dao.getDocumentById(id)?.let { DocumentMapper.toDomain(it) }
         }.onFailure { Timber.e(it, "getDocumentById failed: id=$id") }
 
     override suspend fun countDocumentsForIsland(islandId: String): Result<Int> =
@@ -89,15 +91,15 @@ class DocumentRepositoryImpl @Inject constructor(
     // SUSPEND — write
     // =========================================================================
 
-    override suspend fun insertDocument(document: IslandDocument): Result<Unit> =
+    override suspend fun insertDocument(document: Document): Result<Unit> =
         runCatching {
-            dao.insertDocument(IslandDocumentMapper.toEntity(document))
+            dao.insertDocument(DocumentMapper.toEntity(document))
             Timber.d("insertDocument: id=${document.id} scope=${document.scope}")
         }.onFailure { Timber.e(it, "insertDocument failed: id=${document.id}") }
 
-    override suspend fun updateDocument(document: IslandDocument): Result<Unit> =
+    override suspend fun updateDocument(document: Document): Result<Unit> =
         runCatching {
-            dao.updateDocument(IslandDocumentMapper.toEntity(document))
+            dao.updateDocument(DocumentMapper.toEntity(document))
             Timber.d("updateDocument: id=${document.id}")
         }.onFailure { Timber.e(it, "updateDocument failed: id=${document.id}") }
 
@@ -131,14 +133,14 @@ class DocumentRepositoryImpl @Inject constructor(
     // SYNC
     // =========================================================================
 
-    override suspend fun getPendingSync(): Result<List<IslandDocument>> =
+    override suspend fun getPendingSync(): Result<List<Document>> =
         runCatching {
-            IslandDocumentMapper.toDomainList(dao.getPendingSync())
+            DocumentMapper.toDomainList(dao.getPendingSync())
         }.onFailure { Timber.e(it, "getPendingSync failed") }
 
-    override suspend fun getChangedSince(since: Long): Result<List<IslandDocument>> =
+    override suspend fun getChangedSince(since: Long): Result<List<Document>> =
         runCatching {
-            IslandDocumentMapper.toDomainList(dao.getChangedSince(since))
+            DocumentMapper.toDomainList(dao.getChangedSince(since))
         }.onFailure { Timber.e(it, "getChangedSince failed: since=$since") }
 
     override suspend fun markSynced(id: String, syncedAt: Long): Result<Unit> =
@@ -147,9 +149,9 @@ class DocumentRepositoryImpl @Inject constructor(
             Timber.d("markSynced: id=$id syncedAt=$syncedAt")
         }.onFailure { Timber.e(it, "markSynced failed: id=$id") }
 
-    override suspend fun upsertDocuments(documents: List<IslandDocument>): Result<Unit> =
+    override suspend fun upsertDocuments(documents: List<Document>): Result<Unit> =
         runCatching {
-            dao.upsertDocuments(IslandDocumentMapper.toEntityList(documents))
+            dao.upsertDocuments(DocumentMapper.toEntityList(documents))
             Timber.d("upsertDocuments: count=${documents.size}")
         }.onFailure { Timber.e(it, "upsertDocuments failed: count=${documents.size}") }
 }

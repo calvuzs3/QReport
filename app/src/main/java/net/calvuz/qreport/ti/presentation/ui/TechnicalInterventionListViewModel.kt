@@ -5,14 +5,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.app.app.presentation.model.QReportFilter
+import net.calvuz.qreport.app.app.presentation.model.QReportSortOrder
+import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.ti.domain.usecase.DeleteTechnicalInterventionUseCase
@@ -26,7 +31,6 @@ import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SelectionAction
 import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionActionHandler
-import net.calvuz.qreport.app.app.presentation.components.simple_selection.SimpleSelectionManager
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -48,23 +52,41 @@ data class TechnicalInterventionListUiState(
 )
 
 /** TechnicalInterventionListScreen Filter */
-enum class InterventionFilter {
+enum class InterventionFilter : QReportFilter {
     ACTIVE,         // DRAFT + IN_PROGRESS (default)
     COMPLETED,      // COMPLETED + ARCHIVED
     DRAFT,          // Only DRAFT
     IN_PROGRESS,    // Only IN_PROGRESS
     PENDING_REVIEW, // Only PENDING_REVIEW
-    ALL             // All statuses
+    ALL;            // All statuses
+
+    override fun getDisplayName(): UiText = when (this) {
+        ACTIVE -> UiText.StringResource(R.string.interventions_filter_active)
+        COMPLETED -> UiText.StringResource(R.string.interventions_filter_completed)
+        DRAFT -> UiText.StringResource(R.string.interventions_filter_draft)
+        IN_PROGRESS -> UiText.StringResource(R.string.interventions_filter_in_progress)
+        PENDING_REVIEW -> UiText.StringResource(R.string.interventions_filter_pending_review)
+        ALL -> UiText.StringResource(R.string.interventions_filter_all)
+    }
 }
 
 /** TechnicalInterventionListScreen SortOrder */
-enum class InterventionSortOrder {
+enum class InterventionSortOrder : QReportSortOrder {
     UPDATED_RECENT,     // updatedAt DESC
     UPDATED_OLDEST,     // updatedAt ASC
     CREATED_RECENT,     // createdAt DESC
     CREATED_OLDEST,     // createdAt ASC
     CUSTOMER_NAME,      // customerData.customerName ASC
-    INTERVENTION_NUMBER // interventionNumber ASC
+    INTERVENTION_NUMBER; // interventionNumber ASC
+
+    override fun getDisplayName(): UiText = when (this) {
+        UPDATED_RECENT -> UiText.StringResource(R.string.interventions_sort_updated_recent)
+        UPDATED_OLDEST -> UiText.StringResource(R.string.interventions_sort_updated_oldest)
+        CREATED_RECENT -> UiText.StringResource(R.string.interventions_sort_created_recent)
+        CREATED_OLDEST -> UiText.StringResource(R.string.interventions_sort_created_oldest)
+        CUSTOMER_NAME -> UiText.StringResource(R.string.interventions_sort_customer_name)
+        INTERVENTION_NUMBER -> UiText.StringResource(R.string.interventions_sort_intervention_number)
+    }
 }
 
 @HiltViewModel
@@ -78,7 +100,8 @@ class TechnicalInterventionListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TechnicalInterventionListUiState())
     val uiState: StateFlow<TechnicalInterventionListUiState> = _uiState.asStateFlow()
 
-    val selectionManager = SimpleSelectionManager<TechnicalIntervention>()
+    // Tracks the active observation coroutine so switching filters never leaves stale collectors.
+    private var loadJob: Job? = null
 
     companion object {
         const val KEY = AppSettingsDataStore.LIST_KEY_TI
@@ -86,177 +109,23 @@ class TechnicalInterventionListViewModel @Inject constructor(
 
     init {
         observeCardVariant()
+        loadInterventions()
     }
 
     // ============================================================
     // PUBLIC METHODS
     // ============================================================
 
-    init {
-        loadInterventions()
-    }
-
     fun loadInterventions() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                error = null
-            )
-
-            try {
-                Timber.d("Loading technical interventions")
-
-                // Use default filter (ACTIVE) to get DRAFT + IN_PROGRESS
-                getAllTechnicalInterventionsUseCase.getActiveInterventions()
-                    .catch { exception ->
-                        if (exception is CancellationException) throw exception
-                        Timber.e(exception, "Error in interventions flow")
-                        if (currentCoroutineContext().isActive) {
-                            _uiState.value = _uiState.value.copy(
-                                isLoading = false,
-                                isRefreshing = false,
-                                error = UiText.StringResource(R.string.err_interventions_list_load_failed)
-                            )
-                        }
-                    }
-                    .collect { result ->
-                        if (!currentCoroutineContext().isActive) {
-                            Timber.d("Skipping interventions processing - job cancelled")
-                            return@collect
-                        }
-
-                        when (result) {
-                            is QrResult.Success -> {
-                                val interventions = result.data
-
-                                // Enrich with statistics
-                                val interventionsWithStats = enrichWithStatistics(interventions)
-
-                                if (currentCoroutineContext().isActive) {
-                                    val currentState = _uiState.value
-                                    val filteredAndSorted = applyFiltersAndSort(
-                                        interventionsWithStats,
-                                        currentState.searchQuery,
-                                        currentState.selectedFilter,
-                                        currentState.selectedSortOrder
-                                    )
-
-                                    _uiState.value = currentState.copy(
-                                        interventions = interventionsWithStats,
-                                        filteredInterventions = filteredAndSorted,
-                                        isLoading = false,
-                                        isRefreshing = false,
-                                        error = null
-                                    )
-
-                                    Timber.d("Loaded ${interventions.size} interventions successfully")
-                                }
-                            }
-
-                            is QrResult.Error -> {
-                                if (currentCoroutineContext().isActive) {
-                                    _uiState.value = _uiState.value.copy(
-                                        isLoading = false,
-                                        isRefreshing = false,
-                                        error = UiText.StringResource(R.string.err_interventions_list_load_failed)
-                                    )
-                                }
-                            }
-                        }
-                    }
-            } catch (_: CancellationException) {
-                Timber.d("Interventions loading cancelled")
-            } catch (e: Exception) {
-                Timber.e(e, "Exception loading interventions")
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = UiText.StringResource(R.string.err_interventions_list_unexpected)
-                )
-            }
-        }
+        observeInterventions(_uiState.value.selectedFilter)
     }
 
     fun refresh() {
         viewModelScope.launch {
-            try {
-                _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
-
-                Timber.d("Refreshing technical interventions")
-                delay(500)
-
-                // Use current filter for refresh
-                val currentFilter = _uiState.value.selectedFilter
-                val useCase = when (currentFilter) {
-                    InterventionFilter.ACTIVE -> getAllTechnicalInterventionsUseCase.getActiveInterventions()
-                    InterventionFilter.COMPLETED -> getAllTechnicalInterventionsUseCase.getCompletedInterventions()
-                    InterventionFilter.DRAFT -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
-                        InterventionStatus.DRAFT
-                    )
-                    InterventionFilter.IN_PROGRESS -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
-                        InterventionStatus.IN_PROGRESS
-                    )
-                    InterventionFilter.PENDING_REVIEW -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
-                        InterventionStatus.PENDING_REVIEW
-                    )
-                    InterventionFilter.ALL -> getAllTechnicalInterventionsUseCase()
-                }
-
-                useCase.catch { exception ->
-                    if (exception is CancellationException) throw exception
-                    Timber.e(exception, "Error refreshing interventions")
-                    if (currentCoroutineContext().isActive) {
-                        _uiState.value = _uiState.value.copy(
-                            isRefreshing = false,
-                            error = UiText.StringResource(R.string.err_interventions_list_refresh_failed)
-                        )
-                    }
-                }.collect { result ->
-                    if (!currentCoroutineContext().isActive) return@collect
-
-                    when (result) {
-                        is QrResult.Success -> {
-                            val interventions = result.data
-                            val interventionsWithStats = enrichWithStatistics(interventions)
-
-                            if (currentCoroutineContext().isActive) {
-                                val currentState = _uiState.value
-                                val filteredAndSorted = applyFiltersAndSort(
-                                    interventionsWithStats,
-                                    currentState.searchQuery,
-                                    currentState.selectedFilter,
-                                    currentState.selectedSortOrder
-                                )
-
-                                _uiState.value = currentState.copy(
-                                    interventions = interventionsWithStats,
-                                    filteredInterventions = filteredAndSorted,
-                                    isRefreshing = false,
-                                    error = null
-                                )
-
-                                Timber.d("Refresh completed: ${interventions.size} interventions")
-                            }
-                        }
-
-                        is QrResult.Error -> {
-                            if (currentCoroutineContext().isActive) {
-                                _uiState.value = _uiState.value.copy(
-                                    isRefreshing = false,
-                                    error = UiText.StringResource(R.string.err_interventions_list_refresh_failed)
-                                )
-                            }
-                        }
-                    }
-                }
-            } catch (_: CancellationException) {
-                Timber.d("Refresh cancelled")
-            } catch (e: Exception) {
-                Timber.e(e, "Exception during refresh")
-                _uiState.value = _uiState.value.copy(
-                    isRefreshing = false,
-                    error = UiText.StringResource(R.string.err_interventions_list_unexpected)
-                )
-            }
+            _uiState.value = _uiState.value.copy(isRefreshing = true, error = null)
+            Timber.d("Refreshing technical interventions")
+            delay(500)
+            observeInterventions(_uiState.value.selectedFilter, isRefresh = true)
         }
     }
 
@@ -289,8 +158,8 @@ class TechnicalInterventionListViewModel @Inject constructor(
             filteredInterventions = filteredAndSorted
         )
 
-        // Reload data for new filter
-        loadInterventions()
+        // Reload data for the new filter
+        observeInterventions(filter)
     }
 
     fun updateSortOrder(sortOrder: InterventionSortOrder) {
@@ -454,6 +323,117 @@ class TechnicalInterventionListViewModel @Inject constructor(
     // ============================================================
     // PRIVATE METHODS
     // ============================================================
+
+    /**
+     * Returns the Flow matching the given filter's status criteria.
+     */
+    private fun getInterventionsFlow(filter: InterventionFilter): Flow<QrResult<List<TechnicalIntervention>, QrError>> =
+        when (filter) {
+            InterventionFilter.ACTIVE -> getAllTechnicalInterventionsUseCase.getActiveInterventions()
+            InterventionFilter.COMPLETED -> getAllTechnicalInterventionsUseCase.getCompletedInterventions()
+            InterventionFilter.DRAFT -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                InterventionStatus.DRAFT
+            )
+            InterventionFilter.IN_PROGRESS -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                InterventionStatus.IN_PROGRESS
+            )
+            InterventionFilter.PENDING_REVIEW -> getAllTechnicalInterventionsUseCase.getInterventionsByStatus(
+                InterventionStatus.PENDING_REVIEW
+            )
+            InterventionFilter.ALL -> getAllTechnicalInterventionsUseCase()
+        }
+
+    /**
+     * Observes technical interventions matching [filter].
+     * Cancels any previous observation before starting a new one, so switching
+     * filters or refreshing never leaves stale collectors running.
+     */
+    private fun observeInterventions(filter: InterventionFilter, isRefresh: Boolean = false) {
+        loadJob?.cancel()
+
+        val errorRes = if (isRefresh) {
+            R.string.err_interventions_list_refresh_failed
+        } else {
+            R.string.err_interventions_list_load_failed
+        }
+
+        loadJob = viewModelScope.launch {
+            if (!isRefresh) {
+                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            }
+
+            try {
+                Timber.d("Observing technical interventions (filter=$filter)")
+
+                getInterventionsFlow(filter)
+                    .catch { exception ->
+                        if (exception is CancellationException) throw exception
+                        Timber.e(exception, "Error in interventions flow")
+                        if (currentCoroutineContext().isActive) {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                isRefreshing = false,
+                                error = UiText.StringResource(errorRes)
+                            )
+                        }
+                    }
+                    .collect { result ->
+                        if (!currentCoroutineContext().isActive) {
+                            Timber.d("Skipping interventions processing - job cancelled")
+                            return@collect
+                        }
+
+                        when (result) {
+                            is QrResult.Success -> {
+                                val interventions = result.data
+
+                                // Enrich with statistics
+                                val interventionsWithStats = enrichWithStatistics(interventions)
+
+                                if (currentCoroutineContext().isActive) {
+                                    val currentState = _uiState.value
+                                    val filteredAndSorted = applyFiltersAndSort(
+                                        interventionsWithStats,
+                                        currentState.searchQuery,
+                                        currentState.selectedFilter,
+                                        currentState.selectedSortOrder
+                                    )
+
+                                    _uiState.value = currentState.copy(
+                                        interventions = interventionsWithStats,
+                                        filteredInterventions = filteredAndSorted,
+                                        isLoading = false,
+                                        isRefreshing = false,
+                                        error = null
+                                    )
+
+                                    Timber.d("Loaded ${interventions.size} interventions successfully")
+                                }
+                            }
+
+                            is QrResult.Error -> {
+                                if (currentCoroutineContext().isActive) {
+                                    _uiState.value = _uiState.value.copy(
+                                        isLoading = false,
+                                        isRefreshing = false,
+                                        error = UiText.StringResource(errorRes)
+                                    )
+                                }
+                            }
+                        }
+                    }
+            } catch (_: CancellationException) {
+                Timber.d("Interventions observation cancelled")
+            } catch (e: Exception) {
+                Timber.e(e, "Exception observing interventions")
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    isRefreshing = false,
+                    error = UiText.StringResource(R.string.err_interventions_list_unexpected)
+                )
+            }
+        }
+    }
 
     /**
      * Observe the persisted card variant preference and apply it to UI state.

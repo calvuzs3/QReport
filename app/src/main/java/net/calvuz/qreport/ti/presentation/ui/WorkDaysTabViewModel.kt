@@ -1,14 +1,15 @@
 package net.calvuz.qreport.ti.presentation.ui
 
-import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
-import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 import net.calvuz.qreport.ti.domain.model.WorkDay
 import net.calvuz.qreport.ti.domain.usecase.GetTechnicalInterventionByIdUseCase
@@ -77,7 +78,7 @@ class WorkDaysTabViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "Errore nel caricamento: ${result.error}"
+                            errorMessage = result.error.asUiText()
                         )
                     }
                 }
@@ -163,7 +164,13 @@ class WorkDaysTabViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true) }
 
-            val updatedIntervention = intervention.copy(workDays = workDays)
+            // Re-fetch the latest data to avoid overwriting changes saved from other tabs
+            val baseIntervention = when (val freshResult = getTechnicalInterventionByIdUseCase(intervention.id)) {
+                is QrResult.Success -> freshResult.data
+                is QrResult.Error -> intervention
+            }
+
+            val updatedIntervention = baseIntervention.copy(workDays = workDays)
 
             when (val result = updateTechnicalInterventionUseCase(updatedIntervention)) {
                 is QrResult.Success -> {
@@ -180,7 +187,7 @@ class WorkDaysTabViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = "Errore nell'eliminazione: ${result.error}"
+                            errorMessage = result.error.asUiText()
                         )
                     }
                 }
@@ -193,22 +200,6 @@ class WorkDaysTabViewModel @Inject constructor(
      */
     fun clearError() {
         _state.update { it.copy(errorMessage = null) }
-    }
-
-    /**
-     * Check if tab has unsaved changes (for dirty state tracking)
-     */
-    fun isDirty(): Boolean {
-        return _state.value.viewMode is WorkDaysViewMode.Detail
-    }
-
-    /**
-     * Auto-save on tab change - delegates to detail form if in detail mode
-     */
-    fun autoSaveOnTabChange(): QrResult<Unit, QrError> {
-        // If we're in list mode, nothing to save at this level
-        // The detail form handles its own saving
-        return QrResult.Success(Unit)
     }
 }
 
@@ -228,7 +219,7 @@ data class WorkDaysTabState(
     val isSaving: Boolean = false,
     val workDays: List<WorkDay> = emptyList(),
     val viewMode: WorkDaysViewMode = WorkDaysViewMode.List,
-    val errorMessage: String? = null
+    val errorMessage: UiText? = null
 )
 
 /**
@@ -253,7 +244,7 @@ fun WorkDay.toListItem(index: Int): WorkDayListItem {
     return WorkDayListItem(
         index = index,
         date = date,
-        dateFormatted = formatDateForList(date),
+        dateFormatted = (date.toItalianDate()),
         isRemoteAssistance = remoteAssistance,
         technicianCount = technicianCount,
         technicianInitials = technicianInitials,
@@ -261,21 +252,4 @@ fun WorkDay.toListItem(index: Int): WorkDayListItem {
         hasMorningWork = morningStart.isNotBlank() || morningEnd.isNotBlank(),
         hasAfternoonWork = afternoonStart.isNotBlank() || afternoonEnd.isNotBlank()
     )
-}
-
-/**
- * Format Instant for list display (dd/MM/yyyy)
- */
-private fun formatDateForList(instant: Instant): String {
-    return try {
-        val localDate = instant.toString().substring(0, 10)
-        val parts = localDate.split("-")
-        if (parts.size == 3) {
-            "${parts[2]}/${parts[1]}/${parts[0]}"
-        } else {
-            "Data non valida"
-        }
-    } catch (e: Exception) {
-        "Data non valida"
-    }
 }

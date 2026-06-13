@@ -2,8 +2,6 @@ package net.calvuz.qreport.app.database.di
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,17 +12,8 @@ import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
-import net.calvuz.qreport.client.client.data.local.dao.ClientDao
-import net.calvuz.qreport.client.contact.data.local.dao.ContactDao
-import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
-import net.calvuz.qreport.client.island.data.local.dao.IslandDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
-import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
-import net.calvuz.qreport.client.document.data.local.dao.IslandDocumentDao
-import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
-import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
-import net.calvuz.qreport.sync.data.local.dao.SyncDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import javax.inject.Singleton
 

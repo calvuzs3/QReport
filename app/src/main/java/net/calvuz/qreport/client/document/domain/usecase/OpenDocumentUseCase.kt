@@ -8,7 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.file.domain.repository.CoreFileRepository
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -28,7 +28,7 @@ class OpenDocumentUseCase @Inject constructor(
     private val coreFileRepo: CoreFileRepository, @ApplicationContext private val context: Context
 ) {
     suspend operator fun invoke(
-        document: IslandDocument
+        document: Document
     ): QrResult<Unit, QrError.IslandDocumentError> {
 
         // 1. Verify file still exists on disk

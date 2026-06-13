@@ -29,7 +29,7 @@ package net.calvuz.qreport.client.document.domain.model
  *  - [updatedAt] is set on every local write.
  *  - [syncedAt]  is set after a successful push to the server; null = never synced.
  */
-data class IslandDocument(
+data class Document(
     val id: String,
 
     // ===== SCOPE =====
@@ -64,6 +64,7 @@ data class IslandDocument(
      * The scope-appropriate FK as a single nullable string.
      * Null for [DocumentScope.GLOBAL] documents.
      */
+    
     val scopeEntityId: String?
         get() = when (scope) {
             DocumentScope.ISLAND   -> islandId

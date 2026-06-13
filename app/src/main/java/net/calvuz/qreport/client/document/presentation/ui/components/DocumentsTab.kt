@@ -37,12 +37,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 import net.calvuz.qreport.client.document.domain.model.DocumentCategory
 import net.calvuz.qreport.client.document.domain.model.DocumentMimeTypes
 import net.calvuz.qreport.client.document.domain.model.DocumentScope
+import net.calvuz.qreport.client.document.presentation.model.displayLabel
 import net.calvuz.qreport.client.document.presentation.ui.DocumentViewModel
 
 /**
@@ -112,7 +115,8 @@ fun DocumentsTab(
                 FloatingActionButton(
                     onClick = { pickerLauncher.launch(DocumentMimeTypes.PICKER_ALL) }
                 ) {
-                    Icon(Icons.Default.Add, contentDescription = "Aggiungi documento")
+                    Icon(Icons.Default.Add, contentDescription =
+                        stringResource(R.string.action_add_document))
                 }
             }
         },
@@ -158,7 +162,7 @@ fun DocumentsTab(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             TextButton(onClick = viewModel::onErrorDismissed) {
-                                Text("Chiudi")
+                                Text(stringResource(R.string.action_close))
                             }
                         }
                     }
@@ -167,7 +171,7 @@ fun DocumentsTab(
                 uiState.filteredDocuments.isEmpty() -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text  = "Nessun documento",
+                            text  = stringResource((R.string.label_no_documents)),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -202,16 +206,17 @@ fun DocumentsTab(
         if (uiState.pendingDelete != null) {
             AlertDialog(
                 onDismissRequest = viewModel::onCancelDelete,
-                title = { Text("Elimina documento") },
-                text  = { Text("Confermi l'eliminazione del documento?") },
+                title = { Text(stringResource(R.string.action_delete_document)) },
+                text  = { Text(stringResource(R.string.action_delete_document_confirmation)) },
                 confirmButton = {
                     TextButton(onClick = viewModel::onConfirmDelete) {
-                        Text("Elimina", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(R.string.action_delete), color = MaterialTheme
+                            .colorScheme.error)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = viewModel::onCancelDelete) {
-                        Text("Annulla")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             )
@@ -234,26 +239,17 @@ private fun CategoryFilterRow(
             FilterChip(
                 selected  = selected == null,
                 onClick   = { onSelect(null) },
-                label     = { Text("Tutti") }
+                label     = { Text(stringResource(R.string.label_all)) }
             )
         }
         items(DocumentCategory.entries) { category ->
             FilterChip(
                 selected  = selected == category,
                 onClick   = { onSelect(if (selected == category) null else category) },
-                label     = { Text(category.displayLabel()) }
+                label     = { Text(category.displayLabel().asString()) }
             )
         }
     }
-}
-
-private fun DocumentCategory.displayLabel(): String = when (this) {
-    DocumentCategory.ELECTRICAL -> "Elettrico"
-    DocumentCategory.MECHANICAL -> "Meccanico"
-    DocumentCategory.FLUID      -> "Fluidi"
-    DocumentCategory.MANUAL     -> "Manuale"
-    DocumentCategory.CONTRACT   -> "Contratto"
-    DocumentCategory.OTHER      -> "Altro"
 }
 
 // ── Selection top bar ─────────────────────────────────────────────────────────
@@ -266,15 +262,15 @@ private fun SelectionTopBar(
     onDelete: () -> Unit
 ) {
     androidx.compose.material3.TopAppBar(
-        title = { Text("$count selezionati") },
+        title = { Text(stringResource(R.string.label_count_selected, count)) },
         navigationIcon = {
-            TextButton(onClick = onClear) { Text("Annulla") }
+            TextButton(onClick = onClear) { Text(stringResource(R.string.action_cancel)) }
         },
         actions = {
             IconButton(onClick = onDelete) {
                 Icon(
                     Icons.Default.Delete,
-                    contentDescription = "Elimina selezionati",
+                    contentDescription = stringResource(R.string.action_delete),
                     tint = MaterialTheme.colorScheme.error
                 )
             }

@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral", "ASSIGNED_VALUE_IS_NEVER_READ")
 package net.calvuz.qreport.ti.presentation.ui
 
 import androidx.compose.animation.animateColorAsState
@@ -13,14 +14,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.ti.domain.model.WorkDay
 
 /**
  * List content for WorkDays tab.
  * Displays all work days with summary info and swipe-to-delete.
  */
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkDaysListContent(
@@ -77,12 +81,13 @@ fun WorkDaysListContent(
                 onClick = onAddWorkDay,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
+                    .navigationBarsPadding()
                     .padding(16.dp),
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Aggiungi giornata"
+                    contentDescription = stringResource(R.string.intervention_workdays_list_add_cd)
                 )
             }
         }
@@ -92,6 +97,7 @@ fun WorkDaysListContent(
 /**
  * Swipeable work day card with delete action
  */
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SwipeableWorkDayCard(
@@ -135,7 +141,7 @@ private fun SwipeableWorkDayCard(
                 if (dismissState.targetValue == SwipeToDismissBoxValue.EndToStart) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Elimina",
+                        contentDescription = stringResource(R.string.action_delete),
                         tint = MaterialTheme.colorScheme.onErrorContainer
                     )
                 }
@@ -158,9 +164,9 @@ private fun SwipeableWorkDayCard(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Elimina giornata") },
+            title = { Text(stringResource(R.string.intervention_workdays_list_delete_dialog_title)) },
             text = {
-                Text("Sei sicuro di voler eliminare la giornata ${index + 1}?")
+                Text(stringResource(R.string.intervention_workdays_list_delete_dialog_text, index + 1))
             },
             confirmButton = {
                 TextButton(
@@ -172,12 +178,12 @@ private fun SwipeableWorkDayCard(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Elimina")
+                    Text(stringResource(R.string.action_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Annulla")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -187,6 +193,7 @@ private fun SwipeableWorkDayCard(
 /**
  * Work day card with summary information
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun WorkDayCard(
     workDay: WorkDay,
@@ -252,7 +259,7 @@ private fun WorkDayCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Elimina",
+                            contentDescription = stringResource(R.string.action_delete),
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(18.dp)
                         )
@@ -280,9 +287,13 @@ private fun WorkDayCard(
                     )
                     Text(
                         text = if (listItem.technicianInitials.isNotBlank()) {
-                            "${listItem.technicianCount} tec. (${listItem.technicianInitials})"
+                            stringResource(
+                                R.string.intervention_workdays_list_technicians_with_initials,
+                                listItem.technicianCount,
+                                listItem.technicianInitials
+                            )
                         } else {
-                            "${listItem.technicianCount} tecnici"
+                            stringResource(R.string.intervention_workdays_list_technicians_count, listItem.technicianCount)
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -307,7 +318,7 @@ private fun WorkDayCard(
                                 tint = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                             Text(
-                                text = "Remoto",
+                                text = stringResource(R.string.intervention_workdays_list_remote_badge),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
@@ -325,7 +336,7 @@ private fun WorkDayCard(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "${listItem.totalKilometers.toInt()} km",
+                            text = stringResource(R.string.intervention_workdays_list_kilometers, listItem.totalKilometers.toInt()),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -346,7 +357,12 @@ private fun WorkDayCard(
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = buildWorkHoursSummary(workDay),
+                        text = buildWorkHoursSummary(
+                            workDay = workDay,
+                            morningFormat = stringResource(R.string.intervention_workdays_list_morning_summary),
+                            afternoonFormat = stringResource(R.string.intervention_workdays_list_afternoon_summary),
+                            noHoursLabel = stringResource(R.string.intervention_workdays_list_no_hours)
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -359,18 +375,23 @@ private fun WorkDayCard(
 /**
  * Build summary string for work hours
  */
-private fun buildWorkHoursSummary(workDay: WorkDay): String {
+private fun buildWorkHoursSummary(
+    workDay: WorkDay,
+    morningFormat: String,
+    afternoonFormat: String,
+    noHoursLabel: String
+): String {
     val parts = mutableListOf<String>()
 
     if (workDay.morningStart.isNotBlank() && workDay.morningEnd.isNotBlank()) {
-        parts.add("Matt: ${workDay.morningStart}-${workDay.morningEnd}")
+        parts.add(String.format(morningFormat, workDay.morningStart, workDay.morningEnd))
     }
 
     if (workDay.afternoonStart.isNotBlank() && workDay.afternoonEnd.isNotBlank()) {
-        parts.add("Pom: ${workDay.afternoonStart}-${workDay.afternoonEnd}")
+        parts.add(String.format(afternoonFormat, workDay.afternoonStart, workDay.afternoonEnd))
     }
 
-    return if (parts.isEmpty()) "Orari non inseriti" else parts.joinToString(" | ")
+    return if (parts.isEmpty()) noHoursLabel else parts.joinToString(" | ")
 }
 
 /**
@@ -394,13 +415,13 @@ private fun EmptyWorkDaysContent(
         )
 
         Text(
-            text = "Nessuna giornata registrata",
+            text = stringResource(R.string.intervention_workdays_list_empty_title),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Text(
-            text = "Aggiungi la prima giornata di lavoro",
+            text = stringResource(R.string.intervention_workdays_list_empty_description),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
         )
@@ -412,7 +433,7 @@ private fun EmptyWorkDaysContent(
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Aggiungi giornata")
+            Text(stringResource(R.string.intervention_workdays_list_add_button))
         }
     }
 }

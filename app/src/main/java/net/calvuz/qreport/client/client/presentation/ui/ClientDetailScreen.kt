@@ -396,12 +396,12 @@ private fun InfoTabContent(
                     DoubleInfoItem(
                         label = stringResource(R.string.client_detail_info_field_created),
                         valueStart = (clientDetails.client.createdAt.toItalianDateTime()),
-                        valueEnd = (clientDetails.client.createdAt.toItalianCreatedAt())
+                        valueEnd = (clientDetails.client.createdAt.toItalianCreatedAt().asString())
                     )
                     DoubleInfoItem(
                         label = stringResource(R.string.client_detail_info_field_updated),
                         valueStart = (clientDetails.client.updatedAt.toItalianDateTime()),
-                        valueEnd = (clientDetails.client.createdAt.toItalianLastModified())
+                        valueEnd = (clientDetails.client.createdAt.toItalianLastModified().asString())
                     )
                     DoubleInfoItem(
                         label = stringResource(R.string.client_detail_info_field_status),

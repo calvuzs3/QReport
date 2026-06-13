@@ -2,13 +2,13 @@ package net.calvuz.qreport.client.document.domain.usecase
 
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import net.calvuz.qreport.client.document.domain.repository.DocumentRepository
 import javax.inject.Inject
 
 /**
  * Updates the editable metadata of an existing document:
- * [IslandDocument.title], [IslandDocument.category], [IslandDocument.notes].
+ * [Document.title], [Document.category], [Document.notes].
  *
  * File content, path, size, and scope FK fields are immutable after import.
  * A blank title is rejected.
@@ -17,7 +17,7 @@ class UpdateDocumentUseCase @Inject constructor(
     private val repository: DocumentRepository
 ) {
     suspend operator fun invoke(
-        document: IslandDocument
+        document: Document
     ): QrResult<Unit, QrError.IslandDocumentError> {
 
         // 1. Title must not be blank

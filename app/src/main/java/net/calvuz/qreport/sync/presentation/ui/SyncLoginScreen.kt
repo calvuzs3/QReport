@@ -32,10 +32,12 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import net.calvuz.qreport.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,10 +54,10 @@ fun SyncLoginScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Accesso Server") },
+                title = { Text(stringResource(R.string.sync_login_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Indietro")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 }
             )
@@ -71,7 +73,7 @@ fun SyncLoginScreen(
         ) {
 
             Text(
-                text = "Inserisci le credenziali per accedere al server di sincronizzazione.",
+                text = stringResource(R.string.sync_login_screen_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -79,7 +81,7 @@ fun SyncLoginScreen(
             OutlinedTextField(
                 value = uiState.username,
                 onValueChange = { viewModel.onUsernameChange(it) },
-                label = { Text("Username") },
+                label = { Text(stringResource(R.string.field_username)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
@@ -91,7 +93,7 @@ fun SyncLoginScreen(
             OutlinedTextField(
                 value = uiState.password,
                 onValueChange = { viewModel.onPasswordChange(it) },
-                label = { Text("Password") },
+                label = { Text(stringResource(R.string.field_password)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = if (passwordVisible) VisualTransformation.None
@@ -101,8 +103,8 @@ fun SyncLoginScreen(
                         Icon(
                             imageVector = if (passwordVisible) Icons.Default.Visibility
                             else Icons.Default.VisibilityOff,
-                            contentDescription = if (passwordVisible) "Nascondi password"
-                            else "Mostra password"
+                            contentDescription = if (passwordVisible) stringResource(R.string.cd_hide_password)
+                            else stringResource(R.string.cd_show_password)
                         )
                     }
                 },
@@ -118,7 +120,7 @@ fun SyncLoginScreen(
             // Error message
             uiState.error?.let { error ->
                 Text(
-                    text = error,
+                    text = error.asString(),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -136,7 +138,7 @@ fun SyncLoginScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
-                Text("Accedi")
+                Text(stringResource(R.string.action_login))
             }
         }
     }

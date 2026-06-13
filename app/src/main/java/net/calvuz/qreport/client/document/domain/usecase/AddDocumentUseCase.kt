@@ -13,7 +13,7 @@ import net.calvuz.qreport.client.document.domain.model.DocumentCategory
 import net.calvuz.qreport.client.document.domain.model.DocumentDirectories
 import net.calvuz.qreport.client.document.domain.model.DocumentMimeTypes
 import net.calvuz.qreport.client.document.domain.model.DocumentScope
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import net.calvuz.qreport.client.document.domain.repository.DocumentRepository
 import net.calvuz.qreport.client.document.sync.DocumentHash
 import timber.log.Timber
@@ -34,11 +34,11 @@ import javax.inject.Inject
  *  2. Check file size limit
  *  3. Ensure target directory exists via [CoreFileRepository]
  *  4. Copy bytes from content URI to internal path
- *  5. Persist [IslandDocument] to DB
+ *  5. Persist [Document] to DB
  *  6. On DB failure: rollback by deleting the copied file
  *
  * The original content URI is used only during step 4 and never stored.
- * [IslandDocument.filePath] always points to the stable internal path.
+ * [Document.filePath] always points to the stable internal path.
  */
 class AddDocumentUseCase @Inject constructor(
     private val repository: DocumentRepository,
@@ -57,7 +57,7 @@ class AddDocumentUseCase @Inject constructor(
         category: DocumentCategory,
         title: String? = null,
         notes: String? = null
-    ): QrResult<IslandDocument, QrError.IslandDocumentError> {
+    ): QrResult<Document, QrError.IslandDocumentError> {
 
         // 1. Resolve metadata from ContentResolver
         val (fileName, mimeType, fileSize) = resolveUriMetadata(sourceUri)
@@ -114,7 +114,7 @@ class AddDocumentUseCase @Inject constructor(
 
         // 7. Build domain object
         val now = System.currentTimeMillis()
-        val document = IslandDocument(
+        val document = Document(
             id         = UUID.randomUUID().toString(),
             scope      = scope,
             islandId   = islandId,

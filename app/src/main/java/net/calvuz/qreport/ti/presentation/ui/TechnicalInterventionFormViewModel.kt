@@ -1,6 +1,5 @@
 package net.calvuz.qreport.ti.presentation.ui
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,88 +13,20 @@ import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.error.presentation.toUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.domain.usecase.intervention.CreateTechnicalInterventionUseCase
-import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 import net.calvuz.qreport.ti.domain.model.WorkLocation
 import net.calvuz.qreport.ti.domain.model.WorkLocationType
-import net.calvuz.qreport.ti.domain.usecase.GetTechnicalInterventionByIdUseCase
-import net.calvuz.qreport.ti.domain.usecase.UpdateTechnicalInterventionUseCase
 import javax.inject.Inject
 
 /**
- * ViewModel for TechnicalIntervention form screen
- * Handles both creation (interventionId = null) and editing (interventionId != null)
+ * ViewModel for TechnicalIntervention creation form screen
  */
 @HiltViewModel
 class TechnicalInterventionFormViewModel @Inject constructor(
-    private val createInterventionUseCase: CreateTechnicalInterventionUseCase,
-    private val getInterventionByIdUseCase: GetTechnicalInterventionByIdUseCase,
-    private val updateInterventionUseCase: UpdateTechnicalInterventionUseCase,
-    savedStateHandle: SavedStateHandle
+    private val createInterventionUseCase: CreateTechnicalInterventionUseCase
 ) : ViewModel() {
 
-    private val interventionId: String? = savedStateHandle.get<String>("interventionId")
-    val isEditMode: Boolean = interventionId != null
-
-    private val _state = MutableStateFlow(TechnicalInterventionFormState(isEditMode = isEditMode))
+    private val _state = MutableStateFlow(TechnicalInterventionFormState())
     val state: StateFlow<TechnicalInterventionFormState> = _state.asStateFlow()
-
-    init {
-        if (isEditMode && interventionId != null) {
-            loadExistingIntervention(interventionId)
-        }
-    }
-
-    // ===== LOADING EXISTING INTERVENTION =====
-
-    private fun loadExistingIntervention(id: String) {
-        viewModelScope.launch {
-            _state.value = _state.value.copy(
-                isLoadingExisting = true,
-                errorMessage = null
-            )
-
-            when (val result = getInterventionByIdUseCase(id)) {
-                is QrResult.Success -> {
-                    val intervention = result.data
-                    populateFormFromIntervention(intervention)
-                }
-
-                is QrResult.Error -> {
-                    _state.value = _state.value.copy(
-                        isLoadingExisting = false,
-                        errorMessage = result.error.asUiText()
-                    )
-                }
-            }
-        }
-    }
-
-    private fun populateFormFromIntervention(intervention: TechnicalIntervention) {
-        _state.value = _state.value.copy(
-            // Customer section
-            customerName = intervention.customerData.customerName,
-            customerContact = intervention.customerData.customerContact,
-            ticketNumber = intervention.customerData.ticketNumber,
-            customerOrderNumber = intervention.customerData.customerOrderNumber,
-            notes = intervention.customerData.notes,
-
-            // Robot section
-            serialNumber = intervention.robotData.serialNumber,
-            hoursOfDuty = intervention.robotData.hoursOfDuty.toString(),
-
-            // Work location section
-            workLocation = intervention.workLocation.type,
-            customLocation = intervention.workLocation.customLocation,
-
-            // Technicians section
-            technicians = intervention.technicians.joinToString(", "),
-
-            // State
-            isLoadingExisting = false,
-            existingInterventionId = intervention.id,
-            errorMessage = null
-        )
-    }
 
     // ===== CUSTOMER SECTION UPDATES =====
 
@@ -175,11 +106,7 @@ class TechnicalInterventionFormViewModel @Inject constructor(
     // ===== MAIN ACTIONS =====
 
     fun saveIntervention() {
-        if (isEditMode) {
-            updateExistingIntervention()
-        } else {
-            createNewIntervention()
-        }
+        createNewIntervention()
     }
 
     private fun createNewIntervention() {
@@ -248,76 +175,8 @@ class TechnicalInterventionFormViewModel @Inject constructor(
         }
     }
 
-    private fun updateExistingIntervention() {
-        val currentState = _state.value
-        val existingId = currentState.existingInterventionId ?: return
-
-        // Validate form
-        if (!currentState.canSave) {
-            _state.value = currentState.copy(
-                errorMessage = QrError.CreateInterventionError.CreationFailed().toUiText()
-            )
-            return
-        }
-
-        viewModelScope.launch {
-            _state.value = currentState.copy(
-                isLoading = true,
-                errorMessage = null
-            )
-
-            // Parse technicians
-            val techniciansList = currentState.technicians
-                .split(",")
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .take(6) // Safety limit
-
-            // Parse hours of duty
-            val hoursOfDutyInt = currentState.hoursOfDuty.toIntOrNull() ?: 0
-
-            // Create work location
-            val workLocation = WorkLocation(
-                type = currentState.workLocation,
-                customLocation = if (currentState.workLocation == WorkLocationType.OTHER) {
-                    currentState.customLocation
-                } else ""
-            )
-
-            val result = updateInterventionUseCase.updateEditableFields(
-                interventionId = existingId,
-                hoursOfDuty = hoursOfDutyInt,
-                customerContact = currentState.customerContact,
-                notes = currentState.notes,
-                workLocation = workLocation,
-                technicians = techniciansList
-            )
-
-            when (result) {
-                is QrResult.Success -> {
-                    _state.value = currentState.copy(
-                        isLoading = false,
-                        isSuccess = true,
-                        savedInterventionId = result.data.id
-                    )
-                }
-                is QrResult.Error -> {
-                    _state.value = currentState.copy(
-                        isLoading = false,
-                        isSuccess = false,
-                        errorMessage = result.error.asUiText()
-                    )
-                }
-            }
-        }
-    }
-
     fun clearError() {
         _state.value = _state.value.copy(errorMessage = null)
-    }
-
-    fun clearSuccess() {
-        _state.value = _state.value.copy(isSuccess = false)
     }
 }
 
@@ -343,13 +202,8 @@ data class TechnicalInterventionFormState(
     // ===== TECHNICIANS SECTION =====
     val technicians: String = "",
 
-    // ===== FORM MODE =====
-    val isEditMode: Boolean = false,
-    val existingInterventionId: String? = null,
-
     // ===== UI STATE =====
     val isLoading: Boolean = false,
-    val isLoadingExisting: Boolean = false,
     val isSuccess: Boolean = false,
     val errorMessage: UiText? = null,
     val savedInterventionId: String? = null
@@ -367,8 +221,7 @@ data class TechnicalInterventionFormState(
                 hoursOfDuty.toIntOrNull() != null &&
                 (workLocation != WorkLocationType.OTHER || customLocation.isNotBlank()) &&
                 techniciansList.size <= 6 &&
-                !isLoading &&
-                !isLoadingExisting
+                !isLoading
 
     /**
      * Parsed technicians list for validation
@@ -377,14 +230,17 @@ data class TechnicalInterventionFormState(
         get() = technicians.split(",").map { it.trim() }.filter { it.isNotEmpty() }
 
     /**
-     * Title for the screen based on mode
+     * Whether the user has entered any data that would be lost on back navigation
      */
-    val screenTitle: String
-        get() = if (isEditMode) "Modifica Intervento" else "Nuovo Intervento"
-
-    /**
-     * Action button text based on mode
-     */
-    val actionButtonText: String
-        get() = if (isEditMode) "SALVA" else "CREA"
+    val hasUnsavedData: Boolean
+        get() = customerName.isNotBlank() ||
+                customerContact.isNotBlank() ||
+                ticketNumber.isNotBlank() ||
+                customerOrderNumber.isNotBlank() ||
+                notes.isNotBlank() ||
+                serialNumber.isNotBlank() ||
+                hoursOfDuty.isNotBlank() ||
+                workLocation != WorkLocationType.CLIENT_SITE ||
+                customLocation.isNotBlank() ||
+                technicians.isNotBlank()
 }

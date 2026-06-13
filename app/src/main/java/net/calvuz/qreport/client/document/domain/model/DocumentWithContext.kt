@@ -10,7 +10,7 @@ package net.calvuz.qreport.client.document.domain.model
  *    in every screen context.
  */
 data class DocumentWithContext(
-    val document: IslandDocument,
+    val document: Document,
     val islandSerialNumber: String? = null,
     val facilityName: String?       = null,
     val companyName: String?        = null

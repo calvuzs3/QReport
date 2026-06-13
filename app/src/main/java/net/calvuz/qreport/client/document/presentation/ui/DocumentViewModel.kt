@@ -1,3 +1,5 @@
+@file:Suppress("HardCodedStringLiteral")
+
 package net.calvuz.qreport.client.document.presentation.ui
 
 import android.net.Uri
@@ -10,12 +12,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.error.presentation.toUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.document.domain.model.DocumentCategory
 import net.calvuz.qreport.client.document.domain.model.DocumentScope
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import net.calvuz.qreport.client.document.domain.usecase.AddDocumentUseCase
 import net.calvuz.qreport.client.document.domain.usecase.DeleteDocumentResult
 import net.calvuz.qreport.client.document.domain.usecase.DeleteDocumentUseCase
@@ -41,8 +44,8 @@ import javax.inject.Inject
  * [selectedIds] is non-empty during bulk-selection mode (long-press).
  */
 data class DocumentUiState(
-    val documents: List<IslandDocument>         = emptyList(),
-    val filteredDocuments: List<IslandDocument> = emptyList(),
+    val documents: List<Document>         = emptyList(),
+    val filteredDocuments: List<Document> = emptyList(),
     val categoryFilter: DocumentCategory?       = null,
     val isLoading: Boolean                      = false,
     val error: UiText?                          = null,
@@ -158,7 +161,7 @@ class DocumentViewModel @Inject constructor(
     }
 
     private fun collectDocuments(
-        flowProvider: () -> kotlinx.coroutines.flow.Flow<List<IslandDocument>>
+        flowProvider: () -> kotlinx.coroutines.flow.Flow<List<Document>>
     ) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
@@ -188,9 +191,9 @@ class DocumentViewModel @Inject constructor(
     }
 
     private fun applyFilter(
-        documents: List<IslandDocument>,
+        documents: List<Document>,
         category: DocumentCategory?
-    ): List<IslandDocument> =
+    ): List<Document> =
         if (category == null) documents
         else documents.filter { it.category == category }
 
@@ -235,7 +238,7 @@ class DocumentViewModel @Inject constructor(
     // OPEN
     // =========================================================================
 
-    fun onOpenDocument(document: IslandDocument) {
+    fun onOpenDocument(document: Document) {
         viewModelScope.launch {
             when (val result = openDocument(document)) {
                 is QrResult.Success -> Unit
@@ -250,12 +253,14 @@ class DocumentViewModel @Inject constructor(
     // UPDATE
     // =========================================================================
 
-    fun onUpdateDocument(document: IslandDocument) {
+    fun onUpdateDocument(document: Document) {
         viewModelScope.launch {
             when (val result = updateDocument(document)) {
                 is QrResult.Success -> {
                     _uiState.update {
-                        it.copy(snackbarMessage = UiText.DynStr("Documento aggiornato"))
+                        it.copy(snackbarMessage = UiText.StringResource(
+                            R.string
+                            .msg_document_updated))
                     }
                 }
 
@@ -286,10 +291,11 @@ class DocumentViewModel @Inject constructor(
             when (val result = deleteDocument(id)) {
                 is QrResult.Success -> {
                     val msg = when (result.data) {
-                        DeleteDocumentResult.DEACTIVATED -> "Documento disattivato"
-                        DeleteDocumentResult.MARKED_DELETED -> "Documento eliminato"
+                        DeleteDocumentResult.DEACTIVATED -> UiText.StringResource(R.string.msg_document_deactivated)
+                        DeleteDocumentResult.MARKED_DELETED -> UiText.StringResource(R.string
+                            .msg_document_marked_deleted)
                     }
-                    _uiState.update { it.copy(snackbarMessage = UiText.DynStr(msg)) }
+                    _uiState.update { it.copy(snackbarMessage = msg) }
                 }
 
                 is QrResult.Error -> _uiState.update {
@@ -330,7 +336,8 @@ class DocumentViewModel @Inject constructor(
             }
 
             _uiState.update {
-                it.copy(snackbarMessage = UiText.DynStr("$deletedCount documenti eliminati"))
+                it.copy(snackbarMessage = UiText.StringResources(R.string
+                    .msg_documents_deactivated, deletedCount))
             }
         }
     }

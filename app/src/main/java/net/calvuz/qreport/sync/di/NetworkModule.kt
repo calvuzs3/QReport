@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.sync.di
 
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
@@ -8,7 +9,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import net.calvuz.qreport.BuildConfig
-//import net.calvuz.qreport.sync.data.local.SyncSettingsDataStore
 import net.calvuz.qreport.sync.data.remote.DynamicUrlInterceptor
 import net.calvuz.qreport.sync.data.remote.QReportApi
 import net.calvuz.qreport.sync.data.remote.RemoteDataSource
@@ -32,29 +32,13 @@ object NetworkModule {
         ignoreUnknownKeys = true
         isLenient = true
     }
-
-//    @Provides
-//    @Singleton
-//    fun provideOkHttpClient(): OkHttpClient {
-//        val logging = HttpLoggingInterceptor().apply {
-//            level = HttpLoggingInterceptor.Level.BODY
-//        }
-//        return OkHttpClient.Builder()
-//            .addInterceptor(logging)
-//            .connectTimeout(30, TimeUnit.SECONDS)
-//            .readTimeout(30, TimeUnit.SECONDS)
-//            .writeTimeout(30, TimeUnit.SECONDS)
-//            .build()
-//    }
+    
     @Provides
     @Singleton
     fun provideOkHttpClient(
         dynamicUrlInterceptor: DynamicUrlInterceptor,
         tokenExpiryInterceptor: TokenExpiryInterceptor  // ← aggiungere
 ): OkHttpClient {
-//    val logging = HttpLoggingInterceptor().apply {
-//        level = HttpLoggingInterceptor.Level.BODY
-//    }
     val logging = HttpLoggingInterceptor().apply {
         level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC  // solo URL e status code
         else HttpLoggingInterceptor.Level.NONE                      // niente in produzione
@@ -69,27 +53,6 @@ object NetworkModule {
         .build()
 }
 
-
-//    @Provides
-//    @Singleton
-//    fun provideRetrofit(
-//        okHttpClient: OkHttpClient,
-//        json: Json,
-//        syncSettingsDataStore: SyncSettingsDataStore
-//    ): Retrofit {
-//        // Base URL is read at runtime from DataStore — use a placeholder here,
-//        // actual URL is injected per-request via the interceptor below.
-//        // For simplicity in Phase 3 we build Retrofit with a fixed base URL
-//        // read once at startup; URL changes require app restart.
-//        // Phase 5 can add a dynamic URL interceptor if needed.
-//        val baseUrl = "https://server.domain.top/" // fallback; overridden by DynamicUrlInterceptor
-//
-//        return Retrofit.Builder()
-//            .baseUrl(baseUrl)
-//            .client(okHttpClient)
-//            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-//            .build()
-//    }
     @Provides
     @Singleton
     fun provideRetrofit(
@@ -112,6 +75,7 @@ object NetworkModule {
 
 @Module
 @InstallIn(SingletonComponent::class)
+@Suppress("unused")
 abstract class RemoteDataSourceModule {
 
     @Binds

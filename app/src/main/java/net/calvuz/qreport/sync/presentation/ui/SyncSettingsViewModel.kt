@@ -9,7 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.sync.app.SyncEvent
 import net.calvuz.qreport.sync.app.SyncEventBus
@@ -82,13 +84,13 @@ class SyncSettingsViewModel @Inject constructor(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Errore caricamento stato sync: ${result.exceptionOrNull()?.message}"
+                        error = UiText.StringResources(R.string.sync_settings_error_load_status, result.exceptionOrNull()?.message ?: "")
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Errore inaspettato: ${e.message}"
+                    error = UiText.StringResources(R.string.sync_settings_error_unexpected, e.message ?: "")
                 )
             }
         }
@@ -137,7 +139,7 @@ class SyncSettingsViewModel @Inject constructor(
                 serverUrlHolder.baseUrl = normalized
             } else {
                 _uiState.value = _uiState.value.copy(
-                    error = "Errore salvataggio URL: ${result.exceptionOrNull()?.message}"
+                    error = UiText.StringResources(R.string.sync_settings_error_save_url, result.exceptionOrNull()?.message ?: "")
                 )
             }
         }
@@ -186,9 +188,11 @@ class SyncSettingsViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isSyncing = false,
                         syncResult = result.data,
-                        message = "Sincronizzazione completata — " +
-                                "inviati: ${result.data.pushedCount}, " +
-                                "ricevuti: ${result.data.pulledCount}"
+                        message = UiText.StringResources(
+                            R.string.sync_settings_message_sync_completed,
+                            result.data.pushedCount,
+                            result.data.pulledCount
+                        )
                     )
                     loadSyncStatus() // Refresh pending count
                 }
@@ -198,12 +202,12 @@ class SyncSettingsViewModel @Inject constructor(
                             // Token expired — force re-login
                             tokenStorage.clearToken()
                             _uiState.value = _uiState.value.copy(isLoggedIn = false)
-                            "Sessione scaduta, effettua nuovamente il login"
+                            UiText.StringResource(R.string.sync_error_session_expired)
                         }
-                        is QrError.NetworkError.NoConnection -> "Nessuna connessione di rete"
-                        is QrError.NetworkError.SyncDisabled -> "Sincronizzazione disabilitata"
-                        is QrError.NetworkError.ServerError -> "Errore server"
-                        else -> "Errore sincronizzazione"
+                        is QrError.NetworkError.NoConnection -> UiText.StringResource(R.string.error_no_connection)
+                        is QrError.NetworkError.SyncDisabled -> UiText.StringResource(R.string.sync_error_sync_disabled)
+                        is QrError.NetworkError.ServerError -> UiText.StringResource(R.string.error_server)
+                        else -> UiText.StringResource(R.string.sync_error_generic)
                     }
                     _uiState.value = _uiState.value.copy(isSyncing = false, error = message)
                 }
@@ -256,9 +260,11 @@ class SyncSettingsViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isSyncing = false,
                     syncResult = result.data,
-                    message = "Sincronizzazione completata — " +
-                            "inviati: ${result.data.pushedCount}, " +
-                            "ricevuti: ${result.data.pulledCount}"
+                    message = UiText.StringResources(
+                        R.string.sync_settings_message_sync_completed,
+                        result.data.pushedCount,
+                        result.data.pulledCount
+                    )
                 )
                 loadSyncStatus()
             }
@@ -267,12 +273,12 @@ class SyncSettingsViewModel @Inject constructor(
                     is QrError.NetworkError.Unauthorized -> {
                         tokenStorage.clearToken()
                         _uiState.value = _uiState.value.copy(isLoggedIn = false)
-                        "Sessione scaduta, effettua nuovamente il login"
+                        UiText.StringResource(R.string.sync_error_session_expired)
                     }
-                    is QrError.NetworkError.NoConnection -> "Nessuna connessione di rete"
-                    is QrError.NetworkError.SyncDisabled -> "Sincronizzazione disabilitata"
-                    is QrError.NetworkError.ServerError -> "Errore server"
-                    else -> "Errore sincronizzazione"
+                    is QrError.NetworkError.NoConnection -> UiText.StringResource(R.string.error_no_connection)
+                    is QrError.NetworkError.SyncDisabled -> UiText.StringResource(R.string.sync_error_sync_disabled)
+                    is QrError.NetworkError.ServerError -> UiText.StringResource(R.string.error_server)
+                    else -> UiText.StringResource(R.string.sync_error_generic)
                 }
                 _uiState.value = _uiState.value.copy(isSyncing = false, error = message)
             }
@@ -289,6 +295,6 @@ data class SyncSettingsUiState(
     val isLoggedIn: Boolean = false,
     val syncStatus: SyncStatus? = null,
     val syncResult: SyncResult? = null,
-    val error: String? = null,
-    val message: String? = null
+    val error: UiText? = null,
+    val message: UiText? = null
 )

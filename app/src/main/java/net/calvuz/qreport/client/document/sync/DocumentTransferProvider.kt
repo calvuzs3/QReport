@@ -1,6 +1,6 @@
 package net.calvuz.qreport.client.document.sync
 
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 
 /**
  * A single entry in the server's document manifest.
@@ -34,7 +34,7 @@ suspend fun getManifest(): Result<List<DocumentManifestEntry>>
  * Uploads the file bytes of [document] to the server.
  * The server computes and stores the authoritative hash.
 */
-suspend fun upload(document: IslandDocument): Result<Unit>
+suspend fun upload(document: Document): Result<Unit>
 
 /**
  * Downloads the file bytes for [id] and writes them to [targetPath].

@@ -120,7 +120,7 @@ class ContractContentProvider : BaseCardContentProvider<ContractCardData>() {
 
             Text(
                 text =
-                    item.contract.updatedAt.toItalianLastModified()
+                    item.contract.updatedAt.toItalianLastModified().asString()
                 ,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant

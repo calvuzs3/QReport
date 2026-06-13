@@ -5,7 +5,7 @@ import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.calvuz.qreport.app.file.domain.repository.CoreFileRepository
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import net.calvuz.qreport.client.document.domain.repository.DocumentRepository
 import timber.log.Timber
 import java.io.File
@@ -66,11 +66,11 @@ class DocumentSyncUseCase @Inject constructor(
                 Timber.d("DocumentSync: server has ${serverManifest.size} documents")
 
                 // 2. All local non-deleted documents
-                val localDocs: List<IslandDocument> = repository
+                val localDocs: List<Document> = repository
                     .getChangedSince(0L)
                     .getOrElse { emptyList() }
                     .filter { !it.isDeleted }
-                val localMap: Map<String, IslandDocument> = localDocs.associateBy { it.id }
+                val localMap: Map<String, Document> = localDocs.associateBy { it.id }
 
                 Timber.d("DocumentSync: device has ${localDocs.size} documents")
 
@@ -151,7 +151,7 @@ class DocumentSyncUseCase @Inject constructor(
      * If it's arriving for the first time (local == null), stores it in a staging
      * directory; the full path will be set when metadata is upserted.
      */
-    private fun resolveTargetPath(id: String, local: IslandDocument?): String {
+    private fun resolveTargetPath(id: String, local: Document?): String {
         if (local != null && local.filePath.isNotBlank()) {
             return local.filePath
         }
@@ -171,7 +171,7 @@ class DocumentSyncUseCase @Inject constructor(
      */
     private suspend fun updateLocalHash(
         id: String,
-        local: IslandDocument?,
+        local: Document?,
         filePath: String,
         hash: String
     ) {

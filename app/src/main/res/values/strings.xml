@@ -116,7 +116,6 @@
     <string name="action_update">Aggiorna</string>
     <string name="action_cancel">Annulla</string>
     <string name="action_confirm">Conferma</string>
-    <string name="action_confirm_delete">Elimina</string>
     <string name="action_export">Esporta</string>
     <string name="action_archive">Archivia</string>
     <string name="action_renew">Rinnova</string>
@@ -136,6 +135,9 @@
     <string name="action_call">Chiama</string>
     <string name="action_send_email">Invia Email</string>
     <string name="action_contact">Contatta</string>
+    <string name="action_login">Accedi</string>
+    <string name="action_logout">Disconnetti</string>
+
 
     <!-- DO NOT TRANSLATE THESE -->
     <string translatable="false" name="intent_action_mailto">mailto:%1$s</string>
@@ -163,6 +165,7 @@
     <string name="label_valid">Valido</string>
     <string name="label_invalid">Non Valido</string>
     <string name="label_preferred">Preferito</string>
+    <string name="label_unavailable">—</string>
 
 
 
@@ -186,6 +189,8 @@
     <string name="field_maintenance_type">Tipo Manutenzione</string>
     <string name="field_scheduled_date">Data Programmata</string>
     <string name="field_duration">Durata</string>
+    <string name="field_username">Username</string>
+    <string name="field_password">Password</string>
 
     <!-- Messages -->
     <string name="msg_checkup_created">Check-up creato con successo</string>
@@ -207,6 +212,8 @@
     <string name="error_file_not_found">File non trovato</string>
     <string name="error_invalid_data">Dati non validi</string>
     <string name="error_export_failed">Export fallito</string>
+    <string name="error_server">Errore server</string>
+    <string name="error_no_connection">Nessuna connessione di rete</string>
 
     <!-- Empty states -->
     <string name="empty_checkups">Nessun check-up disponibile</string>
@@ -264,6 +271,8 @@
     <string name="cd_delete_photo">Elimina foto</string>
     <string name="cd_edit_photo">Modifica foto</string>
     <string name="cd_take_photo">Scatta foto</string>
+    <string name="cd_show_password">Mostra password</string>
+    <string name="cd_hide_password">Nascondi password</string>
 
     <!-- Content descriptions for screen readers -->
     <string name="cd_navigation_home">Naviga alla home</string>

@@ -46,7 +46,7 @@ source of truth for the UI; the file system is the source of truth for the bytes
 
 /**
  * Identifies which hierarchy level a document belongs to.
- * Exactly one FK field in [IslandDocument] is non-null, matching the scope.
+ * Exactly one FK field in [Document] is non-null, matching the scope.
  * GLOBAL documents have no FK — they are app-wide reference material.
  */
 enum class DocumentScope {
@@ -126,10 +126,10 @@ object DocumentMimeTypes {
 }
 ```
 
-### 2.4 IslandDocument
+### 2.4 Document
 
 ```kotlin
-// client/document/domain/model/IslandDocument.kt
+// client/document/domain/model/Document.kt
 
 /**
  * A reference document in QReport.
@@ -148,7 +148,7 @@ object DocumentMimeTypes {
  * [mimeType] is stored at import time so the OS can open the file
  * correctly without re-detecting the type later.
  */
-data class IslandDocument(
+data class Document(
     val id: String,
 
     // ===== SCOPE =====
@@ -199,7 +199,7 @@ data class IslandDocument(
  * without a separate query.
  */
 data class DocumentWithContext(
-    val document: IslandDocument,
+    val document: Document,
     val islandSerialNumber: String?  = null,
     val facilityName: String?        = null,
     val companyName: String?         = null
@@ -210,10 +210,10 @@ data class DocumentWithContext(
 
 ## 3. DATABASE SCHEMA (ROOM)
 
-### 3.1 IslandDocumentEntity
+### 3.1 DocumentEntity
 
 ```kotlin
-// client/document/data/local/entity/IslandDocumentEntity.kt
+// client/document/data/local/entity/DocumentEntity.kt
 
 /**
  * Room entity for the island_documents table.
@@ -247,7 +247,7 @@ data class DocumentWithContext(
     ]
     // No foreignKeys block — see class KDoc
 )
-data class IslandDocumentEntity(
+data class DocumentEntity(
     @PrimaryKey
     val id: String,
 
@@ -306,13 +306,13 @@ data class IslandDocumentEntity(
 )
 ```
 
-### 3.2 IslandDocumentDao
+### 3.2 DocumentDao
 
 ```kotlin
-// client/document/data/local/dao/IslandDocumentDao.kt
+// client/document/data/local/dao/DocumentDao.kt
 
 @Dao
-interface IslandDocumentDao {
+interface DocumentDao {
 
     // ===== REACTIVE — by scope =====
 
@@ -321,28 +321,28 @@ interface IslandDocumentDao {
         WHERE island_id = :islandId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    fun getDocumentsForIslandFlow(islandId: String): Flow<List<IslandDocumentEntity>>
+    fun getDocumentsForIslandFlow(islandId: String): Flow<List<DocumentEntity>>
 
     @Query("""
         SELECT * FROM island_documents
         WHERE facility_id = :facilityId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<IslandDocumentEntity>>
+    fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<DocumentEntity>>
 
     @Query("""
         SELECT * FROM island_documents
         WHERE client_id = :clientId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    fun getDocumentsForClientFlow(clientId: String): Flow<List<IslandDocumentEntity>>
+    fun getDocumentsForClientFlow(clientId: String): Flow<List<DocumentEntity>>
 
     @Query("""
         SELECT * FROM island_documents
         WHERE scope = 'GLOBAL' AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    fun getGlobalDocumentsFlow(): Flow<List<IslandDocumentEntity>>
+    fun getGlobalDocumentsFlow(): Flow<List<DocumentEntity>>
 
     // ===== REACTIVE — filtered by category =====
 
@@ -354,12 +354,12 @@ interface IslandDocumentDao {
     fun getDocumentsForIslandByCategoryFlow(
         islandId: String,
         category: String
-    ): Flow<List<IslandDocumentEntity>>
+    ): Flow<List<DocumentEntity>>
 
     // ===== SUSPEND =====
 
     @Query("SELECT * FROM island_documents WHERE id = :id AND is_deleted = 0")
-    suspend fun getDocumentById(id: String): IslandDocumentEntity?
+    suspend fun getDocumentById(id: String): DocumentEntity?
 
     @Query("SELECT COUNT(*) FROM island_documents WHERE island_id = :islandId AND is_deleted = 0")
     suspend fun countDocumentsForIsland(islandId: String): Int
@@ -374,22 +374,22 @@ interface IslandDocumentDao {
         WHERE updated_at > COALESCE(synced_at, 0)
         ORDER BY updated_at ASC
     """)
-    suspend fun getPendingSync(): List<IslandDocumentEntity>
+    suspend fun getPendingSync(): List<DocumentEntity>
 
     @Query("""
         SELECT * FROM island_documents
         WHERE updated_at > :since
         ORDER BY updated_at ASC
     """)
-    suspend fun getChangedSince(since: Long): List<IslandDocumentEntity>
+    suspend fun getChangedSince(since: Long): List<DocumentEntity>
 
     // ===== WRITE =====
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertDocument(document: IslandDocumentEntity)
+    suspend fun insertDocument(document: DocumentEntity)
 
     @Update
-    suspend fun updateDocument(document: IslandDocumentEntity)
+    suspend fun updateDocument(document: DocumentEntity)
 
     @Query("""
         UPDATE island_documents
@@ -409,7 +409,7 @@ interface IslandDocumentDao {
     suspend fun markSynced(id: String, syncedAt: Long)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertDocuments(documents: List<IslandDocumentEntity>)
+    suspend fun upsertDocuments(documents: List<DocumentEntity>)
 }
 ```
 
@@ -484,7 +484,7 @@ filesDir/
 // client/document/domain/model/DocumentDirectories.kt
 
 object DocumentDirectories {
-    fun forScope(document: IslandDocument): DirectorySpec = when (document.scope) {
+    fun forScope(document: Document): DirectorySpec = when (document.scope) {
         DocumentScope.ISLAND   -> DirectorySpec("documents/islands/${document.islandId}")
         DocumentScope.FACILITY -> DirectorySpec("documents/facilities/${document.facilityId}")
         DocumentScope.CLIENT   -> DirectorySpec("documents/clients/${document.clientId}")
@@ -509,7 +509,7 @@ AddDocumentUseCase
     ├── 4. Copy bytes from content URI to internal path
     │        ContentResolver.openInputStream(uri) → File.outputStream()
     └── 5. DocumentRepository.insert()
-              └── IslandDocumentDao.insertDocument()
+              └── DocumentDao.insertDocument()
 ```
 
 The original content URI is used only during step 4 and never stored.
@@ -560,30 +560,30 @@ on next launch by scanning for orphaned files.
 interface DocumentRepository {
 
     // ===== REACTIVE =====
-    fun getDocumentsForIslandFlow(islandId: String): Flow<List<IslandDocument>>
-    fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<IslandDocument>>
-    fun getDocumentsForClientFlow(clientId: String): Flow<List<IslandDocument>>
-    fun getGlobalDocumentsFlow(): Flow<List<IslandDocument>>
+    fun getDocumentsForIslandFlow(islandId: String): Flow<List<Document>>
+    fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<Document>>
+    fun getDocumentsForClientFlow(clientId: String): Flow<List<Document>>
+    fun getGlobalDocumentsFlow(): Flow<List<Document>>
     fun getDocumentsForIslandByCategoryFlow(
         islandId: String,
         category: DocumentCategory
-    ): Flow<List<IslandDocument>>
+    ): Flow<List<Document>>
 
     // ===== SUSPEND =====
-    suspend fun getDocumentById(id: String): Result<IslandDocument?>
+    suspend fun getDocumentById(id: String): Result<Document?>
     suspend fun countDocumentsForIsland(islandId: String): Result<Int>
     suspend fun countGlobalDocuments(): Result<Int>
 
     // ===== WRITE =====
-    suspend fun insertDocument(document: IslandDocument): Result<Unit>
-    suspend fun updateDocument(document: IslandDocument): Result<Unit>
+    suspend fun insertDocument(document: Document): Result<Unit>
+    suspend fun updateDocument(document: Document): Result<Unit>
     suspend fun markDeleted(id: String): Result<Unit>
 
     // ===== SYNC =====
-    suspend fun getPendingSync(): Result<List<IslandDocument>>
-    suspend fun getChangedSince(since: Long): Result<List<IslandDocument>>
+    suspend fun getPendingSync(): Result<List<Document>>
+    suspend fun getChangedSince(since: Long): Result<List<Document>>
     suspend fun markSynced(id: String, syncedAt: Long): Result<Unit>
-    suspend fun upsertDocuments(documents: List<IslandDocument>): Result<Unit>
+    suspend fun upsertDocuments(documents: List<Document>): Result<Unit>
 }
 ```
 
@@ -597,27 +597,27 @@ interface DocumentRepository {
 ```kotlin
 // app/error/domain/model/QrError.kt  (addendum)
 
-sealed interface IslandDocumentError : QrError {
+sealed interface DocumentError : QrError {
 
     // ── Validation ────────────────────────────────────────────────────────────
-    data class MissingTitle(val message: String? = null) : IslandDocumentError
-    data class FileTooLarge(val actualBytes: Long, val maxBytes: Long) : IslandDocumentError
+    data class MissingTitle(val message: String? = null) : DocumentError
+    data class FileTooLarge(val actualBytes: Long, val maxBytes: Long) : DocumentError
 
     // ── Business rules ────────────────────────────────────────────────────────
     /** The referenced parent entity does not exist or is inactive. */
-    data class ParentNotFound(val scope: DocumentScope, val id: String?) : IslandDocumentError
+    data class ParentNotFound(val scope: DocumentScope, val id: String?) : DocumentError
 
     // ── File operations ───────────────────────────────────────────────────────
-    data class ImportFailed(val message: String? = null) : IslandDocumentError
-    data class FileNotFound(val path: String? = null) : IslandDocumentError
-    data class NoAppAvailable(val mimeType: String) : IslandDocumentError
-    data class OpenFailed(val message: String? = null) : IslandDocumentError
+    data class ImportFailed(val message: String? = null) : DocumentError
+    data class FileNotFound(val path: String? = null) : DocumentError
+    data class NoAppAvailable(val mimeType: String) : DocumentError
+    data class OpenFailed(val message: String? = null) : DocumentError
 
     // ── Persistence ───────────────────────────────────────────────────────────
-    data class CreateError(val message: String? = null) : IslandDocumentError
-    data class LoadError(val message: String? = null) : IslandDocumentError
-    data class UpdateError(val message: String? = null) : IslandDocumentError
-    data class DeleteError(val message: String? = null) : IslandDocumentError
+    data class CreateError(val message: String? = null) : DocumentError
+    data class LoadError(val message: String? = null) : DocumentError
+    data class UpdateError(val message: String? = null) : DocumentError
+    data class DeleteError(val message: String? = null) : DocumentError
 }
 ```
 
@@ -660,16 +660,16 @@ class AddDocumentUseCase @Inject constructor(
         category: DocumentCategory,
         title: String? = null,
         notes: String? = null
-    ): QrResult<IslandDocument, QrError.IslandDocumentError> {
+    ): QrResult<Document, QrError.DocumentError> {
 
         // 1. Resolve file metadata
         val (fileName, mimeType, fileSize) = resolveUriMetadata(sourceUri)
-            ?: return QrResult.Error(QrError.IslandDocumentError.ImportFailed("Cannot read URI"))
+            ?: return QrResult.Error(QrError.DocumentError.ImportFailed("Cannot read URI"))
 
         // 2. Size check
         if (fileSize > MAX_FILE_SIZE_BYTES)
             return QrResult.Error(
-                QrError.IslandDocumentError.FileTooLarge(fileSize, MAX_FILE_SIZE_BYTES)
+                QrError.DocumentError.FileTooLarge(fileSize, MAX_FILE_SIZE_BYTES)
             )
 
         // 3. Advisory MIME check — log warning but do not block
@@ -679,7 +679,7 @@ class AddDocumentUseCase @Inject constructor(
         // 4. Build document object early to use DocumentDirectories.forScope()
         val now = System.currentTimeMillis()
         val id = UUID.randomUUID().toString()
-        val partialDoc = IslandDocument(
+        val partialDoc = Document(
             id = id,
             scope = scope,
             islandId   = if (scope == DocumentScope.ISLAND)   scopeEntityId else null,
@@ -700,7 +700,7 @@ class AddDocumentUseCase @Inject constructor(
         val dirSpec = DocumentDirectories.forScope(partialDoc)
         val dirPath = when (val r = coreFileRepo.getOrCreateDirectory(dirSpec)) {
             is QrResult.Error ->
-                return QrResult.Error(QrError.IslandDocumentError.ImportFailed("Cannot create directory"))
+                return QrResult.Error(QrError.DocumentError.ImportFailed("Cannot create directory"))
             is QrResult.Success -> r.data
         }
 
@@ -708,7 +708,7 @@ class AddDocumentUseCase @Inject constructor(
         val targetPath = "$dirPath/$fileName"
         val copyResult = copyFromUri(sourceUri, targetPath)
         if (copyResult is QrResult.Error)
-            return QrResult.Error(QrError.IslandDocumentError.ImportFailed(copyResult.error.toString()))
+            return QrResult.Error(QrError.DocumentError.ImportFailed(copyResult.error.toString()))
 
         val document = partialDoc.copy(filePath = targetPath)
 
@@ -717,7 +717,7 @@ class AddDocumentUseCase @Inject constructor(
             onSuccess = { QrResult.Success(document) },
             onFailure = {
                 coreFileRepo.deleteFile(targetPath)
-                QrResult.Error(QrError.IslandDocumentError.CreateError(it.message))
+                QrResult.Error(QrError.DocumentError.CreateError(it.message))
             }
         )
     }
@@ -773,16 +773,16 @@ class DeleteDocumentUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         documentId: String
-    ): QrResult<Unit, QrError.IslandDocumentError> {
+    ): QrResult<Unit, QrError.DocumentError> {
 
         val document = documentRepository.getDocumentById(documentId).getOrNull()
-            ?: return QrResult.Error(QrError.IslandDocumentError.FileNotFound(documentId))
+            ?: return QrResult.Error(QrError.DocumentError.FileNotFound(documentId))
 
         // DB soft-delete first
         val dbResult = documentRepository.markDeleted(documentId)
         if (dbResult.isFailure)
             return QrResult.Error(
-                QrError.IslandDocumentError.DeleteError(dbResult.exceptionOrNull()?.message)
+                QrError.DocumentError.DeleteError(dbResult.exceptionOrNull()?.message)
             )
 
         // File removal — non-critical, cleanup job retries if needed
@@ -817,15 +817,15 @@ class OpenDocumentUseCase @Inject constructor(
     private val context: Context
 ) {
     suspend operator fun invoke(
-        document: IslandDocument
-    ): QrResult<Unit, QrError.IslandDocumentError> {
+        document: Document
+    ): QrResult<Unit, QrError.DocumentError> {
 
         if (!coreFileRepo.fileExists(document.filePath))
-            return QrResult.Error(QrError.IslandDocumentError.FileNotFound(document.filePath))
+            return QrResult.Error(QrError.DocumentError.FileNotFound(document.filePath))
 
         val uri = when (val r = coreFileRepo.createFileProviderUri(document.filePath)) {
             is QrResult.Error ->
-                return QrResult.Error(QrError.IslandDocumentError.OpenFailed())
+                return QrResult.Error(QrError.DocumentError.OpenFailed())
             is QrResult.Success -> r.data
         }
 
@@ -834,7 +834,7 @@ class OpenDocumentUseCase @Inject constructor(
             // Strategy 2: generic fallback
             ?: tryOpen(uri, "*/*")
             // Strategy 3: no app
-            ?: return QrResult.Error(QrError.IslandDocumentError.NoAppAvailable(document.mimeType))
+            ?: return QrResult.Error(QrError.DocumentError.NoAppAvailable(document.mimeType))
 
         return QrResult.Success(Unit)
     }
@@ -877,7 +877,7 @@ GlobalDocumentsScreen                                   [future]
 AssociateDocumentScreen ← "Open with QReport" intent
 ```
 
-The `DocumentsTab` composable is reusable — it takes a `Flow<List<IslandDocument>>`
+The `DocumentsTab` composable is reusable — it takes a `Flow<List<Document>>`
 and an `onAdd` callback; scope selection is handled by the caller.
 
 ### 8.2 AssociateDocumentScreen layout
@@ -963,16 +963,16 @@ class DocumentViewModel @Inject constructor(
 
     fun onCategoryFilterSelected(category: DocumentCategory?) { /* filter */ }
     fun onDocumentPicked(scope: DocumentScope, scopeEntityId: String?, uri: Uri) { /* invoke use case */ }
-    fun onOpenDocument(document: IslandDocument) { /* invoke use case */ }
+    fun onOpenDocument(document: Document) { /* invoke use case */ }
     fun onDeleteDocument(documentId: String) { /* invoke use case */ }
-    fun onUpdateDocument(document: IslandDocument) { /* invoke use case */ }
+    fun onUpdateDocument(document: Document) { /* invoke use case */ }
 }
 
 data class DocumentUiState(
-    val documents: List<IslandDocument> = emptyList(),
+    val documents: List<Document> = emptyList(),
     val categoryFilter: DocumentCategory? = null,
     val isLoading: Boolean = false,
-    val error: QrError.IslandDocumentError? = null
+    val error: QrError.DocumentError? = null
 )
 ```
 
@@ -985,7 +985,7 @@ Scope FK fields allow the server to route documents correctly per hierarchy leve
 
 | Concept | Entity sync analog | Document sync equivalent |
 |---|---|---|
-| `updated_at` / `synced_at` | On every entity | Present in `IslandDocumentEntity` |
+| `updated_at` / `synced_at` | On every entity | Present in `DocumentEntity` |
 | Soft delete | `is_deleted = true` propagated | Same — record pushed with `is_deleted = true` |
 | Last-write-wins | `updated_at` comparison | Metadata: same. File: SHA-256 hash comparison |
 | Pull endpoint | `/sync/pull?since=` | `/documents/pull?since=` — returns metadata list |
@@ -1005,7 +1005,7 @@ change detection. `getPendingSync()` already returns the right records via the
 client/document/
 ├── domain/
 │   ├── model/
-│   │   ├── IslandDocument.kt
+│   │   ├── Document.kt
 │   │   ├── DocumentScope.kt
 │   │   ├── DocumentCategory.kt
 │   │   ├── DocumentMimeTypes.kt
@@ -1027,9 +1027,9 @@ client/document/
 ├── data/
 │   ├── local/
 │   │   ├── entity/
-│   │   │   └── IslandDocumentEntity.kt
+│   │   │   └── DocumentEntity.kt
 │   │   └── dao/
-│   │       └── IslandDocumentDao.kt
+│   │       └── DocumentDao.kt
 │   └── repository/
 │       └── DocumentRepositoryImpl.kt
 │
@@ -1045,4 +1045,4 @@ client/document/
 
 ---
 
-*Document: 4_8_Client_IslandDocuments.md — QReport v2.0 — June 2026*
+*Document: 4_8_Client_Documents.md — QReport v2.0 — June 2026*

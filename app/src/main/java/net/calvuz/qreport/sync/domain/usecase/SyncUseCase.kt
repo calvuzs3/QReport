@@ -31,6 +31,7 @@ class SyncUseCase @Inject constructor(
     private val syncMapper: SyncMapper
 ) {
 
+    @Suppress("HardCodedStringLiteral")
     suspend operator fun invoke(): QrResult<SyncResult, QrError> {
         return try {
 

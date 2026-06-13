@@ -2,7 +2,7 @@ package net.calvuz.qreport.client.document.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.document.domain.model.DocumentCategory
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import net.calvuz.qreport.client.document.domain.repository.DocumentRepository
 import javax.inject.Inject
 
@@ -19,7 +19,7 @@ class GetDocumentsForIslandUseCase @Inject constructor(
     operator fun invoke(
         islandId: String,
         category: DocumentCategory? = null
-    ): Flow<List<IslandDocument>> =
+    ): Flow<List<Document>> =
         if (category != null) {
             repository.getDocumentsForIslandByCategoryFlow(islandId, category)
         } else {

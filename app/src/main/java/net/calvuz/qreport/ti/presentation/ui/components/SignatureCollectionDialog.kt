@@ -13,9 +13,11 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import net.calvuz.qreport.R
 import timber.log.Timber
 
 /**
@@ -219,7 +221,7 @@ private fun ProcessingIndicator() {
                 strokeWidth = 3.dp
             )
             Text(
-                text = "Elaborazione firma...",
+                text = stringResource(R.string.intervention_signature_processing),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -251,7 +253,7 @@ private fun InstructionCard() {
                 modifier = Modifier.size(24.dp)
             )
             Text(
-                text = "Disegna la firma nell'area sopra utilizzando il dito o uno stylus",
+                text = stringResource(R.string.intervention_signature_instruction),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -286,7 +288,7 @@ private fun ActionButtons(
                 modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Cancella")
+            Text(stringResource(R.string.intervention_signature_action_clear))
         }
 
         // Cancel button
@@ -295,7 +297,7 @@ private fun ActionButtons(
             modifier = Modifier.weight(1f),
             enabled = !isProcessing
         ) {
-            Text("Annulla")
+            Text(stringResource(R.string.action_cancel))
         }
 
         // Confirm button
@@ -317,7 +319,7 @@ private fun ActionButtons(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Conferma Firma")
+                Text(stringResource(R.string.intervention_signature_action_confirm))
             }
         }
     }
@@ -336,9 +338,9 @@ fun TechnicianSignatureDialog(
 ) {
     SignatureCollectionDialog(
         isVisible = isVisible,
-        title = "Firma Tecnico",
-        subtitle = technicianName.takeIf { it.isNotBlank() } ?: "Tecnico",
-        description = "Apponi la tua firma per confermare l'intervento tecnico completato",
+        title = stringResource(R.string.intervention_signature_technician_title),
+        subtitle = technicianName.takeIf { it.isNotBlank() } ?: stringResource(R.string.intervention_signature_technician_default_name),
+        description = stringResource(R.string.intervention_signature_technician_description),
         icon = Icons.Default.Engineering,
         onDismiss = onDismiss,
         onSignatureConfirm = onSignatureConfirm,
@@ -356,9 +358,9 @@ fun CustomerSignatureDialog(
 ) {
     SignatureCollectionDialog(
         isVisible = isVisible,
-        title = "Firma Cliente",
-        subtitle = customerName.takeIf { it.isNotBlank() } ?: "Cliente",
-        description = "Il cliente firma per approvare l'intervento tecnico effettuato",
+        title = stringResource(R.string.intervention_signature_customer_title),
+        subtitle = customerName.takeIf { it.isNotBlank() } ?: stringResource(R.string.intervention_signature_customer_default_name),
+        description = stringResource(R.string.intervention_signature_customer_description),
         icon = Icons.Default.Business,
         onDismiss = onDismiss,
         onSignatureConfirm = onSignatureConfirm,

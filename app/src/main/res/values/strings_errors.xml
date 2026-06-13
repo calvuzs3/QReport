@@ -28,6 +28,8 @@
     <!-- Validation errors -->
     <string name="err_validation_ids_does_not_match">Gli id non corrispondono</string>
     <string name="err_validation_empty_field">Campo obbligatorio mancante</string>
+    <string name="err_field_required">Campo obbligatorio</string>
+    <string name="err_invalid_number">Inserire un numero valido</string>
     <string name="err_validation_duplicate_entry">Duplicato trovato</string>
     <string name="err_validation_email_already_taken">Email gia usata</string>
     <string name="err_validation_phone_already_taken">Telefono gia usato</string>
@@ -337,7 +339,7 @@
     <string name="err_file_delete">Errore durante l\'eliminazione del file</string>
     <string name="err_file_copy">Errore durante la copia del file</string>
     <string name="err_file_move">Errore durante lo spostamento del file</string>
-    <string name="err_file_rename">Errore durante la rinominazione del file</string>
+    <string name="err_file_rename">Errore durante la rinomina del file</string>
     <string name="err_file_access">Errore durante l\'accesso al file</string>
     <string name="err_file_not_found">File non trovato</string>
     <string name="err_file_already_exists">Il file esiste già</string>
@@ -409,7 +411,7 @@
 
 
     <!-- =====================================================================
-         IslandDocument Error Messages
+         Document Error Messages
     ====================================================================== -->
 
     <string name="err_document_missing_title">Titolo documento mancante</string>

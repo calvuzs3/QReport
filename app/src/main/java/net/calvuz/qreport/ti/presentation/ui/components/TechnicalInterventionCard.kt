@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.ti.presentation.ui.components
 
 import androidx.compose.foundation.layout.*
@@ -35,6 +36,7 @@ data class TechnicalInterventionCardData(
  */
 class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalInterventionCardData>() {
 
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun HeaderSection(item: TechnicalInterventionCardData) {
         CardComponents.HeaderRow(
@@ -42,6 +44,7 @@ class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalIn
         )
     }
 
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun MainSection(item: TechnicalInterventionCardData) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -62,6 +65,7 @@ class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalIn
         }
     }
 
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun DetailsSection(item: TechnicalInterventionCardData) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -101,7 +105,11 @@ class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalIn
             // Status already shown in header, so show technicians count or other info
             if (item.intervention.technicians.isNotEmpty()) {
                 Text(
-                    text = "${item.intervention.technicians.size} technicians: ${item.intervention.technicians.joinToString(", ")}",
+                    text = stringResource(
+                        R.string.interventions_card_technicians,
+                        item.intervention.technicians.size,
+                        item.intervention.technicians.joinToString(", ")
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -112,6 +120,7 @@ class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalIn
         }
     }
 
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun FooterSection(item: TechnicalInterventionCardData) {
         Row(
@@ -134,6 +143,7 @@ class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalIn
     }
 
     // Override compact to remove details section
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun CompactContent(item: TechnicalInterventionCardData, isSelected: Boolean, modifier: Modifier) {
         Column(modifier = modifier) {
@@ -162,6 +172,7 @@ class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalIn
     }
 
     // Override minimal to show just intervention number and customer
+    @Suppress("ParamsComparedByRef")
     @Composable
     override fun MinimalContent(item: TechnicalInterventionCardData, modifier: Modifier) {
         Row(
@@ -192,14 +203,15 @@ class TechnicalInterventionContentProvider : BaseCardContentProvider<TechnicalIn
 /**
  * Convenience composable for TechnicalIntervention cards
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 fun TechnicalInterventionCard(
+    modifier: Modifier = Modifier,
     intervention: TechnicalIntervention,
     stats: InterventionStatistics,
     variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
-    isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    isLoading: Boolean = false
 ) {
     val data = TechnicalInterventionCardData(intervention, stats)
     val contentProvider = TechnicalInterventionContentProvider()
@@ -217,13 +229,14 @@ fun TechnicalInterventionCard(
 /**
  * Extension function for even easier usage
  */
+@Suppress("unused")
 @Composable
-fun TechnicalIntervention.asCard(
+fun TechnicalIntervention.AsCard(
+    modifier: Modifier = Modifier,
     stats: InterventionStatistics,
     variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
-    isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    isLoading: Boolean = false
 ) {
     TechnicalInterventionCard(
         intervention = this,
@@ -238,14 +251,15 @@ fun TechnicalIntervention.asCard(
 /**
  * Builder pattern usage example
  */
+@Suppress("unused", "ParamsComparedByRef")
 @Composable
 fun TechnicalInterventionCardBuilder(
+    modifier: Modifier = Modifier,
     intervention: TechnicalIntervention,
     stats: InterventionStatistics,
     variant: ListViewMode = ListViewMode.FULL,
     isSelected: Boolean = false,
-    isLoading: Boolean = false,
-    modifier: Modifier = Modifier
+    isLoading: Boolean = false
 ) {
     val data = TechnicalInterventionCardData(intervention, stats)
 

@@ -1,6 +1,5 @@
 package net.calvuz.qreport.app.database.data.local
 
-import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
@@ -27,8 +26,8 @@ import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
-import net.calvuz.qreport.client.document.data.local.dao.IslandDocumentDao
-import net.calvuz.qreport.client.document.data.local.entity.IslandDocumentEntity
+import net.calvuz.qreport.client.document.data.local.dao.DocumentDao
+import net.calvuz.qreport.client.document.data.local.entity.DocumentEntity
 import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
 import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
@@ -65,7 +64,7 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
         IslandEntity::class,
         MechanicalUnitEntity::class,
         MaintenanceLogEntity::class,
-        IslandDocumentEntity::class,
+        DocumentEntity::class,
         // checkup-client association
         CheckUpIslandAssociationEntity::class,
         // client-contract association
@@ -97,7 +96,7 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun facilityIslandDao(): IslandDao
     abstract fun mechanicalUnitDao(): MechanicalUnitDao
     abstract fun maintenanceLogDao(): MaintenanceLogDao
-    abstract fun islandDocumentDao(): IslandDocumentDao
+    abstract fun islandDocumentDao(): DocumentDao
     abstract fun checkUpAssociationDao(): CheckUpAssociationDao
     abstract fun contractDao(): ContractDao
     abstract fun technicalInterventionDao(): TechnicalInterventionDao

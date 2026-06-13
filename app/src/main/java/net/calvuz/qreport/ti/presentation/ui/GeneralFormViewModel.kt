@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.error.presentation.asUiText
@@ -69,7 +70,7 @@ class GeneralFormViewModel @Inject constructor(
     private fun populateFormFromIntervention(intervention: TechnicalIntervention) {
 
         val techniciansItems = mutableListOf<String>()
-        intervention.technicians?.forEach { technician ->
+        intervention.technicians.forEach { technician ->
             techniciansItems.add(technician)
         }
 
@@ -86,7 +87,7 @@ class GeneralFormViewModel @Inject constructor(
             hoursOfDuty = intervention.robotData.hoursOfDuty.toString(),  // Convert Int to String
             // Work location section
             workLocation = intervention.workLocation.type,
-            customLocation = intervention.workLocation.customLocation ?: "",
+            customLocation = intervention.workLocation.customLocation,
             // Technicians section
             technicians = techniciansItems
         )
@@ -106,7 +107,7 @@ class GeneralFormViewModel @Inject constructor(
 
                 // Work location section
                 workLocation = intervention.workLocation.type,
-                customLocation = intervention.workLocation.customLocation ?: "",
+                customLocation = intervention.workLocation.customLocation,
 
                 // Technicians section
                 technicians = intervention.technicians.joinToString(", "),
@@ -251,6 +252,12 @@ class GeneralFormViewModel @Inject constructor(
         intervention: TechnicalIntervention
     ): QrResult<TechnicalIntervention, QrError> {
         return try {
+            // Re-fetch the latest data to avoid overwriting changes saved from other tabs
+            val baseIntervention = when (val freshResult = getInterventionByIdUseCase(intervention.id)) {
+                is QrResult.Success -> freshResult.data
+                is QrResult.Error -> intervention
+            }
+
             // Parse technicians
             val techniciansList = currentState.technicians
                 .split(",")
@@ -262,7 +269,7 @@ class GeneralFormViewModel @Inject constructor(
             val hoursOfDutyInt = currentState.hoursOfDuty.toIntOrNull() ?: 0
 
             // Build updated customer data
-            val updatedCustomerData = intervention.customerData.copy(
+            val updatedCustomerData = baseIntervention.customerData.copy(
                 customerName = currentState.customerName,
                 customerContact = currentState.customerContact,
                 ticketNumber = currentState.ticketNumber,
@@ -271,7 +278,7 @@ class GeneralFormViewModel @Inject constructor(
             )
 
             // Build updated robot data
-            val updatedRobotData = intervention.robotData.copy(
+            val updatedRobotData = baseIntervention.robotData.copy(
                 serialNumber = currentState.serialNumber,
                 hoursOfDuty = hoursOfDutyInt
             )
@@ -289,7 +296,7 @@ class GeneralFormViewModel @Inject constructor(
                     "workLocation=${updatedWorkLocation.type}")
 
             // Create complete updated intervention
-            val updatedIntervention = intervention.copy(
+            val updatedIntervention = baseIntervention.copy(
                 customerData = updatedCustomerData,
                 robotData = updatedRobotData,
                 workLocation = updatedWorkLocation,
@@ -333,7 +340,7 @@ class GeneralFormViewModel @Inject constructor(
         if (intervention == null) {
             Timber.e("autoSaveOnTabChange: No intervention loaded")
             val error = QrError.InterventionError.NoInterventionLoaded()
-            _state.update { it.copy(errorMessage = UiText.DynStr("No intervention loaded")) }
+            _state.update { it.copy(errorMessage = UiText.StringResource(R.string.err_intervention_no_intervention_loaded)) }
             return QrResult.Error(error)
         }
 
@@ -377,7 +384,7 @@ class GeneralFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = UiText.DynStr("Errore nel salvataggio: ${result.error}")
+                            errorMessage = UiText.StringResources(R.string.err_intervention_general_update_error_with_message, result.error.toString())
                         )
                     }
                     QrResult.Error(error)
@@ -389,18 +396,11 @@ class GeneralFormViewModel @Inject constructor(
             _state.update {
                 it.copy(
                     isSaving = false,
-                    errorMessage = UiText.DynStr("Errore nel salvataggio: ${e.message}")
+                    errorMessage = UiText.StringResources(R.string.err_intervention_general_update_error_with_message, e.message ?: "")
                 )
             }
             QrResult.Error(error)
         }
-    }
-
-    /**
-     * Check if this tab has unsaved changes
-     */
-    fun hasUnsavedChanges(): Boolean {
-        return _state.value.isDirty
     }
 
     /**
@@ -477,14 +477,16 @@ data class GeneralFormState(
     /**
      * Title for the screen based on mode
      */
-    val screenTitle: String
-        get() = if (isEditMode) "Modifica Intervento" else "Nuovo Intervento"
+    val screenTitle: UiText
+        get() = if (isEditMode) UiText.StringResource(R.string.intervention_edit_title)
+        else UiText.StringResource(R.string.interventions_create_new)
 
     /**
      * Action button text based on mode
      */
-    val actionButtonText: String
-        get() = if (isEditMode) "SALVA" else "CREA"
+    val actionButtonText: UiText
+        get() = if (isEditMode) UiText.StringResource(R.string.action_save)
+        else UiText.StringResource(R.string.action_create)
 }
 
 data class GeneralOriginalData(

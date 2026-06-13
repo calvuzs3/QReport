@@ -26,19 +26,22 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
+import net.calvuz.qreport.app.util.SizeUtils.getFormattedSize
 import net.calvuz.qreport.client.document.domain.model.DocumentCategory
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import net.calvuz.qreport.client.document.domain.model.Document
+import net.calvuz.qreport.client.document.presentation.model.displayLabel
+import kotlinx.datetime.Instant
 
 /** Card display variant — follows the project-wide FULL/COMPACT/MINIMAL pattern. */
 enum class DocumentCardVariant { FULL, COMPACT, MINIMAL }
 
 /**
- * Displays a single [IslandDocument] as a card.
+ * Displays a single [Document] as a card.
  *
  * - FULL: title, category chip, MIME type, size, date, notes, action buttons
  * - COMPACT: title, category chip, date, size (default for list view)
@@ -49,14 +52,14 @@ enum class DocumentCardVariant { FULL, COMPACT, MINIMAL }
  */
 @Composable
 fun DocumentCard(
-    document: IslandDocument,
+    modifier: Modifier = Modifier,
+    document: Document,
     variant: DocumentCardVariant = DocumentCardVariant.COMPACT,
     isSelected: Boolean = false,
-    onOpen: (IslandDocument) -> Unit,
-    onEdit: ((IslandDocument) -> Unit)? = null,
-    onDelete: ((IslandDocument) -> Unit)? = null,
-    onLongPress: ((IslandDocument) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    onOpen: (Document) -> Unit,
+    onEdit: ((Document) -> Unit)? = null,
+    onDelete: ((Document) -> Unit)? = null,
+    onLongPress: ((Document) -> Unit)? = null
 ) {
     val containerColor = if (isSelected)
         MaterialTheme.colorScheme.primaryContainer
@@ -85,7 +88,7 @@ fun DocumentCard(
 
 @Composable
 private fun MinimalContent(
-    document: IslandDocument,
+    document: Document,
     isSelected: Boolean
 ) {
     Row(
@@ -119,7 +122,7 @@ private fun MinimalContent(
 
 @Composable
 private fun CompactContent(
-    document: IslandDocument,
+    document: Document,
     isSelected: Boolean
 ) {
     Row(
@@ -155,12 +158,12 @@ private fun CompactContent(
             ) {
                 CategoryChip(document.category)
                 Text(
-                    text = formatDate(document.createdAt),
+                    text = (Instant.fromEpochMilliseconds(document.createdAt)).toItalianDate(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = formatSize(document.fileSize),
+                    text = (document.fileSize.getFormattedSize()),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -173,10 +176,10 @@ private fun CompactContent(
 
 @Composable
 private fun FullContent(
-    document: IslandDocument,
+    document: Document,
     isSelected: Boolean,
-    onEdit: ((IslandDocument) -> Unit)?,
-    onDelete: ((IslandDocument) -> Unit)?
+    onEdit: ((Document) -> Unit)?,
+    onDelete: ((Document) -> Unit)?
 ) {
     Column(
         modifier = Modifier
@@ -229,7 +232,7 @@ private fun FullContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = formatSize(document.fileSize),
+                text = (document.fileSize.getFormattedSize()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -239,7 +242,7 @@ private fun FullContent(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = formatDate(document.createdAt),
+                text = Instant.fromEpochMilliseconds(document.createdAt).toItalianDate(),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -266,7 +269,7 @@ private fun FullContent(
                 IconButton(onClick = { it(document) }) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Modifica",
+                        contentDescription = stringResource(R.string.action_edit),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -275,7 +278,7 @@ private fun FullContent(
                 IconButton(onClick = { it(document) }) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Elimina",
+                        contentDescription = stringResource(R.string.action_delete),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }
@@ -283,7 +286,7 @@ private fun FullContent(
             IconButton(onClick = { /* open handled by card click */ }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Default.OpenInNew,
-                    contentDescription = "Apri",
+                    contentDescription = stringResource(R.string.action_open),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -299,27 +302,9 @@ private fun CategoryChip(category: DocumentCategory) {
         onClick = {},
         label = {
             Text(
-                text = category.displayName(),
+                text = category.displayLabel().asString(),
                 style = MaterialTheme.typography.labelSmall
             )
         }
     )
-}
-
-private fun DocumentCategory.displayName(): String = when (this) {
-    DocumentCategory.ELECTRICAL -> "Elettrico"
-    DocumentCategory.MECHANICAL -> "Meccanico"
-    DocumentCategory.FLUID      -> "Fluidi"
-    DocumentCategory.MANUAL     -> "Manuale"
-    DocumentCategory.CONTRACT   -> "Contratto"
-    DocumentCategory.OTHER      -> "Altro"
-}
-
-private fun formatDate(epochMs: Long): String =
-    SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(Date(epochMs))
-
-private fun formatSize(bytes: Long): String = when {
-    bytes < 1024       -> "${bytes}B"
-    bytes < 1024 * 1024 -> "${bytes / 1024}KB"
-    else               -> "${"%.1f".format(bytes / (1024f * 1024f))}MB"
 }

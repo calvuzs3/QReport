@@ -2,7 +2,7 @@ package net.calvuz.qreport.client.document.domain.repository
 
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.document.domain.model.DocumentCategory
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 
 /**
  * Domain contract for document persistence.
@@ -20,29 +20,29 @@ interface DocumentRepository {
     // REACTIVE
     // =========================================================================
 
-    fun getDocumentsForIslandFlow(islandId: String): Flow<List<IslandDocument>>
+    fun getDocumentsForIslandFlow(islandId: String): Flow<List<Document>>
 
-    fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<IslandDocument>>
+    fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<Document>>
 
-    fun getDocumentsForClientFlow(clientId: String): Flow<List<IslandDocument>>
+    fun getDocumentsForClientFlow(clientId: String): Flow<List<Document>>
 
-    fun getGlobalDocumentsFlow(): Flow<List<IslandDocument>>
+    fun getGlobalDocumentsFlow(): Flow<List<Document>>
 
     fun getDocumentsForIslandByCategoryFlow(
         islandId: String,
         category: DocumentCategory
-    ): Flow<List<IslandDocument>>
+    ): Flow<List<Document>>
 
     fun getDocumentsForFacilityByCategoryFlow(
         facilityId: String,
         category: DocumentCategory
-    ): Flow<List<IslandDocument>>
+    ): Flow<List<Document>>
 
     // =========================================================================
     // SUSPEND — read
     // =========================================================================
 
-    suspend fun getDocumentById(id: String): Result<IslandDocument?>
+    suspend fun getDocumentById(id: String): Result<Document?>
 
     suspend fun countDocumentsForIsland(islandId: String): Result<Int>
 
@@ -54,9 +54,9 @@ interface DocumentRepository {
     // SUSPEND — write
     // =========================================================================
 
-    suspend fun insertDocument(document: IslandDocument): Result<Unit>
+    suspend fun insertDocument(document: Document): Result<Unit>
 
-    suspend fun updateDocument(document: IslandDocument): Result<Unit>
+    suspend fun updateDocument(document: Document): Result<Unit>
 
     /**
      * Two-stage soft-delete.
@@ -72,10 +72,10 @@ interface DocumentRepository {
     // =========================================================================
 
     /** Records with local changes not yet pushed to the server. */
-    suspend fun getPendingSync(): Result<List<IslandDocument>>
+    suspend fun getPendingSync(): Result<List<Document>>
 
     /** Records changed since the given epoch-ms timestamp. */
-    suspend fun getChangedSince(since: Long): Result<List<IslandDocument>>
+    suspend fun getChangedSince(since: Long): Result<List<Document>>
 
     /** Mark a single record as successfully synced at [syncedAt]. */
     suspend fun markSynced(id: String, syncedAt: Long): Result<Unit>
@@ -86,5 +86,5 @@ interface DocumentRepository {
      * Last-write-wins conflict resolution is handled at the use case level
      * before calling this method.
      */
-    suspend fun upsertDocuments(documents: List<IslandDocument>): Result<Unit>
+    suspend fun upsertDocuments(documents: List<Document>): Result<Unit>
 }

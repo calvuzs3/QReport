@@ -3,6 +3,7 @@
 
     <!-- Technical Intervention  -->
     <string name="interventions_screen_title">Interventi Tecnici</string>
+    <string name="interventions_screen_title_count">Interventi (%1$d)</string>
     <string name="debug_mode_active">Modalità Debug</string>
     <string name="debug_mode_toggle">Toggle Debug Mode</string>
     <string name="intervention_edit_title">Modifica intervento</string>
@@ -27,7 +28,7 @@
 
     <!-- Search & Empty States -->
     <string name="interventions_search_placeholder">Cerca interventi…</string>
-    <string name="intervention_loading">Caricamento intervento</string>
+    <string name="intervention_loading">Caricamento intervento…</string>
     <string name="interventions_loading">Caricamento interventi…</string>
     <string name="interventions_empty_title">Nessun intervento</string>
     <string name="interventions_empty_description">Non ci sono interventi tecnici. Creane uno per iniziare.</string>
@@ -43,6 +44,7 @@
     <string name="work_location_client_site">Sede cliente</string>
     <string name="work_location_our_site">Nostra sede</string>
     <string name="work_location_other">Altro</string>
+    <string name="interventions_card_technicians">Tecnici (%1$d): %2$s</string>
 
     <!-- Success Messages -->
     <string name="intervention_delete_success">Intervento eliminato</string>
@@ -106,6 +108,7 @@
     <string name="err_intervention_signature_not_ready">Firma non pronta"</string>
     <string name="err_intervention_signature_not_ready_with_message">Firma non pronta: %1$s</string>
     <string name="err_intervention_no_intervention_loaded">Nessun intervento caricato</string>
+    <string name="err_intervention_nothing_to_save">Nessun intervento da salvare</string>
 
     <string name="err_intervention_signature_technician_name_required">Nome tecnico obbligatorio per documenti pronti alla firma</string>
     <string name="err_intervention_signature_client_name_required">Nome cliente obbligatorio per documenti pronti alla firma</string>
@@ -142,5 +145,162 @@
 
     <!-- Form Status -->
     <string name="form_status_saved">Salvato con successo</string>
+
+    <!-- Technical Intervention Form -->
+    <string name="intervention_form_edit_mode_badge">Modalità modifica</string>
+    <string name="intervention_form_immutable_in_edit">Immutabili in modifica</string>
+    <string name="intervention_form_section_customer">Dati cliente</string>
+    <string name="intervention_form_customer_name_label">Nome cliente *</string>
+    <string name="intervention_form_customer_contact_label">Persona di riferimento</string>
+    <string name="intervention_form_ticket_number_label">Numero commessa/ticket *</string>
+    <string name="intervention_form_customer_order_number_label">Numero ordine cliente *</string>
+    <string name="intervention_form_notes_label">Note</string>
+    <string name="intervention_form_section_robot">Dati robot</string>
+    <string name="intervention_form_serial_number_label">Numero seriale *</string>
+    <string name="intervention_form_hours_of_duty_label">Ore di servizio *</string>
+    <string name="intervention_form_section_work_location">Lavoro svolto presso</string>
+    <string name="intervention_form_work_location_label">Sede di lavoro</string>
+    <string name="intervention_form_custom_location_label">Specifica sede</string>
+    <string name="intervention_form_custom_location_placeholder">Inserisci sede personalizzata</string>
+    <string name="intervention_form_section_technicians">Tecnici (max 6)</string>
+    <string name="intervention_form_technicians_label">Nomi tecnici</string>
+    <string name="intervention_form_technicians_placeholder">Inserisci nomi separati da virgola</string>
+    <string name="intervention_form_technicians_supporting">Massimo 6 tecnici, separati da virgola</string>
+    <string name="intervention_form_unsaved_message">Hai inserito dei dati che non sono stati salvati. Uscire senza salvare?</string>
+    <string name="intervention_form_unsaved_discard">Abbandona</string>
+    <string name="intervention_form_unsaved_keep_editing">Continua a modificare</string>
+
+    <!-- General Form (Edit Tab) -->
+    <string name="intervention_general_unsaved_changes">Modifiche non salvate</string>
+    <string name="intervention_general_customer_order_number_label">Numero Ordine Cliente</string>
+    <string name="intervention_general_notes_placeholder">Note aggiuntive…</string>
+    <string name="err_intervention_general_update_error_with_message">Errore aggiornamento dati generali: %1$s</string>
+
+    <!-- Details Form -->
+    <string name="intervention_details_section_description">Descrizione Intervento</string>
+    <string name="intervention_details_description_label">Descrizione Tecnica</string>
+    <string name="intervention_details_description_placeholder">Descrivi l\'intervento tecnico effettuato…</string>
+    <string name="intervention_details_section_materials">Materiali Utilizzati</string>
+    <string name="intervention_details_ddt_number_label">Numero DDT</string>
+    <string name="intervention_details_ddt_number_placeholder">es. DDT001/2024</string>
+    <string name="intervention_details_ddt_date_label">Data DDT</string>
+    <string name="intervention_details_ddt_date_placeholder">dd/MM/yyyy</string>
+    <string name="intervention_details_materials_max_rows">Materiali (max 6 righe)</string>
+    <string name="intervention_details_material_item_label">Materiale %1$d</string>
+    <string name="intervention_details_material_quantity_label">Qtà</string>
+    <string name="intervention_details_material_description_placeholder">Descrivi il materiale…</string>
+    <string name="intervention_details_section_external_report">Report Esterno</string>
+    <string name="intervention_details_report_number_label">Numero Report</string>
+    <string name="intervention_details_report_number_placeholder">Numero report ditta esterna</string>
+    <string name="intervention_details_section_completion">Stato Completamento</string>
+    <string name="intervention_details_completed_title">Intervento Completato</string>
+    <string name="intervention_details_in_progress_title">Intervento in Corso</string>
+    <string name="intervention_details_completed_description">L\'intervento è stato completato con successo</string>
+    <string name="intervention_details_in_progress_description">L\'intervento è ancora in corso</string>
+
+    <!-- Signature Components -->
+    <string name="intervention_signature_processing">Elaborazione firma…</string>
+    <string name="intervention_signature_instruction">Disegna la firma nell\'area sopra utilizzando il dito o uno stylus</string>
+    <string name="intervention_signature_action_clear">Cancella</string>
+    <string name="intervention_signature_action_confirm">Conferma firma</string>
+    <string name="intervention_signature_technician_title">Firma tecnico</string>
+    <string name="intervention_signature_technician_default_name">Tecnico</string>
+    <string name="intervention_signature_technician_description">Apponi la tua firma per confermare l\'intervento tecnico completato</string>
+    <string name="intervention_signature_customer_title">Firma cliente</string>
+    <string name="intervention_signature_customer_default_name">Cliente</string>
+    <string name="intervention_signature_customer_description">Il cliente firma per approvare l\'intervento tecnico effettuato</string>
+    <string name="intervention_signature_pad_placeholder">Disegna qui la tua firma</string>
+    <string name="intervention_signature_preview_content_description">Firma digitale</string>
+    <string name="intervention_signature_preview_unavailable">Firma non disponibile</string>
+    <string name="intervention_signature_action_new">Nuova firma</string>
+    <string name="intervention_signature_action_collect">Raccogli firma</string>
+
+    <!-- Signatures Form -->
+    <string name="intervention_signatures_form_technician_section_title">Firma Tecnico</string>
+    <string name="intervention_signatures_form_technician_name_label">Nome Tecnico</string>
+    <string name="intervention_signatures_form_technician_name_placeholder">Nome e cognome del tecnico</string>
+    <string name="intervention_signatures_form_signature_acquired_label">Firma acquisita:</string>
+    <string name="intervention_signatures_form_technician_digital_title">Firma Digitale Tecnico</string>
+    <string name="intervention_signatures_form_customer_section_title">Firma Cliente</string>
+    <string name="intervention_signatures_form_customer_name_label">Nome Cliente</string>
+    <string name="intervention_signatures_form_customer_name_placeholder">Nome e cognome del referente cliente</string>
+    <string name="intervention_signatures_form_customer_digital_title">Firma Digitale Cliente</string>
+    <string name="intervention_signatures_form_collection_success">Firma raccolta con successo</string>
+    <string name="intervention_signatures_form_collection_pending">Premi il pulsante per raccogliere la firma</string>
+    <string name="intervention_signatures_form_button_edit">Modifica Firma</string>
+    <string name="intervention_signatures_form_button_collect">Raccogli Firma</string>
+    <string name="intervention_signatures_form_name_required_hint">Inserisci il nome per abilitare la raccolta firma</string>
+    <string name="intervention_signatures_form_document_status_title">Stato Documento</string>
+    <string name="intervention_signatures_form_ready_title">Pronto per Firme</string>
+    <string name="intervention_signatures_form_not_ready_title">In Preparazione</string>
+    <string name="intervention_signatures_form_ready_description">Il documento è pronto per essere firmato</string>
+    <string name="intervention_signatures_form_not_ready_description">Il documento è ancora in preparazione</string>
+    <string name="intervention_signatures_form_digital_signatures_complete">Firme digitali complete! L\'intervento può essere finalizzato.</string>
+    <string name="intervention_signatures_form_completion_summary_title">Riepilogo Completamento</string>
+    <string name="intervention_signatures_form_document_ready_checklist">Documento Pronto</string>
+    <string name="intervention_signatures_form_process_complete">Processo di firma completato con successo!</string>
+
+    <!-- Work Day Form -->
+    <string name="intervention_workday_unsaved_new">Nuova giornata - non salvata</string>
+    <string name="intervention_workday_section_basic_info">Informazioni Giornata</string>
+    <string name="intervention_workday_date_label">Data</string>
+    <string name="intervention_workday_remote_assistance_title">Assistenza Remota</string>
+    <string name="intervention_workday_remote_assistance_enabled_desc">I campi viaggio sono nascosti</string>
+    <string name="intervention_workday_remote_assistance_disabled_desc">Attiva per nascondere i tempi di viaggio</string>
+    <string name="intervention_workday_technician_count_label">N° Tecnici</string>
+    <string name="intervention_workday_technician_initials_label">Sigle Tecnici</string>
+    <string name="intervention_workday_technician_initials_placeholder">LC, AB, MR</string>
+    <string name="intervention_workday_section_travel_hours">Orari di Viaggio</string>
+    <string name="intervention_workday_outbound_travel">Viaggio Andata</string>
+    <string name="intervention_workday_return_travel">Viaggio Ritorno</string>
+    <string name="intervention_workday_time_start_label">Inizio</string>
+    <string name="intervention_workday_time_end_label">Fine</string>
+    <string name="intervention_workday_time_placeholder">HH:mm</string>
+    <string name="intervention_workday_section_work_hours">Orari di Lavoro</string>
+    <string name="intervention_workday_morning_work">Lavoro Mattina</string>
+    <string name="intervention_workday_afternoon_work">Lavoro Pomeriggio</string>
+    <string name="intervention_workday_section_expenses">Spese</string>
+    <string name="intervention_workday_pocket_money_title">Indennità di Trasferta</string>
+    <string name="intervention_workday_pocket_money_morning">1/2 Mattina</string>
+    <string name="intervention_workday_pocket_money_afternoon">1/2 Pomeriggio</string>
+    <string name="intervention_workday_section_travel_expenses">Spese di Viaggio</string>
+    <string name="intervention_workday_total_kilometers_label">Chilometri Totali</string>
+    <string name="intervention_workday_total_kilometers_supporting">Inserire i km percorsi</string>
+    <string name="intervention_workday_flight">Volo</string>
+    <string name="intervention_workday_rent_car">Auto a Noleggio</string>
+    <string name="intervention_workday_transfer_airport">Transfer Aeroporto</string>
+    <string name="intervention_workday_lodging">Pernottamento</string>
+    <string name="intervention_workday_remote_assistance_note">Spese di viaggio nascoste per assistenza remota</string>
+
+    <!-- Work Days Tab -->
+    <string name="intervention_workdays_tab_back_to_list_cd">Torna alla lista</string>
+    <string name="intervention_workdays_tab_day_header">Giornata %1$d/%2$d</string>
+    <string name="intervention_workdays_tab_new_day_header">Nuova giornata</string>
+    <string name="intervention_workdays_tab_unsaved_indicator">Non salvato</string>
+
+    <!-- Work Days List -->
+    <string name="intervention_workdays_list_add_cd">Aggiungi giornata</string>
+    <string name="intervention_workdays_list_delete_dialog_title">Elimina giornata</string>
+    <string name="intervention_workdays_list_delete_dialog_text">Sei sicuro di voler eliminare la giornata %1$d?</string>
+    <string name="intervention_workdays_list_technicians_with_initials">%1$d tec. (%2$s)</string>
+    <string name="intervention_workdays_list_technicians_count">%1$d tecnici</string>
+    <string name="intervention_workdays_list_remote_badge">Remoto</string>
+    <string name="intervention_workdays_list_kilometers">%1$d km</string>
+    <string name="intervention_workdays_list_morning_summary">Matt: %1$s-%2$s</string>
+    <string name="intervention_workdays_list_afternoon_summary">Pom: %1$s-%2$s</string>
+    <string name="intervention_workdays_list_no_hours">Orari non inseriti</string>
+    <string name="intervention_workdays_list_empty_title">Nessuna giornata registrata</string>
+    <string name="intervention_workdays_list_empty_description">Aggiungi la prima giornata di lavoro</string>
+    <string name="intervention_workdays_list_add_button">Aggiungi giornata</string>
+
+    <!-- Edit Intervention -->
+    <string name="intervention_edit_tab_general">Generale</string>
+    <string name="intervention_edit_tab_details">Dettagli</string>
+    <string name="intervention_edit_tab_workdays">Giornate</string>
+    <string name="intervention_edit_tab_signatures">Firme</string>
+    <string name="intervention_edit_unsaved_dialog_text">Hai modifiche non salvate. Vuoi salvarle prima di uscire?</string>
+    <string name="intervention_edit_save_and_exit">Salva ed esci</string>
+    <string name="intervention_edit_exit_without_saving">Esci senza salvare</string>
+    <string name="intervention_edit_all_saved_success">Tutti i dati salvati con successo</string>
 
 </resources>

@@ -1,5 +1,6 @@
 package net.calvuz.qreport.app.util
 
+@Suppress("HardCodedStringLiteral")
 object SizeUtils {
 
     fun Double.getFormattedSize(): String {
@@ -27,21 +28,6 @@ object SizeUtils {
             value >= 1_000_000 -> "${(value / 1_000_000).toInt() }M"
             value >= 1_000 -> "${(value / 1_000).toInt()}K"
             else -> value.toString()
-        }
-    }
-
-    fun Long.getFormattedHours(): String {
-        val value: Long = this
-        return when {
-            value >= 1000 -> "${value / 1000}K ore"
-            else -> "$value ore"
-        }
-    }
-    fun Int.getFormattedHours(): String {
-        val value: Int = this
-        return when {
-            value >= 1000 -> "${value / 1000}K ore"
-            else -> "$value ore"
         }
     }
 }

@@ -37,7 +37,7 @@ fun QrCardFooter(data: QrCardFooterData) {
         )
 
         Text(
-            text = data.date.toItalianLastModified(),
+            text = data.date.toItalianLastModified().asString(),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

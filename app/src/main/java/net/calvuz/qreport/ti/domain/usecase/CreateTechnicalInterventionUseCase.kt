@@ -148,7 +148,7 @@ class CreateTechnicalInterventionUseCase @Inject constructor(
         }
 
         if (ticketNumber.isBlank()) {
-            return QrResult.Error(CreateInterventionError.MissingSerialNumber())
+            return QrResult.Error(CreateInterventionError.MissingTicketNumber())
         }
 
         if (customerOrderNumber.isBlank()) {

@@ -1,6 +1,6 @@
+
 package net.calvuz.qreport.ti.presentation.ui.components
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -21,10 +21,13 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import timber.log.Timber
 import java.io.File
+import androidx.core.graphics.createBitmap
 
 /**
  * Global state holder for signature capture
@@ -161,7 +164,7 @@ fun SignaturePad(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Disegna qui la tua firma",
+                    text = stringResource(R.string.intervention_signature_pad_placeholder),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                 )
@@ -212,7 +215,7 @@ fun captureSignatureBitmap(
                 "scale: %.2fx%.2f".format(scaleX, scaleY))
 
         // Create Android Bitmap
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(width, height)
         val canvas = android.graphics.Canvas(bitmap)
 
         // Fill background with white
@@ -272,7 +275,7 @@ fun captureSignatureBitmap(
 fun SignaturePreview(
     signaturePath: String,
     modifier: Modifier = Modifier,
-    contentDescription: String = "Firma digitale"
+    contentDescription: String = stringResource(R.string.intervention_signature_preview_content_description)
 ) {
     var bitmap by remember(signaturePath) { mutableStateOf<ImageBitmap?>(null) }
     var isLoading by remember { mutableStateOf(true) }
@@ -332,7 +335,7 @@ fun SignaturePreview(
                 }
                 hasError -> {
                     Text(
-                        text = "Firma non disponibile",
+                        text = stringResource(R.string.intervention_signature_preview_unavailable),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -358,6 +361,7 @@ fun SignaturePreview(
 /**
  * Card showing signature status with optional preview
  */
+@Suppress("unused")
 @Composable
 fun SignatureStatusCard(
     title: String,
@@ -421,7 +425,8 @@ fun SignatureStatusCard(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(
-                    text = if (hasSignature) "Nuova firma" else "Raccogli firma"
+                    text = if (hasSignature) stringResource(R.string.intervention_signature_action_new)
+                    else stringResource(R.string.intervention_signature_action_collect)
                 )
             }
         }

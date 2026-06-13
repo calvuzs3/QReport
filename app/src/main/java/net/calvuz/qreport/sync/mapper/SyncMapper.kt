@@ -1,9 +1,10 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.sync.mapper
 
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
-import net.calvuz.qreport.client.document.data.local.entity.IslandDocumentEntity
+import net.calvuz.qreport.client.document.data.local.entity.DocumentEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
@@ -301,7 +302,8 @@ class SyncMapper @Inject constructor() {
 
     // ===== END =====
 
-    fun islandDocumentToDto(entity: IslandDocumentEntity) = IslandDocumentDto(
+    @Suppress("unused")
+    fun islandDocumentToDto(entity: DocumentEntity) = IslandDocumentDto(
         id = entity.id,
         scope = entity.scope,
         islandId = entity.islandId,
@@ -321,8 +323,9 @@ class SyncMapper @Inject constructor() {
         isActive = entity.isActive,
         isDeleted = entity.isDeleted
     )
-
-    fun islandDocumentToEntity(dto: IslandDocumentDto) = IslandDocumentEntity(
+    
+    @Suppress("unused")
+    fun islandDocumentToEntity(dto: IslandDocumentDto) = DocumentEntity(
         id = dto.id,
         scope = dto.scope,
         islandId = dto.islandId,

@@ -46,8 +46,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import net.calvuz.qreport.R
 import net.calvuz.qreport.sync.domain.model.SyncMode
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -65,17 +68,18 @@ fun SyncSettingsScreen(
     val syncMode by viewModel.syncMode.collectAsState()
     val lastSyncTimestamp by viewModel.lastSyncTimestamp.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
 
     // Show messages via Snackbar
     LaunchedEffect(uiState.error) {
         uiState.error?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showSnackbar(it.asString(context))
             viewModel.clearMessages()
         }
     }
     LaunchedEffect(uiState.message) {
         uiState.message?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarHostState.showSnackbar(it.asString(context))
             viewModel.clearMessages()
         }
     }
@@ -83,10 +87,10 @@ fun SyncSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Sincronizzazione") },
+                title = { Text(stringResource(R.string.sync_settings_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Indietro")
+                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.action_back))
                     }
                 }
             )
@@ -102,12 +106,12 @@ fun SyncSettingsScreen(
         ) {
 
             // ===== SYNC MODE TOGGLE =====
-            SyncSection(title = "Modalità") {
+            SyncSection(title = stringResource(R.string.sync_settings_section_mode)) {
                 SyncToggleItem(
-                    title = "Sincronizzazione remota",
+                    title = stringResource(R.string.sync_settings_mode_remote_title),
                     subtitle = when (syncMode) {
-                        SyncMode.LOCAL_ONLY -> "Solo locale — nessun server configurato"
-                        SyncMode.REMOTE_ENABLED -> "Attiva — i dati verranno sincronizzati con il server"
+                        SyncMode.LOCAL_ONLY -> stringResource(R.string.sync_settings_mode_local_only)
+                        SyncMode.REMOTE_ENABLED -> stringResource(R.string.sync_settings_mode_remote_enabled)
                     },
                     icon = when (syncMode) {
                         SyncMode.LOCAL_ONLY -> Icons.Default.CloudOff
@@ -120,21 +124,21 @@ fun SyncSettingsScreen(
 
             // ===== SERVER URL =====
 
-            SyncSection(title = "Server") {
+            SyncSection(title = stringResource(R.string.sync_settings_section_server)) {
                 val serverUrl by viewModel.serverUrl.collectAsState()
                 var serverUrlInput by remember(serverUrl) { mutableStateOf(serverUrl) }
 
                 OutlinedTextField(
                     value = serverUrlInput,
                     onValueChange = { serverUrlInput = it },
-                    label = { Text("Indirizzo server") },
-                    placeholder = { Text("https://tuamacchina.tuoserver.com") },
+                    label = { Text(stringResource(R.string.sync_settings_server_url_label)) },
+                    placeholder = { Text(stringResource(R.string.sync_settings_server_url_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     trailingIcon = {
                         if (serverUrlInput != serverUrl) {
                             IconButton(onClick = { viewModel.saveServerUrl(serverUrlInput) }) {
-                                Icon(Icons.Default.Check, contentDescription = "Salva")
+                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.action_save))
                             }
                         }
                     }
@@ -142,7 +146,7 @@ fun SyncSettingsScreen(
             }
 
             // ===== ACCOUNT =====
-            SyncSection(title = "Account") {
+            SyncSection(title = stringResource(R.string.sync_settings_section_account)) {
                 if (uiState.isLoggedIn) {
                     // Logged in — show sync button + logout
                     Button(
@@ -156,14 +160,14 @@ fun SyncSettingsScreen(
                                 strokeWidth = 2.dp,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
-                            Text("Sincronizzazione in corso...")
+                            Text(stringResource(R.string.sync_settings_syncing_in_progress))
                         } else {
                             Icon(
                                 Icons.Default.Sync,
                                 contentDescription = null,
                                 modifier = Modifier.padding(end = 8.dp)
                             )
-                            Text("Sincronizza ora")
+                            Text(stringResource(R.string.sync_settings_action_sync_now))
                         }
                     }
 
@@ -179,7 +183,7 @@ fun SyncSettingsScreen(
                             contentDescription = null,
                             modifier = Modifier.padding(end = 8.dp)
                         )
-                        Text("Disconnetti")
+                        Text(stringResource(R.string.action_logout))
                     }
 
                     OutlinedButton(
@@ -187,7 +191,7 @@ fun SyncSettingsScreen(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !uiState.isSyncing
                     ) {
-                        Text("Sync completa (scarica tutto)")
+                        Text(stringResource(R.string.sync_settings_action_full_sync))
                     }
 
                 } else {
@@ -201,16 +205,16 @@ fun SyncSettingsScreen(
                             contentDescription = null,
                             modifier = Modifier.padding(end = 8.dp)
                         )
-                        Text("Accedi al server")
+                        Text(stringResource(R.string.sync_settings_action_login))
                     }
                 }
             }
 
 
             // ===== SYNC STATUS =====
-            SyncSection(title = "Stato") {
+            SyncSection(title = stringResource(R.string.sync_settings_section_status)) {
                 SyncInfoItem(
-                    title = "Ultima sincronizzazione",
+                    title = stringResource(R.string.sync_settings_last_sync_label),
                     subtitle = lastSyncTimestamp
                         ?.let {
                             SimpleDateFormat(
@@ -218,23 +222,23 @@ fun SyncSettingsScreen(
                                 Locale.getDefault()
                             ).format(Date(it))
                         }
-                        ?: "Mai eseguita",
+                        ?: stringResource(R.string.sync_settings_never_synced),
                     icon = Icons.Default.History
                 )
                 SyncInfoItem(
-                    title = "Modifiche in attesa",
+                    title = stringResource(R.string.sync_settings_pending_changes_label),
                     subtitle = uiState.syncStatus
-                        ?.let { "${it.pendingChangesCount} record da sincronizzare" }
-                        ?: "—",
+                        ?.let { stringResource(R.string.sync_settings_pending_changes_count, it.pendingChangesCount) }
+                        ?: stringResource(R.string.label_unavailable),
                     icon = Icons.Default.Pending
                 )
             }
 
             // ===== DEVICE INFO =====
-            SyncSection(title = "Dispositivo") {
+            SyncSection(title = stringResource(R.string.sync_settings_section_device)) {
                 SyncInfoItem(
-                    title = "ID Dispositivo",
-                    subtitle = uiState.syncStatus?.deviceId ?: "—",
+                    title = stringResource(R.string.sync_settings_device_id_label),
+                    subtitle = uiState.syncStatus?.deviceId ?: stringResource(R.string.label_unavailable),
                     icon = Icons.Default.DeviceHub
                 )
             }

@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.sync.domain.usecase
 
 import net.calvuz.qreport.app.error.domain.model.QrError

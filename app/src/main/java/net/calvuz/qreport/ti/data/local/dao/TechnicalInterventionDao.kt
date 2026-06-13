@@ -1,6 +1,7 @@
 package net.calvuz.qreport.ti.data.local.dao
 
 import androidx.room.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
@@ -101,6 +102,19 @@ interface TechnicalInterventionDao {
 
     @Query("SELECT * FROM technical_interventions WHERE status = 'COMPLETED' ORDER BY created_at DESC")
     suspend fun getCompletedInterventions(): List<TechnicalInterventionEntity>
+
+    // ===== REACTIVE QUERIES (FLOW) =====
+    @Query("SELECT * FROM technical_interventions ORDER BY created_at DESC")
+    fun getAllInterventionsFlow(): Flow<List<TechnicalInterventionEntity>>
+
+    @Query("SELECT * FROM technical_interventions WHERE status = :status ORDER BY created_at DESC")
+    fun getInterventionsByStatusFlow(status: InterventionStatus): Flow<List<TechnicalInterventionEntity>>
+
+    @Query("SELECT * FROM technical_interventions WHERE status IN ('DRAFT', 'IN_PROGRESS') ORDER BY updated_at DESC")
+    fun getActiveInterventionsFlow(): Flow<List<TechnicalInterventionEntity>>
+
+    @Query("SELECT * FROM technical_interventions WHERE status IN ('COMPLETED', 'ARCHIVED') ORDER BY updated_at DESC")
+    fun getCompletedInterventionsFlow(): Flow<List<TechnicalInterventionEntity>>
 
     // ===== SEARCH =====
     @Query(

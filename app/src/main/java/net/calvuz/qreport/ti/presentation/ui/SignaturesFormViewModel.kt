@@ -6,6 +6,8 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.toUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.ti.domain.model.*
 import net.calvuz.qreport.ti.domain.repository.SignatureFileRepository
@@ -61,7 +63,7 @@ class SignaturesFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = QrError.InterventionError.LoadError()
+                            errorMessage = QrError.InterventionError.LoadError().toUiText()
                         )
                     }
                 }
@@ -203,7 +205,7 @@ class SignaturesFormViewModel @Inject constructor(
             Timber.e("SignaturesFormViewModel: Cannot collect signature - no intervention loaded")
             _state.update {
                 it.copy(
-                    errorMessage = QrError.InterventionError.NoInterventionLoaded(),
+                    errorMessage = QrError.InterventionError.NoInterventionLoaded().toUiText(),
                     showTechnicianSignatureDialog = false
                 )
             }
@@ -250,7 +252,7 @@ class SignaturesFormViewModel @Inject constructor(
                             it.copy(
                                 isProcessingSignature = false,
                                 showTechnicianSignatureDialog = false,
-                                errorMessage = QrError.InterventionError.SignatureError.TechnicianSignatureFailed()
+                                errorMessage = QrError.InterventionError.SignatureError.TechnicianSignatureFailed().toUiText()
                             )
                         }
                     }
@@ -262,7 +264,7 @@ class SignaturesFormViewModel @Inject constructor(
                     it.copy(
                         isProcessingSignature = false,
                         showTechnicianSignatureDialog = false,
-                        errorMessage = QrError.InterventionError.SignatureError.TechnicianSignatureFailed()
+                        errorMessage = QrError.InterventionError.SignatureError.TechnicianSignatureFailed().toUiText()
                     )
                 }
             }
@@ -278,7 +280,7 @@ class SignaturesFormViewModel @Inject constructor(
             Timber.e("SignaturesFormViewModel: Cannot collect signature - no intervention loaded")
             _state.update {
                 it.copy(
-                    errorMessage = QrError.InterventionError.NoInterventionLoaded(),
+                    errorMessage = QrError.InterventionError.NoInterventionLoaded().toUiText(),
                     showCustomerSignatureDialog = false
                 )
             }
@@ -325,7 +327,7 @@ class SignaturesFormViewModel @Inject constructor(
                             it.copy(
                                 isProcessingSignature = false,
                                 showCustomerSignatureDialog = false,
-                                errorMessage = QrError.InterventionError.SignatureError.CustomerSignatureFailed()
+                                errorMessage = QrError.InterventionError.SignatureError.CustomerSignatureFailed().toUiText()
                             )
                         }
                     }
@@ -337,7 +339,7 @@ class SignaturesFormViewModel @Inject constructor(
                     it.copy(
                         isProcessingSignature = false,
                         showCustomerSignatureDialog = false,
-                        errorMessage = QrError.InterventionError.SignatureError.CustomerSignatureFailed()
+                        errorMessage = QrError.InterventionError.SignatureError.CustomerSignatureFailed().toUiText()
                     )
                 }
             }
@@ -380,7 +382,7 @@ class SignaturesFormViewModel @Inject constructor(
         if (intervention == null) {
             Timber.e("autoSaveOnTabChange: No intervention loaded")
             val error = QrError.InterventionError.NoInterventionLoaded()
-            _state.update { it.copy(errorMessage = error) }
+            _state.update { it.copy(errorMessage = error.toUiText()) }
             return QrResult.Error(error)
         }
 
@@ -392,7 +394,7 @@ class SignaturesFormViewModel @Inject constructor(
                 Timber.w("autoSaveOnTabChange: Validation error: $error")
             }
             val error = QrError.InterventionError.SignatureError.ValidationError(validationErrors)
-            _state.update { it.copy(errorMessage = error) }
+            _state.update { it.copy(errorMessage = error.toUiText()) }
             return QrResult.Error(error)
         }
 
@@ -420,8 +422,14 @@ class SignaturesFormViewModel @Inject constructor(
                     "technician: ${technicianSignature?.name} (${technicianSignature?.signature}), " +
                     "customer: ${customerSignature?.name} (${customerSignature?.signature})")
 
+            // Re-fetch the latest data to avoid overwriting changes saved from other tabs
+            val baseIntervention = when (val freshResult = getTechnicalInterventionByIdUseCase(intervention.id)) {
+                is QrResult.Success -> freshResult.data
+                is QrResult.Error -> intervention
+            }
+
             // Update intervention with new signatures
-            val updatedIntervention = intervention.copy(
+            val updatedIntervention = baseIntervention.copy(
                 technicianSignature = technicianSignature,
                 customerSignature = customerSignature
             )
@@ -459,7 +467,7 @@ class SignaturesFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = error
+                            errorMessage = error.toUiText()
                         )
                     }
                     QrResult.Error(error)
@@ -471,20 +479,11 @@ class SignaturesFormViewModel @Inject constructor(
             _state.update {
                 it.copy(
                     isSaving = false,
-                    errorMessage = error
+                    errorMessage = error.toUiText()
                 )
             }
             QrResult.Error(error)
         }
-    }
-
-    /**
-     * Check if this tab has unsaved changes
-     */
-    fun hasUnsavedChanges(): Boolean {
-        val hasChanges = _state.value.isDirty
-        Timber.v("hasUnsavedChanges: $hasChanges")
-        return hasChanges
     }
 
     /**
@@ -595,96 +594,6 @@ class SignaturesFormViewModel @Inject constructor(
         return status
     }
 
-    /**
-     * Get current intervention data (for parent coordination)
-     */
-    fun getCurrentIntervention(): TechnicalIntervention? {
-        return currentIntervention
-    }
-
-    /**
-     * Force save without validation (for debugging/fallback)
-     */
-    suspend fun forceSave(): QrResult<Unit, QrError.InterventionError> {
-        val currentState = _state.value
-        val intervention = currentIntervention
-
-        Timber.d("forceSave: Force saving without validation")
-
-        if (intervention == null) {
-            Timber.e("forceSave: No intervention loaded")
-            val error = QrError.InterventionError.NoInterventionLoaded()
-            return QrResult.Error(error)
-        }
-
-        return try {
-            _state.update { it.copy(isSaving = true, errorMessage = null) }
-
-            // Create signature objects if names are provided (no validation)
-            val technicianSignature = if (currentState.technicianName.isNotBlank()) {
-                TechnicianSignature(
-                    name = currentState.technicianName,
-                    signature = ""
-                )
-            } else null
-
-            val customerSignature = if (currentState.customerName.isNotBlank()) {
-                CustomerSignature(
-                    name = currentState.customerName,
-                    signature = ""
-                )
-            } else null
-
-            val updatedIntervention = intervention.copy(
-                technicianSignature = technicianSignature,
-                customerSignature = customerSignature
-            )
-
-            when (val result = updateTechnicalInterventionUseCase(updatedIntervention)) {
-                is QrResult.Success -> {
-                    Timber.d("forceSave: Force save successful")
-                    currentIntervention = updatedIntervention
-
-                    // Update original data
-                    originalData = SignatureOriginalData(
-                        technicianName = currentState.technicianName,
-                        customerName = currentState.customerName,
-                        isReadyForSignatures = currentState.isReadyForSignatures
-                    )
-
-                    _state.update {
-                        it.copy(
-                            isSaving = false,
-                            isDirty = false,
-                            successMessage = InterventionFormStatus.Signature.SavedForm()
-                        )
-                    }
-
-                    QrResult.Success(Unit)
-                }
-
-                is QrResult.Error -> {
-                    Timber.e("forceSave: Force save failed - ${result.error}")
-                    _state.update {
-                        it.copy(
-                            isSaving = false,
-                            errorMessage = QrError.InterventionError.UpdateError()
-                        )
-                    }
-                    QrResult.Error(QrError.InterventionError.UpdateError())
-                }
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "forceSave: Exception during force save")
-            _state.update {
-                it.copy(
-                    isSaving = false,
-                    errorMessage = QrError.InterventionError.UpdateError()
-                )
-            }
-            QrResult.Error(QrError.InterventionError.UpdateError())
-        }
-    }
 }
 
 /**
@@ -709,7 +618,7 @@ data class SignaturesFormState(
     val showCustomerSignatureDialog: Boolean = false,
     val isProcessingSignature: Boolean = false,
 
-    val errorMessage: QrError.InterventionError? = null,
+    val errorMessage: UiText? = null,
     val successMessage: InterventionFormStatus? = null
 ) {
     /**

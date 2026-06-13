@@ -1,25 +1,25 @@
 package net.calvuz.qreport.client.document.data.mapper
 
-import net.calvuz.qreport.client.document.data.local.entity.IslandDocumentEntity
+import net.calvuz.qreport.client.document.data.local.entity.DocumentEntity
 import net.calvuz.qreport.client.document.domain.model.DocumentCategory
 import net.calvuz.qreport.client.document.domain.model.DocumentScope
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 
 /**
- * Mapper between [IslandDocumentEntity] (data layer) and [IslandDocument] (domain layer).
+ * Mapper between [DocumentEntity] (data layer) and [Document] (domain layer).
  *
  * Enum conversions use [enumValueOf] with a safe fallback:
- *  - Unknown [scope] strings fall back to [DocumentScope.GLOBAL].
- *  - Unknown [category] strings fall back to [DocumentCategory.OTHER].
+ *  - Unknown [DocumentScope] strings fall back to [DocumentScope.GLOBAL].
+ *  - Unknown [DocumentCategory] strings fall back to [DocumentCategory.OTHER].
  * This prevents crashes if future server values haven't been added to the
  * local enum yet.
  */
-object IslandDocumentMapper {
+object DocumentMapper {
 
     // ── Entity → Domain ───────────────────────────────────────────────────────
 
-    fun toDomain(entity: IslandDocumentEntity): IslandDocument =
-        IslandDocument(
+    fun toDomain(entity: DocumentEntity): Document =
+        Document(
             id         = entity.id,
             scope      = entity.scope.toDocumentScope(),
             islandId   = entity.islandId,
@@ -40,13 +40,13 @@ object IslandDocumentMapper {
             syncedAt   = entity.syncedAt
         )
 
-    fun toDomainList(entities: List<IslandDocumentEntity>): List<IslandDocument> =
+    fun toDomainList(entities: List<DocumentEntity>): List<Document> =
         entities.map { toDomain(it) }
 
     // ── Domain → Entity ───────────────────────────────────────────────────────
 
-    fun toEntity(domain: IslandDocument): IslandDocumentEntity =
-        IslandDocumentEntity(
+    fun toEntity(domain: Document): DocumentEntity =
+        DocumentEntity(
             id         = domain.id,
             scope      = domain.scope.name,
             islandId   = domain.islandId,
@@ -67,7 +67,7 @@ object IslandDocumentMapper {
             syncedAt   = domain.syncedAt
         )
 
-    fun toEntityList(domains: List<IslandDocument>): List<IslandDocumentEntity> =
+    fun toEntityList(domains: List<Document>): List<DocumentEntity> =
         domains.map { toEntity(it) }
 
     // ── Private helpers ───────────────────────────────────────────────────────

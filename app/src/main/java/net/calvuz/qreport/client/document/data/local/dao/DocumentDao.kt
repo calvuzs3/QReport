@@ -8,7 +8,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-import net.calvuz.qreport.client.document.data.local.entity.IslandDocumentEntity
+import net.calvuz.qreport.client.document.data.local.entity.DocumentEntity
 
 /**
  * DAO for the island_documents table.
@@ -20,7 +20,7 @@ import net.calvuz.qreport.client.document.data.local.entity.IslandDocumentEntity
  *  - Soft-delete is performed via UPDATE, never DELETE.
  */
 @Dao
-interface IslandDocumentDao {
+interface DocumentDao {
 
     // =========================================================================
     // REACTIVE — by scope
@@ -32,7 +32,7 @@ interface IslandDocumentDao {
         WHERE island_id = :islandId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    fun getDocumentsForIslandFlow(islandId: String): Flow<List<IslandDocumentEntity>>
+    fun getDocumentsForIslandFlow(islandId: String): Flow<List<DocumentEntity>>
 
     /** All active documents for a facility, newest first. */
     @Query("""
@@ -40,7 +40,7 @@ interface IslandDocumentDao {
         WHERE facility_id = :facilityId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<IslandDocumentEntity>>
+    fun getDocumentsForFacilityFlow(facilityId: String): Flow<List<DocumentEntity>>
 
     /** All active documents for a client, newest first. */
     @Query("""
@@ -48,7 +48,7 @@ interface IslandDocumentDao {
         WHERE client_id = :clientId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    fun getDocumentsForClientFlow(clientId: String): Flow<List<IslandDocumentEntity>>
+    fun getDocumentsForClientFlow(clientId: String): Flow<List<DocumentEntity>>
 
     /** All active global documents (no FK), newest first. */
     @Query("""
@@ -56,7 +56,7 @@ interface IslandDocumentDao {
         WHERE scope = 'GLOBAL' AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    fun getGlobalDocumentsFlow(): Flow<List<IslandDocumentEntity>>
+    fun getGlobalDocumentsFlow(): Flow<List<DocumentEntity>>
 
     // =========================================================================
     // REACTIVE — by scope + category
@@ -72,7 +72,7 @@ interface IslandDocumentDao {
     fun getDocumentsForIslandByCategoryFlow(
         islandId: String,
         category: String
-    ): Flow<List<IslandDocumentEntity>>
+    ): Flow<List<DocumentEntity>>
 
     @Query("""
         SELECT * FROM island_documents
@@ -84,7 +84,7 @@ interface IslandDocumentDao {
     fun getDocumentsForFacilityByCategoryFlow(
         facilityId: String,
         category: String
-    ): Flow<List<IslandDocumentEntity>>
+    ): Flow<List<DocumentEntity>>
     
     // =========================================================================
     // SUSPEND — multi record
@@ -96,7 +96,7 @@ interface IslandDocumentDao {
         WHERE client_id = :clientId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    suspend fun getDocumentsForClient(clientId: String): List<IslandDocumentEntity>
+    suspend fun getDocumentsForClient(clientId: String): List<DocumentEntity>
     
     /** All active documents for a facility, newest first. */
     @Query("""
@@ -104,7 +104,7 @@ interface IslandDocumentDao {
         WHERE facility_id = :facilityId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    suspend fun getDocumentsForFacility(facilityId: String): List<IslandDocumentEntity>
+    suspend fun getDocumentsForFacility(facilityId: String): List<DocumentEntity>
     
     /** All active documents for an island, newest first. */
     @Query("""
@@ -112,14 +112,14 @@ interface IslandDocumentDao {
         WHERE island_id = :islandId AND is_deleted = 0
         ORDER BY created_at DESC
     """)
-    suspend fun getDocumentsForIsland(islandId: String): List<IslandDocumentEntity>
+    suspend fun getDocumentsForIsland(islandId: String): List<DocumentEntity>
     
     // =========================================================================
     // SUSPEND — single record
     // =========================================================================
 
     @Query("SELECT * FROM island_documents WHERE id = :id AND is_deleted = 0")
-    suspend fun getDocumentById(id: String): IslandDocumentEntity?
+    suspend fun getDocumentById(id: String): DocumentEntity?
 
     // =========================================================================
     // SUSPEND — counts
@@ -156,7 +156,7 @@ interface IslandDocumentDao {
         WHERE updated_at > COALESCE(synced_at, 0)
         ORDER BY updated_at ASC
     """)
-    suspend fun getPendingSync(): List<IslandDocumentEntity>
+    suspend fun getPendingSync(): List<DocumentEntity>
 
     /**
      * Records changed since a given timestamp — used by the pull response
@@ -167,17 +167,17 @@ interface IslandDocumentDao {
         WHERE updated_at > :since
         ORDER BY updated_at ASC
     """)
-    suspend fun getChangedSince(since: Long): List<IslandDocumentEntity>
+    suspend fun getChangedSince(since: Long): List<DocumentEntity>
 
     // =========================================================================
     // WRITE
     // =========================================================================
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertDocument(document: IslandDocumentEntity)
+    suspend fun insertDocument(document: DocumentEntity)
 
     @Update
-    suspend fun updateDocument(document: IslandDocumentEntity)
+    suspend fun updateDocument(document: DocumentEntity)
 
     /**
      * Stage 1 soft-delete: deactivate (hidden in UI, not yet purged).
@@ -223,5 +223,5 @@ interface IslandDocumentDao {
      * existing ones (last-write-wins via updated_at comparison at use case level).
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsertDocuments(documents: List<IslandDocumentEntity>)
+    suspend fun upsertDocuments(documents: List<DocumentEntity>)
 }

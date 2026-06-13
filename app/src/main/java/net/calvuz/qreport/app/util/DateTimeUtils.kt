@@ -1,6 +1,9 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.app.util
 
 import kotlinx.datetime.*
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.backup.domain.model.BackupInfo
 import kotlin.time.Duration
 
@@ -85,39 +88,40 @@ object DateTimeUtils {
      * Formatta data in modo relativo rispetto a oggi
      * Esempi: "Oggi", "Ieri", "Tra 5 giorni", "5 giorni fa", "15/11/2024"
      */
-    fun Instant.toItalianRelativeDate(): String {
+    @Suppress("unused")
+    fun Instant.toItalianRelativeDate(): UiText {
         val now = Clock.System.now()
         val thisDate = this.toLocalDateTime(TimeZone.currentSystemDefault()).date
         val todayDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
 
         return when (val daysDifference = thisDate.toEpochDays() - todayDate.toEpochDays()) {
-            0 -> "Oggi"
-            1 -> "Domani"
-            -1 -> "Ieri"
-            in 2L..30L -> "Tra $daysDifference giorni"
-            in -30L..-2L -> "${-daysDifference} giorni fa"
-            else -> this.toItalianDate()
+            0 -> UiText.StringResource(R.string.date_today)
+            1 -> UiText.StringResource(R.string.date_tomorrow)
+            -1 -> UiText.StringResource(R.string.date_yesterday)
+            in 2..30 -> UiText.StringResources(R.string.date_in_days, daysDifference)
+            in -30..-2 -> UiText.StringResources(R.string.date_days_ago, -daysDifference)
+            else -> UiText.DynStr(this.toItalianDate())
         }
     }
 
     /**
      * Formatta data in modo relativo rispetto a oggi
      */
-    fun Instant.toItalianLastModified(): String {
+    fun Instant.toItalianLastModified(): UiText {
         val now = Clock.System.now()
         val diffMillis = (now - this).inWholeMilliseconds
 
         return when {
-            diffMillis < 60000 -> "Aggiornato ora"
-            diffMillis < 3600000 -> "Aggiornato ${diffMillis / 60000} min fa"
-            diffMillis < 86400000 -> "Aggiornato ${diffMillis / 3600000}h fa"
+            diffMillis < 60000 -> UiText.StringResource(R.string.date_updated_now)
+            diffMillis < 3600000 -> UiText.StringResources(R.string.date_updated_minutes_ago, diffMillis / 60000)
+            diffMillis < 86400000 -> UiText.StringResources(R.string.date_updated_hours_ago, diffMillis / 3600000)
             else -> {
-                val days = (this - Clock.System.now()).inWholeDays
+                val days = (now - this).inWholeDays
 
-                return when {
-                    days == 1L -> "Aggiornato ieri"
-                    days < 28 -> "Aggiornato $days giorni fa"
-                    else -> "Aggiornato il ${this.toItalianDate()}"
+                when {
+                    days == 1L -> UiText.StringResource(R.string.date_updated_yesterday)
+                    days < 28 -> UiText.StringResources(R.string.date_updated_days_ago, days)
+                    else -> UiText.StringResources(R.string.date_updated_on, this.toItalianDate())
                 }
             }
         }
@@ -126,21 +130,21 @@ object DateTimeUtils {
     /**
      * Formatta data in modo relativo rispetto a oggi
      */
-    fun Instant.toItalianCreatedAt(): String {
+    fun Instant.toItalianCreatedAt(): UiText {
         val now = Clock.System.now()
         val diffMillis = (now - this).inWholeMilliseconds
 
         return when {
-            diffMillis < 60000 -> "Creato ora"
-            diffMillis < 3600000 -> "Creato ${diffMillis / 60000} min fa"
-            diffMillis < 86400000 -> "Creato ${diffMillis / 3600000}h fa"
+            diffMillis < 60000 -> UiText.StringResource(R.string.date_created_now)
+            diffMillis < 3600000 -> UiText.StringResources(R.string.date_created_minutes_ago, diffMillis / 60000)
+            diffMillis < 86400000 -> UiText.StringResources(R.string.date_created_hours_ago, diffMillis / 3600000)
             else -> {
-                val days = (this - Clock.System.now()).inWholeDays
+                val days = (now - this).inWholeDays
 
-                return when {
-                    days == 1L -> "Creato ieri"
-                    days < 28 -> "Creato $days giorni fa"
-                    else -> "Creato il ${this.toItalianDate()}"
+                when {
+                    days == 1L -> UiText.StringResource(R.string.date_created_yesterday)
+                    days < 28 -> UiText.StringResources(R.string.date_created_days_ago, days)
+                    else -> UiText.StringResources(R.string.date_created_on, this.toItalianDate())
                 }
             }
         }
@@ -150,14 +154,18 @@ object DateTimeUtils {
      * Formatta per messaggi di scadenza
      * Esempi: "scade oggi", "scade domani", "scade il 15/11/2024", "scaduta il 10/11/2024"
      */
-    fun Instant.toExpiryMessage(): String {
+    @Suppress("unused")
+    fun Instant.toExpiryMessage(): UiText {
         val now = Clock.System.now()
+        val thisDate = this.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val todayDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val daysDifference = thisDate.toEpochDays() - todayDate.toEpochDays()
 
         return when {
-            this < now -> "scaduta il ${this.toItalianDate()}"
-            this.toItalianRelativeDate() == "Oggi" -> "scade oggi"
-            this.toItalianRelativeDate() == "Domani" -> "scade domani"
-            else -> "scade il ${this.toItalianDate()}"
+            this < now -> UiText.StringResources(R.string.date_expired_on, this.toItalianDate())
+            daysDifference == 0 -> UiText.StringResource(R.string.date_expires_today)
+            daysDifference == 1 -> UiText.StringResource(R.string.date_expires_tomorrow)
+            else -> UiText.StringResources(R.string.date_expires_on, this.toItalianDate())
         }
     }
 
@@ -165,7 +173,8 @@ object DateTimeUtils {
      * Formatta per messaggi di manutenzione
      * Esempi: "dovuta oggi", "dovuta tra 3 giorni", "in ritardo di 5 giorni"
      */
-    fun Instant.toMaintenanceMessage(): String {
+    @Suppress("unused")
+    fun Instant.toMaintenanceMessage(): UiText {
         val now = Clock.System.now()
         val duration = this - now
 
@@ -173,16 +182,16 @@ object DateTimeUtils {
             duration < Duration.ZERO -> {
                 val daysLate = (-duration).inWholeDays
                 when (daysLate) {
-                    0L -> "dovuta oggi (in ritardo)"
-                    1L -> "in ritardo di 1 giorno"
-                    else -> "in ritardo di $daysLate giorni"
+                    0L -> UiText.StringResource(R.string.date_maintenance_overdue_today)
+                    1L -> UiText.StringResource(R.string.date_maintenance_overdue_one_day)
+                    else -> UiText.StringResources(R.string.date_maintenance_overdue_days, daysLate)
                 }
             }
 
-            duration.inWholeDays == 0L -> "dovuta oggi"
-            duration.inWholeDays == 1L -> "dovuta domani"
-            duration.inWholeDays <= 7 -> "dovuta tra ${duration.inWholeDays} giorni"
-            else -> "dovuta il ${this.toItalianDate()}"
+            duration.inWholeDays == 0L -> UiText.StringResource(R.string.date_maintenance_due_today)
+            duration.inWholeDays == 1L -> UiText.StringResource(R.string.date_maintenance_due_tomorrow)
+            duration.inWholeDays <= 7 -> UiText.StringResources(R.string.date_maintenance_due_in_days, duration.inWholeDays)
+            else -> UiText.StringResources(R.string.date_maintenance_due_on, this.toItalianDate())
         }
     }
 
@@ -190,19 +199,20 @@ object DateTimeUtils {
      * Formatta durata tra due Instant in formato leggibile
      * Esempi: "2 giorni", "3 settimane", "1 mese"
      */
-    fun durationBetween(start: Instant, end: Instant): String {
+    @Suppress("unused")
+    fun durationBetween(start: Instant, end: Instant): UiText {
         val duration = end - start
         val days = duration.inWholeDays
 
         return when {
-            days == 0L -> "Oggi"
-            days == 1L -> "1 giorno"
-            days < 7 -> "$days giorni"
-            days < 14 -> "1 settimana"
-            days < 30 -> "${days / 7} settimane"
-            days < 60 -> "1 mese"
-            days < 365 -> "${days / 30} mesi"
-            else -> "${days / 365} anni"
+            days == 0L -> UiText.StringResource(R.string.date_today)
+            days == 1L -> UiText.StringResource(R.string.date_duration_one_day)
+            days < 7 -> UiText.StringResources(R.string.date_duration_days, days)
+            days < 14 -> UiText.StringResource(R.string.date_duration_one_week)
+            days < 30 -> UiText.StringResources(R.string.date_duration_weeks, days / 7)
+            days < 60 -> UiText.StringResource(R.string.date_duration_one_month)
+            days < 365 -> UiText.StringResources(R.string.date_duration_months, days / 30)
+            else -> UiText.StringResources(R.string.date_duration_years, days / 365)
         }
     }
 
@@ -218,16 +228,19 @@ object DateTimeUtils {
     /**
      * Verifica se la data è nel futuro
      */
+    @Suppress("unused")
     fun Instant.isFuture(): Boolean = this > Clock.System.now()
 
     /**
      * Verifica se la data è nel passato
      */
+    @Suppress("unused")
     fun Instant.isPast(): Boolean = this < Clock.System.now()
 
     /**
      * Verifica se la data è oggi
      */
+    @Suppress("unused")
     fun Instant.isToday(): Boolean {
         val now = Clock.System.now()
         val thisDate = this.toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -245,6 +258,7 @@ object DateTimeUtils {
     /**
      * Formatta timestamp per nomi directory (YYYYMMDD_HHMMSS)
      */
+    @Suppress("unused")
     fun formatTimestampToDateTime(instant: Instant): String {
         // Format: 20241220_143022
         return instant.toString()

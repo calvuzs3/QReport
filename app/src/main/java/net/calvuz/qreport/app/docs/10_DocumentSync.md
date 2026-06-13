@@ -220,7 +220,7 @@ CREATE INDEX idx_island_documents_file_hash ON island_documents(file_hash);
  */
 interface DocumentTransferProvider {
     suspend fun getManifest(): Result<List<DocumentManifestEntry>>
-    suspend fun upload(document: IslandDocument): Result<Unit>
+    suspend fun upload(document: Document): Result<Unit>
     suspend fun download(id: String, targetPath: String): Result<String>  // returns fileHash
 }
 

@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.client.document.data.local.entity
 
 import androidx.room.ColumnInfo
@@ -39,7 +40,7 @@ import androidx.room.PrimaryKey
     ]
     // No foreignKeys — see class KDoc
 )
-data class IslandDocumentEntity(
+data class DocumentEntity(
 
     @PrimaryKey
     val id: String,

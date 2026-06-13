@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * DTO for [net.calvuz.qreport.client.document.domain.model.IslandDocument]
+ * DTO for [net.calvuz.qreport.client.document.domain.model.Document]
  * in the entity sync JSON payload.
  *
  * Note: [filePath] is intentionally absent — paths are local to each device.

@@ -1,15 +1,20 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
-
+@file: Suppress("HardCodedStringLiteral", "ASSIGNED_VALUE_IS_NEVER_READ")
 package net.calvuz.qreport.ti.presentation.ui
 
+import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -24,6 +29,7 @@ import timber.log.Timber
  * Edit screen for TechnicalIntervention with tabbed interface
  * Tabs: General, Details, WorkDays, Signatures
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 fun EditInterventionScreen(
     interventionId: String,
@@ -32,23 +38,26 @@ fun EditInterventionScreen(
     viewModel: EditInterventionViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     // ViewModels for each tab (for auto-save coordination)
     val generalViewModel: GeneralFormViewModel = hiltViewModel()
     val detailsViewModel: DetailsFormViewModel = hiltViewModel()
     val workDaysTabViewModel: WorkDaysTabViewModel = hiltViewModel()
+    val workDayFormViewModel: WorkDayFormViewModel = hiltViewModel()
     val signaturesViewModel: SignaturesFormViewModel = hiltViewModel()
 
     // Collect states from all ViewModels
     val generalState by generalViewModel.state.collectAsStateWithLifecycle()
     val detailsState by detailsViewModel.state.collectAsStateWithLifecycle()
     val workDaysTabState by workDaysTabViewModel.state.collectAsStateWithLifecycle()
+    val workDayFormState by workDayFormViewModel.state.collectAsStateWithLifecycle()
     val signaturesState by signaturesViewModel.state.collectAsStateWithLifecycle()
 
     // Track dirty states from ViewModel states (not manual variables)
     val generalTabDirty = generalState.isDirty
     val detailsTabDirty = detailsState.isDirty
-    val workDayTabDirty = workDaysTabState.viewMode is WorkDaysViewMode.Detail
+    val workDayTabDirty = workDaysTabState.viewMode is WorkDaysViewMode.Detail && workDayFormState.isDirty
     val signaturesTabDirty = signaturesState.isDirty
 
     // Calculate overall dirty state
@@ -95,7 +104,7 @@ fun EditInterventionScreen(
     LaunchedEffect(state.errorMessage) {
         state.errorMessage?.let { error ->
             Timber.e("EditInterventionScreen: Error message: $error")
-            snackbarHostState.showSnackbar(error.toString())
+            snackbarHostState.showSnackbar(error.asString(context))
             viewModel.clearError()
         }
     }
@@ -104,7 +113,7 @@ fun EditInterventionScreen(
     LaunchedEffect(state.successMessage) {
         state.successMessage?.let { message ->
             Timber.d("EditInterventionScreen: Success message: $message")
-            snackbarHostState.showSnackbar(message.toString())
+            snackbarHostState.showSnackbar(message.asString(context))
             viewModel.clearSuccess()
         }
     }
@@ -134,7 +143,7 @@ fun EditInterventionScreen(
                     }
 
                     EditInterventionTab.WORK_DAYS -> {
-                        if (workDayTabDirty) workDaysTabViewModel.autoSaveOnTabChange() else QrResult.Success(
+                        if (workDayTabDirty) workDayFormViewModel.autoSaveOnTabChange() else QrResult.Success(
                             Unit
                         )
                     }
@@ -165,6 +174,55 @@ fun EditInterventionScreen(
         }
     }
 
+    /**
+     * Save the current tab without exiting the screen.
+     */
+    fun saveCurrentTab() {
+        coroutineScope.launch {
+            try {
+                Timber.d("Saving current tab")
+
+                val saveResult = when (EditInterventionTab.entries[state.selectedTabIndex]) {
+                    EditInterventionTab.GENERAL -> {
+                        if (generalTabDirty) generalViewModel.autoSaveOnTabChange() else QrResult.Success(
+                            Unit
+                        )
+                    }
+
+                    EditInterventionTab.DETAILS -> {
+                        if (detailsTabDirty) detailsViewModel.autoSaveOnTabChange() else QrResult.Success(
+                            Unit
+                        )
+                    }
+
+                    EditInterventionTab.WORK_DAYS -> {
+                        if (workDayTabDirty) workDayFormViewModel.autoSaveOnTabChange() else QrResult.Success(
+                            Unit
+                        )
+                    }
+
+                    EditInterventionTab.SIGNATURES -> {
+                        if (signaturesTabDirty) signaturesViewModel.autoSaveOnTabChange() else QrResult.Success(
+                            Unit
+                        )
+                    }
+                }
+
+                when (saveResult) {
+                    is QrResult.Success -> {
+                        snackbarHostState.showSnackbar(context.getString(R.string.form_status_saved))
+                    }
+
+                    is QrResult.Error -> {
+                        Timber.e("Save failed: ${saveResult.error}")
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.e(e, "Exception saving current tab")
+            }
+        }
+    }
+
     val handleBackPress = {
         if (isAnyTabDirty) {
             showExitDialog = true
@@ -172,6 +230,8 @@ fun EditInterventionScreen(
             onNavigateBack()
         }
     }
+
+    BackHandler(onBack = handleBackPress)
 
     Scaffold(
         topBar = {
@@ -212,8 +272,20 @@ fun EditInterventionScreen(
                         )
                     }
                 },
+                actions = {
+                    IconButton(
+                        onClick = { saveCurrentTab() },
+                        enabled = isAnyTabDirty && !isAnyTabSaving
+                    ) {
+                        Icon(
+                            imageVector = if (isAnyTabDirty) Icons.Default.Save else Icons.Outlined.Save,
+                            contentDescription = stringResource(R.string.action_save)
+                        )
+                    }
+                },
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier
     ) { paddingValues ->
 
@@ -256,9 +328,10 @@ fun EditInterventionScreen(
                                 handleCoordinatedTabSwitch(
                                     newTabIndex = index,
                                     currentTabIndex = state.selectedTabIndex,
+                                    generalViewModel = generalViewModel,
                                     detailsViewModel = detailsViewModel,
-//                                    workDayViewModel = workDayViewModel,
-                                    workDaysTabViewModel = workDaysTabViewModel,
+                                    workDayFormViewModel = workDayFormViewModel,
+                                    isWorkDayDetailOpen = workDaysTabState.viewMode is WorkDaysViewMode.Detail,
                                     signaturesViewModel = signaturesViewModel,
                                     parentViewModel = viewModel,
                                     coroutineScope = coroutineScope,
@@ -272,7 +345,7 @@ fun EditInterventionScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = tab.getDisplayName(),
+                                        text = stringResource(tab.getDisplayNameRes()),
                                         style = MaterialTheme.typography.labelLarge
                                     )
 
@@ -287,7 +360,7 @@ fun EditInterventionScreen(
                                     if (tabIsDirty) {
                                         Icon(
                                             imageVector = Icons.Default.Warning,
-                                            contentDescription = "Modifiche non salvate",
+                                            contentDescription = stringResource(R.string.intervention_general_unsaved_changes),
                                             tint = MaterialTheme.colorScheme.warning,
                                             modifier = Modifier.size(12.dp)
                                         )
@@ -323,6 +396,7 @@ fun EditInterventionScreen(
                             WorkDaysTabContent(
                                 interventionId = interventionId,
                                 tabViewModel = workDaysTabViewModel,
+                                formViewModel = workDayFormViewModel,
                                 modifier = Modifier.fillMaxSize()
                             )
                         }
@@ -346,7 +420,7 @@ fun EditInterventionScreen(
                 if (!isExitSaving) showExitDialog = false
             },
             title = {
-                Text("Modifiche non salvate")
+                Text(stringResource(R.string.intervention_general_unsaved_changes))
             },
             text = {
                 if (isExitSaving) {
@@ -355,10 +429,10 @@ fun EditInterventionScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                        Text("Salvataggio in corso...")
+                        Text(stringResource(R.string.msg_saving))
                     }
                 } else {
-                    Text("Hai modifiche non salvate. Vuoi salvarle prima di uscire?")
+                    Text(stringResource(R.string.intervention_edit_unsaved_dialog_text))
                 }
             },
             confirmButton = {
@@ -366,7 +440,7 @@ fun EditInterventionScreen(
                     onClick = { saveCurrentTabAndExit() },
                     enabled = !isExitSaving
                 ) {
-                    Text("Salva ed esci")
+                    Text(stringResource(R.string.intervention_edit_save_and_exit))
                 }
             },
             dismissButton = {
@@ -377,7 +451,7 @@ fun EditInterventionScreen(
                     },
                     enabled = !isExitSaving
                 ) {
-                    Text("Esci senza salvare")
+                    Text(stringResource(R.string.intervention_edit_exit_without_saving))
                 }
             }
         )
@@ -391,9 +465,10 @@ fun EditInterventionScreen(
 private fun handleCoordinatedTabSwitch(
     newTabIndex: Int,
     currentTabIndex: Int,
+    generalViewModel: GeneralFormViewModel,
     detailsViewModel: DetailsFormViewModel,
-//    workDayViewModel: WorkDayFormViewModel,
-    workDaysTabViewModel: WorkDaysTabViewModel,
+    workDayFormViewModel: WorkDayFormViewModel,
+    isWorkDayDetailOpen: Boolean,
     signaturesViewModel: SignaturesFormViewModel,
     parentViewModel: EditInterventionViewModel,
     coroutineScope: kotlinx.coroutines.CoroutineScope,
@@ -414,9 +489,8 @@ private fun handleCoordinatedTabSwitch(
             // Auto-save current tab before switching based on which tab we're leaving
             val autoSaveResult = when (EditInterventionTab.entries[currentTabIndex]) {
                 EditInterventionTab.GENERAL -> {
-                    // TODO: Implement when TechnicalInterventionFormViewModel has autoSaveOnTabChange
-                    Timber.i("handleCoordinatedTabSwitch: General tab auto-save not yet implemented")
-                    QrResult.Success(Unit)
+                    Timber.i("handleCoordinatedTabSwitch: Auto-saving General tab")
+                    generalViewModel.autoSaveOnTabChange()
                 }
 
                 EditInterventionTab.DETAILS -> {
@@ -424,14 +498,13 @@ private fun handleCoordinatedTabSwitch(
                     detailsViewModel.autoSaveOnTabChange()
                 }
 
-//                EditInterventionTab.WORK_DAYS -> {
-//                    Timber.d("handleCoordinatedTabSwitch: Auto-saving WorkDays tab")
-//                    workDayViewModel.autoSaveOnTabChange()
-//                }
-
                 EditInterventionTab.WORK_DAYS -> {
-                    Timber.i("handleCoordinatedTabSwitch: Auto-saving WorkDays tab")
-                    workDaysTabViewModel.autoSaveOnTabChange()
+                    if (isWorkDayDetailOpen) {
+                        Timber.i("handleCoordinatedTabSwitch: Auto-saving open WorkDay detail")
+                        workDayFormViewModel.autoSaveOnTabChange()
+                    } else {
+                        QrResult.Success(Unit)
+                    }
                 }
 
                 EditInterventionTab.SIGNATURES -> {
@@ -470,12 +543,13 @@ enum class EditInterventionTab {
     WORK_DAYS,
     SIGNATURES;
 
-    fun getDisplayName(): String {
+    @StringRes
+    fun getDisplayNameRes(): Int {
         return when (this) {
-            GENERAL -> "Generale"
-            DETAILS -> "Dettagli"
-            WORK_DAYS -> "Giornate"
-            SIGNATURES -> "Firme"
+            GENERAL -> R.string.intervention_edit_tab_general
+            DETAILS -> R.string.intervention_edit_tab_details
+            WORK_DAYS -> R.string.intervention_edit_tab_workdays
+            SIGNATURES -> R.string.intervention_edit_tab_signatures
         }
     }
 }

@@ -2,7 +2,7 @@ package net.calvuz.qreport.client.document.sync.remote
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import net.calvuz.qreport.client.document.sync.DocumentHash
 import net.calvuz.qreport.client.document.sync.DocumentManifestEntry
 import net.calvuz.qreport.client.document.sync.DocumentTransferProvider
@@ -45,7 +45,7 @@ class KtorDocumentTransferProvider @Inject constructor(
             }.onFailure { Timber.e(it, "KtorTransferProvider: getManifest failed") }
         }
 
-    override suspend fun upload(document: IslandDocument): Result<Unit> =
+    override suspend fun upload(document: Document): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val file = File(document.filePath)

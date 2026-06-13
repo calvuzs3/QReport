@@ -7,7 +7,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.sync.app.SyncEvent
 import net.calvuz.qreport.sync.app.SyncEventBus
@@ -48,11 +50,11 @@ class SyncLoginViewModel @Inject constructor(
                 }
                 is QrResult.Error -> {
                     val message = when (result.error) {
-                        is QrError.NetworkError.Unauthorized -> "Credenziali non valide"
-                        is QrError.NetworkError.NoConnection -> "Nessuna connessione di rete"
-                        is QrError.NetworkError.ServerError -> "Errore server"
-                        is QrError.ValidationError.EmptyField -> "Compilare tutti i campi"
-                        else -> "Errore durante il login"
+                        is QrError.NetworkError.Unauthorized -> UiText.StringResource(R.string.sync_login_error_invalid_credentials)
+                        is QrError.NetworkError.NoConnection -> UiText.StringResource(R.string.error_no_connection)
+                        is QrError.NetworkError.ServerError -> UiText.StringResource(R.string.error_server)
+                        is QrError.ValidationError.EmptyField -> UiText.StringResource(R.string.err_fields_required)
+                        else -> UiText.StringResource(R.string.sync_login_error_generic)
                     }
                     Timber.e("SyncLoginViewModel: login failed: ${result.error}")
                     _uiState.value = _uiState.value.copy(isLoading = false, error = message)
@@ -71,7 +73,7 @@ data class SyncLoginUiState(
     val username: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: UiText? = null
 ) {
     val isValid: Boolean get() = username.isNotBlank() && password.isNotBlank()
 }

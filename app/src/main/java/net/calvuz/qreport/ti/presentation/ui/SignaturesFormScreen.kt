@@ -12,11 +12,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 import net.calvuz.qreport.ti.presentation.ui.components.TechnicianSignatureDialog
 import net.calvuz.qreport.ti.presentation.ui.components.CustomerSignatureDialog
 import net.calvuz.qreport.ti.presentation.ui.components.SignaturePreview
@@ -43,6 +45,7 @@ fun SignaturesFormScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -51,7 +54,7 @@ fun SignaturesFormScreen(
         // ===== DIRTY STATE INDICATOR =====
         if (state.isDirty) {
             DirtyStateIndicator(
-                message = "Modifiche non salvate",
+                message = stringResource(R.string.intervention_general_unsaved_changes),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -81,7 +84,7 @@ fun SignaturesFormScreen(
                         tint = MaterialTheme.colorScheme.onErrorContainer
                     )
                     Text(
-                        text = errorMessage.toString(),
+                        text = errorMessage.asString(),
                         color = MaterialTheme.colorScheme.onErrorContainer,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -109,7 +112,7 @@ fun SignaturesFormScreen(
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Text(
-                        text = "Elaborazione firma in corso...",
+                        text = stringResource(R.string.intervention_signature_processing),
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -226,7 +229,7 @@ private fun TechnicianSignatureSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Firma Tecnico",
+                    text = stringResource(R.string.intervention_signatures_form_technician_section_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -237,8 +240,8 @@ private fun TechnicianSignatureSection(
             OutlinedTextField(
                 value = technicianName,
                 onValueChange = onTechnicianNameChange,
-                label = { Text("Nome Tecnico") },
-                placeholder = { Text("Nome e cognome del tecnico") },
+                label = { Text(stringResource(R.string.intervention_signatures_form_technician_name_label)) },
+                placeholder = { Text(stringResource(R.string.intervention_signatures_form_technician_name_placeholder)) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.PersonOutline,
@@ -254,14 +257,14 @@ private fun TechnicianSignatureSection(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Firma acquisita:",
+                        text = stringResource(R.string.intervention_signatures_form_signature_acquired_label),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     SignaturePreview(
                         signaturePath = signaturePath,
                         modifier = Modifier.fillMaxWidth(),
-                        contentDescription = "Firma tecnico"
+                        contentDescription = stringResource(R.string.intervention_signature_technician_title)
                     )
                 }
             }
@@ -269,7 +272,7 @@ private fun TechnicianSignatureSection(
 
             // Digital signature collection
             SignatureCollectionCard(
-                title = "Firma Digitale Tecnico",
+                title = stringResource(R.string.intervention_signatures_form_technician_digital_title),
                 hasSignature = hasDigitalSignature,
                 onCollectSignature = onCollectSignature,
                 isProcessing = isProcessing,
@@ -309,7 +312,7 @@ private fun CustomerSignatureSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Firma Cliente",
+                    text = stringResource(R.string.intervention_signatures_form_customer_section_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -320,8 +323,8 @@ private fun CustomerSignatureSection(
             OutlinedTextField(
                 value = customerName,
                 onValueChange = onCustomerNameChange,
-                label = { Text("Nome Cliente") },
-                placeholder = { Text("Nome e cognome del referente cliente") },
+                label = { Text(stringResource(R.string.intervention_signatures_form_customer_name_label)) },
+                placeholder = { Text(stringResource(R.string.intervention_signatures_form_customer_name_placeholder)) },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.PersonOutline,
@@ -337,14 +340,14 @@ private fun CustomerSignatureSection(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "Firma acquisita:",
+                        text = stringResource(R.string.intervention_signatures_form_signature_acquired_label),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     SignaturePreview(
                         signaturePath = signaturePath,
                         modifier = Modifier.fillMaxWidth(),
-                        contentDescription = "Firma cliente"
+                        contentDescription = stringResource(R.string.intervention_signature_customer_title)
                     )
                 }
             }
@@ -352,7 +355,7 @@ private fun CustomerSignatureSection(
 
             // Digital signature collection
             SignatureCollectionCard(
-                title = "Firma Digitale Cliente",
+                title = stringResource(R.string.intervention_signatures_form_customer_digital_title),
                 hasSignature = hasDigitalSignature,
                 onCollectSignature = onCollectSignature,
                 isProcessing = isProcessing,
@@ -412,9 +415,9 @@ private fun SignatureCollectionCard(
 
                     Text(
                         text = if (hasSignature)
-                            "Firma raccolta con successo"
+                            stringResource(R.string.intervention_signatures_form_collection_success)
                         else
-                            "Premi il pulsante per raccogliere la firma",
+                            stringResource(R.string.intervention_signatures_form_collection_pending),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (hasSignature)
                             MaterialTheme.colorScheme.onPrimaryContainer
@@ -445,13 +448,14 @@ private fun SignatureCollectionCard(
                 }
 
                 Text(
-                    text = if (hasSignature) "Modifica Firma" else "Raccogli Firma"
+                    text = if (hasSignature) stringResource(R.string.intervention_signatures_form_button_edit)
+                    else stringResource(R.string.intervention_signatures_form_button_collect)
                 )
             }
 
             if (!enabled) {
                 Text(
-                    text = "Inserisci il nome per abilitare la raccolta firma",
+                    text = stringResource(R.string.intervention_signatures_form_name_required_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
@@ -494,7 +498,7 @@ private fun ReadyForSignaturesCard(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Stato Documento",
+                    text = stringResource(R.string.intervention_signatures_form_document_status_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -514,15 +518,16 @@ private fun ReadyForSignaturesCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (isReady) "Pronto per Firme" else "In Preparazione",
+                        text = if (isReady) stringResource(R.string.intervention_signatures_form_ready_title)
+                        else stringResource(R.string.intervention_signatures_form_not_ready_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium
                     )
                     Text(
                         text = if (isReady)
-                            "Il documento è pronto per essere firmato"
+                            stringResource(R.string.intervention_signatures_form_ready_description)
                         else
-                            "Il documento è ancora in preparazione",
+                            stringResource(R.string.intervention_signatures_form_not_ready_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -548,7 +553,7 @@ private fun ReadyForSignaturesCard(
                             modifier = Modifier.size(20.dp)
                         )
                         Text(
-                            text = "Firme digitali complete! L'intervento può essere finalizzato.",
+                            text = stringResource(R.string.intervention_signatures_form_digital_signatures_complete),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer
                         )
@@ -588,7 +593,7 @@ private fun CompletionSummaryCard(
                     tint = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 Text(
-                    text = "Riepilogo Completamento",
+                    text = stringResource(R.string.intervention_signatures_form_completion_summary_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -597,17 +602,17 @@ private fun CompletionSummaryCard(
 
             // Checklist items
             SignatureChecklistItem(
-                text = "Firma Tecnico",
+                text = stringResource(R.string.intervention_signatures_form_technician_section_title),
                 isComplete = technicianSigned
             )
 
             SignatureChecklistItem(
-                text = "Firma Cliente",
+                text = stringResource(R.string.intervention_signatures_form_customer_section_title),
                 isComplete = customerSigned
             )
 
             SignatureChecklistItem(
-                text = "Documento Pronto",
+                text = stringResource(R.string.intervention_signatures_form_document_ready_checklist),
                 isComplete = isReady
             )
 
@@ -627,7 +632,7 @@ private fun CompletionSummaryCard(
                         modifier = Modifier.size(24.dp)
                     )
                     Text(
-                        text = "Processo di firma completato con successo!",
+                        text = stringResource(R.string.intervention_signatures_form_process_complete),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
@@ -730,7 +735,7 @@ private fun AutoSaveIndicator(
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Salvataggio in corso...",
+                text = stringResource(R.string.msg_saving),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )

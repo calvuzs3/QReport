@@ -32,7 +32,7 @@ object DocumentDirectories {
      * @throws IllegalArgumentException if [document] scope is ISLAND/FACILITY/CLIENT
      *   and the corresponding FK is null.
      */
-    fun forScope(document: IslandDocument): DirectorySpec = when (document.scope) {
+    fun forScope(document: Document): DirectorySpec = when (document.scope) {
         DocumentScope.ISLAND -> {
             requireNotNull(document.islandId) {
                 "islandId must not be null when scope == ISLAND"
@@ -58,7 +58,7 @@ object DocumentDirectories {
     }
 
     /**
-     * Convenience overload — builds a minimal [IslandDocument] shell just to
+     * Convenience overload — builds a minimal [Document] shell just to
      * resolve the directory when the full domain object is not yet available
      * (e.g. during import, before the document is persisted).
      */
@@ -68,7 +68,7 @@ object DocumentDirectories {
         facilityId: String? = null,
         clientId: String?   = null
     ): DirectorySpec {
-        val shell = IslandDocument(
+        val shell = Document(
             id = "",
             scope = scope,
             islandId = islandId,

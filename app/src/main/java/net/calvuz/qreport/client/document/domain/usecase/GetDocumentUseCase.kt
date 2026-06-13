@@ -2,7 +2,7 @@ package net.calvuz.qreport.client.document.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.client.document.domain.model.DocumentCategory
-import net.calvuz.qreport.client.document.domain.model.IslandDocument
+import net.calvuz.qreport.client.document.domain.model.Document
 import net.calvuz.qreport.client.document.domain.repository.DocumentRepository
 import javax.inject.Inject
 
@@ -16,7 +16,7 @@ class GetDocumentsForFacilityUseCase @Inject constructor(
     operator fun invoke(
         facilityId: String,
         category: DocumentCategory? = null
-    ): Flow<List<IslandDocument>> =
+    ): Flow<List<Document>> =
         if (category != null) {
             repository.getDocumentsForFacilityByCategoryFlow(facilityId, category)
         } else {
@@ -32,7 +32,7 @@ class GetDocumentsForFacilityUseCase @Inject constructor(
 class GetDocumentsForClientUseCase @Inject constructor(
     private val repository: DocumentRepository
 ) {
-    operator fun invoke(clientId: String): Flow<List<IslandDocument>> =
+    operator fun invoke(clientId: String): Flow<List<Document>> =
         repository.getDocumentsForClientFlow(clientId)
 }
 
@@ -44,7 +44,7 @@ class GetDocumentsForClientUseCase @Inject constructor(
 class GetGlobalDocumentsUseCase @Inject constructor(
     private val repository: DocumentRepository
 ) {
-    operator fun invoke(): Flow<List<IslandDocument>> =
+    operator fun invoke(): Flow<List<Document>> =
         repository.getGlobalDocumentsFlow()
 }
 
@@ -56,6 +56,6 @@ class GetGlobalDocumentsUseCase @Inject constructor(
 class GetDocumentByIdUseCase @Inject constructor(
     private val repository: DocumentRepository
 ) {
-    suspend operator fun invoke(id: String): IslandDocument? =
+    suspend operator fun invoke(id: String): Document? =
         repository.getDocumentById(id).getOrNull()
 }

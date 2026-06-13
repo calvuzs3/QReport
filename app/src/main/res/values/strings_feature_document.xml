@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="action_add_document">Aggiungi documento</string>
+    <string name="action_delete_document">Elimina documento</string>
+    <string name="action_delete_document_confirmation">Confermi l\'eliminazione del
+        documento?</string>
+
+    <string name="msg_document_updated">Documento aggiornato</string>
+    <string name="msg_document_deactivated">Documento cancellato</string>
+    <string name="msg_document_marked_deleted">Documento eliminato</string>
+    <string name="msg_documents_deactivated">%1$d documenti eliminati</string>
+
+    <string name="msg_document_deleted">Documento eliminato</string>
+    <string name="msg_documents_deleted">%1$d documenti eliminati</string>
+
+    <string name="label_no_documents">Nessun documento</string>
+    <string name="label_all">Tutti</string>
+    <string name="label_count_selected">%1$d selezionati</string>
+
+
+    <string name="document_category_electrical">Elettrico</string>
+    <string name="document_category_mechanical">Meccanico</string>
+    <string name="document_category_fluid">Fluidi</string>
+    <string name="document_category_manual">Manuale</string>
+    <string name="document_category_contract">Contratto</string>
+    <string name="document_category_other">Altro</string>
+
+</resources>

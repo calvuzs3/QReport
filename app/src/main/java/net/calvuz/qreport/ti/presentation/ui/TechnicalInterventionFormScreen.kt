@@ -1,13 +1,13 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
-
+@file:Suppress("HardCodedStringLiteral", "UNUSED_PARAMETER")
 package net.calvuz.qreport.ti.presentation.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.PrecisionManufacturing
@@ -15,27 +15,37 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.ti.domain.model.WorkLocationType
 
 /**
- * Screen for creating or editing TechnicalIntervention
- * Handles both modes: Create (interventionId = null) and Edit (interventionId != null)
+ * Screen for creating a new TechnicalIntervention
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TechnicalInterventionFormScreen(
-    interventionId: String? = null,
-    onNavigateBack: () -> Unit,
-    onInterventionSaved: (String) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: TechnicalInterventionFormViewModel = hiltViewModel()
+    viewModel: TechnicalInterventionFormViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit,
+    onInterventionSaved: (String) -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val scrollState = rememberScrollState()
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+
+    val handleBackPress = {
+        if (state.hasUnsavedData) {
+            showUnsavedChangesDialog = true
+        } else {
+            onNavigateBack()
+        }
+    }
 
     // Handle side effects
     LaunchedEffect(state.isSuccess) {
@@ -45,17 +55,40 @@ fun TechnicalInterventionFormScreen(
         }
     }
 
+    BackHandler(onBack = handleBackPress)
+
+    if (showUnsavedChangesDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnsavedChangesDialog = false },
+            title = { Text(stringResource(R.string.intervention_general_unsaved_changes)) },
+            text = { Text(stringResource(R.string.intervention_form_unsaved_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showUnsavedChangesDialog = false
+                    onNavigateBack()
+                }) {
+                    Text(stringResource(R.string.intervention_form_unsaved_discard))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnsavedChangesDialog = false }) {
+                    Text(stringResource(R.string.intervention_form_unsaved_keep_editing))
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(state.screenTitle)
+                    Text(stringResource(R.string.interventions_create_new))
                 },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = handleBackPress) {
                         Icon(
                             imageVector = Icons.Default.ArrowBackIosNew,
-                            contentDescription = "Indietro"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 },
@@ -70,7 +103,7 @@ fun TechnicalInterventionFormScreen(
                                 strokeWidth = 2.dp
                             )
                         } else {
-                            Text(state.actionButtonText)
+                            Text(stringResource(R.string.action_create).uppercase())
                         }
                     }
                 }
@@ -79,136 +112,82 @@ fun TechnicalInterventionFormScreen(
         modifier = modifier
     ) { paddingValues ->
 
-        when {
-            state.isLoadingExisting -> {
-                // Loading existing intervention for edit
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .imePadding()
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+
+            // Error display
+            state.errorMessage?.let { errorMessage ->
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer
+                    )
                 ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        CircularProgressIndicator()
-                        Text(
-                            text = "Caricamento intervento...",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                    Text(
+                        text = errorMessage.asString(),
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
                 }
             }
 
-            else -> {
-                // Form content
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .verticalScroll(scrollState)
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
-                ) {
+            // ===== CUSTOMER SECTION =====
+            CustomerDataSection(
+                customerName = state.customerName,
+                onCustomerNameChange = viewModel::updateCustomerName,
+                customerContact = state.customerContact,
+                onCustomerContactChange = viewModel::updateCustomerContact,
+                ticketNumber = state.ticketNumber,
+                onTicketNumberChange = viewModel::updateTicketNumber,
+                customerOrderNumber = state.customerOrderNumber,
+                onCustomerOrderNumberChange = viewModel::updateCustomerOrderNumber,
+                notes = state.notes,
+                onNotesChange = viewModel::updateNotes
+            )
 
-                    // Error display
-                    state.errorMessage?.let { errorMessage ->
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer
-                            )
-                        ) {
-                            Text(
-                                text = errorMessage.asString(),
-                                modifier = Modifier.padding(16.dp),
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                        }
-                    }
+            HorizontalDivider()
 
-                    // Edit mode indicator
-                    if (state.isEditMode) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Business,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = "Modalità Modifica",
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
-                        }
-                    }
+            // ===== ROBOT DATA SECTION =====
+            RobotDataSection(
+                serialNumber = state.serialNumber,
+                onSerialNumberChange = viewModel::updateSerialNumber,
+                hoursOfDuty = state.hoursOfDuty,
+                onHoursOfDutyChange = viewModel::updateHoursOfDuty
+            )
 
-                    // ===== CUSTOMER SECTION =====
-                    CustomerDataSection(
-                        customerName = state.customerName,
-                        onCustomerNameChange = viewModel::updateCustomerName,
-                        customerContact = state.customerContact,
-                        onCustomerContactChange = viewModel::updateCustomerContact,
-                        ticketNumber = state.ticketNumber,
-                        onTicketNumberChange = viewModel::updateTicketNumber,
-                        customerOrderNumber = state.customerOrderNumber,
-                        onCustomerOrderNumberChange = viewModel::updateCustomerOrderNumber,
-                        notes = state.notes,
-                        onNotesChange = viewModel::updateNotes,
-                        isEditMode = state.isEditMode
-                    )
+            HorizontalDivider()
 
-                    HorizontalDivider()
+            // ===== WORK LOCATION SECTION =====
+            WorkLocationSection(
+                workLocation = state.workLocation,
+                onWorkLocationChange = viewModel::updateWorkLocation,
+                customLocation = state.customLocation,
+                onCustomLocationChange = viewModel::updateCustomLocation
+            )
 
-                    // ===== ROBOT DATA SECTION =====
-                    RobotDataSection(
-                        serialNumber = state.serialNumber,
-                        onSerialNumberChange = viewModel::updateSerialNumber,
-                        hoursOfDuty = state.hoursOfDuty,
-                        onHoursOfDutyChange = viewModel::updateHoursOfDuty,
-                        isEditMode = state.isEditMode
-                    )
+            HorizontalDivider()
 
-                    HorizontalDivider()
+            // ===== TECHNICIANS SECTION =====
+            TechniciansSection(
+                technicians = state.technicians,
+                onTechniciansChange = viewModel::updateTechnicians
+            )
 
-                    // ===== WORK LOCATION SECTION =====
-                    WorkLocationSection(
-                        workLocation = state.workLocation,
-                        onWorkLocationChange = viewModel::updateWorkLocation,
-                        customLocation = state.customLocation,
-                        onCustomLocationChange = viewModel::updateCustomLocation
-                    )
-
-                    HorizontalDivider()
-
-                    // ===== TECHNICIANS SECTION =====
-                    TechniciansSection(
-                        technicians = state.technicians,
-                        onTechniciansChange = viewModel::updateTechnicians
-                    )
-
-                    // Spacer for bottom navigation
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-            }
+            // Spacer for bottom navigation
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
 @Composable
 private fun CustomerDataSection(
+    modifier: Modifier = Modifier,
     customerName: String,
     onCustomerNameChange: (String) -> Unit,
     customerContact: String,
@@ -218,9 +197,7 @@ private fun CustomerDataSection(
     customerOrderNumber: String,
     onCustomerOrderNumberChange: (String) -> Unit,
     notes: String,
-    onNotesChange: (String) -> Unit,
-    isEditMode: Boolean = false,
-    modifier: Modifier = Modifier
+    onNotesChange: (String) -> Unit
 ) {
     Column(
         modifier = modifier,
@@ -237,31 +214,22 @@ private fun CustomerDataSection(
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "Dati Cliente",
+                text = stringResource(R.string.intervention_form_section_customer),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
             )
-            if (isEditMode) {
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "(Immutabili in modifica)",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
 
         // Customer name (required)
         OutlinedTextField(
             value = customerName,
             onValueChange = onCustomerNameChange,
-            label = { Text("Nome Cliente *") },
+            label = { Text(stringResource(R.string.intervention_form_customer_name_label)) },
             isError = customerName.isBlank(),
             supportingText = if (customerName.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
             } else null,
-            enabled = !isEditMode, // Read-only in edit mode for fiscal compliance
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -269,7 +237,7 @@ private fun CustomerDataSection(
         OutlinedTextField(
             value = customerContact,
             onValueChange = onCustomerContactChange,
-            label = { Text("Persona di Riferimento") },
+            label = { Text(stringResource(R.string.intervention_form_customer_contact_label)) },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -277,12 +245,11 @@ private fun CustomerDataSection(
         OutlinedTextField(
             value = ticketNumber,
             onValueChange = onTicketNumberChange,
-            label = { Text("Numero Commessa/Ticket *") },
+            label = { Text(stringResource(R.string.intervention_form_ticket_number_label)) },
             isError = ticketNumber.isBlank(),
             supportingText = if (ticketNumber.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
             } else null,
-            enabled = !isEditMode, // Read-only in edit mode for fiscal compliance
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -290,12 +257,11 @@ private fun CustomerDataSection(
         OutlinedTextField(
             value = customerOrderNumber,
             onValueChange = onCustomerOrderNumberChange,
-            label = { Text("Numero Ordine Cliente *") },
+            label = { Text(stringResource(R.string.intervention_form_customer_order_number_label)) },
             isError = customerOrderNumber.isBlank(),
             supportingText = if (customerOrderNumber.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
             } else null,
-            enabled = !isEditMode, // Read-only in edit mode for fiscal compliance
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -303,7 +269,7 @@ private fun CustomerDataSection(
         OutlinedTextField(
             value = notes,
             onValueChange = onNotesChange,
-            label = { Text("Note") },
+            label = { Text(stringResource(R.string.intervention_form_notes_label)) },
             minLines = 3,
             maxLines = 5,
             modifier = Modifier.fillMaxWidth()
@@ -313,12 +279,11 @@ private fun CustomerDataSection(
 
 @Composable
 private fun RobotDataSection(
+    modifier: Modifier = Modifier,
     serialNumber: String,
     onSerialNumberChange: (String) -> Unit,
     hoursOfDuty: String,
-    onHoursOfDutyChange: (String) -> Unit,
-    isEditMode: Boolean = false,
-    modifier: Modifier = Modifier
+    onHoursOfDutyChange: (String) -> Unit
 ) {
     Column(
         modifier = modifier,
@@ -335,45 +300,36 @@ private fun RobotDataSection(
                 tint = MaterialTheme.colorScheme.primary
             )
             Text(
-                text = "Dati Robot",
+                text = stringResource(R.string.intervention_form_section_robot),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.primary
             )
-            if (isEditMode) {
-                Spacer(modifier = Modifier.weight(1f))
-                Text(
-                    text = "(Immutabili in modifica)",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
 
         // Serial number (required)
         OutlinedTextField(
             value = serialNumber,
             onValueChange = onSerialNumberChange,
-            label = { Text("Serial Number *") },
+            label = { Text(stringResource(R.string.intervention_form_serial_number_label)) },
             isError = serialNumber.isBlank(),
             supportingText = if (serialNumber.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
             } else null,
-            enabled = !isEditMode, // Read-only in edit mode for fiscal compliance
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Hours of duty (editable in both modes - can be updated)
+        // Hours of duty (always editable)
         OutlinedTextField(
             value = hoursOfDuty,
             onValueChange = onHoursOfDutyChange,
-            label = { Text("Ore di Servizio *") },
+            label = { Text(stringResource(R.string.intervention_form_hours_of_duty_label)) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             isError = hoursOfDuty.isBlank() || hoursOfDuty.toIntOrNull() == null,
             supportingText = if (hoursOfDuty.isBlank()) {
-                { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
             } else if (hoursOfDuty.toIntOrNull() == null) {
-                { Text("Inserire un numero valido", color = MaterialTheme.colorScheme.error) }
+                { Text(stringResource(R.string.err_invalid_number), color = MaterialTheme.colorScheme.error) }
             } else {
                 null
             },
@@ -395,7 +351,7 @@ private fun WorkLocationSection(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Lavoro svolto presso",
+            text = stringResource(R.string.intervention_form_section_work_location),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
@@ -409,10 +365,10 @@ private fun WorkLocationSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             OutlinedTextField(
-                value = workLocation.displayName,
+                value = workLocation.displayName.asString(),
                 onValueChange = { },
                 readOnly = true,
-                label = { Text("Sede di Lavoro") },
+                label = { Text(stringResource(R.string.intervention_form_work_location_label)) },
                 trailingIcon = {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                 },
@@ -425,9 +381,9 @@ private fun WorkLocationSection(
                 expanded = expanded,
                 onDismissRequest = { expanded = false }
             ) {
-                WorkLocationType.values().forEach { locationType ->
+                WorkLocationType.entries.forEach { locationType ->
                     DropdownMenuItem(
-                        text = { Text(locationType.displayName) },
+                        text = { Text(locationType.displayName.asString()) },
                         onClick = {
                             onWorkLocationChange(locationType)
                             expanded = false
@@ -442,8 +398,8 @@ private fun WorkLocationSection(
             OutlinedTextField(
                 value = customLocation,
                 onValueChange = onCustomLocationChange,
-                label = { Text("Specifica Sede") },
-                placeholder = { Text("Inserisci sede personalizzata") },
+                label = { Text(stringResource(R.string.intervention_form_custom_location_label)) },
+                placeholder = { Text(stringResource(R.string.intervention_form_custom_location_placeholder)) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -461,7 +417,7 @@ private fun TechniciansSection(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "Tecnici (max 6)",
+            text = stringResource(R.string.intervention_form_section_technicians),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
@@ -469,9 +425,9 @@ private fun TechniciansSection(
         OutlinedTextField(
             value = technicians,
             onValueChange = onTechniciansChange,
-            label = { Text("Nomi Tecnici") },
-            placeholder = { Text("Inserisci nomi separati da virgola") },
-            supportingText = { Text("Massimo 6 tecnici, separati da virgola") },
+            label = { Text(stringResource(R.string.intervention_form_technicians_label)) },
+            placeholder = { Text(stringResource(R.string.intervention_form_technicians_placeholder)) },
+            supportingText = { Text(stringResource(R.string.intervention_form_technicians_supporting)) },
             modifier = Modifier.fillMaxWidth()
         )
     }
@@ -480,9 +436,9 @@ private fun TechniciansSection(
 /**
  * Extension for WorkLocationType display names
  */
-private val WorkLocationType.displayName: String
+private val WorkLocationType.displayName: UiText
     get() = when (this) {
-        WorkLocationType.CLIENT_SITE -> "Sede Cliente"
-        WorkLocationType.OUR_SITE -> "Nostra Sede"
-        WorkLocationType.OTHER -> "Altro"
+        WorkLocationType.CLIENT_SITE -> UiText.StringResource(R.string.work_location_client_site)
+        WorkLocationType.OUR_SITE -> UiText.StringResource(R.string.work_location_our_site)
+        WorkLocationType.OTHER -> UiText.StringResource(R.string.work_location_other)
     }

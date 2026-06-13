@@ -1,7 +1,8 @@
 package net.calvuz.qreport.ti.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.ti.domain.model.InterventionStatus
@@ -12,7 +13,8 @@ import javax.inject.Inject
 /**
  * Use Case: Get All Technical Interventions with filtering support
  *
- * Returns all interventions or filtered by status.
+ * Returns all interventions or filtered by status, reactively (Room Flow),
+ * so the list updates automatically whenever the underlying data changes.
  * Default filter: DRAFT + IN_PROGRESS (active interventions)
  */
 class GetAllTechnicalInterventionsUseCase @Inject constructor(
@@ -24,51 +26,20 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
      *
      * @return Flow with QrResult containing list of TechnicalIntervention or error
      */
-    operator fun invoke(): Flow<QrResult<List<TechnicalIntervention>, QrError>> = flow {
-        try {
-            val result = interventionRepository.getAllInterventions()
-
-            if (result.isSuccess) {
-                val interventions = result.getOrThrow()
-                emit(QrResult.Success(interventions))
-            } else {
-                val exception = result.exceptionOrNull()
-                emit(QrResult.Error(QrError.InterventionError.LoadError(exception?.message)))
-            }
-
-        } catch (e: Exception) {
-            emit(QrResult.Error(QrError.InterventionError.LoadError(e.message)))
-        }
-    }
+    operator fun invoke(): Flow<QrResult<List<TechnicalIntervention>, QrError>> =
+        interventionRepository.getAllInterventionsFlow()
+            .map<List<TechnicalIntervention>, QrResult<List<TechnicalIntervention>, QrError>> { QrResult.Success(it) }
+            .catch { e -> emit(QrResult.Error(QrError.InterventionError.LoadError(e.message))) }
 
     /**
      * Get active interventions (DRAFT + IN_PROGRESS) - Default filter
      *
      * @return Flow with QrResult containing active interventions
      */
-    fun getActiveInterventions(): Flow<QrResult<List<TechnicalIntervention>, QrError>> = flow {
-        try {
-            // Get DRAFT interventions
-            val draftResult = interventionRepository.getInterventionsByStatus(InterventionStatus.DRAFT)
-            val inProgressResult = interventionRepository.getInterventionsByStatus(InterventionStatus.IN_PROGRESS)
-
-            if (draftResult.isSuccess && inProgressResult.isSuccess) {
-                val draftInterventions = draftResult.getOrThrow()
-                val inProgressInterventions = inProgressResult.getOrThrow()
-
-                val activeInterventions = (draftInterventions + inProgressInterventions)
-                    .sortedByDescending { it.updatedAt }
-
-                emit(QrResult.Success(activeInterventions))
-            } else {
-                val error = draftResult.exceptionOrNull() ?: inProgressResult.exceptionOrNull()
-                emit(QrResult.Error(QrError.InterventionError.LoadError(error?.message)))
-            }
-
-        } catch (e: Exception) {
-            emit(QrResult.Error(QrError.InterventionError.LoadError(e.message)))
-        }
-    }
+    fun getActiveInterventions(): Flow<QrResult<List<TechnicalIntervention>, QrError>> =
+        interventionRepository.getActiveInterventionsFlow()
+            .map<List<TechnicalIntervention>, QrResult<List<TechnicalIntervention>, QrError>> { QrResult.Success(it) }
+            .catch { e -> emit(QrResult.Error(QrError.InterventionError.LoadError(e.message))) }
 
     /**
      * Get interventions by specific status
@@ -76,49 +47,20 @@ class GetAllTechnicalInterventionsUseCase @Inject constructor(
      * @param status InterventionStatus to filter by
      * @return Flow with QrResult containing filtered interventions
      */
-    fun getInterventionsByStatus(status: InterventionStatus): Flow<QrResult<List<TechnicalIntervention>, QrError>> = flow {
-        try {
-            val result = interventionRepository.getInterventionsByStatus(status)
-
-            if (result.isSuccess) {
-                val interventions = result.getOrThrow().sortedByDescending { it.updatedAt }
-                emit(QrResult.Success(interventions))
-            } else {
-                val exception = result.exceptionOrNull()
-                emit(QrResult.Error(QrError.InterventionError.LoadError(exception?.message)))
+    fun getInterventionsByStatus(status: InterventionStatus): Flow<QrResult<List<TechnicalIntervention>, QrError>> =
+        interventionRepository.getInterventionsByStatusFlow(status)
+            .map<List<TechnicalIntervention>, QrResult<List<TechnicalIntervention>, QrError>> { interventions ->
+                QrResult.Success(interventions.sortedByDescending { it.updatedAt })
             }
-
-        } catch (e: Exception) {
-            emit(QrResult.Error(QrError.InterventionError.LoadError(e.message)))
-        }
-    }
+            .catch { e -> emit(QrResult.Error(QrError.InterventionError.LoadError(e.message))) }
 
     /**
-     * Get completed interventions
+     * Get completed interventions (COMPLETED + ARCHIVED)
      *
      * @return Flow with QrResult containing completed interventions
      */
-    fun getCompletedInterventions(): Flow<QrResult<List<TechnicalIntervention>, QrError>> = flow {
-        try {
-            // Get COMPLETED and ARCHIVED interventions
-            val completedResult = interventionRepository.getInterventionsByStatus(InterventionStatus.COMPLETED)
-            val archivedResult = interventionRepository.getInterventionsByStatus(InterventionStatus.ARCHIVED)
-
-            if (completedResult.isSuccess && archivedResult.isSuccess) {
-                val completedInterventions = completedResult.getOrThrow()
-                val archivedInterventions = archivedResult.getOrThrow()
-
-                val allCompleted = (completedInterventions + archivedInterventions)
-                    .sortedByDescending { it.updatedAt }
-
-                emit(QrResult.Success(allCompleted))
-            } else {
-                val error = completedResult.exceptionOrNull() ?: archivedResult.exceptionOrNull()
-                emit(QrResult.Error(QrError.InterventionError.LoadError(error?.message)))
-            }
-
-        } catch (e: Exception) {
-            emit(QrResult.Error(QrError.InterventionError.LoadError(e.message)))
-        }
-    }
+    fun getCompletedInterventions(): Flow<QrResult<List<TechnicalIntervention>, QrError>> =
+        interventionRepository.getCompletedInterventionsFlow()
+            .map<List<TechnicalIntervention>, QrResult<List<TechnicalIntervention>, QrError>> { QrResult.Success(it) }
+            .catch { e -> emit(QrResult.Error(QrError.InterventionError.LoadError(e.message))) }
 }

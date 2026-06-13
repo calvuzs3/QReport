@@ -4,6 +4,8 @@ import net.calvuz.qreport.ti.domain.model.TechnicalIntervention
 import net.calvuz.qreport.ti.domain.repository.TechnicalInterventionRepository
 import net.calvuz.qreport.ti.data.local.dao.toEntity
 import net.calvuz.qreport.ti.data.local.dao.toDomain
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.ti.domain.model.InterventionStatus
@@ -96,6 +98,28 @@ class TechnicalInterventionRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e)
         }
+    }
+
+    // ===== REACTIVE QUERIES (FLOW) =====
+
+    override fun getAllInterventionsFlow(): Flow<List<TechnicalIntervention>> {
+        return interventionDao.getAllInterventionsFlow()
+            .map { entities -> entities.map { it.toDomain() } }
+    }
+
+    override fun getInterventionsByStatusFlow(status: InterventionStatus): Flow<List<TechnicalIntervention>> {
+        return interventionDao.getInterventionsByStatusFlow(status)
+            .map { entities -> entities.map { it.toDomain() } }
+    }
+
+    override fun getActiveInterventionsFlow(): Flow<List<TechnicalIntervention>> {
+        return interventionDao.getActiveInterventionsFlow()
+            .map { entities -> entities.map { it.toDomain() } }
+    }
+
+    override fun getCompletedInterventionsFlow(): Flow<List<TechnicalIntervention>> {
+        return interventionDao.getCompletedInterventionsFlow()
+            .map { entities -> entities.map { it.toDomain() } }
     }
 
     // ===== ADDITIONAL HELPER METHODS =====

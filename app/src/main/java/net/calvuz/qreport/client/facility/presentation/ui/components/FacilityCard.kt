@@ -269,7 +269,7 @@ private fun FullFacilityCard(
                 inactiveString = UiText.StringResource(R.string.facility_card_status_inactive)
             )
             Text(
-                text = facility.updatedAt.toItalianLastModified(),
+                text = facility.updatedAt.toItalianLastModified().asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

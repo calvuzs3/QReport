@@ -271,7 +271,7 @@ private fun FullCheckupCard(
 
             // Right
             Text(
-                text = checkup.updatedAt.toItalianLastModified(),
+                text = checkup.updatedAt.toItalianLastModified().asString(),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -16,11 +16,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.ti.domain.model.WorkLocationType
 
 /**
@@ -29,11 +32,12 @@ import net.calvuz.qreport.ti.domain.model.WorkLocationType
  *
  * UPDATED: Unified card styling matching WorkDayFormScreen and SignaturesFormScreen
  */
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GeneralFormScreen(
-    interventionId: String? = null,
     modifier: Modifier = Modifier,
+    interventionId: String? = null,
     viewModel: GeneralFormViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsState()
@@ -41,8 +45,9 @@ fun GeneralFormScreen(
 
     // Form content
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -51,7 +56,7 @@ fun GeneralFormScreen(
         // Dirty state indicator
         if (state.isDirty) {
             DirtyStateIndicator(
-                message = "Modifiche non salvate",
+                message = stringResource(R.string.intervention_general_unsaved_changes),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -98,7 +103,7 @@ fun GeneralFormScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Modalità Modifica",
+                        text = stringResource(R.string.intervention_form_edit_mode_badge),
                         style = MaterialTheme.typography.titleSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -125,7 +130,7 @@ fun GeneralFormScreen(
         RobotDataSection(
             serialNumber = state.serialNumber,
             onSerialNumberChange = viewModel::updateSerialNumber,
-            hoursOfDuty = state.hoursOfDuty.toString(),
+            hoursOfDuty = state.hoursOfDuty,
             onHoursOfDutyChange = viewModel::updateHoursOfDuty,
             isEditMode = state.isEditMode
         )
@@ -151,6 +156,7 @@ fun GeneralFormScreen(
 
 @Composable
 private fun CustomerDataSection(
+    modifier: Modifier = Modifier,
     customerName: String,
     onCustomerNameChange: (String) -> Unit,
     customerContact: String,
@@ -161,8 +167,7 @@ private fun CustomerDataSection(
     onCustomerOrderNumberChange: (String) -> Unit,
     notes: String,
     onNotesChange: (String) -> Unit,
-    isEditMode: Boolean = false,
-    modifier: Modifier = Modifier
+    isEditMode: Boolean = false
 ) {
     Card(
         modifier = modifier,
@@ -183,7 +188,7 @@ private fun CustomerDataSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Dati Cliente",
+                    text = stringResource(R.string.intervention_form_section_customer),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -191,7 +196,7 @@ private fun CustomerDataSection(
                 if (isEditMode) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "(Immutabili in modifica)",
+                        text = "(${stringResource(R.string.intervention_form_immutable_in_edit)})",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -202,10 +207,10 @@ private fun CustomerDataSection(
             OutlinedTextField(
                 value = customerName,
                 onValueChange = onCustomerNameChange,
-                label = { Text("Nome Cliente *") },
+                label = { Text(stringResource(R.string.intervention_form_customer_name_label)) },
                 isError = customerName.isBlank(),
                 supportingText = if (customerName.isBlank()) {
-                    { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                    { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
                 } else null,
                 enabled = !isEditMode,
                 modifier = Modifier.fillMaxWidth()
@@ -215,7 +220,7 @@ private fun CustomerDataSection(
             OutlinedTextField(
                 value = customerContact,
                 onValueChange = onCustomerContactChange,
-                label = { Text("Persona di Riferimento") },
+                label = { Text(stringResource(R.string.intervention_form_customer_contact_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -223,10 +228,10 @@ private fun CustomerDataSection(
             OutlinedTextField(
                 value = ticketNumber,
                 onValueChange = onTicketNumberChange,
-                label = { Text("Numero Commessa/Ticket *") },
+                label = { Text(stringResource(R.string.intervention_form_ticket_number_label)) },
                 isError = ticketNumber.isBlank(),
                 supportingText = if (ticketNumber.isBlank()) {
-                    { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                    { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
                 } else null,
                 enabled = !isEditMode,
                 modifier = Modifier.fillMaxWidth()
@@ -236,7 +241,7 @@ private fun CustomerDataSection(
             OutlinedTextField(
                 value = customerOrderNumber,
                 onValueChange = onCustomerOrderNumberChange,
-                label = { Text("Numero Ordine Cliente") },
+                label = { Text(stringResource(R.string.intervention_general_customer_order_number_label)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -244,8 +249,8 @@ private fun CustomerDataSection(
             OutlinedTextField(
                 value = notes,
                 onValueChange = onNotesChange,
-                label = { Text("Note") },
-                placeholder = { Text("Note aggiuntive...") },
+                label = { Text(stringResource(R.string.intervention_form_notes_label)) },
+                placeholder = { Text(stringResource(R.string.intervention_general_notes_placeholder)) },
                 minLines = 2,
                 maxLines = 4,
                 modifier = Modifier.fillMaxWidth()
@@ -256,12 +261,12 @@ private fun CustomerDataSection(
 
 @Composable
 private fun RobotDataSection(
+    modifier: Modifier = Modifier,
     serialNumber: String,
     onSerialNumberChange: (String) -> Unit,
     hoursOfDuty: String,
     onHoursOfDutyChange: (String) -> Unit,
-    isEditMode: Boolean = false,
-    modifier: Modifier = Modifier
+    isEditMode: Boolean = false
 ) {
     Card(
         modifier = modifier,
@@ -282,7 +287,7 @@ private fun RobotDataSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Dati Robot",
+                    text = stringResource(R.string.intervention_form_section_robot),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -290,7 +295,7 @@ private fun RobotDataSection(
                 if (isEditMode) {
                     Spacer(modifier = Modifier.weight(1f))
                     Text(
-                        text = "(Immutabili in modifica)",
+                        text = "(${stringResource(R.string.intervention_form_immutable_in_edit)})",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -301,10 +306,10 @@ private fun RobotDataSection(
             OutlinedTextField(
                 value = serialNumber,
                 onValueChange = onSerialNumberChange,
-                label = { Text("Serial Number *") },
+                label = { Text(stringResource(R.string.intervention_form_serial_number_label)) },
                 isError = serialNumber.isBlank(),
                 supportingText = if (serialNumber.isBlank()) {
-                    { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                    { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
                 } else null,
                 enabled = !isEditMode,
                 modifier = Modifier.fillMaxWidth()
@@ -314,13 +319,13 @@ private fun RobotDataSection(
             OutlinedTextField(
                 value = hoursOfDuty,
                 onValueChange = onHoursOfDutyChange,
-                label = { Text("Ore di Servizio *") },
+                label = { Text(stringResource(R.string.intervention_form_hours_of_duty_label)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 isError = hoursOfDuty.isBlank() || hoursOfDuty.toIntOrNull() == null,
                 supportingText = if (hoursOfDuty.isBlank()) {
-                    { Text("Campo obbligatorio", color = MaterialTheme.colorScheme.error) }
+                    { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
                 } else if (hoursOfDuty.toIntOrNull() == null) {
-                    { Text("Inserire un numero valido", color = MaterialTheme.colorScheme.error) }
+                    { Text(stringResource(R.string.err_invalid_number), color = MaterialTheme.colorScheme.error) }
                 } else {
                     null
                 },
@@ -357,7 +362,7 @@ private fun WorkLocationSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Lavoro svolto presso",
+                    text = stringResource(R.string.intervention_form_section_work_location),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -373,10 +378,10 @@ private fun WorkLocationSection(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 OutlinedTextField(
-                    value = workLocation.displayName,
+                    value = workLocation.displayName.asString(),
                     onValueChange = { },
                     readOnly = true,
-                    label = { Text("Sede di Lavoro") },
+                    label = { Text(stringResource(R.string.intervention_form_work_location_label)) },
                     trailingIcon = {
                         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                     },
@@ -389,9 +394,9 @@ private fun WorkLocationSection(
                     expanded = expanded,
                     onDismissRequest = { expanded = false }
                 ) {
-                    WorkLocationType.values().forEach { locationType ->
+                    WorkLocationType.entries.forEach { locationType ->
                         DropdownMenuItem(
-                            text = { Text(locationType.displayName) },
+                            text = { Text(locationType.displayName.asString()) },
                             onClick = {
                                 onWorkLocationChange(locationType)
                                 expanded = false
@@ -406,8 +411,8 @@ private fun WorkLocationSection(
                 OutlinedTextField(
                     value = customLocation,
                     onValueChange = onCustomLocationChange,
-                    label = { Text("Specifica Sede") },
-                    placeholder = { Text("Inserisci sede personalizzata") },
+                    label = { Text(stringResource(R.string.intervention_form_custom_location_label)) },
+                    placeholder = { Text(stringResource(R.string.intervention_form_custom_location_placeholder)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -440,7 +445,7 @@ private fun TechniciansSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Tecnici (max 6)",
+                    text = stringResource(R.string.intervention_form_section_technicians),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -450,9 +455,9 @@ private fun TechniciansSection(
             OutlinedTextField(
                 value = technicians,
                 onValueChange = onTechniciansChange,
-                label = { Text("Nomi Tecnici") },
-                placeholder = { Text("Inserisci nomi separati da virgola") },
-                supportingText = { Text("Massimo 6 tecnici, separati da virgola") },
+                label = { Text(stringResource(R.string.intervention_form_technicians_label)) },
+                placeholder = { Text(stringResource(R.string.intervention_form_technicians_placeholder)) },
+                supportingText = { Text(stringResource(R.string.intervention_form_technicians_supporting)) },
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Text,
                     capitalization = KeyboardCapitalization.Words
@@ -526,7 +531,7 @@ private fun AutoSaveIndicator(
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Salvataggio in corso...",
+                text = stringResource(R.string.msg_saving),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -537,9 +542,9 @@ private fun AutoSaveIndicator(
 /**
  * Extension for WorkLocationType display names
  */
-private val WorkLocationType.displayName: String
+private val WorkLocationType.displayName: UiText
     get() = when (this) {
-        WorkLocationType.CLIENT_SITE -> "Sede Cliente"
-        WorkLocationType.OUR_SITE -> "Nostra Sede"
-        WorkLocationType.OTHER -> "Altro"
+        WorkLocationType.CLIENT_SITE -> UiText.StringResource(R.string.work_location_client_site)
+        WorkLocationType.OUR_SITE -> UiText.StringResource(R.string.work_location_our_site)
+        WorkLocationType.OTHER -> UiText.StringResource(R.string.work_location_other)
     }

@@ -6,7 +6,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.ti.domain.model.*
 import net.calvuz.qreport.ti.domain.usecase.GetTechnicalInterventionByIdUseCase
@@ -52,7 +55,7 @@ class DetailsFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "Errore nel caricamento: ${result.error}"
+                            errorMessage = result.error.asUiText()
                         )
                     }
                 }
@@ -218,7 +221,7 @@ class DetailsFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = "Errore nel salvataggio: ${result.error}"
+                            errorMessage = result.error.asUiText()
                         )
                     }
                 }
@@ -234,6 +237,12 @@ class DetailsFormViewModel @Inject constructor(
         intervention: TechnicalIntervention
     ): QrResult<TechnicalIntervention, QrError> {
         return try {
+            // Re-fetch the latest data to avoid overwriting changes saved from other tabs
+            val baseIntervention = when (val freshResult = getTechnicalInterventionByIdUseCase(intervention.id)) {
+                is QrResult.Success -> freshResult.data
+                is QrResult.Error -> intervention
+            }
+
             // Convert MaterialItemState back to domain MaterialItem
             val materialItems = currentState.materialItems
                 .filter { it.quantity.isNotBlank() || it.description.isNotBlank() }
@@ -257,7 +266,7 @@ class DetailsFormViewModel @Inject constructor(
                 ExternalReport(reportNumber = currentState.externalReportNumber)
             } else null
 
-            val updatedIntervention = intervention.copy(
+            val updatedIntervention = baseIntervention.copy(
                 interventionDescription = currentState.interventionDescription,
                 materials = materialsUsed,
                 externalReport = externalReport,
@@ -313,8 +322,7 @@ class DetailsFormViewModel @Inject constructor(
 
         if (intervention == null) {
             Timber.e("autoSaveOnTabChange: No intervention loaded")
-            val error = "No intervention loaded"
-            _state.update { it.copy(errorMessage = error) }
+            _state.update { it.copy(errorMessage = UiText.StringResource(R.string.err_intervention_no_intervention_loaded)) }
             return QrResult.Error(QrError.InterventionError.DetailError.SaveError())
         }
 
@@ -353,7 +361,7 @@ class DetailsFormViewModel @Inject constructor(
                     _state.update {
                         it.copy(
                             isSaving = false,
-                            errorMessage = "Errore nel salvataggio: ${result.error}"
+                            errorMessage = result.error.asUiText()
                         )
                     }
                     QrResult.Error(result.error)
@@ -361,22 +369,14 @@ class DetailsFormViewModel @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "autoSaveOnTabChange: Exception during save")
-            val error = "Errore nel salvataggio: ${e.message}"
             _state.update {
                 it.copy(
                     isSaving = false,
-                    errorMessage = error
+                    errorMessage = QrError.InterventionError.DetailError.SaveError(e.message).asUiText()
                 )
             }
             QrResult.Error(QrError.InterventionError.DetailError.SaveError())
         }
-    }
-
-    /**
-     * Check if this tab has unsaved changes
-     */
-    fun hasUnsavedChanges(): Boolean {
-        return _state.value.isDirty
     }
 
     /**
@@ -442,7 +442,7 @@ data class InterventionDetailsFormState(
     val materialItems: List<MaterialItemState> = List(6) { MaterialItemState() },
     val externalReportNumber: String = "",
     val isComplete: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: UiText? = null
 )
 
 /**

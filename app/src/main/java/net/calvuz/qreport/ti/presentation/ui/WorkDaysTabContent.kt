@@ -3,19 +3,21 @@ package net.calvuz.qreport.ti.presentation.ui
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 
 /**
  * Main content for WorkDays tab.
  * Switches between list view and detail form based on state.
  */
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WorkDaysTabContent(
@@ -46,7 +48,7 @@ fun WorkDaysTabContent(
                 color = MaterialTheme.colorScheme.errorContainer
             ) {
                 Text(
-                    text = error,
+                    text = error.asString(),
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     style = MaterialTheme.typography.bodyMedium
@@ -100,6 +102,7 @@ fun WorkDaysTabContent(
 /**
  * Wrapper for WorkDayFormScreen with back navigation header
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 private fun WorkDayDetailWrapper(
     interventionId: String,
@@ -170,15 +173,15 @@ private fun WorkDayDetailHeader(
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.Default.ArrowBackIosNew,
-                    contentDescription = "Torna alla lista"
+                    contentDescription = stringResource(R.string.intervention_workdays_tab_back_to_list_cd)
                 )
             }
 
             Text(
                 text = if (workDayIndex != null) {
-                    "Giornata ${workDayIndex + 1}/${totalWorkDays}"
+                    stringResource(R.string.intervention_workdays_tab_day_header, workDayIndex + 1, totalWorkDays)
                 } else {
-                    "Nuova giornata"
+                    stringResource(R.string.intervention_workdays_tab_new_day_header)
                 },
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f)
@@ -198,7 +201,7 @@ private fun WorkDayDetailHeader(
                     shape = MaterialTheme.shapes.small
                 ) {
                     Text(
-                        text = "Non salvato",
+                        text = stringResource(R.string.intervention_workdays_tab_unsaved_indicator),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSecondaryContainer

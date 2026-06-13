@@ -12,12 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import net.calvuz.qreport.R
 
 /**
  * Form screen for editing work day details:
@@ -30,11 +32,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
  * @param workDayIndex Index of work day to edit (null = create new)
  * @param viewModel The form ViewModel (injected or provided by parent)
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 fun WorkDayFormScreen(
+    modifier: Modifier = Modifier,
     interventionId: String,
     workDayIndex: Int? = null,
-    modifier: Modifier = Modifier,
     viewModel: WorkDayFormViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -43,6 +46,7 @@ fun WorkDayFormScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .imePadding()
             .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
@@ -51,7 +55,8 @@ fun WorkDayFormScreen(
         // Dirty state indicator
         if (state.isDirty) {
             DirtyStateIndicator(
-                message = if (state.isNewWorkDay) "Nuova giornata - non salvata" else "Modifiche non salvate",
+                message = if (state.isNewWorkDay) stringResource(R.string.intervention_workday_unsaved_new)
+                else stringResource(R.string.intervention_general_unsaved_changes),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -71,7 +76,7 @@ fun WorkDayFormScreen(
                 )
             ) {
                 Text(
-                    text = errorMessage,
+                    text = errorMessage.asString(),
                     modifier = Modifier.padding(16.dp),
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
@@ -176,7 +181,7 @@ private fun BasicInfoSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Informazioni Giornata",
+                    text = stringResource(R.string.intervention_workday_section_basic_info),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -187,8 +192,8 @@ private fun BasicInfoSection(
             OutlinedTextField(
                 value = date,
                 onValueChange = onDateChange,
-                label = { Text("Data") },
-                placeholder = { Text("dd/MM/yyyy") },
+                label = { Text(stringResource(R.string.intervention_workday_date_label)) },
+                placeholder = { Text(stringResource(R.string.intervention_details_ddt_date_placeholder)) },
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -220,15 +225,15 @@ private fun BasicInfoSection(
 
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Assistenza Remota",
+                            text = stringResource(R.string.intervention_workday_remote_assistance_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Medium
                         )
                         Text(
                             text = if (remoteAssistance)
-                                "I campi viaggio sono nascosti"
+                                stringResource(R.string.intervention_workday_remote_assistance_enabled_desc)
                             else
-                                "Attiva per nascondere i tempi di viaggio",
+                                stringResource(R.string.intervention_workday_remote_assistance_disabled_desc),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -249,7 +254,7 @@ private fun BasicInfoSection(
                 OutlinedTextField(
                     value = technicianCount,
                     onValueChange = onTechnicianCountChange,
-                    label = { Text("N° Tecnici") },
+                    label = { Text(stringResource(R.string.intervention_workday_technician_count_label)) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
                     ),
@@ -259,8 +264,8 @@ private fun BasicInfoSection(
                 OutlinedTextField(
                     value = technicianInitials,
                     onValueChange = onTechnicianInitialsChange,
-                    label = { Text("Sigle Tecnici") },
-                    placeholder = { Text("LC, AB, MR") },
+                    label = { Text(stringResource(R.string.intervention_workday_technician_initials_label)) },
+                    placeholder = { Text(stringResource(R.string.intervention_workday_technician_initials_placeholder)) },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Text,
                         capitalization = KeyboardCapitalization.Characters
@@ -303,7 +308,7 @@ private fun TravelHoursSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Orari di Viaggio",
+                    text = stringResource(R.string.intervention_workday_section_travel_hours),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -312,7 +317,7 @@ private fun TravelHoursSection(
 
             // Outbound travel
             Text(
-                text = "Viaggio Andata",
+                text = stringResource(R.string.intervention_workday_outbound_travel),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -324,14 +329,14 @@ private fun TravelHoursSection(
                 TimeTextField(
                     value = outboundTravelStart,
                     onValueChange = onOutboundTravelStartChange,
-                    label = "Inizio",
+                    label = stringResource(R.string.intervention_workday_time_start_label),
                     modifier = Modifier.weight(1f)
                 )
 
                 TimeTextField(
                     value = outboundTravelEnd,
                     onValueChange = onOutboundTravelEndChange,
-                    label = "Fine",
+                    label = stringResource(R.string.intervention_workday_time_end_label),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -340,7 +345,7 @@ private fun TravelHoursSection(
 
             // Return travel
             Text(
-                text = "Viaggio Ritorno",
+                text = stringResource(R.string.intervention_workday_return_travel),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -352,14 +357,14 @@ private fun TravelHoursSection(
                 TimeTextField(
                     value = returnTravelStart,
                     onValueChange = onReturnTravelStartChange,
-                    label = "Inizio",
+                    label = stringResource(R.string.intervention_workday_time_start_label),
                     modifier = Modifier.weight(1f)
                 )
 
                 TimeTextField(
                     value = returnTravelEnd,
                     onValueChange = onReturnTravelEndChange,
-                    label = "Fine",
+                    label = stringResource(R.string.intervention_workday_time_end_label),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -398,7 +403,7 @@ private fun WorkHoursSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Orari di Lavoro",
+                    text = stringResource(R.string.intervention_workday_section_work_hours),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -407,7 +412,7 @@ private fun WorkHoursSection(
 
             // Morning work
             Text(
-                text = "Lavoro Mattina",
+                text = stringResource(R.string.intervention_workday_morning_work),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -419,14 +424,14 @@ private fun WorkHoursSection(
                 TimeTextField(
                     value = morningStart,
                     onValueChange = onMorningStartChange,
-                    label = "Inizio",
+                    label = stringResource(R.string.intervention_workday_time_start_label),
                     modifier = Modifier.weight(1f)
                 )
 
                 TimeTextField(
                     value = morningEnd,
                     onValueChange = onMorningEndChange,
-                    label = "Fine",
+                    label = stringResource(R.string.intervention_workday_time_end_label),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -435,7 +440,7 @@ private fun WorkHoursSection(
 
             // Afternoon work
             Text(
-                text = "Lavoro Pomeriggio",
+                text = stringResource(R.string.intervention_workday_afternoon_work),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -447,14 +452,14 @@ private fun WorkHoursSection(
                 TimeTextField(
                     value = afternoonStart,
                     onValueChange = onAfternoonStartChange,
-                    label = "Inizio",
+                    label = stringResource(R.string.intervention_workday_time_start_label),
                     modifier = Modifier.weight(1f)
                 )
 
                 TimeTextField(
                     value = afternoonEnd,
                     onValueChange = onAfternoonEndChange,
-                    label = "Fine",
+                    label = stringResource(R.string.intervention_workday_time_end_label),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -500,7 +505,7 @@ private fun ExpensesSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Spese",
+                    text = stringResource(R.string.intervention_workday_section_expenses),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary
@@ -509,7 +514,7 @@ private fun ExpensesSection(
 
             // Pocket money checkboxes
             Text(
-                text = "Indennità di Trasferta",
+                text = stringResource(R.string.intervention_workday_pocket_money_title),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -521,14 +526,14 @@ private fun ExpensesSection(
                 CheckboxWithLabel(
                     checked = morningPocketMoney,
                     onCheckedChange = onMorningPocketMoneyChange,
-                    label = "1/2 Mattina",
+                    label = stringResource(R.string.intervention_workday_pocket_money_morning),
                     modifier = Modifier.weight(1f)
                 )
 
                 CheckboxWithLabel(
                     checked = afternoonPocketMoney,
                     onCheckedChange = onAfternoonPocketMoneyChange,
-                    label = "1/2 Pomeriggio",
+                    label = stringResource(R.string.intervention_workday_pocket_money_afternoon),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -538,7 +543,7 @@ private fun ExpensesSection(
             // Travel expenses (hidden if remote assistance)
             if (!remoteAssistance) {
                 Text(
-                    text = "Spese di Viaggio",
+                    text = stringResource(R.string.intervention_workday_section_travel_expenses),
                     style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -547,9 +552,9 @@ private fun ExpensesSection(
                 OutlinedTextField(
                     value = totalKilometers,
                     onValueChange = onTotalKilometersChange,
-                    label = { Text("Chilometri Totali") },
+                    label = { Text(stringResource(R.string.intervention_workday_total_kilometers_label)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    supportingText = { Text("Inserire i km percorsi") },
+                    supportingText = { Text(stringResource(R.string.intervention_workday_total_kilometers_supporting)) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -560,25 +565,25 @@ private fun ExpensesSection(
                     CheckboxWithLabel(
                         checked = flight,
                         onCheckedChange = onFlightChange,
-                        label = "Volo"
+                        label = stringResource(R.string.intervention_workday_flight)
                     )
 
                     CheckboxWithLabel(
                         checked = rentCar,
                         onCheckedChange = onRentCarChange,
-                        label = "Auto a Noleggio"
+                        label = stringResource(R.string.intervention_workday_rent_car)
                     )
 
                     CheckboxWithLabel(
                         checked = transferToAirport,
                         onCheckedChange = onTransferToAirportChange,
-                        label = "Transfer Aeroporto"
+                        label = stringResource(R.string.intervention_workday_transfer_airport)
                     )
 
                     CheckboxWithLabel(
                         checked = lodging,
                         onCheckedChange = onLodgingChange,
-                        label = "Pernottamento"
+                        label = stringResource(R.string.intervention_workday_lodging)
                     )
                 }
             } else {
@@ -599,7 +604,7 @@ private fun ExpensesSection(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = "Spese di viaggio nascoste per assistenza remota",
+                            text = stringResource(R.string.intervention_workday_remote_assistance_note),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -627,7 +632,7 @@ private fun TimeTextField(
             }
         },
         label = { Text(label) },
-        placeholder = { Text("HH:mm") },
+        placeholder = { Text(stringResource(R.string.intervention_workday_time_placeholder)) },
         modifier = modifier
     )
 }
@@ -717,7 +722,7 @@ private fun AutoSaveIndicator(
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "Salvataggio in corso...",
+                text = stringResource(R.string.msg_saving),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
