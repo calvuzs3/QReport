@@ -22,6 +22,7 @@ import kotlinx.datetime.toLocalDateTime
 import net.calvuz.qreport.R
 
 
+@Suppress("ParamsComparedByRef")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QrDatePickerField(

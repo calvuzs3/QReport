@@ -15,7 +15,7 @@
     <string name="photo_camera_err_binding">Errore binding camera: %1$s</string>
 
     <!-- CameraScreen -->
-    <string name="photo_camera_initializing">Inizializzazione camera...</string>
+    <string name="photo_camera_initializing">Inizializzazione camera…</string>
     <string name="photo_camera_cd_back">Indietro</string>
     <string name="photo_camera_cd_flash">Flash</string>
     <string name="photo_camera_cd_zoom_in">Zoom In</string>
@@ -38,19 +38,19 @@
     <!-- PhotoImportPreviewScreen -->
     <string name="photo_import_title">Importa Foto</string>
     <string name="photo_import_cd_back">Torna indietro</string>
-    <string name="photo_import_importing">Importando...</string>
+    <string name="photo_import_importing">Importando…</string>
     <string name="photo_import_cd_preview">Anteprima foto da importare</string>
     <string name="photo_import_perspective_required_label">Prospettiva *</string>
     <string name="photo_import_perspective_description">Seleziona la prospettiva che meglio descrive questa foto:</string>
     <string name="photo_import_perspective_label">Scegli prospettiva</string>
-    <string name="photo_import_perspective_placeholder">Seleziona una prospettiva...</string>
+    <string name="photo_import_perspective_placeholder">Seleziona una prospettiva…</string>
     <string name="photo_import_field_required">Campo obbligatorio</string>
     <string name="photo_import_cd_selected">Selezionata</string>
     <string name="photo_import_description_label">Descrizione</string>
-    <string name="photo_import_description_placeholder">Aggiungi una descrizione...</string>
+    <string name="photo_import_description_placeholder">Aggiungi una descrizione…</string>
     <string name="photo_import_caption_char_count">%1$d/200 caratteri</string>
-    <string name="photo_import_info_message">La foto verrà processata e salvata con gli stessi metadati delle foto catturate dalla camera.</string>
-    <string name="photo_import_loading">Caricamento anteprima...</string>
+    <string name="photo_import_info_message">La foto verrà processata e salvata con gli stessi metadata delle foto catturate dalla camera.</string>
+    <string name="photo_import_loading">Caricamento anteprima…</string>
     <string name="photo_import_error_title">Errore import foto</string>
 
     <!-- CheckItemPhotoPreview -->
@@ -66,7 +66,7 @@
     <string name="photo_gallery_capture_photo">Scatta Foto</string>
     <string name="photo_gallery_cd_photo">Foto %1$s</string>
     <string name="photo_gallery_file_not_found">File non trovato</string>
-    <string name="photo_gallery_loading">Caricamento foto...</string>
+    <string name="photo_gallery_loading">Caricamento foto…</string>
     <string name="photo_gallery_empty_title">Nessuna foto presente</string>
     <string name="photo_gallery_empty_message">Scatta la prima foto per questo check item</string>
 

@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.share.domain.usecase
 
 import kotlinx.coroutines.Dispatchers
@@ -28,7 +29,6 @@ class ShareFileUseCase @Inject constructor(
      * Share exported file using Android sharing system
      *
      * @param filePath Percorso completo al file esportato
-     * @param exportFormat Formato del file export per determinare configurazione sharing
      * @return QrResult.Success se condivisione avviata, QrResult.Error con dettagli se fallita
      */
     suspend operator fun invoke(
@@ -119,7 +119,9 @@ class ShareFileUseCase @Inject constructor(
             }
 
             // 7. Share file using ShareFileRepository
-            when (val shareResult = shareFileRepository.shareFile(filePath, shareOptions)) {
+            @Suppress("unused")
+            when (val shareResult = shareFileRepository.shareFile(filePath,
+                shareOptions)) {
                 is QrResult.Error -> {
                     Timber.e("Failed to share exported file: $filePath")
                     // Map ShareError to more specific error if needed
@@ -140,43 +142,6 @@ class ShareFileUseCase @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Exception sharing exported file: $filePath")
             QrResult.Error(QrError.ShareError.ShareFailed())
-        }
-    }
-
-    /**
-     * Check if exported file can be shared
-     * Useful for UI to enable/disable share buttons
-     */
-    suspend fun canShareFile(
-        filePath: String,
-    ): QrResult<Boolean, QrError> = withContext(Dispatchers.IO) {
-
-        try {
-            // Basic file checks
-            val file = File(filePath)
-            if (!file.exists() || !file.canRead() || file.length() == 0L) {
-                return@withContext QrResult.Success(false)
-            }
-
-            // Validation check
-            when (val validationResult = shareFileRepository.validateFileForSharing(filePath)) {
-                is QrResult.Error -> return@withContext QrResult.Success(false)
-                is QrResult.Success -> {
-                    if (!validationResult.data.canShare) {
-                        return@withContext QrResult.Success(false)
-                    }
-                }
-            }
-
-            // Compatibility check
-            when (val compatibilityResult = shareFileRepository.getCompatibleApps(filePath)) {
-                is QrResult.Error -> QrResult.Success(false)
-                is QrResult.Success -> QrResult.Success(compatibilityResult.data.isNotEmpty())
-            }
-
-        } catch (e: Exception) {
-            Timber.e(e, "Exception checking if file can be shared: $filePath")
-            QrResult.Success(false)
         }
     }
 }

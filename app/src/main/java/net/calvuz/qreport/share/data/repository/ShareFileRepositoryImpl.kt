@@ -6,7 +6,10 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.file.domain.repository.CoreFileRepository
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.app.util.DateTimeUtils.toFilenameSafeDateTime
@@ -52,7 +55,7 @@ class ShareFileRepositoryImpl @Inject constructor(
                 is QrResult.Error -> QrResult.Error(intentResult.error)
                 is QrResult.Success -> {
                     val intent = intentResult.data
-                    val chooserIntent = Intent.createChooser(intent, shareOptions.chooserTitle ?: "Share with")
+                    val chooserIntent = Intent.createChooser(intent, shareOptions.chooserTitle ?: context.getString(R.string.action_share))
                     chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(chooserIntent)
 
@@ -99,7 +102,7 @@ class ShareFileRepositoryImpl @Inject constructor(
                     val intent = intentResult.data
                     intent.putExtra(Intent.EXTRA_TEXT, text)
 
-                    val chooserIntent = Intent.createChooser(intent, shareOptions.chooserTitle ?: "Condividi")
+                    val chooserIntent = Intent.createChooser(intent, shareOptions.chooserTitle ?: context.getString(R.string.action_share))
                     chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(chooserIntent)
 
@@ -217,7 +220,7 @@ class ShareFileRepositoryImpl @Inject constructor(
                     }
 
                     if (openOptions.allowChooser) {
-                        val chooserIntent = Intent.createChooser(intent, openOptions.chooserTitle ?: "Open with")
+                        val chooserIntent = Intent.createChooser(intent, openOptions.chooserTitle ?: context.getString(R.string.share_chooser_title_open))
                         chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         context.startActivity(chooserIntent)
                     } else {
@@ -527,7 +530,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             if (!file.exists()) {
                 issues.add(ShareIssue(
                     type = ShareIssueType.FILE_NOT_FOUND,
-                    message = "File not found: $filePath",
+                    message = QrError.FileError.FileNotFound(filePath).asUiText(),
                     severity = ShareIssueSeverity.ERROR,
                     suggestedAction = "Verify file path exists"
                 ))
@@ -537,7 +540,8 @@ class ShareFileRepositoryImpl @Inject constructor(
             if (file.length() > maxSize) {
                 warnings.add(ShareIssue(
                     type = ShareIssueType.FILE_TOO_LARGE,
-                    message = "File is ${file.length() / (1024*1024)}MB, may not be supported by all apps",
+                    message = UiText.StringResources(R.string.share_share_err_file_unsupported,
+                        file.length() / (1024 * 1024)),
                     severity = ShareIssueSeverity.WARNING,
                     suggestedAction = "Consider compressing the file"
                 ))

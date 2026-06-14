@@ -4,8 +4,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
-import net.calvuz.qreport.photo.data.local.mapper.toDomain
-import net.calvuz.qreport.photo.data.local.mapper.toEntity
+import net.calvuz.qreport.checkup.data.local.mapper.toDomain
+import net.calvuz.qreport.checkup.data.local.mapper.toEntity
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.photo.domain.model.PhotoFilter
 import net.calvuz.qreport.photo.domain.model.PhotoPerspective

@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral", "ASSIGNED_VALUE_IS_NEVER_READ")
 package net.calvuz.qreport.photo.presentation.ui
 
 import android.net.Uri
@@ -26,6 +27,7 @@ import net.calvuz.qreport.photo.domain.model.PhotoPerspective
  * Screen per preview e configurazione di una foto importata dalla galleria.
  * Permette di impostare perspective, caption e confermare l'import.
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 fun PhotoImportPreviewScreen(
     checkItemId: String,

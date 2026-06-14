@@ -6,8 +6,8 @@ import net.calvuz.qreport.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.domain.model.spare.SparePart
 import net.calvuz.qreport.checkup.domain.repository.CheckUpRepository
+import net.calvuz.qreport.checkup.data.local.mapper.toDomain
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
-import net.calvuz.qreport.photo.data.local.mapper.toDomain
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.app.error.domain.model.QrError
 import timber.log.Timber

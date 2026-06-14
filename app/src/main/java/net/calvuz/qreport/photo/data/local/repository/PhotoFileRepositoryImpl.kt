@@ -1,5 +1,7 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.photo.data.local.repository
 
+import android.annotation.SuppressLint
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.file.domain.model.DirectorySpec
 import net.calvuz.qreport.app.file.domain.repository.*
@@ -30,7 +32,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
     // ===== DIRECTORY MANAGEMENT =====
 
     override suspend fun getPhotosDirectory(): QrResult<String, QrError> {
-        return coreFileRepo.getOrCreateDirectory(DirectorySpec.Core.PHOTOS)
+        return coreFileRepo.getOrCreateDirectory(DirectorySpec.PHOTOS)
     }
 
     override suspend fun getThumbnailsDirectory(): QrResult<String, QrError> {
@@ -38,7 +40,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             when (val photosResult = getPhotosDirectory()) {
                 is QrResult.Error -> photosResult
                 is QrResult.Success -> {
-                    coreFileRepo.createSubDirectory(DirectorySpec.Core.PHOTOS, THUMBNAILS_SUBDIR)
+                    coreFileRepo.createSubDirectory(DirectorySpec.PHOTOS, THUMBNAILS_SUBDIR)
                 }
             }
         } catch (e: Exception) {
@@ -49,7 +51,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
 
     override suspend fun createCheckItemPhotoDirectory(checkItemId: String): QrResult<String, QrError> {
         return try {
-            coreFileRepo.createSubDirectory(DirectorySpec.Core.PHOTOS, checkItemId)
+            coreFileRepo.createSubDirectory(DirectorySpec.PHOTOS, checkItemId)
         } catch (e: Exception) {
             Timber.e(e, "Failed to create checkItem photo directory: $checkItemId")
             QrResult.Error(QrError.PhotoError.DirectoryCreate())
@@ -208,6 +210,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             Timber.d("Orphaned photos cleanup not implemented yet")
             QrResult.Success(0)
         } catch (e: Exception) {
+            Timber.e(e, "Failed to cleanup orphaned photos")
             QrResult.Error(QrError.PhotoError.Cleanup())
         }
     }
@@ -251,6 +254,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
 
     // ===== HELPER METHODS =====
 
+    @SuppressLint("UsableSpace")
     private fun getAvailableSpace(): Long {
         return try {
             // Get available space on internal storage
@@ -272,6 +276,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
                 is QrResult.Error -> false
             }
         } catch (e: Exception) {
+            Timber.e(e, "Failed to check for thumbnail")
             false
         }
     }

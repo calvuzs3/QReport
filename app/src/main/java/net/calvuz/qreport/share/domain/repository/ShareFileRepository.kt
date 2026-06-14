@@ -5,6 +5,7 @@ import android.graphics.drawable.Drawable
 import android.net.Uri
 import androidx.compose.ui.graphics.vector.ImageVector
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.export.domain.reposirory.ExportFormat
 import java.io.File
@@ -252,7 +253,7 @@ data class ShareableFileInfo(
  */
 data class ShareIssue(
     val type: ShareIssueType,
-    val message: String,
+    val message: UiText,
     val severity: ShareIssueSeverity,
     val suggestedAction: String? = null
 )

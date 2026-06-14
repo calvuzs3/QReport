@@ -3,7 +3,6 @@ package net.calvuz.qreport.app.error.presentation
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText.*
-import net.calvuz.qreport.app.result.domain.QrResult
 
 fun QrError.SystemError.toUiText(): UiText {
     return when (this) {

@@ -83,7 +83,7 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
 @TypeConverters(
     DatabaseConverters::class,
     AddressConverter::class,
-    PhotoConverter::class
+    PhotoConverter::class,
 )
 abstract class QReportDatabase : RoomDatabase() {
 
