@@ -42,7 +42,7 @@ class GetCheckUpDetailsUseCase @Inject constructor(
 
             // 1. Get base Check-up (without photos)
             val checkUp = checkUpRepository.getCheckUpWithDetails(checkUpId)
-                ?: return QrResult.Error(QrError.Checkup.NOT_FOUND)
+                ?: return QrResult.Error(QrError.Checkup.NotFound())
 
             // 2. LoadError PHOTOS FOR EACH CHECK ITEM
             val checkItemsWithPhotos = checkUp.checkItems.map { checkItem ->
@@ -90,7 +90,7 @@ class GetCheckUpDetailsUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "CheckUp details load failed {$checkUpId}")
-            QrResult.Error((QrError.Checkup.LOAD))
+            QrResult.Error((QrError.Checkup.Load()))
         }
     }
 }

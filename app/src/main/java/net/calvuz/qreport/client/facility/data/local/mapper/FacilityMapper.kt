@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.app.data.converter.AddressConverter
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.model.FacilityType
+import net.calvuz.qreport.client.facility.domain.model.FacilityWithIslands
 import javax.inject.Inject
 
 /**
@@ -37,7 +38,7 @@ class FacilityMapper @Inject constructor(
     )
 
     /**
-     * [isDeleted] is always false here; soft-delete is managed by the repository,
+     * isDeleted is always false here; soft-delete is managed by the repository,
      * never written directly from a domain model.
      */
     fun toEntity(domain: Facility): FacilityEntity = FacilityEntity(

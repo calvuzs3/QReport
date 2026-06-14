@@ -13,24 +13,26 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import kotlinx.coroutines.delay
+import net.calvuz.qreport.R
 
 /**
  * Schermata principale della camera per catturare foto.
  * ✅ CORRETTO: Ora usa CameraViewModel dedicato invece di PhotoViewModel
  */
-@OptIn(ExperimentalPermissionsApi::class)
+@Suppress("ParamsComparedByRef")@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun CameraScreen(
     checkItemId: String,
@@ -67,12 +69,10 @@ fun CameraScreen(
     when {
         cameraPermissionState.status.isGranted -> {
             CameraContent(
-                checkItemId = checkItemId,
                 cameraUiState = cameraUiState,
                 onCapturePhoto = { viewModel.capturePhoto(checkItemId) },
                 onSetFlashMode = viewModel::setFlashMode,
                 onSetZoomRatio = viewModel::setZoomRatio,
-                onFocusOnPoint = viewModel::focusOnPoint,
                 onNavigateBack = onNavigateBack,
                 onClearError = viewModel::clearError,
                 onPreviewReady = { previewView = it }, // ✅ NUOVO: Callback per PreviewView
@@ -102,12 +102,10 @@ fun CameraScreen(
  */
 @Composable
 private fun CameraContent(
-    checkItemId: String,
     cameraUiState: CameraUiState,
     onCapturePhoto: () -> Unit,
     onSetFlashMode: (Int) -> Unit,
     onSetZoomRatio: (Float) -> Unit,
-    onFocusOnPoint: (Float, Float) -> Unit,
     onNavigateBack: () -> Unit,
     onClearError: () -> Unit,
     onPreviewReady: (PreviewView) -> Unit, // ✅ NUOVO: Callback per PreviewView
@@ -176,7 +174,7 @@ private fun CameraContent(
                 ) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     Text(
-                        text = "Inizializzazione camera...",
+                        text = stringResource(R.string.photo_camera_initializing),
                         style = MaterialTheme.typography.bodyLarge,
                         color = Color.White
                     )
@@ -200,7 +198,7 @@ private fun CameraContent(
                 )
             ) {
                 Text(
-                    text = error,
+                    text = error.asString(),
                     modifier = Modifier.padding(16.dp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer
@@ -239,7 +237,7 @@ private fun CameraTopControls(
         ) {
             Icon(
                 imageVector = Icons.Default.ArrowBackIosNew,
-                contentDescription = "Indietro",
+                contentDescription = stringResource(R.string.photo_camera_cd_back),
                 tint = Color.White
             )
         }
@@ -268,7 +266,7 @@ private fun CameraTopControls(
                 }
                 Icon(
                     imageVector = icon,
-                    contentDescription = "Flash",
+                    contentDescription = stringResource(R.string.photo_camera_cd_flash),
                     tint = Color.White
                 )
             }
@@ -305,7 +303,7 @@ private fun ZoomControls(
         ) {
             Icon(
                 imageVector = Icons.Default.ZoomIn,
-                contentDescription = "Zoom In",
+                contentDescription = stringResource(R.string.photo_camera_cd_zoom_in),
                 tint = Color.White
             )
         }
@@ -325,7 +323,7 @@ private fun ZoomControls(
         ) {
             Icon(
                 imageVector = Icons.Default.ZoomOut,
-                contentDescription = "Zoom Out",
+                contentDescription = stringResource(R.string.photo_camera_cd_zoom_out),
                 tint = Color.White
             )
         }
@@ -362,7 +360,7 @@ private fun CameraBottomControls(
             } else {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
-                    contentDescription = "Scatta Foto",
+                    contentDescription = stringResource(R.string.photo_camera_cd_capture),
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -396,7 +394,7 @@ private fun CameraPermissionRequest(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Permesso Camera Richiesto",
+            text = stringResource(R.string.photo_camera_permission_required_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
@@ -404,7 +402,7 @@ private fun CameraPermissionRequest(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Per scattare foto durante i check-up, l'app ha bisogno dell'accesso alla camera.",
+            text = stringResource(R.string.photo_camera_permission_required_message),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
@@ -415,7 +413,7 @@ private fun CameraPermissionRequest(
             onClick = onRequestPermission,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Concedi Permesso")
+            Text(stringResource(R.string.photo_camera_permission_grant))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -424,7 +422,7 @@ private fun CameraPermissionRequest(
             onClick = onNavigateBack,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Annulla")
+            Text(stringResource(R.string.action_cancel))
         }
     }
 }
@@ -455,7 +453,7 @@ private fun CameraPermissionRationale(
         Spacer(modifier = Modifier.height(24.dp))
 
         Text(
-            text = "Permesso Camera Necessario",
+            text = stringResource(R.string.photo_camera_permission_rationale_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
@@ -463,7 +461,7 @@ private fun CameraPermissionRationale(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "QReport ha bisogno dell'accesso alla camera per documentare i check-up con foto. Senza questo permesso non sarà possibile acquisire immagini dei componenti ispezionati.",
+            text = stringResource(R.string.photo_camera_permission_rationale_message),
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center
         )
@@ -474,7 +472,7 @@ private fun CameraPermissionRationale(
             onClick = onRequestPermission,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Riprova")
+            Text(stringResource(R.string.photo_camera_permission_retry))
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -483,7 +481,7 @@ private fun CameraPermissionRationale(
             onClick = onNavigateBack,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Torna Indietro")
+            Text(stringResource(R.string.photo_camera_permission_back))
         }
     }
 }

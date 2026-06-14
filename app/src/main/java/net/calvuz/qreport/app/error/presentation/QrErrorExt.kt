@@ -167,7 +167,7 @@ fun QrError.App.toUiText(): UiText {
 
 fun QrError.ValidationError.toUiText(): UiText {
     return when (this) {
-        is QrError.ValidationError.IdsDoesntMatch -> StringResources(R.string.err_validation_ids_does_not_match)
+        is QrError.ValidationError.IdsDoesNotMatch -> StringResources(R.string.err_validation_ids_does_not_match)
         is QrError.ValidationError.EmptyField -> StringResources(R.string.err_validation_empty_field)
         is QrError.ValidationError.EmailAlreadyTaken -> StringResources(R.string.err_validation_email_already_taken)
         is QrError.ValidationError.PhoneAlreadyTaken -> StringResources(R.string.err_validation_phone_already_taken)
@@ -211,7 +211,7 @@ fun QrError.ContactsError.toUiText(): UiText {
         is QrError.ContactsError.NotFound -> StringResources(R.string.err_contacts_not_found)
         is QrError.ContactsError.UnknownContactMethodOnDB -> StringResources(R.string.err_contacts_unknown_contact_method)
         is QrError.ContactsError.ContactIsNotActive -> StringResources(R.string.err_contacts_contact_is_not_active)
-        is QrError.ContactsError.ContactDoesntBelongToClient -> StringResources(R.string.err_contact_contact_does_not_belong_to_client)
+        is QrError.ContactsError.ContactDoesNotBelongToClient -> StringResources(R.string.err_contact_contact_does_not_belong_to_client)
         is QrError.ContactsError.IsNotPrimary -> StringResources(R.string.err_contact_is_not_primary)
         is QrError.ContactsError.CannotChangeClientAssociation -> StringResources(R.string.err_contact_cannot_change_client_association)
         is QrError.ContactsError.CannotRemovePrimaryFlag -> StringResources(R.string.err_contact_cannot_remove_primary_flag)
@@ -369,6 +369,207 @@ fun QrError.ShareError.toUiText(): UiText {
     }
 }
 
+fun QrError.ExportError.toUiText(): UiText {
+    return when (this) {
+        is QrError.ExportError.DirectoryCreate -> StringResources(R.string.err_export_directory_create)
+        is QrError.ExportError.DirectoryAccess -> StringResources(R.string.err_export_directory_access)
+        is QrError.ExportError.DirectoryDelete -> StringResources(R.string.err_export_directory_delete)
+        is QrError.ExportError.FileCreate -> StringResources(R.string.err_export_file_create)
+        is QrError.ExportError.FileWrite -> StringResources(R.string.err_export_file_write)
+        is QrError.ExportError.FileRead -> StringResources(R.string.err_export_file_read)
+        is QrError.ExportError.FileCopy -> StringResources(R.string.err_export_file_copy)
+        is QrError.ExportError.FileMove -> StringResources(R.string.err_export_file_move)
+        is QrError.ExportError.FileDelete -> StringResources(R.string.err_export_file_delete)
+        is QrError.ExportError.ExportGenerationFailed -> StringResources(R.string.err_export_generation_failed)
+        is QrError.ExportError.ContentSerialization -> StringResources(R.string.err_export_content_serialization)
+        is QrError.ExportError.FormatNotSupported -> StringResources(R.string.err_export_format_not_supported)
+        is QrError.ExportError.TemplateProcessing -> StringResources(R.string.err_export_template_processing)
+        is QrError.ExportError.ValidationFailed -> StringResources(R.string.err_export_validation_failed)
+        is QrError.ExportError.FileCorruption -> StringResources(R.string.err_export_file_corruption)
+        is QrError.ExportError.IntegrityCheckFailed -> StringResources(R.string.err_export_integrity_check_failed)
+        is QrError.ExportError.StructureInvalid -> StringResources(R.string.err_export_structure_invalid)
+        is QrError.ExportError.StorageCheckFailed -> StringResources(R.string.err_export_storage_check_failed)
+        is QrError.ExportError.InsufficientStorage -> StringResources(R.string.err_export_insufficient_storage)
+        is QrError.ExportError.SizeCalculationFailed -> StringResources(R.string.err_export_size_calculation_failed)
+        is QrError.ExportError.QuotaExceeded -> StringResources(R.string.err_export_quota_exceeded)
+        is QrError.ExportError.CleanupFailed -> StringResources(R.string.err_export_cleanup_failed)
+        is QrError.ExportError.DeleteFailed -> StringResources(R.string.err_export_delete_failed)
+        is QrError.ExportError.MaintenanceFailed -> StringResources(R.string.err_export_maintenance_failed)
+        is QrError.ExportError.ListFailed -> StringResources(R.string.err_export_list_failed)
+        is QrError.ExportError.InfoFailed -> StringResources(R.string.err_export_info_failed)
+        is QrError.ExportError.MetadataFailed -> StringResources(R.string.err_export_metadata_failed)
+        is QrError.ExportError.IndexCreationFailed -> StringResources(R.string.err_export_index_creation_failed)
+        is QrError.ExportError.ManifestCreateFailed -> StringResources(R.string.err_export_manifest_create_failed)
+        is QrError.ExportError.ManifestReadFailed -> StringResources(R.string.err_export_manifest_read_failed)
+        is QrError.ExportError.TrackingFailed -> StringResources(R.string.err_export_tracking_failed)
+        is QrError.ExportError.CompressionFailed -> StringResources(R.string.err_export_compression_failed)
+        is QrError.ExportError.ArchiveCreationFailed -> StringResources(R.string.err_export_archive_creation_failed)
+        is QrError.ExportError.PackageAssemblyFailed -> StringResources(R.string.err_export_package_assembly_failed)
+        is QrError.ExportError.PermissionDenied -> StringResources(R.string.err_export_permission_denied)
+        is QrError.ExportError.AccessRestricted -> StringResources(R.string.err_export_access_restricted)
+        is QrError.ExportError.WriteProtected -> StringResources(R.string.err_export_write_protected)
+        is QrError.ExportError.ConfigurationInvalid -> StringResources(R.string.err_export_configuration_invalid)
+        is QrError.ExportError.OptionsConflict -> StringResources(R.string.err_export_options_conflict)
+        is QrError.ExportError.ParameterMissing -> StringResources(R.string.err_export_parameter_missing)
+        is QrError.ExportError.TempFileFailed -> StringResources(R.string.err_export_temp_file_failed)
+        is QrError.ExportError.TempCleanupFailed -> StringResources(R.string.err_export_temp_cleanup_failed)
+        is QrError.ExportError.TempSpaceFull -> StringResources(R.string.err_export_temp_space_full)
+        is QrError.ExportError.ExternalToolFailed -> StringResources(R.string.err_export_external_tool_failed)
+        is QrError.ExportError.LibraryError -> StringResources(R.string.err_export_library_error)
+        is QrError.ExportError.SystemResourceUnavailable -> StringResources(R.string.err_export_system_resource_unavailable)
+        is QrError.ExportError.FileShareFailed -> StringResources(R.string.err_export_file_share_failed)
+    }
+}
+
+fun QrError.PhotoError.toUiText(): UiText {
+    return when (this) {
+        // Directory operations
+        is QrError.PhotoError.DirectoryCreate -> StringResources(R.string.err_photo_directory_create)
+        is QrError.PhotoError.DirectoryAccess -> StringResources(R.string.err_photo_directory_access)
+        is QrError.PhotoError.ThumbnailsDirCreate -> StringResources(R.string.err_photo_thumbnails_dir_create)
+
+        // File operations
+        is QrError.PhotoError.FileCreate -> StringResources(R.string.err_photo_file_create)
+        is QrError.PhotoError.FileAccess -> StringResources(R.string.err_photo_file_access)
+        is QrError.PhotoError.FileDelete -> StringResources(R.string.err_photo_file_delete)
+        is QrError.PhotoError.FileCopy -> StringResources(R.string.err_photo_file_copy)
+        is QrError.PhotoError.FileMove -> StringResources(R.string.err_photo_file_move)
+
+        // Photo processing
+        is QrError.PhotoError.Save -> StringResources(R.string.err_photo_save)
+        is QrError.PhotoError.Load -> StringResources(R.string.err_photo_load)
+        is QrError.PhotoError.Resize -> StringResources(R.string.err_photo_resize)
+        is QrError.PhotoError.Rotate -> StringResources(R.string.err_photo_rotate)
+        is QrError.PhotoError.Crop -> StringResources(R.string.err_photo_crop)
+
+        // Thumbnail operations
+        is QrError.PhotoError.ThumbnailCreate -> StringResources(R.string.err_photo_thumbnail_create)
+        is QrError.PhotoError.ThumbnailDelete -> StringResources(R.string.err_photo_thumbnail_delete)
+        is QrError.PhotoError.ThumbnailAccess -> StringResources(R.string.err_photo_thumbnail_access)
+
+        // Metadata & EXIF
+        is QrError.PhotoError.MetadataRead -> StringResources(R.string.err_photo_metadata_read)
+        is QrError.PhotoError.MetadataWrite -> StringResources(R.string.err_photo_metadata_write)
+        is QrError.PhotoError.ExifRead -> StringResources(R.string.err_photo_exif_read)
+        is QrError.PhotoError.ExifWrite -> StringResources(R.string.err_photo_exif_write)
+        is QrError.PhotoError.OrientationRead -> StringResources(R.string.err_photo_orientation_read)
+
+        // Image processing
+        is QrError.PhotoError.Decode -> StringResources(R.string.err_photo_decode)
+        is QrError.PhotoError.Encode -> StringResources(R.string.err_photo_encode)
+        is QrError.PhotoError.FormatUnsupported -> StringResources(R.string.err_photo_format_unsupported)
+        is QrError.PhotoError.Compression -> StringResources(R.string.err_photo_compression)
+        is QrError.PhotoError.QualityAdjustment -> StringResources(R.string.err_photo_quality_adjustment)
+
+        // Validation
+        is QrError.PhotoError.Validation -> StringResources(R.string.err_photo_validation)
+        is QrError.PhotoError.SizeValidation -> StringResources(R.string.err_photo_size_validation)
+        is QrError.PhotoError.FormatValidation -> StringResources(R.string.err_photo_format_validation)
+        is QrError.PhotoError.CorruptionDetected -> StringResources(R.string.err_photo_corruption_detected)
+
+        // Storage
+        is QrError.PhotoError.StorageAccess -> StringResources(R.string.err_photo_storage_access)
+        is QrError.PhotoError.StorageFull -> StringResources(R.string.err_photo_storage_full)
+        is QrError.PhotoError.Permissions -> StringResources(R.string.err_photo_permissions)
+
+        // Import/Export
+        is QrError.PhotoError.Import -> StringResources(R.string.err_photo_import)
+        is QrError.PhotoError.Export -> StringResources(R.string.err_photo_export)
+        is QrError.PhotoError.UriAccess -> StringResources(R.string.err_photo_uri_access)
+
+        // Management
+        is QrError.PhotoError.List -> StringResources(R.string.err_photo_list)
+        is QrError.PhotoError.Count -> StringResources(R.string.err_photo_count)
+        is QrError.PhotoError.Delete -> StringResources(R.string.err_photo_delete)
+        is QrError.PhotoError.Cleanup -> StringResources(R.string.err_photo_cleanup)
+
+        // Camera integration
+        is QrError.PhotoError.CameraAccess -> StringResources(R.string.err_photo_camera_access)
+        is QrError.PhotoError.Capture -> StringResources(R.string.err_photo_capture)
+        is QrError.PhotoError.SettingsApply -> StringResources(R.string.err_photo_settings_apply)
+    }
+}
+
+fun QrError.BackupError.toUiText(): UiText {
+    return when (this) {
+        // Basic operations
+        is QrError.BackupError.Save -> StringResources(R.string.err_backup_save)
+        is QrError.BackupError.Load -> StringResources(R.string.err_backup_load)
+        is QrError.BackupError.Delete -> StringResources(R.string.err_backup_delete)
+        is QrError.BackupError.Create -> StringResources(R.string.err_backup_create)
+
+        // Validation & integrity
+        is QrError.BackupError.Validate -> StringResources(R.string.err_backup_validate)
+        is QrError.BackupError.Corrupt -> StringResources(R.string.err_backup_corrupt)
+        is QrError.BackupError.ChecksumMismatch -> StringResources(R.string.err_backup_checksum_mismatch)
+        is QrError.BackupError.MetadataMissing -> StringResources(R.string.err_backup_metadata_missing)
+        is QrError.BackupError.StructureInvalid -> StringResources(R.string.err_backup_structure_invalid)
+
+        // Compression operations
+        is QrError.BackupError.ZipCreate -> StringResources(R.string.err_backup_zip_create)
+        is QrError.BackupError.ZipExtract -> StringResources(R.string.err_backup_zip_extract)
+        is QrError.BackupError.ZipCorrupt -> StringResources(R.string.err_backup_zip_corrupt)
+        is QrError.BackupError.ZipPassword -> StringResources(R.string.err_backup_zip_password)
+
+        // Sharing & transfer
+        is QrError.BackupError.ShareCreate -> StringResources(R.string.err_backup_share_create)
+        is QrError.BackupError.ExportFailed -> StringResources(R.string.err_backup_export_failed)
+        is QrError.BackupError.TempFileCreate -> StringResources(R.string.err_backup_temp_file_create)
+
+        // Photo operations
+        is QrError.BackupError.PhotoArchive -> StringResources(R.string.err_backup_photo_archive)
+        is QrError.BackupError.PhotoExtract -> StringResources(R.string.err_backup_photo_extract)
+        is QrError.BackupError.PhotoMissing -> StringResources(R.string.err_backup_photo_missing)
+        is QrError.BackupError.PhotoCorrupt -> StringResources(R.string.err_backup_photo_corrupt)
+
+        // Cleanup & maintenance
+        is QrError.BackupError.RetentionPolicy -> StringResources(R.string.err_backup_retention_policy)
+        is QrError.BackupError.CleanupFailed -> StringResources(R.string.err_backup_cleanup_failed)
+        is QrError.BackupError.DiskSpace -> StringResources(R.string.err_backup_disk_space)
+
+        // Specific backup scenarios
+        is QrError.BackupError.PathGeneration -> StringResources(R.string.err_backup_path_generation)
+        is QrError.BackupError.PathResolution -> StringResources(R.string.err_backup_path_resolution)
+        is QrError.BackupError.StatsCalculation -> StringResources(R.string.err_backup_stats_calculation)
+        is QrError.BackupError.SummaryGeneration -> StringResources(R.string.err_backup_summary_generation)
+    }
+}
+
+fun QrError.Checkup.toUiText(): UiText {
+    return when (this) {
+        is QrError.Checkup.Unknown -> StringResources(R.string.err_checkup_delete_unknown)
+        is QrError.Checkup.NotFound -> StringResources(R.string.err_checkup_not_found)
+        is QrError.Checkup.CannotDeleteCompleted -> StringResources(R.string.err_checkup_delete_cannot_delete_completed)
+        is QrError.Checkup.CannotDeleteExported -> StringResources(R.string.err_checkup_delete_cannot_delete_exported)
+        is QrError.Checkup.CannotDeleteArchived -> StringResources(R.string.err_checkup_delete_cannot_delete_archived)
+        is QrError.Checkup.Load -> StringResources(R.string.err_checkup_load_checkup)
+        is QrError.Checkup.Reload -> StringResources(R.string.err_checkup_reload_checkup)
+        is QrError.Checkup.Create -> StringResources(R.string.err_create)
+        is QrError.Checkup.Delete -> StringResources(R.string.err_delete)
+        is QrError.Checkup.FieldsRequired -> StringResources(R.string.err_fields_required)
+        is QrError.Checkup.Refresh -> StringResources(R.string.err_refresh)
+        is QrError.Checkup.FileOpen -> StringResources(R.string.err_file_open)
+        is QrError.Checkup.FileShare -> StringResources(R.string.err_share)
+
+        is QrError.Checkup.LoadPhotos -> StringResources(R.string.err_checkup_load_photos)
+        is QrError.Checkup.UpdateStatus -> StringResources(R.string.err_checkup_update_status)
+        is QrError.Checkup.UpdateNotes -> StringResources(R.string.err_checkup_update_notes)
+        is QrError.Checkup.UpdateHeader -> StringResources(R.string.err_checkup_update_header)
+        is QrError.Checkup.NotAvailable -> StringResources(R.string.err_checkup_not_available)
+        is QrError.Checkup.SpareAdd -> StringResources(R.string.err_checkup_spare_add)
+        is QrError.Checkup.Association -> StringResources(R.string.err_checkup_association)
+        is QrError.Checkup.AssociationRemove -> StringResources(R.string.err_checkup_association_remove)
+        is QrError.Checkup.Finalize -> StringResources(R.string.err_checkup_finalize)
+        is QrError.Checkup.Export -> StringResources(R.string.err_checkup_export)
+
+        is QrError.Checkup.InvalidStatusTransition -> StringResources(R.string.err_checkup_invalid_status_transition)
+
+        is QrError.Checkup.ClientLoad -> StringResources(R.string.err_client_load_client)
+        is QrError.Checkup.FacilityLoad -> StringResources(R.string.err_facility_load_facility)
+        is QrError.Checkup.IslandLoad -> StringResources(R.string.err_island_load_island)
+    }
+}
+
 fun QrError.asUiText(): UiText {
     return when (this) {
 
@@ -388,216 +589,11 @@ fun QrError.asUiText(): UiText {
         is QrError.MaintenanceLogError -> this.toUiText()
         is QrError.IslandDocumentError -> this.toUiText()
         is QrError.ShareError -> this.toUiText()
-
-        // Export Error Mappings
-        QrError.ExportError.DIRECTORY_CREATE -> StringResources(R.string.err_export_directory_create)
-        QrError.ExportError.DIRECTORY_ACCESS -> StringResources(R.string.err_export_directory_access)
-        QrError.ExportError.DIRECTORY_DELETE -> StringResources(R.string.err_export_directory_delete)
-        QrError.ExportError.FILE_CREATE -> StringResources(R.string.err_export_file_create)
-        QrError.ExportError.FILE_WRITE -> StringResources(R.string.err_export_file_write)
-        QrError.ExportError.FILE_READ -> StringResources(R.string.err_export_file_read)
-        QrError.ExportError.FILE_COPY -> StringResources(R.string.err_export_file_copy)
-        QrError.ExportError.FILE_MOVE -> StringResources(R.string.err_export_file_move)
-        QrError.ExportError.FILE_DELETE -> StringResources(R.string.err_export_file_delete)
-        QrError.ExportError.EXPORT_GENERATION_FAILED -> StringResources(R.string.err_export_generation_failed)
-        QrError.ExportError.CONTENT_SERIALIZATION -> StringResources(R.string.err_export_content_serialization)
-        QrError.ExportError.FORMAT_NOT_SUPPORTED -> StringResources(R.string.err_export_format_not_supported)
-        QrError.ExportError.TEMPLATE_PROCESSING -> StringResources(R.string.err_export_template_processing)
-        QrError.ExportError.VALIDATION_FAILED -> StringResources(R.string.err_export_validation_failed)
-        QrError.ExportError.FILE_CORRUPTION -> StringResources(R.string.err_export_file_corruption)
-        QrError.ExportError.INTEGRITY_CHECK_FAILED -> StringResources(R.string.err_export_integrity_check_failed)
-        QrError.ExportError.STRUCTURE_INVALID -> StringResources(R.string.err_export_structure_invalid)
-        QrError.ExportError.STORAGE_CHECK_FAILED -> StringResources(R.string.err_export_storage_check_failed)
-        QrError.ExportError.INSUFFICIENT_STORAGE -> StringResources(R.string.err_export_insufficient_storage)
-        QrError.ExportError.SIZE_CALCULATION_FAILED -> StringResources(R.string.err_export_size_calculation_failed)
-        QrError.ExportError.QUOTA_EXCEEDED -> StringResources(R.string.err_export_quota_exceeded)
-        QrError.ExportError.CLEANUP_FAILED -> StringResources(R.string.err_export_cleanup_failed)
-        QrError.ExportError.DELETE_FAILED -> StringResources(R.string.err_export_delete_failed)
-        QrError.ExportError.MAINTENANCE_FAILED -> StringResources(R.string.err_export_maintenance_failed)
-        QrError.ExportError.LIST_FAILED -> StringResources(R.string.err_export_list_failed)
-        QrError.ExportError.INFO_FAILED -> StringResources(R.string.err_export_info_failed)
-        QrError.ExportError.METADATA_FAILED -> StringResources(R.string.err_export_metadata_failed)
-        QrError.ExportError.INDEX_CREATION_FAILED -> StringResources(R.string.err_export_index_creation_failed)
-        QrError.ExportError.MANIFEST_CREATE_FAILED -> StringResources(R.string.err_export_manifest_create_failed)
-        QrError.ExportError.MANIFEST_READ_FAILED -> StringResources(R.string.err_export_manifest_read_failed)
-        QrError.ExportError.TRACKING_FAILED -> StringResources(R.string.err_export_tracking_failed)
-        QrError.ExportError.COMPRESSION_FAILED -> StringResources(R.string.err_export_compression_failed)
-        QrError.ExportError.ARCHIVE_CREATION_FAILED -> StringResources(R.string.err_export_archive_creation_failed)
-        QrError.ExportError.PACKAGE_ASSEMBLY_FAILED -> StringResources(R.string.err_export_package_assembly_failed)
-        QrError.ExportError.PERMISSION_DENIED -> StringResources(R.string.err_export_permission_denied)
-        QrError.ExportError.ACCESS_RESTRICTED -> StringResources(R.string.err_export_access_restricted)
-        QrError.ExportError.WRITE_PROTECTED -> StringResources(R.string.err_export_write_protected)
-        QrError.ExportError.CONFIGURATION_INVALID -> StringResources(R.string.err_export_configuration_invalid)
-        QrError.ExportError.OPTIONS_CONFLICT -> StringResources(R.string.err_export_options_conflict)
-        QrError.ExportError.PARAMETER_MISSING -> StringResources(R.string.err_export_parameter_missing)
-        QrError.ExportError.TEMP_FILE_FAILED -> StringResources(R.string.err_export_temp_file_failed)
-        QrError.ExportError.TEMP_CLEANUP_FAILED -> StringResources(R.string.err_export_temp_cleanup_failed)
-        QrError.ExportError.TEMP_SPACE_FULL -> StringResources(R.string.err_export_temp_space_full)
-        QrError.ExportError.EXTERNAL_TOOL_FAILED -> StringResources(R.string.err_export_external_tool_failed)
-        QrError.ExportError.LIBRARY_ERROR -> StringResources(R.string.err_export_library_error)
-        QrError.ExportError.SYSTEM_RESOURCE_UNAVAILABLE -> StringResources(R.string.err_export_system_resource_unavailable)
-        QrError.ExportError.FILE_SHARE_FAILED -> StringResources(R.string.err_export_file_share_failed)
-
-        // ===== NEW PHOTO ERROR MAPPINGS =====
-
-        // File operations
-        QrError.PhotoError.FILE_COPY -> StringResources(R.string.err_photo_file_copy)
-        QrError.PhotoError.FILE_MOVE -> StringResources(R.string.err_photo_file_move)
-
-        // Photo processing
-        QrError.PhotoError.CROP -> StringResources(R.string.err_photo_crop)
-
-        // Thumbnail operations
-        QrError.PhotoError.THUMBNAIL_ACCESS -> StringResources(R.string.err_photo_thumbnail_access)
-
-        // Metadata & EXIF
-        QrError.PhotoError.METADATA_WRITE -> StringResources(R.string.err_photo_metadata_write)
-        QrError.PhotoError.EXIF_WRITE -> StringResources(R.string.err_photo_exif_write)
-        QrError.PhotoError.ORIENTATION_READ -> StringResources(R.string.err_photo_orientation_read)
-
-        // Image processing
-        QrError.PhotoError.DECODE -> StringResources(R.string.err_photo_decode)
-        QrError.PhotoError.ENCODE -> StringResources(R.string.err_photo_encode)
-        QrError.PhotoError.FORMAT_UNSUPPORTED -> StringResources(R.string.err_photo_format_unsupported)
-        QrError.PhotoError.COMPRESSION -> StringResources(R.string.err_photo_compression)
-        QrError.PhotoError.QUALITY_ADJUSTMENT -> StringResources(R.string.err_photo_quality_adjustment)
-
-        // Validation
-        QrError.PhotoError.SIZE_VALIDATION -> StringResources(R.string.err_photo_size_validation)
-
-        // Import/Export
-        QrError.PhotoError.IMPORT -> StringResources(R.string.err_photo_import)
-        QrError.PhotoError.EXPORT -> StringResources(R.string.err_photo_export)
-        QrError.PhotoError.URI_ACCESS -> StringResources(R.string.err_photo_uri_access)
-
-        // Management
-        QrError.PhotoError.COUNT -> StringResources(R.string.err_photo_count)
-
-        // Camera integration
-        QrError.PhotoError.CAMERA_ACCESS -> StringResources(R.string.err_photo_camera_access)
-        QrError.PhotoError.CAPTURE -> StringResources(R.string.err_photo_capture)
-        QrError.PhotoError.SETTINGS_APPLY -> StringResources(R.string.err_photo_settings_apply)
-
-        // Directory operations
-        QrError.PhotoError.DIRECTORY_CREATE -> StringResources(R.string.err_photo_directory_create)
-        QrError.PhotoError.DIRECTORY_ACCESS -> StringResources(R.string.err_photo_directory_access)
-        QrError.PhotoError.THUMBNAILS_DIR_CREATE -> StringResources(R.string.err_photo_thumbnails_dir_create)
-
-        // File operations
-        QrError.PhotoError.FILE_CREATE -> StringResources(R.string.err_photo_file_create)
-        QrError.PhotoError.FILE_ACCESS -> StringResources(R.string.err_photo_file_access)
-        QrError.PhotoError.FILE_DELETE -> StringResources(R.string.err_photo_file_delete)
-
-        // Photo processing
-        QrError.PhotoError.SAVE -> StringResources(R.string.err_photo_save)
-        QrError.PhotoError.LOAD -> StringResources(R.string.err_photo_load)
-        QrError.PhotoError.RESIZE -> StringResources(R.string.err_photo_resize)
-        QrError.PhotoError.ROTATE -> StringResources(R.string.err_photo_rotate)
-
-        // Thumbnail operations
-        QrError.PhotoError.THUMBNAIL_CREATE -> StringResources(R.string.err_photo_thumbnail_create)
-        QrError.PhotoError.THUMBNAIL_DELETE -> StringResources(R.string.err_photo_thumbnail_delete)
-
-        // Metadata & EXIF
-        QrError.PhotoError.METADATA_READ -> StringResources(R.string.err_photo_metadata_read)
-        QrError.PhotoError.EXIF_READ -> StringResources(R.string.err_photo_exif_read)
-
-        // Validation
-        QrError.PhotoError.VALIDATION -> StringResources(R.string.err_photo_validation)
-        QrError.PhotoError.FORMAT_VALIDATION -> StringResources(R.string.err_photo_format_validation)
-        QrError.PhotoError.CORRUPTION_DETECTED -> StringResources(R.string.err_photo_corruption_detected)
-
-        // Storage
-        QrError.PhotoError.STORAGE_ACCESS -> StringResources(R.string.err_photo_storage_access)
-        QrError.PhotoError.STORAGE_FULL -> StringResources(R.string.err_photo_storage_full)
-        QrError.PhotoError.PERMISSIONS -> StringResources(R.string.err_photo_permissions)
-
-        // Management
-        QrError.PhotoError.LIST -> StringResources(R.string.err_photo_list)
-        QrError.PhotoError.DELETE -> StringResources(R.string.err_photo_delete)
-        QrError.PhotoError.CLEANUP -> StringResources(R.string.err_photo_cleanup)
-
-
-        // ===== NEW BACKUP ERROR MAPPINGS =====
-
-        // Basic operations
-        QrError.BackupError.SAVE -> StringResources(R.string.err_backup_save)
-        QrError.BackupError.LOAD -> StringResources(R.string.err_backup_load)
-        QrError.BackupError.DELETE -> StringResources(R.string.err_backup_delete)
-        QrError.BackupError.CREATE -> StringResources(R.string.err_backup_create)
-
-        // Validation & integrity
-        QrError.BackupError.VALIDATE -> StringResources(R.string.err_backup_validate)
-        QrError.BackupError.CORRUPT -> StringResources(R.string.err_backup_corrupt)
-        QrError.BackupError.CHECKSUM_MISMATCH -> StringResources(R.string.err_backup_checksum_mismatch)
-        QrError.BackupError.METADATA_MISSING -> StringResources(R.string.err_backup_metadata_missing)
-        QrError.BackupError.STRUCTURE_INVALID -> StringResources(R.string.err_backup_structure_invalid)
-
-        // Compression operations
-        QrError.BackupError.ZIP_CREATE -> StringResources(R.string.err_backup_zip_create)
-        QrError.BackupError.ZIP_EXTRACT -> StringResources(R.string.err_backup_zip_extract)
-        QrError.BackupError.ZIP_CORRUPT -> StringResources(R.string.err_backup_zip_corrupt)
-        QrError.BackupError.ZIP_PASSWORD -> StringResources(R.string.err_backup_zip_password)
-
-        // Sharing & transfer
-        QrError.BackupError.SHARE_CREATE -> StringResources(R.string.err_backup_share_create)
-        QrError.BackupError.EXPORT_FAILED -> StringResources(R.string.err_backup_export_failed)
-        QrError.BackupError.TEMP_FILE_CREATE -> StringResources(R.string.err_backup_temp_file_create)
-
-        // Photo operations
-        QrError.BackupError.PHOTO_ARCHIVE -> StringResources(R.string.err_backup_photo_archive)
-        QrError.BackupError.PHOTO_EXTRACT -> StringResources(R.string.err_backup_photo_extract)
-        QrError.BackupError.PHOTO_MISSING -> StringResources(R.string.err_backup_photo_missing)
-        QrError.BackupError.PHOTO_CORRUPT -> StringResources(R.string.err_backup_photo_corrupt)
-
-        // Cleanup & maintenance
-        QrError.BackupError.RETENTION_POLICY -> StringResources(R.string.err_backup_retention_policy)
-        QrError.BackupError.CLEANUP_FAILED -> StringResources(R.string.err_backup_cleanup_failed)
-        QrError.BackupError.DISK_SPACE -> StringResources(R.string.err_backup_disk_space)
-
-        // Specific backup scenarios
-        QrError.BackupError.PATH_GENERATION -> StringResources(R.string.err_backup_path_generation)
-        QrError.BackupError.PATH_RESOLUTION -> StringResources(R.string.err_backup_path_resolution)
-        QrError.BackupError.STATS_CALCULATION -> StringResources(R.string.err_backup_stats_calculation)
-        QrError.BackupError.SUMMARY_GENERATION -> StringResources(R.string.err_backup_summary_generation)
-
-        // ===== NEW SHARE ERROR MAPPINGS =====
-
-        QrError.Checkup.UNKNOWN -> StringResources(R.string.err_checkup_delete_unknown)
-        QrError.Checkup.NOT_FOUND -> StringResources(R.string.err_checkup_not_found)
-        QrError.Checkup.CANNOT_DELETE_COMPLETED -> StringResources(R.string.err_checkup_delete_cannot_delete_completed)
-        QrError.Checkup.CANNOT_DELETE_EXPORTED -> StringResources(R.string.err_checkup_delete_cannot_delete_exported)
-        QrError.Checkup.CANNOT_DELETE_ARCHIVED -> StringResources(R.string.err_checkup_delete_cannot_delete_archived)
-        QrError.Checkup.LOAD -> StringResources(R.string.err_checkup_load_checkup)
-        QrError.Checkup.RELOAD -> StringResources(R.string.err_checkup_reload_checkup)
-        QrError.Checkup.CREATE -> StringResources(R.string.err_create)
-        QrError.Checkup.DELETE -> StringResources(R.string.err_delete)
-        QrError.Checkup.FIELDS_REQUIRED -> StringResources(R.string.err_fields_required)
-        QrError.Checkup.REFRESH -> StringResources(R.string.err_refresh)
-        QrError.Checkup.FILE_OPEN -> StringResources(R.string.err_file_open)
-        QrError.Checkup.FILE_SHARE -> StringResources(R.string.err_share)
-
-        QrError.Checkup.LOAD_PHOTOS -> StringResources(R.string.err_checkup_load_photos)
-        QrError.Checkup.UPDATE_STATUS -> StringResources(R.string.err_checkup_update_status)
-        QrError.Checkup.UPDATE_NOTES -> StringResources(R.string.err_checkup_update_notes)
-        QrError.Checkup.UPDATE_HEADER -> StringResources(R.string.err_checkup_update_header)
-        QrError.Checkup.NOT_AVAILABLE -> StringResources(R.string.err_checkup_not_available)
-        QrError.Checkup.SPARE_ADD -> StringResources(R.string.err_checkup_spare_add)
-        QrError.Checkup.ASSOCIATION -> StringResources(R.string.err_checkup_association)
-        QrError.Checkup.ASSOCIATION_REMOVE -> StringResources(R.string.err_checkup_association_remove)
-        QrError.Checkup.FINALIZE -> StringResources(R.string.err_checkup_finalize)
-        QrError.Checkup.EXPORT -> StringResources(R.string.err_checkup_export)
-
-        QrError.Checkup.INVALID_STATUS_TRANSITION -> StringResources(R.string.err_checkup_invalid_status_transition)
-
-        QrError.Checkup.CLIENT_LOAD -> StringResources(R.string.err_client_load_client)
-        QrError.Checkup.FACILITY_LOAD -> StringResources(R.string.err_facility_load_facility)
-        QrError.Checkup.ISLAND_LOAD -> StringResources(R.string.err_island_load_island)
+        is QrError.ExportError -> this.toUiText()
+        is QrError.PhotoError -> this.toUiText()
+        is QrError.BackupError -> this.toUiText()
+        is QrError.Checkup -> this.toUiText()
 
         else -> {}
     } as UiText
-}
-
-fun QrResult.Error<*, QrError>.asErrorUiText(): UiText {
-    return error.asUiText()
 }

@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral", "unused")
 package net.calvuz.qreport.client.client.data.local.entity
 
 import androidx.room.ColumnInfo

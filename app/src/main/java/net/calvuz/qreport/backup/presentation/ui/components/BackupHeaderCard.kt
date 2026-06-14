@@ -12,10 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.R
 import net.calvuz.qreport.backup.domain.model.enum.BackupMode
 import net.calvuz.qreport.backup.presentation.ui.model.BackupProgress
 import net.calvuz.qreport.backup.presentation.model.BackupModeExt.getDescription
@@ -62,14 +64,14 @@ fun BackupHeaderCard(
             ) {
                 Column {
                     Text(
-                        text = "Sistema Backup",
+                        text = stringResource(R.string.backup_header_card_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
 
                     Text(
-                        text = "Database e foto QReport",
+                        text = stringResource(R.string.backup_header_card_subtitle),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
@@ -92,21 +94,21 @@ fun BackupHeaderCard(
             ) {
                 BackupStatItem(
                     icon = Icons.Outlined.Folder,
-                    label = "Backup",
+                    label = stringResource(R.string.backup_header_card_backups_label),
                     value = totalBackups.toString(),
                     modifier = Modifier.weight(1f)
                 )
 
                 BackupStatItem(
                     icon = Icons.Outlined.Schedule,
-                    label = "Ultimo",
-                    value = lastBackupDate?.toItalianDate() ?: "Mai",
+                    label = stringResource(R.string.backup_header_card_last_label),
+                    value = lastBackupDate?.toItalianDate() ?: stringResource(R.string.backup_header_card_never),
                     modifier = Modifier.weight(1f)
                 )
 
                 BackupStatItem(
                     icon = Icons.Outlined.Storage,
-                    label = "Dimensione",
+                    label = stringResource(R.string.backup_header_card_size_label),
                     value = estimatedSize.getFormattedSize(),
                     modifier = Modifier.weight(1f)
                 )
@@ -179,7 +181,7 @@ fun BackupOptionsCard(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Opzioni Backup",
+                text = stringResource(R.string.backup_options_card_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -190,8 +192,8 @@ fun BackupOptionsCard(
             // Photo options
             OptionToggleItem(
                 icon = Icons.Outlined.Photo,
-                title = "Includi foto",
-                description = "Backup di tutte le foto dei check-up",
+                title = stringResource(R.string.backup_options_include_photos_title),
+                description = stringResource(R.string.backup_options_include_photos_desc),
                 checked = includePhotos,
                 onCheckedChange = { onTogglePhotos() }
             )
@@ -210,7 +212,7 @@ fun BackupOptionsCard(
 
             // Backup mode selection
             Text(
-                text = "Modalità Backup",
+                text = stringResource(R.string.backup_options_mode_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
@@ -360,7 +362,7 @@ private fun BackupSizeIndicator(
             Spacer(modifier = Modifier.width(4.dp))
 
             Text(
-                text = "Dimensione stimata:",
+                text = stringResource(R.string.backup_options_estimated_size_label),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
@@ -430,14 +432,14 @@ private fun BackupProgressContent(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Backup in corso...",
+                text = stringResource(R.string.backup_progress_in_progress),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onTertiaryContainer
             )
 
             TextButton(onClick = onCancel) {
-                Text("Annulla")
+                Text(stringResource(R.string.action_cancel))
             }
         }
 
@@ -478,7 +480,12 @@ private fun BackupProgressContent(
                 if (progress.currentTable != null) {
                     if (progress.currentTable.isNotEmpty()) {
                         Text(
-                            text = "Tabella: ${progress.currentTable} (${progress.processedRecords}/${progress.totalRecords})",
+                            text = stringResource(
+                                R.string.backup_action_table_progress,
+                                progress.currentTable,
+                                progress.processedRecords,
+                                progress.totalRecords
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
                         )
@@ -494,7 +501,7 @@ private fun BackupProgressContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Preparazione backup...",
+                    text = stringResource(R.string.backup_action_preparing),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onTertiaryContainer
                 )
@@ -531,7 +538,7 @@ private fun BackupActionContent(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
-                            text = "Backup completato",
+                            text = stringResource(R.string.backup_action_completed),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
@@ -541,9 +548,10 @@ private fun BackupActionContent(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "File salvato in: ${
+                        text = stringResource(
+                            R.string.backup_action_saved_to,
                             progress.backupPath.split("/").lastOrNull() ?: ""
-                        }",
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center
@@ -565,7 +573,7 @@ private fun BackupActionContent(
                         Spacer(modifier = Modifier.width(8.dp))
 
                         Text(
-                            text = "Errore backup",
+                            text = stringResource(R.string.backup_action_error),
                             style = MaterialTheme.typography.titleMedium,
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Bold
@@ -606,7 +614,7 @@ private fun BackupActionContent(
             Spacer(modifier = Modifier.width(8.dp))
 
             Text(
-                text = if (showResult) "Crea Nuovo Backup" else "Crea Backup",
+                text = if (showResult) stringResource(R.string.backup_action_create_new) else stringResource(R.string.backup_action_create),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )

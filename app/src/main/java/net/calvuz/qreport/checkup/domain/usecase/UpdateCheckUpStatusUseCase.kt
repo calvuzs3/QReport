@@ -18,13 +18,13 @@ class UpdateCheckUpStatusUseCase @Inject constructor(
     ): QrResult<Unit, QrError.Checkup> {
         return try {
             val checkUp = repository.getCheckUpById(checkUpId)
-                ?: return QrResult.Error(QrError.Checkup.NOT_FOUND)
+                ?: return QrResult.Error(QrError.Checkup.NotFound())
 //            Result.failure(Exception("CheckUp not found: $checkUpId"))
 
             // Validazione transizioni di status (aggiornata)
             val isValidTransition = isValidStatusTransition(checkUp.status, newStatus)
             if (!isValidTransition) {
-                return QrResult.Error(QrError.Checkup.INVALID_STATUS_TRANSITION)
+                return QrResult.Error(QrError.Checkup.InvalidStatusTransition())
 //                Result.failure(
 //                    Exception("Invalid status transition: ${checkUp.status} -> $newStatus")
 //                )
@@ -40,7 +40,7 @@ class UpdateCheckUpStatusUseCase @Inject constructor(
 //            Result.success(Unit)
 
         } catch (e: Exception) {
-            QrResult.Error(QrError.Checkup.UNKNOWN)
+            QrResult.Error(QrError.Checkup.Unknown())
         }
     }
 

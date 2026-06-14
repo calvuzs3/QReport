@@ -13,7 +13,7 @@ import net.calvuz.qreport.settings.domain.repository.TechnicianSettingsRepositor
 import javax.inject.Singleton
 
 /**
- * Modulo Hilt per Phase 6: Technician Settings & Enhanced Backup Integration
+ * Hilt Module: Technician Settings & Enhanced Backup Integration
  *
  * Provides:
  * - TechnicianSettingsRepository with backup support

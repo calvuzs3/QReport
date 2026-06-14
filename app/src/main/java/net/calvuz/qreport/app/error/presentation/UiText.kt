@@ -4,15 +4,16 @@ import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
-import net.calvuz.qreport.R
+import kotlinx.serialization.Serializable
 
+@Serializable
 sealed class UiText {
 
     /** A runtime string — use only when the text is not known at compile time. */
     data class DynStr(val str: String) : UiText()
 
     /** A string resource without format arguments. */
-    data class StringResource(@StringRes val resId: Int) : UiText()
+    data class StringResource(@param:StringRes val resId: Int) : UiText()
 
     /**
      * A string resource with format arguments (e.g. "%1$d items").
@@ -20,7 +21,8 @@ sealed class UiText {
      * Not a data class because vararg prevents auto-generated equals/hashCode.
      * Implemented manually so Compose recomposition and tests work correctly.
      */
-    class StringResources(@StringRes val resId: Int, vararg val args: Any) : UiText() {
+    @Suppress("HardCodedStringLiteral")
+    class StringResources(@param:StringRes val resId: Int, vararg val args: Any) : UiText() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other !is StringResources) return false

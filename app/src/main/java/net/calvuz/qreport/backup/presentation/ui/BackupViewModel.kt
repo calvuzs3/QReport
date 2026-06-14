@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.backup.domain.model.BackupInfo
 import net.calvuz.qreport.backup.domain.model.enum.BackupMode
 import net.calvuz.qreport.backup.presentation.ui.model.BackupProgress
@@ -51,9 +53,9 @@ data class BackupUiState(
 
     // Stati UI
     val isLoading: Boolean = false,
-    val successMessage: String? = null,
-    val errorMessage: String? = null,
-    val infoMessage: String? = null,
+    val successMessage: UiText? = null,
+    val errorMessage: UiText? = null,
+    val infoMessage: UiText? = null,
 
     // Share
     val showShareDialog: Boolean = false,
@@ -124,7 +126,7 @@ class BackupViewModel @Inject constructor(
     fun showShareDialog(backupId: String) {
         val backup = uiState.value.availableBackups.find { it.id == backupId }
         if (backup == null) {
-            showErrorMessage("Backup non trovato")
+            showErrorMessage(UiText.StringResource(R.string.backup_vm_err_not_found))
             return
         }
 
@@ -247,12 +249,12 @@ class BackupViewModel @Inject constructor(
                         is BackupProgress.Completed -> {
                             Timber.d("Backup completed: ${progress.backupPath}")
                             loadAvailableBackups() // Refresh lista
-                            showSuccessMessage("Backup creato con successo")
+                            showSuccessMessage(UiText.StringResource(R.string.backup_vm_success_created))
                         }
 
                         is BackupProgress.Error -> {
                             Timber.e("Backup failed: ${progress.message}")
-                            showErrorMessage("Errore durante backup: ${progress.message}")
+                            showErrorMessage(UiText.StringResources(R.string.backup_vm_err_during_backup, progress.message))
                         }
 
                         else -> {
@@ -263,7 +265,7 @@ class BackupViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "Backup creation failed")
                 _backupProgress.value = BackupProgress.Error("Errore imprevisto: ${e.message}")
-                showErrorMessage("Errore imprevisto durante backup")
+                showErrorMessage(UiText.StringResource(R.string.backup_vm_err_unexpected_backup))
             }
         }
     }
@@ -278,7 +280,7 @@ class BackupViewModel @Inject constructor(
 
         _backupProgress.value = BackupProgress.Idle
         Timber.d("Backup cancelled by user")
-        showInfoMessage("Backup annullato")
+        showInfoMessage(UiText.StringResource(R.string.backup_vm_info_backup_cancelled))
     }
 
     // ===== RESTORE ACTIONS =====
@@ -299,13 +301,13 @@ class BackupViewModel @Inject constructor(
                 // Prima valida backup
                 val backup = uiState.value.availableBackups.find { it.id == backupId }
                 if (backup == null) {
-                    showErrorMessage("Backup non trovato")
+                    showErrorMessage(UiText.StringResource(R.string.backup_vm_err_not_found))
                     return@launch
                 }
 
                 val validation = validateBackupUseCase(backup.filePath)
                 if (!validation.isValid) {
-                    showErrorMessage("Backup non valido: ${validation.issues.firstOrNull()}")
+                    showErrorMessage(UiText.StringResources(R.string.backup_vm_err_invalid, validation.issues.firstOrNull() ?: ""))
                     return@launch
                 }
 
@@ -320,12 +322,12 @@ class BackupViewModel @Inject constructor(
                     when (progress) {
                         is RestoreProgress.Completed -> {
                             Timber.d("Restore completed successfully")
-                            showSuccessMessage("Ripristino completato con successo")
+                            showSuccessMessage(UiText.StringResource(R.string.backup_vm_success_restored))
                         }
 
                         is RestoreProgress.Error -> {
                             Timber.e("Restore failed: ${progress.message}")
-                            showErrorMessage("Errore durante ripristino: ${progress.message}")
+                            showErrorMessage(UiText.StringResources(R.string.backup_vm_err_during_restore, progress.message))
                         }
 
                         else -> {
@@ -336,7 +338,7 @@ class BackupViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "Unexpected error during restore")
                 _restoreProgress.value = RestoreProgress.Error("Errore imprevisto: ${e.message}")
-                showErrorMessage("Errore imprevisto durante ripristino")
+                showErrorMessage(UiText.StringResource(R.string.backup_vm_err_unexpected_restore))
             }
         }
     }
@@ -351,7 +353,7 @@ class BackupViewModel @Inject constructor(
 
         _restoreProgress.value = RestoreProgress.Idle
         Timber.d("Restore cancelled by user")
-        showInfoMessage("Ripristino annullato")
+        showInfoMessage(UiText.StringResource(R.string.backup_vm_info_restore_cancelled))
     }
 
     // ===== BACKUP MANAGEMENT =====
@@ -366,16 +368,16 @@ class BackupViewModel @Inject constructor(
 
                 if (result.isSuccess) {
                     loadAvailableBackups() // Refresh lista
-                    showSuccessMessage("Backup eliminato")
+                    showSuccessMessage(UiText.StringResource(R.string.backup_vm_success_deleted))
                     Timber.d("Backup deleted: $backupId")
                 } else {
                     val error = result.exceptionOrNull()?.message ?: "Errore sconosciuto"
-                    showErrorMessage("Impossibile eliminare backup: $error")
+                    showErrorMessage(UiText.StringResources(R.string.backup_vm_err_delete_failed, error))
                     Timber.e("Failed to delete backup $backupId: $error")
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Error deleting backup $backupId")
-                showErrorMessage("Errore durante eliminazione backup")
+                showErrorMessage(UiText.StringResource(R.string.backup_vm_err_delete_unexpected))
             }
         }
     }
@@ -433,7 +435,7 @@ class BackupViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "Loading available backups failed")
                 _uiState.update { it.copy(isLoading = false) }
-                showErrorMessage("Errore caricamento backup")
+                showErrorMessage(UiText.StringResource(R.string.backup_vm_err_load))
             }
         }
     }
@@ -457,15 +459,15 @@ class BackupViewModel @Inject constructor(
 
     // ===== UI MESSAGES =====
 
-    private fun showSuccessMessage(message: String) {
+    private fun showSuccessMessage(message: UiText) {
         _uiState.update { it.copy(successMessage = message) }
     }
 
-    private fun showErrorMessage(message: String) {
+    private fun showErrorMessage(message: UiText) {
         _uiState.update { it.copy(errorMessage = message) }
     }
 
-    private fun showInfoMessage(message: String) {
+    private fun showInfoMessage(message: UiText) {
         _uiState.update { it.copy(infoMessage = message) }
     }
 
@@ -530,12 +532,12 @@ class BackupViewModel @Inject constructor(
                  when (progress) {
                      is ExportProgress.Completed -> {
                          _uiState.update { it.copy(isExporting = false) }
-                         showSuccessMessage("Backup esportato con successo")
+                         showSuccessMessage(UiText.StringResource(R.string.backup_vm_success_exported))
                          Timber.d("Export completed: ${progress.exportedPath}")
                      }
                      is ExportProgress.Error -> {
                          _uiState.update { it.copy(isExporting = false) }
-                         showErrorMessage(progress.message)
+                         showErrorMessage(UiText.DynStr(progress.message))
                          Timber.e("Export failed: ${progress.message}")
                      }
                      else -> { /* Progress updates */ }
@@ -545,7 +547,7 @@ class BackupViewModel @Inject constructor(
              Timber.e(e, "Export failed unexpectedly")
              _uiState.update { it.copy(isExporting = false) }
              _exportProgress.value = ExportProgress.Error("Errore imprevisto: ${e.message}")
-             showErrorMessage("Errore durante l'export")
+             showErrorMessage(UiText.StringResource(R.string.backup_vm_err_export))
          }
      }
  }
@@ -592,12 +594,12 @@ class BackupViewModel @Inject constructor(
                      is ImportProgress.Completed -> {
                          _uiState.update { it.copy(isImporting = false) }
                          loadAvailableBackups() // Refresh list to show imported backup
-                         showSuccessMessage("Backup importato con successo (${progress.filesImported} file)")
+                         showSuccessMessage(UiText.StringResources(R.string.backup_vm_success_imported, progress.filesImported))
                          Timber.d("Import completed: ${progress.backupId}")
                      }
                      is ImportProgress.Error -> {
                          _uiState.update { it.copy(isImporting = false) }
-                         showErrorMessage(progress.message)
+                         showErrorMessage(UiText.DynStr(progress.message))
                          Timber.e("Import failed: ${progress.message}")
                      }
                      else -> { /* Progress updates */ }
@@ -607,7 +609,7 @@ class BackupViewModel @Inject constructor(
              Timber.e(e, "Import failed unexpectedly")
              _uiState.update { it.copy(isImporting = false) }
              _importProgress.value = ImportProgress.Error("Errore imprevisto: ${e.message}")
-             showErrorMessage("Errore durante l'import")
+             showErrorMessage(UiText.StringResource(R.string.backup_vm_err_import))
          }
      }
  }

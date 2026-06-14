@@ -60,19 +60,13 @@ import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionFormScreen
 import net.calvuz.qreport.ti.presentation.ui.TechnicalInterventionListScreen
 
 /**
- * Sistema di navigazione QReport - COMPLETO
+ * QReport Navigation System
  *
- * Gestisce la navigazione principale dell'app con:
- * - Bottom Navigation Bar con 4 destinazioni principali
- * - Navigation Component per Compose
- * - State management per destinazioni attive
- * - Flusso completo creazione e dettagli check-up
- *
- * Struttura:
- * - Home: Dashboard con quick actions
- * - Check-up: Lista e gestione check-up
- * - Clienti: Gestione clienti
- * - Impostazioni: Configurazioni app
+ * Manages the app's main navigation:
+ * - Bottom navigation bar with 4 primary destinations
+ * - Navigation Component for Compose
+ * - State management for the active destination
+ * - Full check-up creation and detail flow
  */
 sealed class QReportDestination(
     val route: String,
@@ -110,7 +104,7 @@ sealed class QReportDestination(
 }
 
 /**
- * Routes per navigazione secondaria
+ * Routes for secondary navigation
  */
 object QReportRoutes {
     const val HOME = "home"
@@ -119,18 +113,18 @@ object QReportRoutes {
     const val SETTINGS = "settings"
     const val TI = "tis"
 
-    // Intervention
+    // Intervention routes
     const val TI_CREATE = "ti_form"
     const val TI_EDIT = "ti_edit_form/{interventionId}"
 
-    // Settings
+    // Settings routes
     const val TECHNICIAN_SETTINGS = "technician_settings"
 
-    // Sync
+    // Sync routes
     const val SYNC_SETTINGS = "sync_settings"
     const val SYNC_LOGIN = "sync_login"
 
-    // Check up management routes
+    // Check-up management routes
     const val CHECKUP_CREATE = "checkup_create"
     const val CHECKUP_DETAIL = "checkup_detail/{checkUpId}"
     const val CAMERA = "camera/{checkItemId}"
@@ -161,56 +155,42 @@ object QReportRoutes {
 
     // Island routes
     const val ISLAND_LIST = "islands/{facilityId}"
-    const val ISLAND_LIST_ALL = "islands_all"   // No facility filter — shows all islands
+    const val ISLAND_LIST_ALL = "islands_all" // No facility filter — shows all islands
     const val ISLAND_DETAIL = "island_detail/{facilityId}/{islandId}"
     const val ISLAND_CREATE = "island_form/{facilityId}"
     const val ISLAND_EDIT = "island_form/{facilityId}/{islandId}"
 
-    // Unit
-
+    // Unit routes
     const val UNIT_LIST = "units/{islandId}"
     const val UNIT_CREATE = "unit_form/{islandId}"
     const val UNIT_EDIT = "unit_form/{islandId}/{unitId}"
-    fun unitList(islandId: String) = "units/$islandId"
-    fun unitAdd(islandId: String) = "unit_form/$islandId"
-    fun unitEdit(islandId: String, unitId: String) = "unit_form/$islandId/$unitId"
 
-
-    // Maintenance Log routes
-
-
+    // Maintenance log routes
     const val MAINTENANCE_LOG_CREATE = "maintenance_log_form/{islandId}"
-    const val ISLAND_HEALTH          = "island_health/{islandId}"
+    const val ISLAND_HEALTH = "island_health/{islandId}"
 
-    fun maintenanceLogCreateRoute(islandId: String) =
-        "maintenance_log_form/$islandId"
-    fun islandHealthRoute(islandId: String) =
-        "island_health/$islandId"
-
-
-    // Backup
+    // Backup routes
     const val BACKUP = "backup"
 
+    // ------------------------------------------------------------
+    // Helper functions
+    // ------------------------------------------------------------
 
-    // Helper extension for URL encoding client names with spaces/special chars
     private fun String.encodeUrl(): String = URLEncoder.encode(this, "UTF-8")
 
-
-    // Helpers for TI
+    // Intervention
     fun ti() = "tis"
     fun tiCreateRoute() = "ti_form"
     fun tiEditRoute(interventionId: String) = "ti_edit_form/$interventionId"
 
-    // Helper functions for CLIENTS
-
+    // Client
     fun clientDetail(clientId: String, clientName: String) =
         "client_detail/$clientId/$clientName"
 
     fun clientEdit(clientId: String) =
         "client_edit/$clientId"
 
-    // Helper functions for CONTACT
-
+    // Contact
     fun contactCreateRoute(clientId: String, clientName: String) =
         "contact_form/$clientId/${clientName.encodeUrl()}"
 
@@ -220,8 +200,7 @@ object QReportRoutes {
     fun contactListRoute(clientId: String, clientName: String) =
         "contacts/$clientId/${clientName.encodeUrl()}"
 
-    // Helper for CONTRACTS
-
+    // Contract
     fun contractListRoute(clientId: String, clientName: String) =
         "contracts/$clientId/${clientName.encodeUrl()}"
 
@@ -231,8 +210,7 @@ object QReportRoutes {
     fun contractEditRoute(clientId: String, clientName: String, contractId: String?) =
         "contract_form/$clientId/${clientName.encodeUrl()}/$contractId"
 
-    // Helper functions for FACILITY
-
+    // Facility
     fun facilityListRoute(clientId: String) =
         "facilities/$clientId"
 
@@ -245,17 +223,27 @@ object QReportRoutes {
     fun facilityCreateRoute(clientId: String) =
         "facility_form/$clientId"
 
-    // Helper functions for FACILITY ISLAND
-
+    // Island
     fun islandListRoute(facilityId: String) = "islands/$facilityId"
+
     fun islandDetailRoute(facilityId: String, islandId: String) =
         "island_detail/$facilityId/$islandId"
 
     fun islandCreateRoute(facilityId: String) = "island_form/$facilityId"
-    fun islandEditRoute(facilityId: String, islandId: String) = "island_form/$facilityId/$islandId"
 
-    // Helper functions for CHECK-UPs
+    fun islandEditRoute(facilityId: String, islandId: String) =
+        "island_form/$facilityId/$islandId"
 
+    // Unit
+    fun unitList(islandId: String) = "units/$islandId"
+    fun unitAdd(islandId: String) = "unit_form/$islandId"
+    fun unitEdit(islandId: String, unitId: String) = "unit_form/$islandId/$unitId"
+
+    // Maintenance log
+    fun maintenanceLogCreateRoute(islandId: String) = "maintenance_log_form/$islandId"
+    fun islandHealthRoute(islandId: String) = "island_health/$islandId"
+
+    // Check-up
     fun checkUpCreateRoute(clientId: String? = null) = "checkup_create"
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
@@ -264,11 +252,10 @@ object QReportRoutes {
         "photo_import_preview/$checkItemId?photoUri=$photoUri"
 
     fun exportOptions(checkUpId: String) = "export_options/$checkUpId"
-
 }
 
 /**
- * Lista delle destinazioni bottom navigation
+ * List of bottom navigation destinations
  */
 val bottomNavDestinations = listOf(
     QReportDestination.Home,
@@ -278,7 +265,7 @@ val bottomNavDestinations = listOf(
 )
 
 /**
- * Composable principale per la navigazione
+ * Main navigation composable
  */
 @Composable
 fun QReportNavigation(
@@ -298,7 +285,7 @@ fun QReportNavigation(
                 modifier = Modifier.fillMaxSize()
             ) {
                 // ============================================================
-                // ✅ MAIN DESTINATIONS (Bottom Navigation)
+                // MAIN DESTINATIONS (Bottom Navigation)
                 // ============================================================
 
                 composable(QReportRoutes.HOME) {
@@ -392,7 +379,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ INTERVENTION DESTINATIONS
+                // INTERVENTION DESTINATIONS
                 // ============================================================
 
                 composable(QReportRoutes.TI_CREATE) {
@@ -425,7 +412,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ SETTINGS DESTINATIONS
+                // SETTINGS DESTINATIONS
                 // ============================================================
 
                 composable(QReportRoutes.TECHNICIAN_SETTINGS) {
@@ -437,7 +424,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ SYNC DESTINATIONS
+                // SYNC DESTINATIONS
                 // ============================================================
 
                 composable(QReportRoutes.SYNC_SETTINGS) {
@@ -459,7 +446,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ CHECK-UP MANAGEMENT DESTINATIONS
+                // CHECK-UP MANAGEMENT DESTINATIONS
                 // ============================================================
 
                 // New Check-up Creation
@@ -508,7 +495,7 @@ fun QReportNavigation(
                             // Navigate back to checkup list after delete
                             navController.navigate(QReportRoutes.CHECKUPS) {
                                 popUpTo(QReportRoutes.checkupDetail(checkUpId)) {
-                                    inclusive = true  // Remove checkup detail from stack
+                                    inclusive = true // Remove checkup detail from stack
                                 }
                             }
                         }
@@ -530,7 +517,7 @@ fun QReportNavigation(
                         checkItemId = checkItemId,
                         onNavigateBack = { navController.popBackStack() },
                         onPhotoSaved = {
-                            // Torna indietro dopo aver salvato la foto
+                            // Go back after saving the photo
                             navController.popBackStack()
                         }
                     )
@@ -587,7 +574,7 @@ fun QReportNavigation(
                             navController.popBackStack()
                         },
                         onImportSuccess = {
-                            // Torna alla gallery dopo import successo
+                            // Return to gallery after a successful import
                             navController.popBackStack()
                         }
                     )
@@ -612,7 +599,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ CLIENT MANAGEMENT DESTINATIONS
+                // CLIENT MANAGEMENT DESTINATIONS
                 // ============================================================
 
                 composable(
@@ -634,7 +621,7 @@ fun QReportNavigation(
                             // Navigate back to client list after delete
                             navController.navigate(QReportRoutes.CLIENTS) {
                                 popUpTo(QReportRoutes.clientDetail(clientId, clientName)) {
-                                    inclusive = true  // Remove client detail from stack
+                                    inclusive = true // Remove client detail from stack
                                 }
                             }
                         },
@@ -701,7 +688,7 @@ fun QReportNavigation(
                     )
                 }
 
-                // ✅ Client Create
+                // Client Create
                 composable(QReportRoutes.CLIENT_CREATE) {
                     ClientFormScreen(
                         onNavigateBack = {
@@ -720,7 +707,7 @@ fun QReportNavigation(
                     )
                 }
 
-                // ✅ Client Edit
+                // Client Edit
                 composable(
                     route = QReportRoutes.CLIENT_EDIT,
                     arguments = listOf(
@@ -750,7 +737,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // CONTACT
+                // CONTACT DESTINATIONS
                 // ============================================================
 
                 // CREATE
@@ -816,7 +803,7 @@ fun QReportNavigation(
                         contactId = contactId,
                         onNavigateBack = { navController.popBackStack() },
                         onContactSaved = { contactId ->
-                            // Torna indietro
+                            // Go back
                             navController.popBackStack()
                         }
                     )
@@ -833,7 +820,7 @@ fun QReportNavigation(
                     val clientId = backStackEntry.arguments?.getString("clientId") ?: ""
                     val clientName = backStackEntry.arguments?.getString("clientName")?.let {
                         URLDecoder.decode(it, "UTF-8")
-                    } ?: "Cliente"
+                    } ?: "Customer"
 
                     ContactListScreen(
                         clientId = clientId,
@@ -857,7 +844,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ CONTRACT DESTINATIONS
+                // CONTRACT DESTINATIONS
                 // ============================================================
 
                 composable(
@@ -970,7 +957,7 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // FACILITY' SCREENS
+                // FACILITY DESTINATIONS
                 // ============================================================
 
                 // 1. DETAIL
@@ -1076,9 +1063,8 @@ fun QReportNavigation(
                     )
                 }
 
-
                 // ============================================================
-                // FACILITY ISLAND SCREENS - ✅ FIXED con GetFacilityByIdUseCase
+                // ISLAND DESTINATIONS
                 // ============================================================
 
                 // 1. CREATE
@@ -1092,7 +1078,7 @@ fun QReportNavigation(
 
                     IslandFormScreen(
                         facilityId = facilityId,
-                        facilityName = "", // ✅ SIMPLE: Let ViewModel handle facilityName lookup
+                        facilityName = "", // Let ViewModel handle facilityName lookup
                         islandId = null, // Create mode
                         onNavigateBack = { navController.popBackStack() },
                         onIslandSaved = { savedIslandId ->
@@ -1123,7 +1109,7 @@ fun QReportNavigation(
 
                     IslandFormScreen(
                         facilityId = facilityId,
-                        facilityName = "", // ✅ SIMPLE: Let ViewModel handle facilityName lookup
+                        facilityName = "", // Let ViewModel handle facilityName lookup
                         islandId = islandId, // Edit mode
                         onNavigateBack = { navController.popBackStack() },
                         onIslandSaved = { savedIslandId ->
@@ -1187,7 +1173,7 @@ fun QReportNavigation(
                         onIslandDeleted = {
                             navController.popBackStack()
                         },
-                        // ── Maintenance Log — filled ──────────────────────────
+                        // Maintenance log
                         onNavigateToCreateMaintenanceLog = { iId ->
                             // islandName is resolved by IslandDetailViewModel;
                             navController.navigate(
@@ -1211,7 +1197,7 @@ fun QReportNavigation(
 
                     IslandListScreen(
                         facilityId = facilityId,
-                        facilityName = "", // ✅ SIMPLE: Let ViewModel handle facilityName lookup
+                        facilityName = "", // Let ViewModel handle facilityName lookup
                         onNavigateToIslandDetail = { islandId ->
                             navController.navigate(
                                 QReportRoutes.islandDetailRoute(
@@ -1230,7 +1216,7 @@ fun QReportNavigation(
                 // 4b. LIST ALL — no facility filter, navigated from HomeScreen
                 composable(QReportRoutes.ISLAND_LIST_ALL) {
                     IslandListScreen(
-                        facilityId = "",        // blank = load all islands
+                        facilityId = "", // blank = load all islands
                         facilityName = "",
                         onNavigateToIslandDetail = { islandId ->
                             navController.navigate(
@@ -1245,10 +1231,10 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ UNIT
+                // UNIT DESTINATIONS
                 // ============================================================
 
-                // ── MechanicalUnit list ──────────────────────────────────────────────────────
+                // Unit list
                 composable(
                     route = QReportRoutes.UNIT_LIST,
                     arguments = listOf(navArgument("islandId") { type = NavType.StringType })
@@ -1267,7 +1253,7 @@ fun QReportNavigation(
                     )
                 }
 
-                // ── MechanicalUnit add ───────────────────────────────────────────────────────
+                // Unit create
                 composable(
                     route = QReportRoutes.UNIT_CREATE,
                     arguments = listOf(navArgument("islandId") { type = NavType.StringType })
@@ -1277,7 +1263,7 @@ fun QReportNavigation(
                     )
                 }
 
-                // ── MechanicalUnit edit ──────────────────────────────────────────────────────
+                // Unit edit
                 composable(
                     route = QReportRoutes.UNIT_EDIT,
                     arguments = listOf(
@@ -1291,10 +1277,10 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ MAINTENANCE LOG
+                // MAINTENANCE LOG DESTINATIONS
                 // ============================================================
 
-                // ── Create maintenance log ───────────────────────────────────
+                // Create maintenance log
                 composable(
                     route = QReportRoutes.MAINTENANCE_LOG_CREATE,
                     arguments = listOf(
@@ -1310,7 +1296,7 @@ fun QReportNavigation(
                     )
                 }
 
-                // ── Island health analysis (M5 — registered now, screen added in M5) ──
+                // Island health analysis
                 composable(
                     route = QReportRoutes.ISLAND_HEALTH,
                     arguments = listOf(
@@ -1326,10 +1312,9 @@ fun QReportNavigation(
                 }
 
                 // ============================================================
-                // ✅ BACKUP
+                // BACKUP DESTINATIONS
                 // ============================================================
 
-                // ===== BACKUP SCREEN =====
                 composable(QReportRoutes.BACKUP) {
                     BackupScreen(
                         onNavigateBack = {
@@ -1405,7 +1390,7 @@ fun QReportBottomNavigation(
                 selected = isSelected,
                 onClick = {
                     if (destination.route == QReportRoutes.HOME) {
-                        // Per Home, naviga senza salvare/ripristinare stato
+                        // For Home, navigate without saving/restoring state
                         navController.navigate(destination.route) {
                             popUpTo(navController.graph.findStartDestination().id) {
                                 inclusive = false

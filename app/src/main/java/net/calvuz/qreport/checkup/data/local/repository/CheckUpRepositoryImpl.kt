@@ -16,9 +16,10 @@ import net.calvuz.qreport.app.app.domain.model.CriticalityLevel
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.checkup.domain.model.module.ModuleProgress
 import net.calvuz.qreport.checkup.domain.model.spare.SparePart
+import net.calvuz.qreport.checkup.data.local.mapper.toDomain
+import net.calvuz.qreport.checkup.data.local.mapper.toEntity
 import net.calvuz.qreport.checkup.domain.repository.CheckUpRepository
-import net.calvuz.qreport.app.app.data.local.mapper.toDomain
-import net.calvuz.qreport.app.app.data.local.mapper.toEntity
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -176,6 +177,7 @@ class CheckUpRepositoryImpl @Inject constructor(
                 val moduleTotal = try {
                     checkItemDao.getItemsCountByModule(id, moduleTypeName) ?: 0
                 } catch (e: Exception) {
+                    Timber.w(e, "Method not found for module: $moduleTypeName")
                     // Fallback se il metodo non esiste
                     0
                 }
@@ -184,18 +186,19 @@ class CheckUpRepositoryImpl @Inject constructor(
                     val moduleCompleted = try {
                         checkItemDao.getCompletedItemsCountByModule(id, moduleTypeName) ?: 0
                     } catch (e: Exception) {
+                        Timber.w(e, "Method not found for module: $moduleTypeName")
+                        // Fallback se il metodo non esiste
                         0
                     }
 
                     val moduleCritical = try {
                         checkItemDao.getCriticalIssuesCountByModule(id, moduleTypeName) ?: 0
                     } catch (e: Exception) {
+                        Timber.w(e, "Method not found for module: $moduleTypeName")
                         0
                     }
 
-                    val modulePercentage = if (moduleTotal > 0) {
-                        (moduleCompleted.toFloat() / moduleTotal) * 100f
-                    } else 0f
+                    val modulePercentage = (moduleCompleted.toFloat() / moduleTotal) * 100f
 
                     moduleProgress[moduleTypeName] = ModuleProgress(
                         totalItems = moduleTotal,
@@ -206,6 +209,7 @@ class CheckUpRepositoryImpl @Inject constructor(
                 }
             }
         } catch (e: Exception) {
+            Timber.w(e, "Error getting module progress")
             // Fallback completo se i metodi del DAO non esistono ancora
             // Lascia moduleProgress vuoto per ora
         }
@@ -230,7 +234,8 @@ class CheckUpRepositoryImpl @Inject constructor(
             // Se hai un metodo nel PhotoDao per contare direttamente
             photoDao.getPhotosCountByCheckUp(checkUpId)
         } catch (e: Exception) {
-            // Fallback: conta attraverso i check items
+            Timber.w(e, "Method not found for photos count")
+            // Fallback: count with check items
 //            try {
 //                val checkItems = checkItemDao.getCheckItemsByCheckUp(checkUpId)
 //                checkItems.sumOf { it. .photos.size }

@@ -11,12 +11,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.photo.domain.model.PhotoPerspective
 
 /**
@@ -106,13 +109,13 @@ private fun PhotoImportTopBar(
 ) {
     TopAppBar(
         title = {
-            Text("Importa Foto")
+            Text(stringResource(R.string.photo_import_title))
         },
         navigationIcon = {
             IconButton(onClick = onNavigateBack) {
                 Icon(
                     imageVector = Icons.Default.ArrowBackIosNew,
-                    contentDescription = "Torna indietro"
+                    contentDescription = stringResource(R.string.photo_import_cd_back)
                 )
             }
         },
@@ -132,10 +135,10 @@ private fun PhotoImportTopBar(
                             strokeWidth = 2.dp,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
-                        Text("Importando...")
+                        Text(stringResource(R.string.photo_import_importing))
                     }
                 } else {
-                    Text("Conferma")
+                    Text(stringResource(R.string.action_confirm))
                 }
             }
         },
@@ -209,7 +212,7 @@ private fun PhotoPreviewCard(
                     .data(photoUri)
                     .crossfade(true)
                     .build(),
-                contentDescription = "Anteprima foto da importare",
+                contentDescription = stringResource(R.string.photo_import_cd_preview),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Fit
             )
@@ -245,14 +248,14 @@ private fun PerspectiveDropdownCard(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Prospettiva *",
+                    text = stringResource(R.string.photo_import_perspective_required_label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
 
             Text(
-                text = "Seleziona la prospettiva che meglio descrive questa foto:",
+                text = stringResource(R.string.photo_import_perspective_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -289,10 +292,10 @@ private fun PerspectiveDropdownSelector(
             onValueChange = { },
             readOnly = true,
             label = {
-                Text("Scegli prospettiva")
+                Text(stringResource(R.string.photo_import_perspective_label))
             },
             placeholder = {
-                Text("Seleziona una prospettiva...")
+                Text(stringResource(R.string.photo_import_perspective_placeholder))
             },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -307,7 +310,7 @@ private fun PerspectiveDropdownSelector(
             supportingText = {
                 if (selectedPerspective == null) {
                     Text(
-                        text = "Campo obbligatorio",
+                        text = stringResource(R.string.photo_import_field_required),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -348,7 +351,7 @@ private fun PerspectiveDropdownSelector(
                         {
                             Icon(
                                 imageVector = Icons.Default.Check,
-                                contentDescription = "Selezionata",
+                                contentDescription = stringResource(R.string.photo_import_cd_selected),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -387,7 +390,7 @@ private fun CaptionInputCard(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Descrizione",
+                    text = stringResource(R.string.photo_import_description_label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -399,11 +402,11 @@ private fun CaptionInputCard(
                 modifier = Modifier.fillMaxWidth(),
 
                 placeholder = {
-                    Text("Aggiungi una descrizione...")
+                    Text(stringResource(R.string.photo_import_description_placeholder))
                 },
                 maxLines = 3,
                 supportingText = {
-                    Text("${caption.length}/200 caratteri")
+                    Text(stringResource(R.string.photo_import_caption_char_count, caption.length))
                 }
             )
         }
@@ -430,7 +433,7 @@ private fun InfoCard() {
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = "La foto verrà processata e salvata con gli stessi metadati delle foto catturate dalla camera.",
+                text = stringResource(R.string.photo_import_info_message),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -453,7 +456,7 @@ private fun PhotoImportLoading() {
         ) {
             CircularProgressIndicator()
             Text(
-                text = "Caricamento anteprima...",
+                text = stringResource(R.string.photo_import_loading),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -465,7 +468,7 @@ private fun PhotoImportLoading() {
  */
 @Composable
 private fun PhotoImportError(
-    error: String,
+    error: UiText,
     onRetry: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -489,12 +492,12 @@ private fun PhotoImportError(
                 )
 
                 Text(
-                    text = "Errore import foto",
+                    text = stringResource(R.string.photo_import_error_title),
                     style = MaterialTheme.typography.headlineSmall
                 )
 
                 Text(
-                    text = error,
+                    text = error.asString(),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -502,10 +505,10 @@ private fun PhotoImportError(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(onClick = onDismiss) {
-                        Text("Annulla")
+                        Text(stringResource(R.string.action_cancel))
                     }
                     Button(onClick = onRetry) {
-                        Text("Riprova")
+                        Text(stringResource(R.string.action_retry))
                     }
                 }
             }

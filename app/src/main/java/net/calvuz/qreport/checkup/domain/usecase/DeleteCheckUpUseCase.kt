@@ -16,13 +16,13 @@ class DeleteCheckUpUseCase @Inject constructor(
     suspend operator fun invoke(checkUpId: String): QrResult<Unit, QrError.Checkup> {
         return try {
             val checkUp = repository.getCheckUpById(checkUpId)
-                ?: return QrResult.Error(QrError.Checkup.NOT_FOUND) //Exception("CheckUp not found: $checkUpId"))
+                ?: return QrResult.Error(QrError.Checkup.NotFound()) //Exception("CheckUp not found: $checkUpId"))
 
             // Validation: non si possono eliminare check-up completati/esportati/archiviati
             val err = when (checkUp.status) {  // in listOf(
-                CheckUpStatus.COMPLETED -> QrError.Checkup.CANNOT_DELETE_COMPLETED
-                CheckUpStatus.EXPORTED -> QrError.Checkup.CANNOT_DELETE_EXPORTED
-                CheckUpStatus.ARCHIVED -> QrError.Checkup.CANNOT_DELETE_ARCHIVED
+                CheckUpStatus.COMPLETED -> QrError.Checkup.CannotDeleteCompleted()
+                CheckUpStatus.EXPORTED -> QrError.Checkup.CannotDeleteExported()
+                CheckUpStatus.ARCHIVED -> QrError.Checkup.CannotDeleteArchived()
                 else -> null
             }
             if (err!= null)
@@ -30,12 +30,12 @@ class DeleteCheckUpUseCase @Inject constructor(
 
             val result = repository.deleteCheckUp(checkUpId)
 
-            Timber.v("Deleted checkup: $result")
+            Timber.d("Deleted checkup: $result")
             QrResult.Success(result)
 
         } catch (e: Exception) {
             Timber.e("Exception: ${e.message}")
-            QrResult.Error(QrError.Checkup.UNKNOWN)
+            QrResult.Error(QrError.Checkup.Unknown())
         }
     }
 }

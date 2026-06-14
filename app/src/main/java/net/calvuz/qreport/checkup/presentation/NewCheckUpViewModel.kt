@@ -95,7 +95,7 @@ class NewCheckUpViewModel @Inject constructor(
 
         if (!currentState.canCreate) {
             _uiState.value = currentState.copy(
-                error = (QrError.Checkup.FIELDS_REQUIRED) //"Compilare tutti i campi obbligatori"
+                error = (QrError.Checkup.FieldsRequired()) //"Compilare tutti i campi obbligatori"
             )
             return
         }
@@ -132,7 +132,7 @@ class NewCheckUpViewModel @Inject constructor(
                         Timber.e(error, "Failed to create check-up")
                         _uiState.value = currentState.copy(
                             isCreating = false,
-                            error = QrError.Checkup.CREATE  // "Errore creazione check-up: ${error.message}"
+                            error = QrError.Checkup.Create()  // "Errore creazione check-up: ${error.message}"
                         )
                     }
                 )
@@ -141,7 +141,7 @@ class NewCheckUpViewModel @Inject constructor(
                 Timber.e(e, "Exception during check-up creation")
                 _uiState.value = currentState.copy(
                     isCreating = false,
-                    error = QrError.Checkup.UNKNOWN // "Errore imprevisto: ${e.message}"
+                    error = QrError.Checkup.Unknown() // "Errore imprevisto: ${e.message}"
                 )
             }
         }

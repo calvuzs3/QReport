@@ -18,7 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 
 
 @Composable
@@ -28,10 +30,10 @@ fun ErrorState(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val errorMessage = error.takeIf { it.isNotBlank() } ?: "Errore sconosciuto"
-    val textError = "Errore"
-    val textActionClose = "Chiudi"
-    val textActionTryAgain  = "Riprova"
+    val errorMessage = error.takeIf { it.isNotBlank() } ?: stringResource(R.string.error_generic)
+    val textError = stringResource(R.string.error_state_title)
+    val textActionClose = stringResource(R.string.error_state_action_dismiss)
+    val textActionTryAgain = stringResource(R.string.error_state_action_retry)
 
     Column(
         modifier = modifier

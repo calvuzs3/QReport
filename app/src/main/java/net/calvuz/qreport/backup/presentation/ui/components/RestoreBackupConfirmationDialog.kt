@@ -8,8 +8,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.backup.domain.model.BackupInfo
 import net.calvuz.qreport.backup.domain.model.enum.RestoreStrategy
 import net.calvuz.qreport.backup.presentation.model.RestoreStrategyExt.getDescription
@@ -55,7 +57,7 @@ fun RestoreBackupConfirmationDialog(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Ripristina Backup",
+                    text = stringResource(R.string.backup_restore_confirm_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -76,7 +78,7 @@ fun RestoreBackupConfirmationDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Backup da ripristinare:",
+                            text = stringResource(R.string.backup_restore_confirm_info_label),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Medium
                         )
@@ -86,11 +88,11 @@ fun RestoreBackupConfirmationDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "📅 ${(backup.createdAt).toItalianDate()}",
+                                text = stringResource(R.string.backup_restore_confirm_date_format, (backup.createdAt).toItalianDate()),
                                 style = MaterialTheme.typography.bodySmall
                             )
                             Text(
-                                text = "📦 ${backup.totalSize.getFormattedSize()}",
+                                text = stringResource(R.string.backup_restore_confirm_size_format, backup.totalSize.getFormattedSize()),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -115,7 +117,10 @@ fun RestoreBackupConfirmationDialog(
                                     tint = MaterialTheme.colorScheme.secondary
                                 )
                                 Text(
-                                    text = "Include foto (${backup.photoCount ?: "N/A"})",
+                                    text = stringResource(
+                                        R.string.backup_restore_confirm_includes_photos,
+                                        backup.photoCount?.toString() ?: stringResource(R.string.backup_restore_confirm_photo_count_na)
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.secondary
                                 )
@@ -126,7 +131,7 @@ fun RestoreBackupConfirmationDialog(
 
                 // Strategy selection
                 Text(
-                    text = "Strategia di ripristino:",
+                    text = stringResource(R.string.backup_restore_confirm_strategy_label),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -181,16 +186,16 @@ fun RestoreBackupConfirmationDialog(
                         )
                         Column {
                             Text(
-                                text = "⚠️ Attenzione",
+                                text = stringResource(R.string.backup_restore_confirm_warning_title),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.error
                             )
                             Text(
                                 text = if (selectedStrategy == RestoreStrategy.REPLACE_ALL) {
-                                    "Tutti i dati esistenti verranno sostituiti. Questa operazione non è reversibile."
+                                    stringResource(R.string.backup_restore_confirm_warning_replace_all)
                                 } else {
-                                    "I dati esistenti verranno uniti con quelli del backup. Verificare compatibilità."
+                                    stringResource(R.string.backup_restore_confirm_warning_merge)
                                 },
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -217,12 +222,12 @@ fun RestoreBackupConfirmationDialog(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Ripristina")
+                Text(stringResource(R.string.backup_restore_confirm_action))
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
-                Text("Annulla")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

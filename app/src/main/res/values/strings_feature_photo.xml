@@ -5,11 +5,70 @@
     <string name="photo_photo_quality_optimized_name">Ottimizzata</string>
     <string name="photo_photo_quality_compressed_name">Compressa</string>
 
+    <!-- CameraController / CameraViewModel - errors -->
+    <string name="photo_camera_err_init_failed">Impossibile inizializzare la camera</string>
+    <string name="photo_camera_err_init">Errore inizializzazione: %1$s</string>
+    <string name="photo_camera_err_not_initialized">Camera non inizializzata</string>
+    <string name="photo_camera_err_capture">Errore cattura: %1$s</string>
+    <string name="photo_camera_err_save">Errore salvataggio: %1$s</string>
+    <string name="photo_camera_err_init_camera">Errore inizializzazione camera: %1$s</string>
+    <string name="photo_camera_err_binding">Errore binding camera: %1$s</string>
 
+    <!-- CameraScreen -->
+    <string name="photo_camera_initializing">Inizializzazione camera...</string>
+    <string name="photo_camera_cd_back">Indietro</string>
+    <string name="photo_camera_cd_flash">Flash</string>
+    <string name="photo_camera_cd_zoom_in">Zoom In</string>
+    <string name="photo_camera_cd_zoom_out">Zoom Out</string>
+    <string name="photo_camera_cd_capture">Scatta Foto</string>
+    <string name="photo_camera_permission_required_title">Permesso Camera Richiesto</string>
+    <string name="photo_camera_permission_required_message">Per scattare foto durante i check-up, l\'app ha bisogno dell\'accesso alla camera.</string>
+    <string name="photo_camera_permission_grant">Concedi Permesso</string>
+    <string name="photo_camera_permission_rationale_title">Permesso Camera Necessario</string>
+    <string name="photo_camera_permission_rationale_message">QReport ha bisogno dell\'accesso alla camera per documentare i check-up con foto. Senza questo permesso non sarà possibile acquisire immagini dei componenti ispezionati.</string>
+    <string name="photo_camera_permission_retry">Riprova</string>
+    <string name="photo_camera_permission_back">Torna Indietro</string>
 
+    <!-- PhotoViewModel - import errors -->
+    <string name="photo_import_err_load_info">Errore caricamento info foto</string>
+    <string name="photo_import_err_import">Errore durante l\'import</string>
+    <string name="photo_import_err_invalid_photo">Foto non valida o non accessibile</string>
+    <string name="photo_import_err_validation">Errore validazione foto</string>
 
+    <!-- PhotoImportPreviewScreen -->
+    <string name="photo_import_title">Importa Foto</string>
+    <string name="photo_import_cd_back">Torna indietro</string>
+    <string name="photo_import_importing">Importando...</string>
+    <string name="photo_import_cd_preview">Anteprima foto da importare</string>
+    <string name="photo_import_perspective_required_label">Prospettiva *</string>
+    <string name="photo_import_perspective_description">Seleziona la prospettiva che meglio descrive questa foto:</string>
+    <string name="photo_import_perspective_label">Scegli prospettiva</string>
+    <string name="photo_import_perspective_placeholder">Seleziona una prospettiva...</string>
+    <string name="photo_import_field_required">Campo obbligatorio</string>
+    <string name="photo_import_cd_selected">Selezionata</string>
+    <string name="photo_import_description_label">Descrizione</string>
+    <string name="photo_import_description_placeholder">Aggiungi una descrizione...</string>
+    <string name="photo_import_caption_char_count">%1$d/200 caratteri</string>
+    <string name="photo_import_info_message">La foto verrà processata e salvata con gli stessi metadati delle foto catturate dalla camera.</string>
+    <string name="photo_import_loading">Caricamento anteprima...</string>
+    <string name="photo_import_error_title">Errore import foto</string>
 
+    <!-- CheckItemPhotoPreview -->
+    <string name="photo_preview_cd_check_item_photo">Foto check item</string>
+    <string name="photo_preview_empty">Nessuna foto</string>
+    <string name="photo_preview_cd_add">Aggiungi foto</string>
 
+    <!-- PhotoGalleryScreen -->
+    <string name="photo_gallery_title">Foto Check Item</string>
+    <string name="photo_gallery_count">%1$d foto</string>
+    <string name="photo_gallery_cd_back">Indietro</string>
+    <string name="photo_gallery_cd_import">Importa dalla galleria</string>
+    <string name="photo_gallery_capture_photo">Scatta Foto</string>
+    <string name="photo_gallery_cd_photo">Foto %1$s</string>
+    <string name="photo_gallery_file_not_found">File non trovato</string>
+    <string name="photo_gallery_loading">Caricamento foto...</string>
+    <string name="photo_gallery_empty_title">Nessuna foto presente</string>
+    <string name="photo_gallery_empty_message">Scatta la prima foto per questo check item</string>
 
 
 

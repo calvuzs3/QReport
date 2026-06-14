@@ -1,9 +1,10 @@
+@file:Suppress("HardCodedStringLiteral", "unused")
 package net.calvuz.qreport.app.app.data.converter
 
-import androidx.room.TypeConverter
 import net.calvuz.qreport.app.app.domain.model.Address
 import net.calvuz.qreport.app.app.domain.model.GeoCoordinates
 import org.json.JSONObject
+import androidx.room.TypeConverter
 import javax.inject.Inject
 
 /**
@@ -17,26 +18,26 @@ class AddressConverter @Inject constructor() {
 
     @TypeConverter
     fun fromAddress(address: Address?): String? {
-        return address?.let { addr ->
+        return address?.let { address ->
             try {
                 val json = JSONObject().apply {
-                    addr.street?.let { put("street", it) }
-                    addr.streetNumber?.let { put("streetNumber", it) }
-                    addr.postalCode?.let { put("postalCode", it) }
-                    addr.city?.let { put("city", it) }
-                    addr.province?.let { put("province", it) }
-                    put("country", addr.country)
-                    addr.notes?.let { put("notes", it) }
+                    address.street?.let { put("street", it) }
+                    address.streetNumber?.let { put("streetNumber", it) }
+                    address.postalCode?.let { put("postalCode", it) }
+                    address.city?.let { put("city", it) }
+                    address.province?.let { put("province", it) }
+                    put("country", address.country)
+                    address.notes?.let { put("notes", it) }
 
                     // Gestione coordinate GPS
-                    addr.coordinates?.let { coords ->
-                        val coordsJson = JSONObject().apply {
-                            put("latitude", coords.latitude)
-                            put("longitude", coords.longitude)
-                            coords.altitude?.let { put("altitude", it) }
-                            coords.accuracy?.let { put("accuracy", it) }
+                    address.coordinates?.let { coordinates ->
+                        val coordinatesJson = JSONObject().apply {
+                            put("latitude", coordinates.latitude)
+                            put("longitude", coordinates.longitude)
+                            coordinates.altitude?.let { put("altitude", it) }
+                            coordinates.accuracy?.let { put("accuracy", it) }
                         }
-                        put("coordinates", coordsJson)
+                        put("coordinates", coordinatesJson)
                     }
                 }
                 json.toString()
@@ -56,12 +57,12 @@ class AddressConverter @Inject constructor() {
 
                 // Parse coordinate se presenti
                 val coordinates = if (json.has("coordinates")) {
-                    val coordsJson = json.getJSONObject("coordinates")
+                    val coordinatesJson = json.getJSONObject("coordinates")
                     GeoCoordinates(
-                        latitude = coordsJson.getDouble("latitude"),
-                        longitude = coordsJson.getDouble("longitude"),
-                        altitude = if (coordsJson.has("altitude")) coordsJson.getDouble("altitude") else null,
-                        accuracy = if (coordsJson.has("accuracy")) coordsJson.getDouble("accuracy").toFloat() else null
+                        latitude = coordinatesJson.getDouble("latitude"),
+                        longitude = coordinatesJson.getDouble("longitude"),
+                        altitude = if (coordinatesJson.has("altitude")) coordinatesJson.getDouble("altitude") else null,
+                        accuracy = if (coordinatesJson.has("accuracy")) coordinatesJson.getDouble("accuracy").toFloat() else null
                     )
                 } else null
 

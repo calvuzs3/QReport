@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.app.app
 
 import android.app.Application
@@ -8,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import net.calvuz.qreport.BuildConfig
+import net.calvuz.qreport.app.app.domain.AppVersionInfo
 import net.calvuz.qreport.sync.app.SyncForegroundObserver
 import net.calvuz.qreport.sync.data.local.SyncSettingsDataStore
 import net.calvuz.qreport.sync.data.remote.ServerUrlHolder
@@ -27,8 +28,6 @@ class QReportApplication : Application() {
 
 
     companion object {
-        const val VERSION_NAME = BuildConfig.VERSION_NAME
-        const val VERSION_CODE = BuildConfig.VERSION_CODE
         const val DATABASE_NAME = "qreport_database"
         const val DATABASE_VERSION = 1
     }
@@ -37,11 +36,11 @@ class QReportApplication : Application() {
         super.onCreate()
 
         // Timber initialization
-        if (BuildConfig.DEBUG) {
-            Timber.Forest.plant(Timber.DebugTree())
+        if (AppVersionInfo.isDebugBuild) {
+            Timber.plant(Timber.DebugTree())
         }
 
-        Timber.Forest.d("QReportApplication: started")
+        Timber.d("QReportApplication: started")
 
         // Initialize ServerUrlHolder from persisted DataStore value.
         // Runs on IO thread — does not block the main thread.

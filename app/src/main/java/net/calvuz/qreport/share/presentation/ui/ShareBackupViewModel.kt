@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.backup.domain.usecase.ShareBackupUseCase
 import net.calvuz.qreport.share.domain.repository.ShareIntentResult
 import net.calvuz.qreport.share.domain.repository.ShareMethod
@@ -41,7 +43,10 @@ class ShareBackupViewModel @Inject constructor(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Errore caricamento opzioni: ${optionsResult.exceptionOrNull()?.message}"
+                        error = UiText.StringResources(
+                            R.string.share_backup_err_load_options,
+                            optionsResult.exceptionOrNull()?.message ?: ""
+                        )
                     )
                 }
 
@@ -49,7 +54,7 @@ class ShareBackupViewModel @Inject constructor(
                 Timber.e(e, "Error loading share options")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Errore inaspettato: ${e.message}"
+                    error = UiText.StringResources(R.string.share_backup_err_unexpected, e.message ?: "")
                 )
             }
         }
@@ -84,7 +89,10 @@ class ShareBackupViewModel @Inject constructor(
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isSharing = false,
-                        error = "Errore condivisione: ${shareResult.exceptionOrNull()?.message}"
+                        error = UiText.StringResources(
+                            R.string.share_backup_err_share,
+                            shareResult.exceptionOrNull()?.message ?: ""
+                        )
                     )
                 }
 
@@ -92,7 +100,7 @@ class ShareBackupViewModel @Inject constructor(
                 Timber.e(e, "Error sharing backup")
                 _uiState.value = _uiState.value.copy(
                     isSharing = false,
-                    error = "Errore inaspettato: ${e.message}"
+                    error = UiText.StringResources(R.string.share_backup_err_unexpected, e.message ?: "")
                 )
             }
         }
@@ -134,5 +142,5 @@ data class ShareBackupUiState(
     val isSharing: Boolean = false,
     val shareOptionOldVersions: List<ShareOptionOldVersion> = emptyList(),
     val lastShareIntentResult: ShareIntentResult? = null,
-    val error: String? = null
+    val error: UiText? = null
 )

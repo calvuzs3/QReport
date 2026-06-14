@@ -33,7 +33,6 @@ import net.calvuz.qreport.photo.domain.usecase.CapturePhotoUseCase
 import net.calvuz.qreport.photo.domain.usecase.DeletePhotoUseCase
 import net.calvuz.qreport.photo.domain.usecase.GetCheckItemPhotosUseCase
 import net.calvuz.qreport.app.error.domain.model.QrError
-import net.calvuz.qreport.app.error.presentation.asErrorUiText
 import net.calvuz.qreport.app.error.presentation.asUiText
 import timber.log.Timber
 import javax.inject.Inject
@@ -139,7 +138,8 @@ class CheckUpDetailViewModel @Inject constructor(
                         Timber.e("Checkup delete failed: $checkupId")
                         _uiState.value = _uiState.value.copy(
                             isDeleting = false,
-                            deleteError = result.asErrorUiText() // "Errore eliminazione: ${error.message}"
+                            deleteError = result.error.asUiText() //.asErrorUiText() // "Errore eliminazione:
+                        // ${error.message}"
                         )
                     }
                 }
@@ -147,7 +147,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Checkup delete failed")
                 _uiState.value = _uiState.value.copy(
                     isDeleting = false,
-                    deleteError = QrError.Checkup.UNKNOWN.asUiText() //"Errore imprevisto: ${e.message}"
+                    deleteError = QrError.Checkup.Unknown().asUiText() //"Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -200,7 +200,8 @@ class CheckUpDetailViewModel @Inject constructor(
                         Timber.e("Check-up details load failed")
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = result.asErrorUiText() // "Errore caricamento dettagli: ${error.message}"
+                            error = result.error.asUiText() // "Errore caricamento dettagli:
+                        // ${error.message}"
                         )
                     }
                 }
@@ -209,7 +210,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 Timber.e(e, "Exception loading check-up details")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = (QrError.Checkup.UNKNOWN.asUiText()) //"Errore imprevisto: ${e.message}"
+                    error = (QrError.Checkup.Unknown().asUiText()) //"Errore imprevisto: ${e.message}"
                 )
             }
         }
@@ -237,7 +238,7 @@ class CheckUpDetailViewModel @Inject constructor(
                             isUpdating = false,
                             error =
                                 // "Errore aggiornamento status: ${error.message}"
-                                QrError.Checkup.UPDATE_STATUS.asUiText()
+                                QrError.Checkup.UpdateStatus().asUiText()
                         )
                     }
                 )
@@ -248,7 +249,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     isUpdating = false,
                     error =
                         // "Errore imprevisto: ${e.message}"
-                        QrError.Checkup.UNKNOWN.asUiText()
+                        QrError.Checkup.Unknown().asUiText()
                 )
             }
         }
@@ -276,7 +277,7 @@ class CheckUpDetailViewModel @Inject constructor(
                             isUpdating = false,
                             error =
                                 // "Errore aggiornamento note: ${e.message}"
-                                QrError.Checkup.UPDATE_NOTES.asUiText()
+                                QrError.Checkup.UpdateNotes().asUiText()
                         )
                     }
                 )
@@ -287,7 +288,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     isUpdating = false,
                     error =
                         // "Errore imprevisto: ${e.message}"
-                        QrError.Checkup.UNKNOWN.asUiText()
+                        QrError.Checkup.Unknown().asUiText()
                 )
             }
         }
@@ -311,7 +312,7 @@ class CheckUpDetailViewModel @Inject constructor(
             val checkUpId = _uiState.value.checkUp?.id
             if (checkUpId == null) {
                 _uiState.value = _uiState.value.copy(
-                    error = QrError.Checkup.NOT_AVAILABLE.asUiText() //"Check-up non disponibile"
+                    error = QrError.Checkup.NotAvailable().asUiText() //"Check-up non disponibile"
                 )
                 return@launch
             }
@@ -343,7 +344,7 @@ class CheckUpDetailViewModel @Inject constructor(
                             isAddingSparePart = false,
                             error =
                                 //"Errore aggiunta ricambio: ${error.message}"
-                                QrError.Checkup.SPARE_ADD.asUiText()
+                                QrError.Checkup.SpareAdd().asUiText()
                         )
                     }
                 )
@@ -354,7 +355,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     isAddingSparePart = false,
                     error =
                         // "Errore imprevisto: ${e.message}"
-                        QrError.Checkup.UNKNOWN.asUiText()
+                        QrError.Checkup.Unknown().asUiText()
                 )
             }
         }
@@ -370,7 +371,7 @@ class CheckUpDetailViewModel @Inject constructor(
 
                 when( val result = updateCheckUpStatusUseCase(checkUpId, CheckUpStatus.COMPLETED)) {
                     is QrResult.Success -> {
-                        Timber.d("Check-up finalized")
+                        Timber.d("Check-up finalized: ${result.data}")
                         // Reload to update status
                         reloadCheckUpData(checkUpId)
                     }
@@ -380,7 +381,7 @@ class CheckUpDetailViewModel @Inject constructor(
                             isUpdating = false,
                             error =
                                 //"Errore completamento: ${error.message}"
-                                QrError.Checkup.FINALIZE.asUiText()
+                                QrError.Checkup.Finalize().asUiText()
                         )
                     }
                 }
@@ -391,7 +392,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     isUpdating = false,
                     error =
                         // "Errore imprevisto: ${e.message}"
-                        QrError.Checkup.UNKNOWN.asUiText()
+                        QrError.Checkup.Unknown().asUiText()
                 )
             }
         }
@@ -475,7 +476,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     isLoadingPhotos = false,
                     error =
                         // "Errore caricamento foto: ${e.message}"
-                        QrError.Checkup.LOAD_PHOTOS.asUiText()
+                        QrError.Checkup.LoadPhotos().asUiText()
                 )
             }
         }
@@ -518,36 +519,6 @@ class CheckUpDetailViewModel @Inject constructor(
         } catch (e: Exception) {
             Timber.e(e, "Loading photo for item failed {$checkItemId}")
         }
-    }
-
-    /**
-     * Refresh delle foto dopo operazioni camera/gallery
-     */
-    fun refreshPhotosAfterCameraReturn() {
-        loadPhotosForCheckUp()
-    }
-
-    fun refreshPhotosForItem(checkItemId: String) {
-        viewModelScope.launch {
-            loadPhotosForCheckItem(checkItemId)
-        }
-    }
-
-    /**
-     * DEBUG: Mostra lo stato attuale delle foto
-     */
-    fun debugPhotoState() {
-        val state = _uiState.value
-        Timber.d("=== DEBUG PHOTO STATE ===")
-        Timber.d("Total photos: ${state.totalPhotoCount}")
-        Timber.d("Loading photos: ${state.isLoadingPhotos}")
-        state.photosByCheckItem.forEach { (itemId, photos) ->
-            Timber.d("Item $itemId: ${photos.size} foto")
-            photos.forEach { photo ->
-                Timber.d("  - ${photo.fileName}: ${photo.filePath}")
-            }
-        }
-        Timber.d("========================")
     }
 
     // ============================================================
@@ -603,7 +574,7 @@ class CheckUpDetailViewModel @Inject constructor(
             if (checkUpId == null) {
                 _uiState.value = _uiState.value.copy(
                     // "Check-up non disponibile"
-                    error = QrError.Checkup.NOT_AVAILABLE.asUiText()
+                    error = QrError.Checkup.NotAvailable().asUiText()
                 )
                 return@launch
             }
@@ -628,7 +599,7 @@ class CheckUpDetailViewModel @Inject constructor(
                             isUpdatingHeader = false,
                             error =
                                 // "Errore aggiornamento header: ${error.message}"
-                                QrError.Checkup.UPDATE_HEADER.asUiText()
+                                QrError.Checkup.UpdateHeader().asUiText()
                         )
                     }
                 )
@@ -639,7 +610,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     isUpdatingHeader = false,
                     error =
                         // "Errore imprevisto: ${e.message}"
-                        QrError.Checkup.UNKNOWN.asUiText(),
+                        QrError.Checkup.Unknown().asUiText(),
                 )
             }
         }
@@ -692,7 +663,7 @@ class CheckUpDetailViewModel @Inject constructor(
             if (checkUpId == null) {
                 _uiState.value = _uiState.value.copy(
                     // "CheckUp non disponibile"
-                    error = QrError.Checkup.NOT_AVAILABLE.asUiText()
+                    error = QrError.Checkup.NotAvailable().asUiText()
                 )
                 return@launch
             }
@@ -713,14 +684,14 @@ class CheckUpDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         error =
                             // "Errore associazione: ${e.message}"
-                            QrError.Checkup.ASSOCIATION.asUiText()
+                            QrError.Checkup.Association().asUiText()
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     error =
                         // "Errore imprevisto: ${e.message}"
-                        QrError.Checkup.UNKNOWN.asUiText()
+                        QrError.Checkup.Unknown().asUiText()
                 )
             }
         }
@@ -744,14 +715,14 @@ class CheckUpDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         error =
                             // "Errore rimozione: ${error.message}"
-                            QrError.Checkup.ASSOCIATION_REMOVE.asUiText()
+                            QrError.Checkup.AssociationRemove().asUiText()
                     )
                 }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     error =
                         // "Errore imprevisto: ${e.message}"
-                        QrError.Checkup.UNKNOWN.asUiText()
+                        QrError.Checkup.Unknown().asUiText()
                 )
             }
         }
@@ -789,7 +760,7 @@ class CheckUpDetailViewModel @Inject constructor(
                         isUpdating = false,
                         isAddingSparePart = false,
                         isUpdatingHeader = false,
-                        error = QrError.Checkup.RELOAD.asUiText() // "Errore ricaricamento dati: ${error.message}"
+                        error = QrError.Checkup.Reload().asUiText() // "Errore ricaricamento dati: ${error.message}"
                     )
                 }
             }
@@ -824,7 +795,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 isUpdating = false,
                 isAddingSparePart = false,
                 isUpdatingHeader = false,
-                error = QrError.Checkup.UNKNOWN.asUiText() // "Errore imprevisto: ${e.message}"
+                error = QrError.Checkup.Unknown().asUiText() // "Errore imprevisto: ${e.message}"
             )
         }
     }
@@ -887,7 +858,7 @@ class CheckUpDetailViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 error =
                                     // "Errore caricamento clienti: ${error.message}"
-                                    QrError.Checkup.CLIENT_LOAD.asUiText(),
+                                    QrError.Checkup.ClientLoad().asUiText(),
                             )
                     }
                 }
@@ -898,7 +869,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     error =
                         // "Errore caricamento clienti: ${e.message}"
-                        QrError.Checkup.CLIENT_LOAD.asUiText()
+                        QrError.Checkup.ClientLoad().asUiText()
                 )
             }
         }
@@ -925,7 +896,7 @@ class CheckUpDetailViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(
                             error =
                                 // "Errore caricamento stabilimenti: ${error.message}"
-                                QrError.Checkup.FACILITY_LOAD.asUiText()
+                                QrError.Checkup.FacilityLoad().asUiText()
                         )
                     }
                 }
@@ -936,7 +907,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     error =
                         //"Errore caricamento stabilimenti: ${e.message}"
-                        QrError.Checkup.FACILITY_LOAD.asUiText()
+                        QrError.Checkup.FacilityLoad().asUiText()
                 )
             }
         }
@@ -962,7 +933,7 @@ class CheckUpDetailViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(
                             error =
                                 // "Errore caricamento isole: ${error.message}"
-                                QrError.Checkup.ISLAND_LOAD.asUiText()
+                                QrError.Checkup.IslandLoad().asUiText()
                         )
                     }
                 }
@@ -973,7 +944,7 @@ class CheckUpDetailViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     error =
                         // "Errore caricamento isole: ${e.message}"
-                        QrError.Checkup.ISLAND_LOAD.asUiText()
+                        QrError.Checkup.IslandLoad().asUiText()
                 )
             }
         }

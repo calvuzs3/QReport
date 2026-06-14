@@ -44,13 +44,13 @@ class ShareBackupRepositoryImpl @Inject constructor(
                 }
                 is QrResult.Error -> {
                     Timber.e("Failed to create compressed backup")
-                    QrResult.Error(QrError.BackupError.ZIP_CREATE)
+                    QrResult.Error(QrError.BackupError.ZipCreate())
                 }
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Create compressed backup failed")
-            QrResult.Error(QrError.BackupError.ZIP_CREATE)
+            QrResult.Error(QrError.BackupError.ZipCreate())
         }
     }
 
@@ -67,13 +67,13 @@ class ShareBackupRepositoryImpl @Inject constructor(
                 }
                 is QrResult.Error -> {
                     Timber.e("Failed to create compressed backup: $outputName")
-                    QrResult.Error(QrError.BackupError.ZIP_CREATE)
+                    QrResult.Error(QrError.BackupError.ZipCreate())
                 }
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Create compressed backup with name failed: $outputName")
-            QrResult.Error(QrError.BackupError.ZIP_CREATE)
+            QrResult.Error(QrError.BackupError.ZipCreate())
         }
     }
 
@@ -98,13 +98,13 @@ class ShareBackupRepositoryImpl @Inject constructor(
                 }
                 is QrResult.Error -> {
                     Timber.e("Failed to create backup file share intent")
-                    QrResult.Error(QrError.BackupError.SHARE_CREATE)
+                    QrResult.Error(QrError.BackupError.ShareCreate())
                 }
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Share backup file failed: $filePath")
-            QrResult.Error(QrError.BackupError.SHARE_CREATE)
+            QrResult.Error(QrError.BackupError.ShareCreate())
         }
     }
 
@@ -124,7 +124,7 @@ class ShareBackupRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Share backup directory failed: $dirPath")
-            QrResult.Error(QrError.BackupError.SHARE_CREATE)
+            QrResult.Error(QrError.BackupError.ShareCreate())
         }
     }
 
@@ -148,13 +148,13 @@ class ShareBackupRepositoryImpl @Inject constructor(
                 }
                 is QrResult.Error -> {
                     Timber.e("Failed to create backup share intent for app: $targetPackage")
-                    QrResult.Error(QrError.BackupError.SHARE_CREATE)
+                    QrResult.Error(QrError.BackupError.ShareCreate())
                 }
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Share backup with app failed: $targetPackage")
-            QrResult.Error(QrError.BackupError.SHARE_CREATE)
+            QrResult.Error(QrError.BackupError.ShareCreate())
         }
     }
 
@@ -197,13 +197,13 @@ class ShareBackupRepositoryImpl @Inject constructor(
                 }
                 is QrResult.Error -> {
                     Timber.e("Backup file validation failed: $filePath")
-                    QrResult.Error(QrError.BackupError.VALIDATE)
+                    QrResult.Error(QrError.BackupError.Validate())
                 }
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Validate backup file for sharing failed: $filePath")
-            QrResult.Error(QrError.BackupError.VALIDATE)
+            QrResult.Error(QrError.BackupError.Validate())
         }
     }
 
@@ -218,13 +218,13 @@ class ShareBackupRepositoryImpl @Inject constructor(
                 }
                 is QrResult.Error -> {
                     Timber.e("Cleanup failed")
-                    QrResult.Error(QrError.BackupError.CLEANUP_FAILED)
+                    QrResult.Error(QrError.BackupError.CleanupFailed())
                 }
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Cleanup temporary share files failed")
-            QrResult.Error(QrError.BackupError.CLEANUP_FAILED)
+            QrResult.Error(QrError.BackupError.CleanupFailed())
         }
     }
 }

@@ -84,7 +84,7 @@ class CheckUpListViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(
                                 isLoading = false,
                                 isRefreshing = false,
-                                error = QrError.Checkup.LOAD // "Errore caricamento check-ups: ${exception.message}"
+                                error = QrError.Checkup.Load() // "Errore caricamento check-ups: ${exception.message}"
                             )
                         }
                     }
@@ -144,7 +144,7 @@ class CheckUpListViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isRefreshing = false,
-                        error = QrError.Checkup.LOAD // "Errore caricamento check-ups: ${e.message}"
+                        error = QrError.Checkup.Load() // "Errore caricamento check-ups: ${e.message}"
                     )
                 } else {
                     Timber.d("Error handling skipped - job cancelled")
@@ -219,7 +219,7 @@ class CheckUpListViewModel @Inject constructor(
                     Timber.e(e, "Failed to refresh check-ups")
                     _uiState.value = _uiState.value.copy(
                         isRefreshing = false,
-                        error = QrError.Checkup.REFRESH // "Errore refresh: ${e.message}"
+                        error = QrError.Checkup.Refresh() // "Errore refresh: ${e.message}"
                     )
                 } else {
                     Timber.d("Refresh error handling skipped - job cancelled")

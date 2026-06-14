@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import net.calvuz.qreport.app.app.QReportApplication
 import net.calvuz.qreport.app.app.data.converter.AddressConverter
 import net.calvuz.qreport.app.app.data.converter.DatabaseConverters
+import net.calvuz.qreport.app.app.data.converter.PhotoConverter
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -81,7 +82,8 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
 )
 @TypeConverters(
     DatabaseConverters::class,
-    AddressConverter::class
+    AddressConverter::class,
+    PhotoConverter::class
 )
 abstract class QReportDatabase : RoomDatabase() {
 

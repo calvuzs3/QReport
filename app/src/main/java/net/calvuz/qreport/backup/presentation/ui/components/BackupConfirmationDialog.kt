@@ -23,9 +23,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import net.calvuz.qreport.R
 import net.calvuz.qreport.backup.domain.model.enum.BackupMode
 import net.calvuz.qreport.backup.presentation.model.BackupModeExt.getDisplayName
 import net.calvuz.qreport.backup.presentation.model.BackupModeExt.getIcon
@@ -71,7 +73,7 @@ fun BackupConfirmationDialog(
                     )
 
                     Text(
-                        text = "Conferma Backup",
+                        text = stringResource(R.string.backup_confirmation_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -81,7 +83,7 @@ fun BackupConfirmationDialog(
 
                 // ===== BACKUP SUMMARY =====
                 Text(
-                    text = "Riepilogo Opzioni",
+                    text = stringResource(R.string.backup_confirmation_summary_label),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -89,23 +91,23 @@ fun BackupConfirmationDialog(
                 // Opzioni foto
                 DialogItemRow(
                     icon = Icons.Default.Photo,
-                    label = "Foto",
-                    value = if (backupOptions.includePhotos) "Incluse" else "Escluse",
+                    label = stringResource(R.string.backup_confirmation_photos_label),
+                    value = if (backupOptions.includePhotos) stringResource(R.string.backup_confirmation_included) else stringResource(R.string.backup_confirmation_excluded),
                     enabled = backupOptions.includePhotos
                 )
 
                 // Opzioni thumbnails
                 DialogItemRow(
                     icon = Icons.Default.PhotoSizeSelectLarge,
-                    label = "Miniature",
-                    value = if (backupOptions.includeThumbnails && backupOptions.includePhotos) "Incluse" else "Escluse",
+                    label = stringResource(R.string.backup_confirmation_thumbnails_label),
+                    value = if (backupOptions.includeThumbnails && backupOptions.includePhotos) stringResource(R.string.backup_confirmation_included) else stringResource(R.string.backup_confirmation_excluded),
                     enabled = backupOptions.includeThumbnails && backupOptions.includePhotos
                 )
 
                 // Modalità backup
                 DialogItemRow(
                     icon = backupOptions.backupMode.getIcon(),
-                    label = "Modalità",
+                    label = stringResource(R.string.backup_confirmation_mode_label),
                     value = backupOptions.backupMode.getDisplayName().asString()               ,
                     enabled = true
                 )
@@ -113,7 +115,7 @@ fun BackupConfirmationDialog(
                 // Dimensione stimata
                 DialogItemRow(
                     icon = Icons.Default.DataUsage,
-                    label = "Stima Dimensione",
+                    label = stringResource(R.string.backup_confirmation_size_label),
                     value = backupOptions.estimatedSize.getFormattedSize(),
                     enabled = true
                 )
@@ -122,7 +124,7 @@ fun BackupConfirmationDialog(
                 if (backupOptions.description.isNotEmpty()) {
                     DialogItemRow(
                         icon = Icons.Default.Description,
-                        label = "Descrizione",
+                        label = stringResource(R.string.backup_confirmation_description_label),
                         value = backupOptions.description,
                         enabled = true
                     )
@@ -159,14 +161,14 @@ fun BackupConfirmationDialog(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Annulla")
+                        Text(stringResource(R.string.action_cancel))
                     }
 
                     Button(
                         onClick = onConfirm,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("Backup")
+                        Text(stringResource(R.string.backup_confirmation_action))
                     }
                 }
             }

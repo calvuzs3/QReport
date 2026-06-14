@@ -1,3 +1,5 @@
+@file:Suppress("HardCodedStringLiteral", "unused")
+
 package net.calvuz.qreport.share.presentation.ui
 
 import androidx.compose.foundation.layout.*
@@ -11,12 +13,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import net.calvuz.qreport.R
 import net.calvuz.qreport.share.domain.repository.ShareMethod
 import net.calvuz.qreport.share.domain.repository.ShareOptionOldVersion
 import net.calvuz.qreport.share.domain.repository.ShareOptionType
@@ -30,13 +34,13 @@ import net.calvuz.qreport.share.domain.repository.ShareOptionType
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShareBackupDialog(
-    backupPath: String,
+    modifier: Modifier = Modifier,
+    @Suppress("unused") backupPath: String,
     backupName: String,
     shareOptionOldVersions: List<ShareOptionOldVersion>,
     isLoading: Boolean = false,
     onShareSelected: (ShareOptionOldVersion) -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    onDismiss: () -> Unit
 ) {
     Dialog(
         onDismissRequest = onDismiss,
@@ -98,7 +102,7 @@ private fun ShareDialogHeader(
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "Condividi Backup",
+                text = stringResource(R.string.share_backup_dialog_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -110,7 +114,7 @@ private fun ShareDialogHeader(
         }
 
         IconButton(onClick = onDismiss) {
-            Icon(Icons.Default.Close, contentDescription = "Chiudi")
+            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_close))
         }
     }
 }
@@ -132,7 +136,7 @@ private fun ShareLoadingState() {
         ) {
             CircularProgressIndicator()
             Text(
-                text = "Preparazione opzioni condivisione...",
+                text = stringResource(R.string.share_backup_dialog_loading),
                 style = MaterialTheme.typography.bodyMedium
             )
         }
@@ -158,7 +162,7 @@ private fun ShareOptionsContent(
         if (fileOptions.isNotEmpty()) {
             item {
                 Text(
-                    text = "Modalità Condivisione",
+                    text = stringResource(R.string.share_backup_dialog_section_file_options),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary
@@ -183,7 +187,7 @@ private fun ShareOptionsContent(
             item {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "App di Condivisione",
+                    text = stringResource(R.string.share_backup_dialog_section_app_options),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary
@@ -206,10 +210,10 @@ private fun ShareOptionsContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EnhancedShareOptionItem(
+    modifier: Modifier = Modifier,
     option: ShareOptionOldVersion,
     onClick: () -> Unit,
-    isRecommended: Boolean = false,
-    modifier: Modifier = Modifier
+    isRecommended: Boolean = false
 ) {
     Card(
         onClick = onClick,
@@ -325,7 +329,7 @@ private fun ShareInfoFooter() {
                 modifier = Modifier.size(20.dp)
             )
             Text(
-                text = "Il backup completo include tutti i file necessari per un ripristino completo.",
+                text = stringResource(R.string.share_backup_dialog_info_footer),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -342,11 +346,11 @@ private fun ShareModeChip(
     modifier: Modifier = Modifier
 ) {
     val (text, color) = when (shareMethod) {
-        ShareMethod.DIRECT -> "Diretto" to MaterialTheme.colorScheme.primary
-        ShareMethod.COMPRESSED -> "ZIP" to MaterialTheme.colorScheme.secondary
-        ShareMethod.CLOUD_UPLOAD -> "Upload to Cloud" to MaterialTheme.colorScheme.tertiary
-        ShareMethod.EMAIL_ATTACHMENT -> "Allegato Email" to MaterialTheme.colorScheme.tertiary
-        ShareMethod.MESSAGING_ATTACHMENT -> "Allegato messaggio" to MaterialTheme.colorScheme.tertiary
+        ShareMethod.DIRECT -> stringResource(R.string.share_mode_direct) to MaterialTheme.colorScheme.primary
+        ShareMethod.COMPRESSED -> stringResource(R.string.share_mode_compressed) to MaterialTheme.colorScheme.secondary
+        ShareMethod.CLOUD_UPLOAD -> stringResource(R.string.share_mode_cloud_upload) to MaterialTheme.colorScheme.tertiary
+        ShareMethod.EMAIL_ATTACHMENT -> stringResource(R.string.share_mode_email_attachment) to MaterialTheme.colorScheme.tertiary
+        ShareMethod.MESSAGING_ATTACHMENT -> stringResource(R.string.share_mode_messaging_attachment) to MaterialTheme.colorScheme.tertiary
     }
 
     AssistChip(
@@ -391,9 +395,9 @@ private fun getIconForOption(optionType: ShareOptionType, shareMethod: ShareMeth
  */
 @Composable
 fun QuickShareButton(
+    modifier: Modifier = Modifier,
     onShare: () -> Unit,
-    isEnabled: Boolean = true,
-    modifier: Modifier = Modifier
+    isEnabled: Boolean = true
 ) {
     FilledTonalButton(
         onClick = onShare,
@@ -409,6 +413,6 @@ fun QuickShareButton(
             modifier = Modifier.size(18.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text("Condividi")
+        Text(stringResource(R.string.action_share))
     }
 }

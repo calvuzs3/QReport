@@ -71,7 +71,7 @@ class OpenFileUseCase @Inject constructor(
             // Validation
             if (!file.exists()) {
                 Timber.e("File/directory not found: $actualFilePath")
-                return@withContext QrResult.Error(QrError.ShareError.FILE_NOT_FOUND)
+                return@withContext QrResult.Error(QrError.ShareError.FileNotFound())
             }
 
             // ✅ STEP 2: Handle directory opening
@@ -82,7 +82,7 @@ class OpenFileUseCase @Inject constructor(
             // ✅ STEP 3: Handle regular file opening (existing logic)
             if (!file.canRead()) {
                 Timber.e("Cannot read file: $actualFilePath")
-                return@withContext QrResult.Error(QrError.ShareError.PERMISSION_DENIED)
+                return@withContext QrResult.Error(QrError.ShareError.PermissionDenied())
             }
 
 
@@ -104,7 +104,7 @@ class OpenFileUseCase @Inject constructor(
                 is QrResult.Success -> {
                     if (compatibilityResult.data.isEmpty()) {
                         Timber.w("No compatible apps found for: $filePath")
-                        return@withContext QrResult.Error(QrError.ShareError.NO_COMPATIBLE_APP)
+                        return@withContext QrResult.Error(QrError.ShareError.NoCompatibleApp())
                     } else {
                         Timber.d("Found ${compatibilityResult.data.size} compatible apps for file")
                     }
@@ -117,11 +117,11 @@ class OpenFileUseCase @Inject constructor(
                     Timber.e("Failed to open exported file: $filePath")
                     // Map ShareError to more specific error if needed
 //                    when (openResult.error) {
-//                        is QrError.ShareError.FILE_NOT_FOUND -> QrResult.Error(QrError.ShareError.FILE_NOT_FOUND)
-//                        is QrError.ShareError.NO_COMPATIBLE_APPS -> QrResult.Error(QrError.ShareError.NO_COMPATIBLE_APPS)
-//                        is QrError.ShareError.PERMISSION_DENIED -> QrResult.Error(QrError.ShareError.PERMISSION_DENIED)
+//                        is QrError.ShareError.FileNotFound -> QrResult.Error(QrError.ShareError.FileNotFound())
+//                        is QrError.ShareError.NoCompatibleApp -> QrResult.Error(QrError.ShareError.NoCompatibleApp())
+//                        is QrError.ShareError.PermissionDenied -> QrResult.Error(QrError.ShareError.PermissionDenied())
 //                        else ->
-                    QrResult.Error(QrError.ShareError.OPEN_FAILED)
+                    QrResult.Error(QrError.ShareError.OpenFailed())
 //                    }
                 }
 
@@ -133,7 +133,7 @@ class OpenFileUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Exception opening exported file: $filePath")
-            QrResult.Error(QrError.ShareError.OPEN_FAILED)
+            QrResult.Error(QrError.ShareError.OpenFailed())
         }
     }
 
@@ -173,7 +173,7 @@ class OpenFileUseCase @Inject constructor(
                 shareFileRepository.createFileProviderUri(directory)) { // .getUriForFile(
                 is QrResult.Error -> {
                     Timber.e("Failed to create URI for directory: ${directory}")
-                    return QrResult.Error(QrError.ShareError.OPEN_FAILED)
+                    return QrResult.Error(QrError.ShareError.OpenFailed())
                 }
                 is QrResult.Success -> result.data
             }
@@ -203,7 +203,7 @@ class OpenFileUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to open directory: ${directory}")
-            QrResult.Error(QrError.ShareError.OPEN_FAILED)
+            QrResult.Error(QrError.ShareError.OpenFailed())
         }
     }
 

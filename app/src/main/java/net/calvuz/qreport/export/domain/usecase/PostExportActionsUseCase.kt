@@ -94,7 +94,7 @@ class PostExportActionsUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to share export")
-            QrResult.Error(QrError.ExportError.FILE_SHARE_FAILED)
+            QrResult.Error(QrError.ExportError.FileShareFailed())
         }
     }
 

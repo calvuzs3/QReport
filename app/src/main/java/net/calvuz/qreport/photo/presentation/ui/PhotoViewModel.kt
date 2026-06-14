@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.photo.domain.model.CameraSettings
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.photo.domain.model.PhotoPerspective
@@ -79,7 +81,7 @@ class PhotoViewModel @Inject constructor(
                     zoomRatio = cameraState.zoomRatio,
                     maxZoomRatio = cameraState.maxZoomRatio,
                     minZoomRatio = cameraState.minZoomRatio,
-                    error = cameraState.error
+                    error = cameraState.error?.let { UiText.DynStr(it) }
                 )
             }
         }
@@ -108,13 +110,13 @@ class PhotoViewModel @Inject constructor(
                     }
                     is CaptureResult.Error -> {
                         _cameraUiState.value = _cameraUiState.value.copy(
-                            error = result.message
+                            error = UiText.DynStr(result.message)
                         )
                     }
                 }
             } catch (e: Exception) {
                 _cameraUiState.value = _cameraUiState.value.copy(
-                    error = "Errore durante la cattura: ${e.message}"
+                    error = UiText.StringResources(R.string.photo_camera_err_capture, e.message ?: "")
                 )
             }
         }
@@ -147,7 +149,7 @@ class PhotoViewModel @Inject constructor(
             }
             is PhotoResult.Error -> {
                 _cameraUiState.value = _cameraUiState.value.copy(
-                    error = "Errore nel salvataggio: ${result.exception.message}"
+                    error = UiText.StringResources(R.string.photo_camera_err_save, result.exception.message ?: "")
                 )
             }
             is PhotoResult.Loading -> {
@@ -526,7 +528,8 @@ class PhotoViewModel @Inject constructor(
             is PhotoResult.Error -> {
                 _importUiState.value = _importUiState.value.copy(
                     isLoading = false,
-                    error = result.exception.message ?: "Errore caricamento info foto"
+                    error = result.exception.message?.let { UiText.DynStr(it) }
+                        ?: UiText.StringResource(R.string.photo_import_err_load_info)
                 )
             }
             is PhotoResult.Loading -> {
@@ -572,7 +575,8 @@ class PhotoViewModel @Inject constructor(
                 is PhotoResult.Error -> {
                     _importUiState.value = _importUiState.value.copy(
                         isImporting = false,
-                        error = result.exception.message ?: "Errore durante l'import"
+                        error = result.exception.message?.let { UiText.DynStr(it) }
+                            ?: UiText.StringResource(R.string.photo_import_err_import)
                     )
                 }
                 is PhotoResult.Loading -> {
@@ -595,13 +599,14 @@ class PhotoViewModel @Inject constructor(
                         setSelectedPhotoForImport(photoUri)
                     } else {
                         _importUiState.value = _importUiState.value.copy(
-                            error = "Foto non valida o non accessibile"
+                            error = UiText.StringResource(R.string.photo_import_err_invalid_photo)
                         )
                     }
                 }
                 is PhotoResult.Error -> {
                     _importUiState.value = _importUiState.value.copy(
-                        error = result.exception.message ?: "Errore validazione foto"
+                        error = result.exception.message?.let { UiText.DynStr(it) }
+                            ?: UiText.StringResource(R.string.photo_import_err_validation)
                     )
                 }
                 is PhotoResult.Loading -> {
@@ -681,7 +686,7 @@ data class PhotoImportUiState(
     val isLoading: Boolean = false,
     val isImporting: Boolean = false,
     val isImportSuccess: Boolean = false,
-    val error: String? = null,
+    val error: UiText? = null,
     val selectedPhotoUri: Uri? = null,
     val imageInfo: ImageInfo? = null
 )

@@ -529,7 +529,7 @@ private fun ContactMethodDropdown(
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = selectedMethod?.getDisplayName() ?: "",
+            value = selectedMethod?.getDisplayName()?.asString() ?: "",
             onValueChange = { },
             readOnly = true,
             label = { Text(stringResource(R.string.contact_form_field_preferred_contact_method)) },
@@ -557,7 +557,7 @@ private fun ContactMethodDropdown(
 
             ContactMethod.entries.forEach { method ->
                 DropdownMenuItem(
-                    text = { Text(method.getDisplayName()) },
+                    text = { Text(method.getDisplayName().asString()) },
                     onClick = {
                         onMethodSelected(method)
                         expanded = false

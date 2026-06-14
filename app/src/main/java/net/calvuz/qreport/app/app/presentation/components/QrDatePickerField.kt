@@ -15,9 +15,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import net.calvuz.qreport.R
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +39,7 @@ fun QrDatePickerField(
             value = value?.toLocalDateTime(TimeZone.currentSystemDefault())?.date?.toString() ?: "",
             onValueChange = { },
             label = { Text(label) },
-            placeholder = { Text("Seleziona data") },
+            placeholder = { Text(stringResource(R.string.date_picker_placeholder)) },
             readOnly = true,
             isError = error != null,
             supportingText = if (error != null) {
@@ -47,7 +49,7 @@ fun QrDatePickerField(
                 IconButton(onClick = { showDatePicker = true }) {
                     Icon(
                         imageVector = Icons.Default.DateRange,
-                        contentDescription = "Seleziona data"
+                        contentDescription = stringResource(R.string.date_picker_placeholder)
                     )
                 }
             },

@@ -16,11 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import net.calvuz.qreport.R
 import net.calvuz.qreport.photo.domain.model.Photo
 import timber.log.Timber
 import java.io.File
@@ -240,7 +242,7 @@ private fun PhotoThumbnail(
             .data(imagePath)
             .crossfade(true)
             .build(),
-        contentDescription = photo.caption.ifBlank { "Foto check item" },
+        contentDescription = photo.caption.ifBlank { stringResource(R.string.photo_preview_cd_check_item_photo) },
         modifier = modifier
             .size(size)
             .clip(RoundedCornerShape(6.dp)),
@@ -306,7 +308,7 @@ private fun EmptyPhotoState(
         )
 
         Text(
-            text = "Nessuna foto",
+            text = stringResource(R.string.photo_preview_empty),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -337,7 +339,7 @@ private fun AddPhotoButton(
     ) {
         Icon(
             imageVector = Icons.Default.Add,
-            contentDescription = "Aggiungi foto",
+            contentDescription = stringResource(R.string.photo_preview_cd_add),
             modifier = Modifier.size(16.dp),
             tint = if (enabled)
                 MaterialTheme.colorScheme.onPrimaryContainer

@@ -138,7 +138,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 //
 //        } catch (e: Exception) {
 //            Timber.e(e, "Failed to get checkup export directory: $checkupId")
-//            QrResult.Error(QrError.ExportError.DIRECTORY_ACCESS)
+//            QrResult.Error(QrError.ExportError.DirectoryAccess())
 //        }
 //    }
 
@@ -175,7 +175,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to create export file: $fileName")
-            QrResult.Error(QrError.ExportError.FILE_CREATE)
+            QrResult.Error(QrError.ExportError.FileCreate())
         }
     }
 
@@ -193,7 +193,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to save export content to: $filePath")
-            QrResult.Error(QrError.ExportError.FILE_WRITE)
+            QrResult.Error(QrError.ExportError.FileWrite())
         }
     }
 
@@ -211,7 +211,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to save export binary to: $filePath")
-            QrResult.Error(QrError.ExportError.FILE_WRITE)
+            QrResult.Error(QrError.ExportError.FileWrite())
         }
     }
 
@@ -238,7 +238,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to copy file to export: $sourceFilePath")
-            QrResult.Error(QrError.ExportError.FILE_COPY)
+            QrResult.Error(QrError.ExportError.FileCopy())
         }
     }
 
@@ -281,7 +281,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to copy files to export")
-            QrResult.Error(QrError.ExportError.FILE_COPY)
+            QrResult.Error(QrError.ExportError.FileCopy())
         }
     }
 
@@ -316,7 +316,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to create $type subdirectory: $dirPath")
-            QrResult.Error(QrError.ExportError.DIRECTORY_CREATE)
+            QrResult.Error(QrError.ExportError.DirectoryCreate())
         }
     }
 
@@ -357,7 +357,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to cleanup old exports")
-            QrResult.Error(QrError.ExportError.CLEANUP_FAILED)
+            QrResult.Error(QrError.ExportError.CleanupFailed())
         }
     }
 
@@ -377,7 +377,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "Failed to delete export for checkup: $checkupId")
-//            QrResult.Error(QrError.ExportError.DeleteError)
+//            QrResult.Error(QrError.ExportError.DeleteFailed())
 //        }
 //    }
 
@@ -414,7 +414,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to cleanup temporary exports")
-            QrResult.Error(QrError.ExportError.CLEANUP_FAILED)
+            QrResult.Error(QrError.ExportError.CleanupFailed())
         }
     }
 
@@ -434,7 +434,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to get exports directory size")
-            QrResult.Error(QrError.ExportError.SIZE_CALCULATION_FAILED)
+            QrResult.Error(QrError.ExportError.SizeCalculationFailed())
         }
     }
 
@@ -453,7 +453,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to validate export directory: $exportPath")
-            QrResult.Error(QrError.ExportError.VALIDATION_FAILED)
+            QrResult.Error(QrError.ExportError.ValidationFailed())
         }
     }
 
@@ -470,7 +470,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "Failed to check export existence for checkup: $checkupId")
-//            QrResult.Error(QrError.ExportError.VALIDATION_FAILED)
+//            QrResult.Error(QrError.ExportError.ValidationFailed())
 //        }
 //    }
 
@@ -485,7 +485,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to get export size: $exportDirectory")
-            QrResult.Error(QrError.ExportError.SIZE_CALCULATION_FAILED)
+            QrResult.Error(QrError.ExportError.SizeCalculationFailed())
         }
     }
 
@@ -502,11 +502,11 @@ class ExportFileRepositoryImpl @Inject constructor(
                     QrResult.Success(hasCorrectExtension)
                 }
 
-                false -> QrResult.Error(QrError.ExportError.VALIDATION_FAILED)
+                false -> QrResult.Error(QrError.ExportError.ValidationFailed())
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to validate export file: $filePath")
-            QrResult.Error(QrError.ExportError.VALIDATION_FAILED)
+            QrResult.Error(QrError.ExportError.ValidationFailed())
         }
     }
 
@@ -543,7 +543,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to list exports")
-            QrResult.Error(QrError.ExportError.LIST_FAILED)
+            QrResult.Error(QrError.ExportError.ListFailed())
         }
     }
 
@@ -562,12 +562,12 @@ class ExportFileRepositoryImpl @Inject constructor(
 //                }
 //
 //                false -> {
-//                    QrResult.Error(QrError.ExportError.INFO_FAILED)
+//                    QrResult.Error(QrError.ExportError.InfoFailed())
 //                }
 //            }
 //        } catch (e: Exception) {
 //            Timber.e(e, "Failed to get export info for checkup: $checkupId")
-//            QrResult.Error(QrError.ExportError.INFO_FAILED)
+//            QrResult.Error(QrError.ExportError.InfoFailed())
 //        }
 //    }
 
@@ -582,7 +582,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to list exports newer than: $timestampMs")
-            QrResult.Error(QrError.ExportError.LIST_FAILED)
+            QrResult.Error(QrError.ExportError.ListFailed())
         }
     }
 
@@ -612,7 +612,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to get export files: $exportDirectory")
-            QrResult.Error(QrError.ExportError.LIST_FAILED)
+            QrResult.Error(QrError.ExportError.ListFailed())
         }
     }
 
@@ -645,7 +645,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Failed to check storage space")
-            QrResult.Error(QrError.ExportError.STORAGE_CHECK_FAILED)
+            QrResult.Error(QrError.ExportError.StorageCheckFailed())
         }
     }
 
@@ -673,7 +673,7 @@ class ExportFileRepositoryImpl @Inject constructor(
                                 return if (validateResult.data) {
                                     QrResult.Success(filePath)
                                 } else {
-                                    QrResult.Error(QrError.ExportError.VALIDATION_FAILED)
+                                    QrResult.Error(QrError.ExportError.ValidationFailed())
                                 }
                             }
                         }
@@ -761,7 +761,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             ) {
                 is QrResult.Error -> {
                     Timber.e("Failed to open export file: $filePath")
-                    QrResult.Error(QrError.ShareError.OPEN_FAILED)
+                    QrResult.Error(QrError.ShareError.OpenFailed())
                 }
 
                 is QrResult.Success -> {
@@ -772,7 +772,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Exception opening export file: $filePath")
-            QrResult.Error(QrError.ShareError.OPEN_FAILED)
+            QrResult.Error(QrError.ShareError.OpenFailed())
         }
     }
 
@@ -808,7 +808,7 @@ class ExportFileRepositoryImpl @Inject constructor(
             )) {
                 is QrResult.Error -> {
                     Timber.e("Failed to share export file: $filePath")
-                    QrResult.Error(QrError.ExportError.FILE_SHARE_FAILED)
+                    QrResult.Error(QrError.ExportError.FileShareFailed())
                 }
 
                 is QrResult.Success -> {
@@ -819,7 +819,7 @@ class ExportFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Exception sharing export file: $filePath")
-            QrResult.Error(QrError.ExportError.FILE_SHARE_FAILED)
+            QrResult.Error(QrError.ExportError.FileShareFailed())
         }
     }
 

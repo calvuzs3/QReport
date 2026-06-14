@@ -56,7 +56,7 @@ class ExportCheckUpUseCase @Inject constructor(
 
             // Carica checkup
             val checkUp = checkUpRepository.getCheckUpById(checkUpId)
-                ?: return@flow emit(QrResult.Error(QrError.Checkup.NOT_FOUND))
+                ?: return@flow emit(QrResult.Error(QrError.Checkup.NotFound()))
 
             // Valida status - business rule: solo checkup completati possono essere esportati
             if (!BuildConfig.DEBUG) {
@@ -87,7 +87,7 @@ class ExportCheckUpUseCase @Inject constructor(
             val validationErrors = options.validate()
             if (validationErrors.isNotEmpty()) {
                 Timber.Forest.e("Export options validation failed: $validationErrors")
-                return@flow emit(QrResult.Error(QrError.Checkup.FIELDS_REQUIRED))
+                return@flow emit(QrResult.Error(QrError.Checkup.FieldsRequired()))
             }
 
             // ===== 2. PREPARAZIONE DATI EXPORT =====
@@ -148,8 +148,8 @@ class ExportCheckUpUseCase @Inject constructor(
                 }
 
         } catch (e: Exception) {
-            Timber.Forest.e(e, QrError.Checkup.EXPORT.name)
-            emit(QrResult.Error(QrError.Checkup.EXPORT))
+            Timber.Forest.e(e, "Checkup.Export")
+            emit(QrResult.Error(QrError.Checkup.Export()))
         }
     }
 

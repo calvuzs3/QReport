@@ -22,8 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.backup.domain.model.BackupInfo
 import net.calvuz.qreport.app.util.DateTimeUtils.getFormattedDate
 import net.calvuz.qreport.app.util.SizeUtils.getFormattedSize
@@ -53,7 +55,7 @@ fun DeleteBackupDialog(
                     tint = MaterialTheme.colorScheme.error
                 )
                 Text(
-                    text = "Elimina Backup",
+                    text = stringResource(R.string.backup_delete_dialog_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
@@ -64,7 +66,7 @@ fun DeleteBackupDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Text(
-                    text = "Sei sicuro di voler eliminare questo backup?",
+                    text = stringResource(R.string.backup_delete_dialog_confirm_message),
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
@@ -80,27 +82,30 @@ fun DeleteBackupDialog(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "📅 Data: ${backup.getFormattedDate()}",
+                            text = stringResource(R.string.backup_delete_dialog_date, backup.getFormattedDate()),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "📦 Dimensione: ${backup.totalSize.getFormattedSize()}",
+                            text = stringResource(R.string.backup_delete_dialog_size, backup.totalSize.getFormattedSize()),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         if (backup.description?.isNotEmpty() == true) {
                             Text(
-                                text = "📝 Descrizione: ${backup.description}",
+                                text = stringResource(R.string.backup_delete_dialog_description, backup.description),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
                         if (backup.includesPhotos) {
                             Text(
-                                text = "📸 Include ${backup.photoCount ?: "N/A"} foto",
+                                text = stringResource(
+                                    R.string.backup_delete_dialog_photos,
+                                    backup.photoCount?.toString() ?: stringResource(R.string.backup_restore_confirm_photo_count_na)
+                                ),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
                         Text(
-                            text = "📱 Versione: ${backup.appVersion}",
+                            text = stringResource(R.string.backup_delete_dialog_version, backup.appVersion),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -125,14 +130,13 @@ fun DeleteBackupDialog(
                         )
                         Column {
                             Text(
-                                text = "⚠️ Operazione Irreversibile",
+                                text = stringResource(R.string.backup_delete_dialog_irreversible_title),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                             Text(
-                                text = "Una volta eliminato, questo backup non potrà più essere recuperato. " +
-                                        "Assicurati di avere altri backup disponibili se necessario.",
+                                text = stringResource(R.string.backup_delete_dialog_irreversible_message),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
@@ -154,12 +158,12 @@ fun DeleteBackupDialog(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Elimina")
+                Text(stringResource(R.string.action_delete))
             }
         },
         dismissButton = {
             OutlinedButton(onClick = onDismiss) {
-                Text("Annulla")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

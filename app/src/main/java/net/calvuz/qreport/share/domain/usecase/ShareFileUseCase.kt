@@ -45,12 +45,12 @@ class ShareFileUseCase @Inject constructor(
             val file = File(filePath)
             if (!file.exists()) {
                 Timber.e("Exported file not found: $filePath")
-                return@withContext QrResult.Error(QrError.ShareError.FILE_NOT_FOUND)
+                return@withContext QrResult.Error(QrError.ShareError.FileNotFound())
             }
 
             if (!file.canRead()) {
                 Timber.e("Cannot read exported file: $filePath")
-                return@withContext QrResult.Error(QrError.ShareError.PERMISSION_DENIED)
+                return@withContext QrResult.Error(QrError.ShareError.PermissionDenied())
             }
 
             // 2. Check file size constraints for sharing
@@ -81,7 +81,7 @@ class ShareFileUseCase @Inject constructor(
             when (val validationResult = shareFileRepository.validateFileForSharing(filePath)) {
                 is QrResult.Error -> {
                     Timber.e("File validation failed for sharing: $filePath")
-                    return@withContext QrResult.Error(QrError.ShareError.VALIDATION_FAILED)
+                    return@withContext QrResult.Error(QrError.ShareError.ValidationFailed())
                 }
                 is QrResult.Success -> {
                     val validation = validationResult.data
@@ -91,7 +91,7 @@ class ShareFileUseCase @Inject constructor(
                         }
                         if (majorIssues.isNotEmpty()) {
                             Timber.e("Cannot share file due to: ${majorIssues.first().message}")
-                            return@withContext QrResult.Error(QrError.ShareError.VALIDATION_FAILED)
+                            return@withContext QrResult.Error(QrError.ShareError.ValidationFailed())
                         }
                     }
 
@@ -111,7 +111,7 @@ class ShareFileUseCase @Inject constructor(
                 is QrResult.Success -> {
                     if (compatibilityResult.data.isEmpty()) {
                         Timber.e("No compatible apps found for sharing: $filePath")
-                        return@withContext QrResult.Error(QrError.ShareError.NO_COMPATIBLE_APP)
+                        return@withContext QrResult.Error(QrError.ShareError.NoCompatibleApp())
                     } else {
                         Timber.d("Found ${compatibilityResult.data.size} compatible apps for sharing")
                     }
@@ -124,11 +124,11 @@ class ShareFileUseCase @Inject constructor(
                     Timber.e("Failed to share exported file: $filePath")
                     // Map ShareError to more specific error if needed
 //                    when (shareResult.error) {
-//                        is QrError.ShareError.FILE_NOT_FOUND -> QrResult.Error(QrError.ShareError.FILE_NOT_FOUND)
-//                        is QrError.ShareError.PERMISSION_DENIED -> QrResult.Error(QrError.ShareError.PERMISSION_DENIED)
-//                        is QrError.ShareError.NO_COMPATIBLE_APPS -> QrResult.Error(QrError.ShareError.NO_COMPATIBLE_APPS)
+//                        is QrError.ShareError.FileNotFound -> QrResult.Error(QrError.ShareError.FileNotFound())
+//                        is QrError.ShareError.PermissionDenied -> QrResult.Error(QrError.ShareError.PermissionDenied())
+//                        is QrError.ShareError.NoCompatibleApp -> QrResult.Error(QrError.ShareError.NoCompatibleApp())
 //                        else ->
-                            QrResult.Error(QrError.ShareError.SHARE_FAILED)
+                            QrResult.Error(QrError.ShareError.ShareFailed())
 //                    }
                 }
                 is QrResult.Success -> {
@@ -139,7 +139,7 @@ class ShareFileUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Exception sharing exported file: $filePath")
-            QrResult.Error(QrError.ShareError.SHARE_FAILED)
+            QrResult.Error(QrError.ShareError.ShareFailed())
         }
     }
 

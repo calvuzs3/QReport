@@ -119,7 +119,7 @@ class ExportOptionsViewModel @Inject constructor(
                         Timber.e("Failed to load checkup details")
                         _uiState.value = _uiState.value.copy(
                             isLoading = false,
-                            error = QrError.Checkup.LOAD
+                            error = QrError.Checkup.Load()
                         )
                     }
 
@@ -146,7 +146,7 @@ class ExportOptionsViewModel @Inject constructor(
                 Timber.e(e, "Exception initializing export options")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = QrError.Checkup.UNKNOWN
+                    error = QrError.Checkup.Unknown()
                 )
             }
         }
@@ -235,7 +235,7 @@ class ExportOptionsViewModel @Inject constructor(
                 Timber.e(e, "Export failed with exception")
                 _uiState.value = _uiState.value.copy(
                     isExporting = false,
-                    error = QrError.Checkup.UNKNOWN
+                    error = QrError.Checkup.Unknown()
                 )
             }
         }
@@ -266,14 +266,14 @@ class ExportOptionsViewModel @Inject constructor(
 
                     is QrResult.Error -> {
                         _uiState.value = _uiState.value.copy(
-                            error = QrError.Checkup.FILE_OPEN
+                            error = QrError.Checkup.FileOpen()
                         )
                     }
                 }
             } catch (e: Exception) {
-                Timber.e(e, QrError.Checkup.FILE_OPEN.name)
+                Timber.e(e, "Checkup.FileOpen")
                 _uiState.value = _uiState.value.copy(
-                    error = QrError.Checkup.FILE_OPEN
+                    error = QrError.Checkup.FileOpen()
                 )
             }
         }
@@ -286,14 +286,14 @@ class ExportOptionsViewModel @Inject constructor(
 //
 //                    is QrResult.Error -> {
 //                        _uiState.value = _uiState.value.copy(
-//                            error = QrError.Checkup.FILE_OPEN
+//                            error = QrError.Checkup.FileOpen()
 //                        )
 //                    }
 //                }
 //            } catch (e: Exception) {
-//                Timber.e(e, QrError.Checkup.FILE_OPEN.name)
+//                Timber.e(e, "Checkup.FileOpen")
 //                _uiState.value = _uiState.value.copy(
-//                    error = QrError.Checkup.FILE_OPEN
+//                    error = QrError.Checkup.FileOpen()
 //                )
 //            }
 //        }
@@ -317,14 +317,14 @@ class ExportOptionsViewModel @Inject constructor(
 
                     is QrResult.Error -> {
                         _uiState.value = _uiState.value.copy(
-                            error = QrError.Checkup.FILE_SHARE
+                            error = QrError.Checkup.FileShare()
                         )
                     }
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Failed to share file")
                 _uiState.value = _uiState.value.copy(
-                    error = QrError.Checkup.FILE_SHARE
+                    error = QrError.Checkup.FileShare()
                 )
             }
         }
@@ -337,14 +337,14 @@ class ExportOptionsViewModel @Inject constructor(
 //
 //                    is QrResult.Error -> {
 //                        _uiState.value = _uiState.value.copy(
-//                            error = QrError.Checkup.FILE_SHARE
+//                            error = QrError.Checkup.FileShare()
 //                        )
 //                    }
 //                }
 //            } catch (e: Exception) {
 //                Timber.e(e, "Failed to share file")
 //                _uiState.value = _uiState.value.copy(
-//                    error = QrError.Checkup.FILE_SHARE
+//                    error = QrError.Checkup.FileShare()
 //                )
 //            }
 //        }

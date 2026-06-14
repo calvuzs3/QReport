@@ -26,11 +26,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import net.calvuz.qreport.R
 import net.calvuz.qreport.backup.presentation.ui.model.BackupProgress
 import net.calvuz.qreport.app.app.presentation.components.DialogItemRow
 import net.calvuz.qreport.app.util.SizeUtils.getFormattedSize
@@ -83,7 +85,7 @@ fun BackupProgressDialog(
                             )
 
                             Text(
-                                text = "Backup in corso...",
+                                text = stringResource(R.string.backup_progress_in_progress),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -94,7 +96,7 @@ fun BackupProgressDialog(
                         // TODO verificare se --> .message
                         DialogItemRow(
                             icon = Icons.Default.Restore,
-                            label = "Backup in corso...",
+                            label = stringResource(R.string.backup_progress_in_progress),
                             value = progress.step,
                             enabled = true
                         )
@@ -112,13 +114,13 @@ fun BackupProgressDialog(
                         if (progress.currentTable != null) {
                             DialogItemRow(
                                 icon = Icons.Default.Tab,
-                                label = "Tabella",
+                                label = stringResource(R.string.backup_restore_progress_table_label),
                                 value = progress.currentTable,
                                 enabled = true
                             )
                             DialogItemRow(
                                 icon = Icons.Default.Tab,
-                                label = "Record",
+                                label = stringResource(R.string.backup_restore_progress_record_label),
                                 value ="${progress.processedRecords}/${progress.totalRecords}",
                                 enabled = true
                             )
@@ -140,7 +142,7 @@ fun BackupProgressDialog(
                             )
 
                             Text(
-                                text = "Backup Completato",
+                                text = stringResource(R.string.backup_progress_completed_title),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -150,7 +152,7 @@ fun BackupProgressDialog(
 
                         // ===== BACKUP SUMMARY =====
                         Text(
-                            text = "Riepilogo azioni",
+                            text = stringResource(R.string.backup_restore_progress_summary_label),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -158,21 +160,21 @@ fun BackupProgressDialog(
                         // ===== BACKUP SUMMARY =====
                         DialogItemRow(
                             icon = Icons.Default.CheckCircle,
-                            label = "Tabelle salvate",
+                            label = stringResource(R.string.backup_progress_tables_saved_label),
                             value = "${progress.tablesBackedUp}",
                             enabled = true,
                         )
                         if (progress.totalSize > 0) {
                             DialogItemRow(
                                 icon = Icons.Default.CheckCircle,
-                                label = "Dati salvati",
+                                label = stringResource(R.string.backup_progress_data_saved_label),
                                 value = progress.totalSize.getFormattedSize(),
                                 enabled = true
                             )
                         }
                         DialogItemRow(
                             icon = Icons.Default.CheckCircle,
-                            label = "Tempo impiegato",
+                            label = stringResource(R.string.backup_progress_time_elapsed_label),
                             value = "${(progress.duration / 1000)}",
                             enabled = true,
                         )
@@ -193,7 +195,7 @@ fun BackupProgressDialog(
                             )
 
                             Text(
-                                text = "Errore Backup",
+                                text = stringResource(R.string.backup_progress_error_title),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center,
@@ -213,7 +215,7 @@ fun BackupProgressDialog(
 
                     is BackupProgress.Idle -> {
                         // Stato idle - shouldn't be the case
-                        Text("Nessuna operazione in corso")
+                        Text(stringResource(R.string.backup_restore_progress_idle))
                     }
                 }
 
@@ -230,7 +232,7 @@ fun BackupProgressDialog(
                     is BackupProgress.InProgress -> {
                         // press CANCEL during process
                         TextButton(onClick = onCancel) {
-                            Text("Annulla")
+                            Text(stringResource(R.string.action_cancel))
                         }
                     }
 
@@ -241,14 +243,14 @@ fun BackupProgressDialog(
                             onClick = onDismiss,
                             modifier = Modifier.fillMaxWidth().padding(16.dp)
                         ) {
-                            Text("OK")
+                            Text(stringResource(R.string.action_ok))
                         }
                     }
 
                     else -> {
                         // Idle state
                         Button(onClick = onDismiss) {
-                            Text("Chiudi")
+                            Text(stringResource(R.string.action_close))
                         }
                     }
                 }

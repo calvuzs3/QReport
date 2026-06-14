@@ -45,7 +45,7 @@ class BackupFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Generate backup path failed")
-            QrResult.Error(QrError.BackupError.PATH_GENERATION)
+            QrResult.Error(QrError.BackupError.PathGeneration())
         }
     }
 
@@ -55,7 +55,7 @@ class BackupFileRepositoryImpl @Inject constructor(
 
             if (!coreFileRepo.fileExists(backupPath)) {
                 Timber.e("Backup file not found: $backupPath")
-                return QrResult.Error(QrError.BackupError.LOAD)
+                return QrResult.Error(QrError.BackupError.Load())
             }
 
             Timber.d("Loading backup: $backupPath")
@@ -74,13 +74,13 @@ class BackupFileRepositoryImpl @Inject constructor(
                 }
                 else -> {
                     Timber.e("Failed to load backup")
-                    QrResult.Error(QrError.BackupError.LOAD)
+                    QrResult.Error(QrError.BackupError.Load())
                 }
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Backup load failed")
-            QrResult.Error(QrError.BackupError.LOAD)
+            QrResult.Error(QrError.BackupError.Load())
         }
     }
 
@@ -101,7 +101,7 @@ class BackupFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Save backup failed")
-            QrResult.Error(QrError.BackupError.SAVE)
+            QrResult.Error(QrError.BackupError.Save())
         }
     }
 
@@ -125,7 +125,7 @@ class BackupFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "List backups failed")
-            QrResult.Error(QrError.BackupError.LOAD)
+            QrResult.Error(QrError.BackupError.Load())
         }
     }
 
@@ -138,12 +138,12 @@ class BackupFileRepositoryImpl @Inject constructor(
                     val backup = listResult.data.find { it.id == backupId }
                     backup?.let {
                         coreFileRepo.deleteDirectory(it.dirPath)
-                    } ?: QrResult.Error(QrError.BackupError.DELETE) // NotFound
+                    } ?: QrResult.Error(QrError.BackupError.Delete()) // NotFound
                 }
             }
         } catch (e: Exception) {
             Timber.e(e, "Delete backup failed")
-            QrResult.Error(QrError.BackupError.DELETE)
+            QrResult.Error(QrError.BackupError.Delete())
         }
     }
 
@@ -184,7 +184,7 @@ class BackupFileRepositoryImpl @Inject constructor(
             ))
         } catch (e: Exception) {
             Timber.e(e, "Get backup stats failed")
-            QrResult.Error(QrError.BackupError.STATS_CALCULATION)
+            QrResult.Error(QrError.BackupError.StatsCalculation())
         }
     }
 
@@ -197,7 +197,7 @@ class BackupFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Cleanup temporary files failed")
-            QrResult.Error(QrError.BackupError.CLEANUP_FAILED)
+            QrResult.Error(QrError.BackupError.CleanupFailed())
         }
     }
 

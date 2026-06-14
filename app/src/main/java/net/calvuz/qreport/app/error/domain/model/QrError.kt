@@ -8,7 +8,26 @@ interface QrError {
         data class UnknownError(val exception: Exception? = null) : SystemError
         data class ExceptionError(val exception: Exception? = null) : SystemError
     }
-
+    
+    sealed interface App : QrError {
+        data class UnknownError(val message: String? = null) : App
+        data class SaveError(val message: QrError? = null) : App
+        data class LoadError(val message: QrError? = null) : App
+        data class DeleteError(val message: QrError? = null) : App
+        data class NotImplemented(val message: QrError? = null) : App
+    }
+    
+    sealed interface ValidationError : QrError {
+        data class IdsDoesNotMatch(val message: String? = null) : ValidationError
+        data class EmptyField(val message: String? = null) : ValidationError
+        data class IsNotActive(val message: String? = null) : ValidationError
+        data class IsNotPrimary(val message: String? = null) : ValidationError
+        data class EmailAlreadyTaken(val message: String? = null) : ValidationError
+        data class PhoneAlreadyTaken(val message: String? = null) : ValidationError
+        data class InvalidOperation(val e: QrError? = null) : ValidationError
+        
+    }
+    
     sealed interface InterventionError : QrError {
         data class LoadError(val message: String? = null) : InterventionError
         data class NotFound(val message: String? = null) : InterventionError
@@ -72,27 +91,7 @@ interface QrError {
         data class ClientNotFound(val message: String? = null) : CreateInterventionError
         data class IslandNotFound(val message: String? = null) : CreateInterventionError
     }
-
-
-    sealed interface App : QrError {
-        data class UnknownError(val message: String? = null) : App
-        data class SaveError(val message: QrError? = null) : App
-        data class LoadError(val message: QrError? = null) : App
-        data class DeleteError(val message: QrError? = null) : App
-        data class NotImplemented(val message: QrError? = null) : App
-    }
-
-    sealed interface ValidationError : QrError {
-        data class IdsDoesntMatch(val message: String? = null) : ValidationError
-        data class EmptyField(val message: String? = null) : ValidationError
-        data class IsNotActive(val message: String? = null) : ValidationError
-        data class IsNotPrimary(val message: String? = null) : ValidationError
-        data class EmailAlreadyTaken(val message: String? = null) : ValidationError
-        data class PhoneAlreadyTaken(val message: String? = null) : ValidationError
-        data class InvalidOperation(val e: QrError? = null) : ValidationError
-
-    }
-
+    
     sealed interface ClientError : QrError {
 
         // ── CRUD ─────────────────────────────────────────────────────────────
@@ -154,7 +153,7 @@ interface QrError {
         data class ClientNotFound(val message: String? = null) : ContactsError
         data class UnknownContactMethodOnDB(val message: String? = null) : ContactsError
         data class ContactIsNotActive(val message: String? = null) : ContactsError
-        data class ContactDoesntBelongToClient(val message: String? = null) : ContactsError
+        data class ContactDoesNotBelongToClient(val message: String? = null) : ContactsError
         data class IsNotPrimary(val message: String? = null) : ContactsError
         data class CannotChangeClientAssociation(val message: String? = null) : ContactsError
         data class CannotRemovePrimaryFlag(val message: String? = null) : ContactsError
@@ -521,116 +520,81 @@ interface QrError {
         data object FilesystemError : FileError
         data object FilesystemReadonly : FileError
     }
-//    enum class FileError : QrError {
-//
-//        // ===== DIRECTORY OPERATIONS =====
-//        DIRECTORY_CREATE,            // Directory creation failed
-//        DIRECTORY_ACCESS,            // Directory access failed
-//        DIRECTORY_DELETE,            // Directory deletion failed
-//        DIRECTORY_NOT_FOUND,         // Directory not found
-//        DIRECTORY_NOT_EMPTY,         // Directory not empty during deletion
-//        DIRECTORY_PERMISSION_DENIED, // Insufficient permissions for directory
-//
-//        // ===== FILE OPERATIONS =====
-//        FileError.FILE_,                 // File creation failed
-//        FILE_READ,                   // File read failed
-//        FILE_WRITE,                  // File write failed
-//        FILE_DELETE,                 // File deletion failed
-//        FILE_COPY,                   // File copy failed
-//        FILE_MOVE,                   // File move failed
-//        FILE_RENAME,                 // File rename failed
-//        FILE_ACCESS,                 // Generic file access error
-//        FILE_NOT_FOUND,              // File not found
-//        FILE_ALREADY_EXISTS,         // File already exists
-//        FILE_LOCKED,                 // File locked / in use
-//        FILE_CORRUPTED,              // File corrupted
 
-//
-//        // ===== I/O OPERATIONS =====
-//        IO_ERRzOR,                    // Generic I/O error
-
-//    }
-
-    // QrError.File has been removed.
-    // The two references in CoreFileRepositoryImpl have been migrated:
-    //   QrError.File.FILE_NOT_EXISTS  →  QrError.FileError.FILE_NOT_FOUND
-    //   QrError.File.IO_ERROR         →  QrError.FileError.IO_ERROR
-
-
-    enum class ExportError : QrError {
+    sealed interface ExportError : QrError {
         // ===== DIRECTORY OPERATIONS =====
-        DIRECTORY_CREATE,           // Errore creazione directory export
-        DIRECTORY_ACCESS,           // Errore accesso directory export
-        DIRECTORY_DELETE,           // Errore eliminazione directory export
+        data class DirectoryCreate(val message: String? = null) : ExportError           // Errore creazione directory export
+        data class DirectoryAccess(val message: String? = null) : ExportError           // Errore accesso directory export
+        data class DirectoryDelete(val message: String? = null) : ExportError           // Errore eliminazione directory export
 
         // ===== FILE OPERATIONS =====
-        FILE_CREATE,                // Errore creazione file export
-        FILE_WRITE,                 // Errore scrittura contenuto export
-        FILE_READ,                  // Errore lettura file export
-        FILE_COPY,                  // Errore copia file per export
-        FILE_MOVE,                  // Errore spostamento file export
-        FILE_DELETE,                // Errore eliminazione file export
+        data class FileCreate(val message: String? = null) : ExportError                // Errore creazione file export
+        data class FileWrite(val message: String? = null) : ExportError                 // Errore scrittura contenuto export
+        data class FileRead(val message: String? = null) : ExportError                  // Errore lettura file export
+        data class FileCopy(val message: String? = null) : ExportError                  // Errore copia file per export
+        data class FileMove(val message: String? = null) : ExportError                  // Errore spostamento file export
+        data class FileDelete(val message: String? = null) : ExportError                // Errore eliminazione file export
 
         // ===== EXPORT GENERATION =====
-        EXPORT_GENERATION_FAILED,   // Errore generale generazione export
-        CONTENT_SERIALIZATION,      // Errore serializzazione contenuti
-        FORMAT_NOT_SUPPORTED,       // Formato export non supportato
-        TEMPLATE_PROCESSING,         // Errore elaborazione template
+        data class ExportGenerationFailed(val message: String? = null) : ExportError    // Errore generale generazione export
+        data class ContentSerialization(val message: String? = null) : ExportError      // Errore serializzazione contenuti
+        data class FormatNotSupported(val message: String? = null) : ExportError        // Formato export non supportato
+        data class TemplateProcessing(val message: String? = null) : ExportError        // Errore elaborazione template
 
         // ===== VALIDATION =====
-        VALIDATION_FAILED,          // Errore validazione export
-        FILE_CORRUPTION,            // File export corrotto
-        INTEGRITY_CHECK_FAILED,     // Controllo integrità fallito
-        STRUCTURE_INVALID,          // Struttura export non valida
+        data class ValidationFailed(val message: String? = null) : ExportError          // Errore validazione export
+        data class FileCorruption(val message: String? = null) : ExportError            // File export corrotto
+        data class IntegrityCheckFailed(val message: String? = null) : ExportError      // Controllo integrità fallito
+        data class StructureInvalid(val message: String? = null) : ExportError          // Struttura export non valida
 
         // ===== STORAGE & SPACE =====
-        STORAGE_CHECK_FAILED,       // Errore verifica spazio disponibile
-        INSUFFICIENT_STORAGE,       // Spazio storage insufficiente
-        SIZE_CALCULATION_FAILED,    // Errore calcolo dimensioni
-        QUOTA_EXCEEDED,             // Quota export superata
+        data class StorageCheckFailed(val message: String? = null) : ExportError        // Errore verifica spazio disponibile
+        data class InsufficientStorage(val message: String? = null) : ExportError       // Spazio storage insufficiente
+        data class SizeCalculationFailed(val message: String? = null) : ExportError      // Errore calcolo dimensioni
+        data class QuotaExceeded(val message: String? = null) : ExportError             // Quota export superata
 
         // ===== CLEANUP & MAINTENANCE =====
-        CLEANUP_FAILED,             // Errore pulizia file temporanei
-        DELETE_FAILED,              // Errore eliminazione export
-        MAINTENANCE_FAILED,         // Errore manutenzione export
+        data class CleanupFailed(val message: String? = null) : ExportError             // Errore pulizia file temporanei
+        data class DeleteFailed(val message: String? = null) : ExportError              // Errore eliminazione export
+        data class MaintenanceFailed(val message: String? = null) : ExportError         // Errore manutenzione export
 
         // ===== LISTING & METADATA =====
-        LIST_FAILED,                // Errore listing export disponibili
-        INFO_FAILED,                // Errore recupero informazioni export
-        METADATA_FAILED,            // Errore gestione metadata export
-        INDEX_CREATION_FAILED,      // Errore creazione indice export
+        data class ListFailed(val message: String? = null) : ExportError                // Errore listing export disponibili
+        data class InfoFailed(val message: String? = null) : ExportError                // Errore recupero informazioni export
+        data class MetadataFailed(val message: String? = null) : ExportError            // Errore gestione metadata export
+        data class IndexCreationFailed(val message: String? = null) : ExportError       // Errore creazione indice export
 
         // ===== MANIFEST & TRACKING =====
-        MANIFEST_CREATE_FAILED,     // Errore creazione manifest export
-        MANIFEST_READ_FAILED,       // Errore lettura manifest export
-        TRACKING_FAILED,            // Errore tracking stato export
+        data class ManifestCreateFailed(val message: String? = null) : ExportError      // Errore creazione manifest export
+        data class ManifestReadFailed(val message: String? = null) : ExportError        // Errore lettura manifest export
+        data class TrackingFailed(val message: String? = null) : ExportError            // Errore tracking stato export
 
         // ===== EXPORT PACKAGING =====
-        COMPRESSION_FAILED,         // Errore compressione export
-        ARCHIVE_CREATION_FAILED,    // Errore creazione archivio
-        PACKAGE_ASSEMBLY_FAILED,    // Errore assemblaggio package export
+        data class CompressionFailed(val message: String? = null) : ExportError         // Errore compressione export
+        data class ArchiveCreationFailed(val message: String? = null) : ExportError     // Errore creazione archivio
+        data class PackageAssemblyFailed(val message: String? = null) : ExportError     // Errore assemblaggio package export
 
         // ===== PERMISSIONS & ACCESS =====
-        PERMISSION_DENIED,          // Permessi insufficienti per export
-        ACCESS_RESTRICTED,          // Accesso limitato directory export
-        WRITE_PROTECTED,            // Directory/file protetti in scrittura
+        data class PermissionDenied(val message: String? = null) : ExportError          // Permessi insufficienti per export
+        data class AccessRestricted(val message: String? = null) : ExportError          // Accesso limitato directory export
+        data class WriteProtected(val message: String? = null) : ExportError            // Directory/file protetti in scrittura
 
         // ===== EXPORT CONFIGURATION =====
-        CONFIGURATION_INVALID,     // Configurazione export non valida
-        OPTIONS_CONFLICT,           // Conflitto nelle opzioni export
-        PARAMETER_MISSING,          // Parametro obbligatorio mancante
+        data class ConfigurationInvalid(val message: String? = null) : ExportError      // Configurazione export non valida
+        data class OptionsConflict(val message: String? = null) : ExportError           // Conflitto nelle opzioni export
+        data class ParameterMissing(val message: String? = null) : ExportError          // Parametro obbligatorio mancante
 
         // ===== TEMPORARY FILES =====
-        TEMP_FILE_FAILED,           // Errore gestione file temporanei
-        TEMP_CLEANUP_FAILED,       // Errore pulizia file temporanei
-        TEMP_SPACE_FULL,            // Spazio temporaneo esaurito
+        data class TempFileFailed(val message: String? = null) : ExportError            // Errore gestione file temporanei
+        data class TempCleanupFailed(val message: String? = null) : ExportError         // Errore pulizia file temporanei
+        data class TempSpaceFull(val message: String? = null) : ExportError             // Spazio temporaneo esaurito
 
         // ===== EXTERNAL DEPENDENCIES =====
-        EXTERNAL_TOOL_FAILED,      // Errore tool esterno per export
-        LIBRARY_ERROR,             // Errore libreria export (POI, etc.)
-        SYSTEM_RESOURCE_UNAVAILABLE,// Risorsa sistema non disponibile
+        data class ExternalToolFailed(val message: String? = null) : ExportError        // Errore tool esterno per export
+        data class LibraryError(val message: String? = null) : ExportError              // Errore libreria export (POI, etc.)
+        data class SystemResourceUnavailable(val message: String? = null) : ExportError // Risorsa sistema non disponibile
 
-        FILE_SHARE_FAILED,          // Errore di condivisione file
+        data class FileShareFailed(val message: String? = null) : ExportError           // Errore di condivisione file
     }
 
     sealed interface ShareError : QrError {
@@ -662,132 +626,152 @@ interface QrError {
         data class CleanupFailed(val message: String? = null) : ShareError        // Temporary file cleanup failed
     }
 
-    enum class PhotoError : QrError {
+    sealed interface PhotoError : QrError {
         // ===== DIRECTORY OPERATIONS =====
-        DIRECTORY_CREATE,          // Failed to create photo directory
-        DIRECTORY_ACCESS,          // Failed to access photo directory
-        THUMBNAILS_DIR_CREATE,     // Failed to create thumbnails directory
+        data class DirectoryCreate(val message: String? = null) : PhotoError      // Failed to create photo directory
+        data class DirectoryAccess(val message: String? = null) : PhotoError      // Failed to access photo directory
+        data class ThumbnailsDirCreate(val message: String? = null) : PhotoError  // Failed to create thumbnails directory
 
         // ===== FILE OPERATIONS =====
-        FILE_CREATE,               // Failed to create photo file
-        FILE_ACCESS,               // Failed to access photo file
-        FILE_DELETE,               // Failed to delete photo file
-        FILE_COPY,                 // Failed to copy photo file
-        FILE_MOVE,                 // Failed to move photo file
+        data class FileCreate(val message: String? = null) : PhotoError           // Failed to create photo file
+        data class FileAccess(val message: String? = null) : PhotoError           // Failed to access photo file
+        data class FileDelete(val message: String? = null) : PhotoError           // Failed to delete photo file
+        data class FileCopy(val message: String? = null) : PhotoError             // Failed to copy photo file
+        data class FileMove(val message: String? = null) : PhotoError             // Failed to move photo file
 
         // ===== PHOTO PROCESSING =====
-        SAVE,                      // Failed to save photo
-        LOAD,                      // Failed to load photo
-        RESIZE,                    // Failed to resize photo
-        ROTATE,                    // Failed to rotate photo
-        CROP,                      // Failed to crop photo
+        data class Save(val message: String? = null) : PhotoError                 // Failed to save photo
+        data class Load(val message: String? = null) : PhotoError                 // Failed to load photo
+        data class Resize(val message: String? = null) : PhotoError               // Failed to resize photo
+        data class Rotate(val message: String? = null) : PhotoError               // Failed to rotate photo
+        data class Crop(val message: String? = null) : PhotoError                 // Failed to crop photo
 
         // ===== THUMBNAIL OPERATIONS =====
-        THUMBNAIL_CREATE,          // Failed to create thumbnail
-        THUMBNAIL_DELETE,          // Failed to delete thumbnail
-        THUMBNAIL_ACCESS,          // Failed to access thumbnail
+        data class ThumbnailCreate(val message: String? = null) : PhotoError      // Failed to create thumbnail
+        data class ThumbnailDelete(val message: String? = null) : PhotoError      // Failed to delete thumbnail
+        data class ThumbnailAccess(val message: String? = null) : PhotoError      // Failed to access thumbnail
 
         // ===== METADATA & EXIF =====
-        METADATA_READ,             // Failed to read photo metadata
-        METADATA_WRITE,            // Failed to write photo metadata
-        EXIF_READ,                 // Failed to read EXIF data
-        EXIF_WRITE,                // Failed to write EXIF data
-        ORIENTATION_READ,          // Failed to read photo orientation
+        data class MetadataRead(val message: String? = null) : PhotoError         // Failed to read photo metadata
+        data class MetadataWrite(val message: String? = null) : PhotoError        // Failed to write photo metadata
+        data class ExifRead(val message: String? = null) : PhotoError             // Failed to read EXIF data
+        data class ExifWrite(val message: String? = null) : PhotoError            // Failed to write EXIF data
+        data class OrientationRead(val message: String? = null) : PhotoError      // Failed to read photo orientation
 
         // ===== IMAGE PROCESSING =====
-        DECODE,                    // Failed to decode image
-        ENCODE,                    // Failed to encode image
-        FORMAT_UNSUPPORTED,        // Unsupported image format
-        COMPRESSION,               // Image compression failed
-        QUALITY_ADJUSTMENT,        // Quality adjustment failed
+        data class Decode(val message: String? = null) : PhotoError               // Failed to decode image
+        data class Encode(val message: String? = null) : PhotoError               // Failed to encode image
+        data class FormatUnsupported(val message: String? = null) : PhotoError    // Unsupported image format
+        data class Compression(val message: String? = null) : PhotoError          // Image compression failed
+        data class QualityAdjustment(val message: String? = null) : PhotoError    // Quality adjustment failed
 
         // ===== VALIDATION =====
-        VALIDATION,                // Photo validation failed
-        SIZE_VALIDATION,           // Photo size validation failed
-        FORMAT_VALIDATION,         // Photo format validation failed
-        CORRUPTION_DETECTED,       // Photo file corruption detected
+        data class Validation(val message: String? = null) : PhotoError           // Photo validation failed
+        data class SizeValidation(val message: String? = null) : PhotoError       // Photo size validation failed
+        data class FormatValidation(val message: String? = null) : PhotoError     // Photo format validation failed
+        data class CorruptionDetected(val message: String? = null) : PhotoError   // Photo file corruption detected
 
         // ===== STORAGE =====
-        STORAGE_ACCESS,            // Failed to access storage
-        STORAGE_FULL,              // Storage space insufficient
-        PERMISSIONS,               // Storage permissions denied
+        data class StorageAccess(val message: String? = null) : PhotoError        // Failed to access storage
+        data class StorageFull(val message: String? = null) : PhotoError          // Storage space insufficient
+        data class Permissions(val message: String? = null) : PhotoError          // Storage permissions denied
 
         // ===== IMPORT/EXPORT =====
-        IMPORT,                    // Photo import failed
-        EXPORT,                    // Photo export failed
-        URI_ACCESS,                // Failed to access photo URI
+        data class Import(val message: String? = null) : PhotoError               // Photo import failed
+        data class Export(val message: String? = null) : PhotoError               // Photo export failed
+        data class UriAccess(val message: String? = null) : PhotoError            // Failed to access photo URI
 
         // ===== MANAGEMENT =====
-        LIST,                      // Failed to list photos
-        COUNT,                     // Failed to count photos
-        DELETE,                    // Failed to delete photo
-        CLEANUP,                   // Photo cleanup failed
+        data class List(val message: String? = null) : PhotoError                 // Failed to list photos
+        data class Count(val message: String? = null) : PhotoError                // Failed to count photos
+        data class Delete(val message: String? = null) : PhotoError               // Failed to delete photo
+        data class Cleanup(val message: String? = null) : PhotoError              // Photo cleanup failed
 
         // ===== CAMERA INTEGRATION =====
-        CAMERA_ACCESS,             // Camera access failed
-        CAPTURE,                   // Photo capture failed
-        SETTINGS_APPLY             // Camera settings application failed
+        data class CameraAccess(val message: String? = null) : PhotoError         // Camera access failed
+        data class Capture(val message: String? = null) : PhotoError              // Photo capture failed
+        data class SettingsApply(val message: String? = null) : PhotoError        // Camera settings application failed
     }
 
 
-    enum class BackupError : QrError {
+    sealed interface BackupError : QrError {
         // ===== BASIC OPERATIONS =====
-        SAVE,                       // Failed to save backup
-        LOAD,                       // Failed to load backup
-        DELETE,                     // Failed to delete backup
-        CREATE,                     // Failed to create backup
+        data class Save(val message: String? = null) : BackupError               // Failed to save backup
+        data class Load(val message: String? = null) : BackupError               // Failed to load backup
+        data class Delete(val message: String? = null) : BackupError             // Failed to delete backup
+        data class Create(val message: String? = null) : BackupError             // Failed to create backup
 
         // ===== VALIDATION & INTEGRITY =====
-        VALIDATE,                   // Backup validation failed
-        CORRUPT,                    // Backup file corrupted
-        CHECKSUM_MISMATCH,         // Checksum validation failed
-        METADATA_MISSING,          // Required metadata missing
-        STRUCTURE_INVALID,         // Backup structure invalid
+        data class Validate(val message: String? = null) : BackupError           // Backup validation failed
+        data class Corrupt(val message: String? = null) : BackupError            // Backup file corrupted
+        data class ChecksumMismatch(val message: String? = null) : BackupError   // Checksum validation failed
+        data class MetadataMissing(val message: String? = null) : BackupError    // Required metadata missing
+        data class StructureInvalid(val message: String? = null) : BackupError   // Backup structure invalid
 
         // ===== COMPRESSION OPERATIONS =====
-        ZIP_CREATE,                // Failed to create ZIP archive
-        ZIP_EXTRACT,               // Failed to extract ZIP archive
-        ZIP_CORRUPT,               // ZIP file corrupted
-        ZIP_PASSWORD,              // ZIP password required/invalid
+        data class ZipCreate(val message: String? = null) : BackupError          // Failed to create ZIP archive
+        data class ZipExtract(val message: String? = null) : BackupError         // Failed to extract ZIP archive
+        data class ZipCorrupt(val message: String? = null) : BackupError         // ZIP file corrupted
+        data class ZipPassword(val message: String? = null) : BackupError        // ZIP password required/invalid
 
         // ===== SHARING & TRANSFER =====
-        SHARE_CREATE,              // Failed to create shareable backup
-        EXPORT_FAILED,             // Export operation failed
-        TEMP_FILE_CREATE,          // Failed to create temporary file
+        data class ShareCreate(val message: String? = null) : BackupError        // Failed to create shareable backup
+        data class ExportFailed(val message: String? = null) : BackupError       // Export operation failed
+        data class TempFileCreate(val message: String? = null) : BackupError     // Failed to create temporary file
 
         // ===== PHOTO OPERATIONS =====
-        PHOTO_ARCHIVE,             // Photo archiving failed
-        PHOTO_EXTRACT,             // Photo extraction failed
-        PHOTO_MISSING,             // Expected photos not found
-        PHOTO_CORRUPT,             // Photo file corrupted
+        data class PhotoArchive(val message: String? = null) : BackupError       // Photo archiving failed
+        data class PhotoExtract(val message: String? = null) : BackupError       // Photo extraction failed
+        data class PhotoMissing(val message: String? = null) : BackupError       // Expected photos not found
+        data class PhotoCorrupt(val message: String? = null) : BackupError       // Photo file corrupted
 
         // ===== CLEANUP & MAINTENANCE =====
-        RETENTION_POLICY,          // Retention policy execution failed
-        CLEANUP_FAILED,            // Cleanup operation failed
-        DISK_SPACE,                // Insufficient disk space
+        data class RetentionPolicy(val message: String? = null) : BackupError    // Retention policy execution failed
+        data class CleanupFailed(val message: String? = null) : BackupError      // Cleanup operation failed
+        data class DiskSpace(val message: String? = null) : BackupError          // Insufficient disk space
 
         // ===== SPECIFIC BACKUP SCENARIOS =====
-        PATH_GENERATION,           // Failed to generate backup path
-        PATH_RESOLUTION,           // Failed to resolve backup path
-        STATS_CALCULATION,         // Failed to calculate backup stats
-        SUMMARY_GENERATION         // Failed to generate backup summary
+        data class PathGeneration(val message: String? = null) : BackupError     // Failed to generate backup path
+        data class PathResolution(val message: String? = null) : BackupError     // Failed to resolve backup path
+        data class StatsCalculation(val message: String? = null) : BackupError   // Failed to calculate backup stats
+        data class SummaryGeneration(val message: String? = null) : BackupError  // Failed to generate backup summary
     }
 
-    enum class Checkup : QrError {
-        UNKNOWN, NOT_FOUND, CANNOT_DELETE_COMPLETED, CANNOT_DELETE_EXPORTED, CANNOT_DELETE_ARCHIVED, LOAD, RELOAD, REFRESH, CREATE, DELETE, FIELDS_REQUIRED, FILE_OPEN, FILE_SHARE,
+    sealed interface Checkup : QrError {
+        data class Unknown(val message: String? = null) : Checkup
+        data class NotFound(val message: String? = null) : Checkup
+        data class CannotDeleteCompleted(val message: String? = null) : Checkup
+        data class CannotDeleteExported(val message: String? = null) : Checkup
+        data class CannotDeleteArchived(val message: String? = null) : Checkup
+        data class Load(val message: String? = null) : Checkup
+        data class Reload(val message: String? = null) : Checkup
+        data class Refresh(val message: String? = null) : Checkup
+        data class Create(val message: String? = null) : Checkup
+        data class Delete(val message: String? = null) : Checkup
+        data class FieldsRequired(val message: String? = null) : Checkup
+        data class FileOpen(val message: String? = null) : Checkup
+        data class FileShare(val message: String? = null) : Checkup
 
-        UPDATE_STATUS, UPDATE_NOTES, UPDATE_HEADER, NOT_AVAILABLE, SPARE_ADD, ASSOCIATION, ASSOCIATION_REMOVE, FINALIZE, EXPORT, LOAD_PHOTOS,
+        data class UpdateStatus(val message: String? = null) : Checkup
+        data class UpdateNotes(val message: String? = null) : Checkup
+        data class UpdateHeader(val message: String? = null) : Checkup
+        data class NotAvailable(val message: String? = null) : Checkup
+        data class SpareAdd(val message: String? = null) : Checkup
+        data class Association(val message: String? = null) : Checkup
+        data class AssociationRemove(val message: String? = null) : Checkup
+        data class Finalize(val message: String? = null) : Checkup
+        data class Export(val message: String? = null) : Checkup
+        data class LoadPhotos(val message: String? = null) : Checkup
 
-        INVALID_STATUS_TRANSITION,
+        data class InvalidStatusTransition(val message: String? = null) : Checkup
 
         // Client
-        CLIENT_LOAD,
+        data class ClientLoad(val message: String? = null) : Checkup
 
         // Facility
-        FACILITY_LOAD,
+        data class FacilityLoad(val message: String? = null) : Checkup
 
         //Island
-        ISLAND_LOAD,
-
+        data class IslandLoad(val message: String? = null) : Checkup
     }
 }

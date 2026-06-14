@@ -7,7 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 
 /**
  * SearchBar riutilizzabile per QReport
@@ -25,10 +27,10 @@ fun QReportSearchBar(
     modifier: Modifier = Modifier,
     query: String,
     onQueryChange: (String) -> Unit,
-    placeholder: String = "Cerca...",
+    placeholder: String = stringResource(R.string.search_bar_placeholder),
     enabled: Boolean = true,
     leadingIcon: @Composable (() -> Unit)? = {
-        Icon(Icons.Default.Search, contentDescription = "Cerca")
+        Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search_bar_cd_search))
     },
     maxLines: Int = 1
 ) {
@@ -40,7 +42,7 @@ fun QReportSearchBar(
         trailingIcon = if (query.isNotEmpty()) {
             {
                 IconButton(onClick = { onQueryChange("") }) {
-                    Icon(Icons.Default.Clear, contentDescription = "Cancella ricerca")
+                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.search_bar_cd_clear_search))
                 }
             }
         } else null,
@@ -62,7 +64,7 @@ fun QReportSearchBar(
 fun CompactSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    placeholder: String = "Cerca...",
+    placeholder: String = stringResource(R.string.search_bar_placeholder),
     modifier: Modifier = Modifier
 ) {
     TextField(
@@ -84,7 +86,7 @@ fun CompactSearchBar(
                 ) {
                     Icon(
                         Icons.Default.Clear,
-                        contentDescription = "Cancella",
+                        contentDescription = stringResource(R.string.search_bar_cd_clear),
                         modifier = Modifier.size(16.dp)
                     )
                 }
@@ -110,7 +112,7 @@ fun SearchBarWithSuggestions(
     onQueryChange: (String) -> Unit,
     suggestions: List<String>,
     onSuggestionSelected: (String) -> Unit,
-    placeholder: String = "Cerca...",
+    placeholder: String = stringResource(R.string.search_bar_placeholder),
     modifier: Modifier = Modifier,
     maxSuggestions: Int = 5
 ) {
@@ -174,7 +176,7 @@ fun AdvancedSearchBar(
     onQueryChange: (String) -> Unit,
     filterCount: Int = 0,
     onFiltersClick: () -> Unit,
-    placeholder: String = "Cerca...",
+    placeholder: String = stringResource(R.string.search_bar_placeholder),
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -202,7 +204,7 @@ fun AdvancedSearchBar(
                 onClick = onFiltersClick,
                 modifier = Modifier.height(56.dp)
             ) {
-                Icon(Icons.Default.FilterList, contentDescription = "Filtri")
+                Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.search_bar_cd_filters))
             }
         }
     }

@@ -12,9 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import net.calvuz.qreport.R
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dagger.hilt.android.qualifiers.ApplicationContext
 import net.calvuz.qreport.backup.domain.model.BackupInfo
@@ -225,7 +227,7 @@ fun BackupScreen(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Backup Disponibili",
+                            text = stringResource(R.string.backup_screen_list_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -233,7 +235,7 @@ fun BackupScreen(
 
                         if (backupUiState.availableBackups.isNotEmpty()) {
                             Text(
-                                text = "${backupUiState.availableBackups.size} backup",
+                                text = stringResource(R.string.backup_screen_list_count, backupUiState.availableBackups.size),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             )
@@ -245,10 +247,10 @@ fun BackupScreen(
                 if (backupUiState.availableBackups.isEmpty()) {
                     item {
                         EmptyState(
-                            textTitle = "Nessun backup trovato",
-                            textMessage = "Crea un nuovo backup per iniziare",
+                            textTitle = stringResource(R.string.backup_screen_empty_title),
+                            textMessage = stringResource(R.string.backup_screen_empty_message),
                             iconImageVector = Icons.Default.Refresh,
-                            iconContentDescription = "Nessun Backup Trovato"
+                            iconContentDescription = stringResource(R.string.backup_screen_empty_cd)
                         )
                     }
                 } else {
@@ -393,7 +395,7 @@ fun BackupScreen(
     // SHARE DIALOG
     if (backupUiState.showShareDialog && backupUiState.shareBackupPath != null) {
         val backupPath = backupUiState.shareBackupPath!!
-        val backupName = backupUiState.shareBackupName ?: "Backup"
+        val backupName = backupUiState.shareBackupName ?: stringResource(R.string.backup_confirmation_action)
 
         LaunchedEffect(backupPath) {
             shareViewModel.loadShareOptions(backupPath)
@@ -426,7 +428,7 @@ fun BackupScreen(
     if (backupUiState.isExporting) {
         AlertDialog(
             onDismissRequest = { /* Cannot dismiss while exporting */ },
-            title = { Text("Esportazione in corso") },
+            title = { Text(stringResource(R.string.backup_screen_export_in_progress)) },
             text = {
                 Column {
                     when (val progress = exportProgress) {
@@ -453,7 +455,7 @@ fun BackupScreen(
     if (backupUiState.isImporting) {
         AlertDialog(
             onDismissRequest = { /* Cannot dismiss while importing */ },
-            title = { Text("Importazione in corso") },
+            title = { Text(stringResource(R.string.backup_screen_import_in_progress)) },
             text = {
                 Column {
                     when (val progress = importProgress) {
@@ -482,7 +484,7 @@ fun BackupScreen(
     // ✅ CORRECTED: Handle sharing errors from ShareViewModel
     LaunchedEffect(shareUiState.error) {
         shareUiState.error?.let { error ->
-            snackbarHostState.showSnackbar("Errore condivisione: $error")
+            snackbarHostState.showSnackbar(error.asString(context))
             shareViewModel.clearError()
         }
     }
@@ -492,7 +494,7 @@ fun BackupScreen(
     LaunchedEffect(backupUiState.successMessage) {
         backupUiState.successMessage?.let { message ->
             // Show snackbar for success
-            snackbarHostState.showSnackbar(message)
+            snackbarHostState.showSnackbar(message.asString(context))
             backupViewModel.dismissMessage()
         }
     }
@@ -500,7 +502,7 @@ fun BackupScreen(
     LaunchedEffect(backupUiState.errorMessage) {
         backupUiState.errorMessage?.let { message ->
             // Show snackbar for error
-            snackbarHostState.showSnackbar(message)
+            snackbarHostState.showSnackbar(message.asString(context))
             backupViewModel.dismissMessage()
         }
     }
@@ -508,7 +510,7 @@ fun BackupScreen(
     LaunchedEffect(backupUiState.infoMessage) {
         backupUiState.infoMessage?.let { message ->
             // Show snackbar for info
-            snackbarHostState.showSnackbar(message)
+            snackbarHostState.showSnackbar(message.asString(context))
             backupViewModel.dismissMessage()
         }
     }
@@ -564,7 +566,7 @@ private fun BackupTopBar(
         modifier = modifier,
         title = {
             Text(
-                text = "Sistema Backup",
+                text = stringResource(R.string.backup_header_card_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -573,7 +575,7 @@ private fun BackupTopBar(
             IconButton(onClick = onNavigateBack) {
                 Icon(
                     imageVector = Icons.Default.ArrowBackIosNew,
-                    contentDescription = "Indietro"
+                    contentDescription = stringResource(R.string.action_back)
                 )
             }
         },
@@ -591,7 +593,7 @@ private fun BackupTopBar(
                 } else {
                     Icon(
                         imageVector = Icons.Default.FileUpload,
-                        contentDescription = "Importa backup"
+                        contentDescription = stringResource(R.string.backup_screen_cd_import)
                     )
                 }
             }
@@ -608,7 +610,7 @@ private fun BackupTopBar(
                 } else {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Aggiorna"
+                        contentDescription = stringResource(R.string.backup_screen_cd_refresh)
                     )
                 }
             }

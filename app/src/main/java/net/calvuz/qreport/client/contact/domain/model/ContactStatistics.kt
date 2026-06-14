@@ -1,6 +1,9 @@
+@file:Suppress("HardCodedStringLiteral", "unused")
+
 package net.calvuz.qreport.client.contact.domain.model
 
 import kotlinx.serialization.Serializable
+import net.calvuz.qreport.app.error.presentation.UiText
 
 /**
  * Statistiche dettagliate per i contatti di un cliente
@@ -25,7 +28,7 @@ data class ContactStatistics(
     val roleDistribution: Map<String, Int>, // Ruolo -> Count
 
     // ===== METODI PREFERITI =====
-    val preferredMethodDistribution: Map<String, Int>, // Metodo preferito -> Count
+    val preferredMethodDistribution: Map<UiText, Int>, // Metodo preferito -> Count
 
     // ===== COMPLETEZZA PROFILI =====
     val completeProfiles: Int, // Con nome, cognome, ruolo, contatto
@@ -61,12 +64,6 @@ data class ContactStatistics(
      */
     val topRole: String?
         get() = roleDistribution.maxByOrNull { it.value }?.key?.takeIf { it.isNotBlank() }
-
-    /**
-     * Metodo di contatto preferito più comune
-     */
-    val topPreferredMethod: String?
-        get() = preferredMethodDistribution.maxByOrNull { it.value }?.key
 
     companion object {
         /**

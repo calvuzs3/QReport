@@ -37,7 +37,7 @@ fun QReportFiltersChipRow(
                 FilterChip(
                     selected = true,
                     onClick = onClearFilter,
-                    label = { Text("Filtro: ${selectedFilter.getDisplayName().asString()}") }, // 👈
+                    label = { Text(stringResource(R.string.filter_chip_row_filter_label, selectedFilter.getDisplayName().asString())) },
                     trailingIcon = {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.filter_chip_row_remove_filter),
                             modifier = Modifier.size(18.dp))
@@ -51,7 +51,7 @@ fun QReportFiltersChipRow(
                 FilterChip(
                     selected = true,
                     onClick = onClearSort,
-                    label = { Text("Ordine: ${selectedSort.getDisplayName().asString()}") }, // 👈
+                    label = { Text(stringResource(R.string.filter_chip_row_sort_label, selectedSort.getDisplayName().asString())) },
                     trailingIcon = {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.filter_chip_row_remove_sort),
                             modifier = Modifier.size(18.dp))

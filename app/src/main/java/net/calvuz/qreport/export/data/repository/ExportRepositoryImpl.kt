@@ -865,7 +865,7 @@ class ExportRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to create export manifest")
-            QrResult.Error(QrError.ExportError.MANIFEST_CREATE_FAILED)
+            QrResult.Error(QrError.ExportError.ManifestCreateFailed())
         }
     }
 

@@ -299,5 +299,36 @@
 
     <string name="filter_chip_row_remove_filter">Rimuovi filtro</string>
     <string name="filter_chip_row_remove_sort">Rimuovi ordinamento</string>
+    <string name="filter_chip_row_filter_label">Filtro: %1$s</string>
+    <string name="filter_chip_row_sort_label">Ordine: %1$s</string>
+
+    <!-- ======================================================= -->
+    <!-- QReportSearchBar                                         -->
+    <!-- ======================================================= -->
+
+    <string name="search_bar_placeholder">Cerca…</string>
+    <string name="search_bar_cd_search">Cerca</string>
+    <string name="search_bar_cd_clear_search">Cancella ricerca</string>
+    <string name="search_bar_cd_clear">Cancella</string>
+    <string name="search_bar_cd_filters">Filtri</string>
+
+    <!-- ======================================================= -->
+    <!-- QrDatePickerField / QrDatePickerDialog                   -->
+    <!-- ======================================================= -->
+
+    <string name="date_picker_placeholder">Seleziona data</string>
+
+    <!-- ======================================================= -->
+    <!-- PrimaryBadge                                             -->
+    <!-- ======================================================= -->
+
+    <string name="primary_badge_label">Primario</string>
+
+    <!-- ======================================================= -->
+    <!-- QReportConfirmDeleteDialog                               -->
+    <!-- ======================================================= -->
+
+    <string name="confirm_delete_dialog_title">Elimina %1$s</string>
+    <string name="confirm_delete_dialog_message">Sei sicuro di voler eliminare %1$s: %2$s?\nL\'operazione non può essere annullata.</string>
 
 </resources>

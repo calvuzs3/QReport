@@ -1,9 +1,9 @@
 # QReport — 7. Remote Sync Feature
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** June 2026  
 **Package root:** `net.calvuz.qreport.sync`  
-**Scope:** Client management group (clients, contacts, contracts, facilities, islands, units)
+**Scope:** Client management group (clients, contacts, contracts, facilities, islands, units, maintenance_logs) + document sync (island_documents)
 
 ---
 
@@ -35,6 +35,8 @@ clients → contacts
         → facilities → facility_islands → mechanical_units
                                         → maintenance_logs
 ```
+
+Documents (`island_documents`) use a **separate two-channel sync** — see section 5.5.
 
 CheckUps, CheckItems, and Photos are **not** synchronised (future phase).
 
@@ -83,7 +85,14 @@ sync/
 │       └── SyncUseCase.kt          Orchestrates push + pull
 │
 ├── mapper/
-│   └── SyncMapper.kt               Entity ↔ DTO conversion
+│   └── SyncMapper.kt               Entity ↔ DTO conversion (7 entity types incl. maintenance_logs)
+│
+├── document/
+│   ├── DocumentFileApi.kt          Retrofit: upload, download, manifest endpoints
+│   ├── DocumentDto.kt              DTO mirror of server document model
+│   ├── DocumentHash.kt             SHA-256 helper (raw bytes only, never metadata)
+│   ├── KtorDocumentTransferProvider.kt  Implements DocumentTransferProvider via Retrofit
+│   └── DocumentSyncUseCase.kt      Orchestrates metadata sync + file transfer
 │
 └── presentation/
     └── ui/
@@ -272,9 +281,61 @@ Room upserts record with is_deleted=true
 All DAO queries filter WHERE is_deleted=0 → record hidden
 ```
 
----
+### 5.5 Document sync (island_documents)
 
-## 6. Authentication
+Documents use **two independent channels** to keep metadata and file bytes decoupled:
+
+```
+Channel 1 — metadata (JSON)
+  GET  /documents/manifest    pull list of {id, sha256, updatedAt} from server
+  POST /sync/push             push document metadata records (same payload as entities)
+
+Channel 2 — file bytes
+  POST /upload/{id}           push a local file whose SHA-256 differs from server
+  GET  /download/{id}         pull a remote file missing or changed locally
+```
+
+**Integrity check**: SHA-256 is computed on **raw file bytes only** (never on metadata).
+A file is transferred only when its local hash differs from the server manifest hash.
+This avoids redundant transfers when only metadata (e.g. title) has changed.
+
+**Provider interfaces** (`DocumentStorageProvider`, `DocumentTransferProvider`) isolate
+the storage and transport layers so a future S3/MinIO backend can be swapped in
+without touching domain or use-case code.
+
+```
+DocumentSyncUseCase
+  │
+  ├── fetch manifest  ──► DocumentFileApi.getManifest()
+  ├── compare hashes  ──► DocumentHash.sha256(file.readBytes())
+  ├── upload changed  ──► KtorDocumentTransferProvider.upload(id, bytes)
+  └── download missing ──► KtorDocumentTransferProvider.download(id) → local file
+```
+
+### 5.6 SyncForegroundObserver
+
+`SyncForegroundObserver` implements `DefaultLifecycleObserver` and is registered on
+`ProcessLifecycleOwner` in `QReportApplication`, so it fires when the **entire app**
+comes to the foreground (not just a single Activity).
+
+```
+App comes to foreground
+  │
+  ▼
+SyncForegroundObserver.onStart()
+  │
+  ├── SyncMode == LOCAL_ONLY?  → skip
+  ├── Not logged in?           → skip
+  ├── now - lastSyncTimestamp < 30 min? → skip (cooldown)
+  │
+  └── trigger SyncUseCase (incremental)
+```
+
+The 30-minute cooldown prevents redundant syncs when the user briefly switches
+apps and returns. The threshold is a constant in `SyncForegroundObserver` and can
+be adjusted without touching other sync logic.
+
+---
 
 ### 6.1 JWT token lifecycle
 
@@ -361,7 +422,12 @@ data class SyncSettingsUiState(
 | `QReportApi.kt` | Retrofit: `POST /auth/login`, `POST /sync/push`, `GET /sync/pull` |
 | `RemoteDataSource.kt` | Interface isolating network from domain |
 | `RetrofitRemoteDataSource.kt` | Maps HTTP responses to `QrResult<T, QrError>` |
-| `SyncMapper.kt` | Entity ↔ DTO bidirectional mapping for all 6 entity types |
+| `SyncMapper.kt` | Entity ↔ DTO bidirectional mapping for all 7 entity types (incl. maintenance_logs) |
+| `DocumentFileApi.kt` | Retrofit: `GET /documents/manifest`, `POST /upload/{id}`, `GET /download/{id}` |
+| `DocumentDto.kt` | DTO mirror of server `island_documents` model |
+| `DocumentHash.kt` | SHA-256 on raw file bytes; used for transfer diffing |
+| `KtorDocumentTransferProvider.kt` | Implements `DocumentTransferProvider`; uploads/downloads file bytes |
+| `DocumentSyncUseCase.kt` | Orchestrates manifest fetch, hash comparison, upload/download |
 | `LoginUseCase.kt` | Validates credentials, calls remote, saves token |
 | `SyncUseCase.kt` | Builds payload, calls push, applies pull, stamps timestamps |
 | `SyncForegroundObserver.kt` | `DefaultLifecycleObserver` on `ProcessLifecycleOwner` |
@@ -408,4 +474,4 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
 
 ---
 
-*Document: 7_Sync_Android.md — QReport v1.0 — June 2026*
+*Document: 7_Sync_Android.md — QReport v1.1 — June 2026*

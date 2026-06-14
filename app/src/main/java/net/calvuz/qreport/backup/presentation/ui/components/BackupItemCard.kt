@@ -32,8 +32,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 import net.calvuz.qreport.backup.domain.model.BackupInfo
 import net.calvuz.qreport.app.util.DateTimeUtils.getFormattedDate
 import net.calvuz.qreport.app.util.SizeUtils.getFormattedSize
@@ -109,7 +111,7 @@ fun BackupItemCard(
                                 tint = MaterialTheme.colorScheme.secondary
                             )
                             Text(
-                                text = "Con foto",
+                                text = stringResource(R.string.backup_item_card_with_photos),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary
                             )
@@ -126,14 +128,14 @@ fun BackupItemCard(
                 if (backup.recordCount != null) {
                     MetadataChip(
                         icon = Icons.Default.Storage,
-                        label = "${backup.recordCount} record"
+                        label = stringResource(R.string.backup_item_card_record_count, backup.recordCount)
                     )
                 }
 
                 if (backup.photoCount != null && backup.photoCount > 0) {
                     MetadataChip(
                         icon = Icons.Default.Photo,
-                        label = "${backup.photoCount} foto"
+                        label = stringResource(R.string.backup_item_card_photo_count, backup.photoCount)
                     )
                 }
 
@@ -164,7 +166,7 @@ fun BackupItemCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Ripristina",
+                        text = stringResource(R.string.backup_restore_confirm_action),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -182,7 +184,7 @@ fun BackupItemCard(
                     } else {
                         Icon(
                             imageVector = Icons.Default.Download,
-                            contentDescription = "Scarica backup",
+                            contentDescription = stringResource(R.string.backup_item_card_cd_download),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -194,7 +196,7 @@ fun BackupItemCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Share,
-                        contentDescription = "Condividi backup",
+                        contentDescription = stringResource(R.string.backup_item_card_cd_share),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
@@ -205,7 +207,7 @@ fun BackupItemCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Elimina backup",
+                        contentDescription = stringResource(R.string.backup_item_card_cd_delete),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }

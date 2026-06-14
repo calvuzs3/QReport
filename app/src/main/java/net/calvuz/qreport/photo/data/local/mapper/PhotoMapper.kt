@@ -62,7 +62,7 @@ fun Photo.toEntity(): PhotoEntity {
         // Dimensions
         width = this.metadata.width,
         height = this.metadata.height,
-        // Metadati - TypeConverters automatici!
+        // Metadata - TypeConverters automatici!
         gpsLocation = this.metadata.gpsLocation, // PhotoLocation diretto!
         resolution = this.metadata.resolution, // PhotoResolution diretto!
         perspective = this.metadata.perspective, // PhotoPerspective diretto!

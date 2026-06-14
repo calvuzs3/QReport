@@ -65,7 +65,7 @@ class SetPrimaryContactUseCase @Inject constructor(
         if (contact.clientId != clientId) {
             Timber.w("Contact $contactId does not belong to client $clientId")
             return QrResult.Error(QrError.ValidationError.InvalidOperation(
-                QrError.ContactsError.ContactDoesntBelongToClient()))
+                QrError.ContactsError.ContactDoesNotBelongToClient()))
         }
 
         if (contact.isPrimary) {

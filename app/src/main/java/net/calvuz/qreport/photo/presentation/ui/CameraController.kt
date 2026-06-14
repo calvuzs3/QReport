@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
+import net.calvuz.qreport.R
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -69,7 +70,7 @@ class CameraController @Inject constructor(
                 _cameraState.value = _cameraState.value.copy(
                     isInitialized = false,
                     isInitializing = false,
-                    error = "Errore inizializzazione camera: ${e.message}"
+                    error = context.getString(R.string.photo_camera_err_init_camera, e.message ?: "")
                 )
                 continuation.resumeWithException(e)
             }
@@ -119,7 +120,7 @@ class CameraController @Inject constructor(
 
         } catch (e: Exception) {
             _cameraState.value = _cameraState.value.copy(
-                error = "Errore binding camera: ${e.message}"
+                error = context.getString(R.string.photo_camera_err_binding, e.message ?: "")
             )
         }
     }
@@ -154,7 +155,7 @@ class CameraController @Inject constructor(
     suspend fun capturePhoto(): CaptureResult = suspendCancellableCoroutine { continuation ->
 
         val imageCapture = imageCapture ?: run {
-            continuation.resume(CaptureResult.Error("Camera non inizializzata"))
+            continuation.resume(CaptureResult.Error(context.getString(R.string.photo_camera_err_not_initialized)))
             return@suspendCancellableCoroutine
         }
 
@@ -175,7 +176,7 @@ class CameraController @Inject constructor(
 
                 override fun onError(exception: ImageCaptureException) {
                     _cameraState.value = _cameraState.value.copy(isCapturing = false)
-                    continuation.resume(CaptureResult.Error("Errore cattura: ${exception.message}"))
+                    continuation.resume(CaptureResult.Error(context.getString(R.string.photo_camera_err_capture, exception.message ?: "")))
                 }
             }
         )

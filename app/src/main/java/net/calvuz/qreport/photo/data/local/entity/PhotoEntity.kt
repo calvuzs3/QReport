@@ -1,10 +1,11 @@
+@file:Suppress("HardCodedStringLiteral", "unused")
 package net.calvuz.qreport.photo.data.local.entity
 
-import androidx.room.ColumnInfo
-import androidx.room.Entity
-import androidx.room.ForeignKey
 import androidx.room.Index
+import androidx.room.Entity
+import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
+import androidx.room.ForeignKey
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.checkup.data.local.entity.CheckItemEntity
 import net.calvuz.qreport.photo.domain.model.CameraSettings
@@ -22,7 +23,7 @@ import net.calvuz.qreport.photo.domain.model.PhotoResolution
             entity = CheckItemEntity::class,
             parentColumns = ["id"],
             childColumns = ["check_item_id"],
-            onDelete = ForeignKey.Companion.CASCADE
+            onDelete = ForeignKey.CASCADE
         )
     ],
     indices = [
@@ -79,7 +80,7 @@ data class PhotoEntity(
     @ColumnInfo(name = "perspective") val perspective: PhotoPerspective? = null,
 
     /**
-     * Metadati EXIF - TypeConverter esistente Map<String, String> ↔ JSON
+     * Metadata EXIF - TypeConverter esistente Map<String, String> ↔ JSON
      */
     @ColumnInfo(name = "exif_data") val exifData: Map<String, String> = emptyMap(),
 

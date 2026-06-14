@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.photo.domain.model.CameraSettings
 import net.calvuz.qreport.photo.domain.model.PhotoPerspective
 import net.calvuz.qreport.photo.domain.model.PhotoResolution
@@ -28,7 +30,7 @@ data class CameraUiState(
     val zoomRatio: Float = 1f,
     val maxZoomRatio: Float = 1f,
     val minZoomRatio: Float = 1f,
-    val error: String? = null,
+    val error: UiText? = null,
     val captureSuccess: Boolean = false,
     val permissionGranted: Boolean = false,
     val showPermissionRationale: Boolean = false,
@@ -67,7 +69,7 @@ class CameraViewModel @Inject constructor(
                     zoomRatio = cameraState.zoomRatio,
                     maxZoomRatio = cameraState.maxZoomRatio,
                     minZoomRatio = cameraState.minZoomRatio,
-                    error = cameraState.error
+                    error = cameraState.error?.let { UiText.DynStr(it) }
                 )
             }
         }
@@ -90,13 +92,13 @@ class CameraViewModel @Inject constructor(
                     Timber.d("Camera inizializzata con successo")
                 } else {
                     _cameraUiState.value = _cameraUiState.value.copy(
-                        error = "Impossibile inizializzare la camera"
+                        error = UiText.StringResource(R.string.photo_camera_err_init_failed)
                     )
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Errore durante l'inizializzazione camera")
                 _cameraUiState.value = _cameraUiState.value.copy(
-                    error = "Errore inizializzazione: ${e.message}"
+                    error = UiText.StringResources(R.string.photo_camera_err_init, e.message ?: "")
                 )
             }
         }
@@ -113,7 +115,7 @@ class CameraViewModel @Inject constructor(
                 // Verifica che la camera sia inizializzata
                 if (!_cameraUiState.value.isInitialized) {
                     _cameraUiState.value = _cameraUiState.value.copy(
-                        error = "Camera non inizializzata"
+                        error = UiText.StringResource(R.string.photo_camera_err_not_initialized)
                     )
                     return@launch
                 }
@@ -136,7 +138,7 @@ class CameraViewModel @Inject constructor(
                     is CaptureResult.Error -> {
                         _cameraUiState.value = _cameraUiState.value.copy(
                             isCapturing = false,
-                            error = result.message
+                            error = UiText.DynStr(result.message)
                         )
                     }
                 }
@@ -144,7 +146,7 @@ class CameraViewModel @Inject constructor(
                 Timber.e(e, "Errore durante la cattura foto")
                 _cameraUiState.value = _cameraUiState.value.copy(
                     isCapturing = false,
-                    error = "Errore cattura: ${e.message}"
+                    error = UiText.StringResources(R.string.photo_camera_err_capture, e.message ?: "")
                 )
             }
         }
@@ -179,7 +181,7 @@ class CameraViewModel @Inject constructor(
                 is PhotoResult.Error -> {
                     _cameraUiState.value = _cameraUiState.value.copy(
                         isCapturing = false,
-                        error = "Errore salvataggio: ${result.exception.message}"
+                        error = UiText.StringResources(R.string.photo_camera_err_save, result.exception.message ?: "")
                     )
                 }
                 is PhotoResult.Loading -> {
@@ -190,7 +192,7 @@ class CameraViewModel @Inject constructor(
             Timber.e(e, "Errore nel salvataggio foto")
             _cameraUiState.value = _cameraUiState.value.copy(
                 isCapturing = false,
-                error = "Errore salvataggio: ${e.message}"
+                error = UiText.StringResources(R.string.photo_camera_err_save, e.message ?: "")
             )
         }
     }

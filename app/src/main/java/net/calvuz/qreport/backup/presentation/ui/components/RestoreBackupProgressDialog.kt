@@ -25,11 +25,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import net.calvuz.qreport.R
 import net.calvuz.qreport.backup.presentation.ui.model.RestoreProgress
 import net.calvuz.qreport.app.app.presentation.components.DialogItemRow
 
@@ -81,7 +83,7 @@ fun RestoreBackupProgressDialog(
                             )
 
                             Text(
-                                text = "Ripristino in corso...",
+                                text = stringResource(R.string.backup_restore_progress_in_progress),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -92,7 +94,7 @@ fun RestoreBackupProgressDialog(
                         // TODO verificare se --> .message
                         DialogItemRow(
                             icon = Icons.Default.Restore,
-                            label = "Ripristino in corso...",
+                            label = stringResource(R.string.backup_restore_progress_in_progress),
                             value = progress.step,
                             enabled = true
                         )
@@ -110,13 +112,13 @@ fun RestoreBackupProgressDialog(
                         if (progress.currentTable != null) {
                             DialogItemRow(
                                 icon = Icons.Default.Tab,
-                                label = "Tabella",
+                                label = stringResource(R.string.backup_restore_progress_table_label),
                                 value = progress.currentTable,
                                 enabled = true
                             )
                             DialogItemRow(
                                 icon = Icons.Default.Tab,
-                                label = "Record",
+                                label = stringResource(R.string.backup_restore_progress_record_label),
                                 value ="${progress.processedRecords}/${progress.totalRecords}",
                                 enabled = true
                             )
@@ -138,7 +140,7 @@ fun RestoreBackupProgressDialog(
                             )
 
                             Text(
-                                text = "Ripristino Completato",
+                                text = stringResource(R.string.backup_restore_progress_completed_title),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center
@@ -148,7 +150,7 @@ fun RestoreBackupProgressDialog(
 
                         // ===== BACKUP SUMMARY =====
                         Text(
-                            text = "Riepilogo azioni",
+                            text = stringResource(R.string.backup_restore_progress_summary_label),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -156,7 +158,7 @@ fun RestoreBackupProgressDialog(
                         // ===== BACKUP SUMMARY =====
                         DialogItemRow(
                             icon = Icons.Default.CheckCircle,
-                            label = "Records ripritinati",
+                            label = stringResource(R.string.backup_restore_progress_records_restored_label),
                             value = "${progress.processedRecords}",
                             enabled = true,
                         )
@@ -190,7 +192,7 @@ fun RestoreBackupProgressDialog(
                             )
 
                             Text(
-                                text = "Errore Ripristino",
+                                text = stringResource(R.string.backup_restore_progress_error_title),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                                 textAlign = TextAlign.Center,
@@ -209,7 +211,7 @@ fun RestoreBackupProgressDialog(
 
                     is RestoreProgress.Idle -> {
                         // Stato idle - shouldn't be the case
-                        Text("Nessuna operazione in corso")
+                        Text(stringResource(R.string.backup_restore_progress_idle))
                     }
                 }
 
@@ -226,7 +228,7 @@ fun RestoreBackupProgressDialog(
                     is RestoreProgress.InProgress -> {
                         // press CANCEL during process
                         TextButton(onClick = onCancel) {
-                            Text("Annulla")
+                            Text(stringResource(R.string.action_cancel))
                         }
                     }
 
@@ -237,14 +239,14 @@ fun RestoreBackupProgressDialog(
                             onClick = onDismiss,
                             modifier = Modifier.fillMaxWidth().padding(16.dp)
                         ) {
-                            Text("OK")
+                            Text(stringResource(R.string.action_ok))
                         }
                     }
 
                     else -> {
                         // Idle state
                         Button(onClick = onDismiss) {
-                            Text("Chiudi")
+                            Text(stringResource(R.string.action_close))
                         }
                     }
                 }

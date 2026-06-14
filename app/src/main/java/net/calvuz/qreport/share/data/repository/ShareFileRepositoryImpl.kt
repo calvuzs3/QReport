@@ -61,7 +61,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Share file failed: $filePath")
-            QrResult.Error(QrError.ShareError.SHARE_FAILED)
+            QrResult.Error(QrError.ShareError.ShareFailed())
         }
     }
 
@@ -82,7 +82,7 @@ class ShareFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Share multiple files failed")
-            QrResult.Error(QrError.ShareError.SHARE_FAILED)
+            QrResult.Error(QrError.ShareError.ShareFailed())
         }
     }
 
@@ -108,7 +108,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Share file with text failed")
-            QrResult.Error(QrError.ShareError.SHARE_FAILED)
+            QrResult.Error(QrError.ShareError.ShareFailed())
         }
     }
 
@@ -124,7 +124,7 @@ class ShareFileRepositoryImpl @Inject constructor(
                 is QrResult.Error -> return QrResult.Error(validation.error)
                 is QrResult.Success -> {
                     if (!validation.data.canShare) {
-                        return QrResult.Error(QrError.ShareError.VALIDATION_FAILED)
+                        return QrResult.Error(QrError.ShareError.ValidationFailed())
                     }
                 }
             }
@@ -159,7 +159,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Create share intent failed: $filePath")
-            QrResult.Error(QrError.ShareError.INTENT_CREATION_FAILED)
+            QrResult.Error(QrError.ShareError.IntentCreationFailed())
         }
     }
 
@@ -178,7 +178,7 @@ class ShareFileRepositoryImpl @Inject constructor(
 
                     val resolveInfos = context.packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
                     if (resolveInfos.isEmpty()) {
-                        return QrResult.Error(QrError.ShareError.APP_NOT_FOUND)
+                        return QrResult.Error(QrError.ShareError.AppNotFound())
                     }
 
                     QrResult.Success(intent)
@@ -186,7 +186,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Create share intent for app failed: $targetPackage")
-            QrResult.Error(QrError.ShareError.INTENT_CREATION_FAILED)
+            QrResult.Error(QrError.ShareError.IntentCreationFailed())
         }
     }
 
@@ -229,7 +229,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Open file failed: $filePath")
-            QrResult.Error(QrError.ShareError.OPEN_FAILED)
+            QrResult.Error(QrError.ShareError.OpenFailed())
         }
     }
 
@@ -264,7 +264,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Open file with app failed: $packageName")
-            QrResult.Error(QrError.ShareError.OPEN_FAILED)
+            QrResult.Error(QrError.ShareError.OpenFailed())
         }
     }
 
@@ -278,7 +278,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             QrResult.Success(apps)
         } catch (e: Exception) {
             Timber.e(e, "Get compatible apps failed")
-            QrResult.Error(QrError.ShareError.APP_QUERY_FAILED)
+            QrResult.Error(QrError.ShareError.AppQueryFailed())
         }
     }
 
@@ -342,7 +342,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Create temporary file failed")
-            QrResult.Error(QrError.ShareError.TEMP_FILE_FAILED)
+            QrResult.Error(QrError.ShareError.TempFileFailed())
         }
     }
 
@@ -371,7 +371,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Create temporary ZIP failed")
-            QrResult.Error(QrError.ShareError.ZIP_CREATION_FAILED)
+            QrResult.Error(QrError.ShareError.ZipCreationFailed())
         }
     }
 
@@ -405,7 +405,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Create ZIP archive failed")
-            QrResult.Error(QrError.ShareError.ZIP_CREATION_FAILED)
+            QrResult.Error(QrError.ShareError.ZipCreationFailed())
         }
     }
 
@@ -443,7 +443,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Cleanup temporary files failed")
-            QrResult.Error(QrError.ShareError.CLEANUP_FAILED)
+            QrResult.Error(QrError.ShareError.CleanupFailed())
         }
     }
 
@@ -474,7 +474,7 @@ class ShareFileRepositoryImpl @Inject constructor(
         return try {
             val file = File(filePath)
             if (!file.exists()) {
-                return QrResult.Error(QrError.ShareError.FILE_NOT_FOUND)
+                return QrResult.Error(QrError.ShareError.FileNotFound())
             }
 
             val mimeType =  when(val result = detectMimeType(filePath)) {
@@ -503,7 +503,7 @@ class ShareFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Get shareable file info failed")
-            QrResult.Error(QrError.ShareError.METADATA_FAILED)
+            QrResult.Error(QrError.ShareError.MetadataFailed())
         }
     }
 
@@ -554,7 +554,7 @@ class ShareFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Share validation failed")
-            QrResult.Error(QrError.ShareError.VALIDATION_FAILED)
+            QrResult.Error(QrError.ShareError.ValidationFailed())
         }
     }
 
@@ -576,7 +576,7 @@ class ShareFileRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "ZIP creation failed")
-            QrResult.Error(QrError.ShareError.ZIP_CREATION_FAILED)
+            QrResult.Error(QrError.ShareError.ZipCreationFailed())
         }
     }
 
@@ -609,7 +609,7 @@ class ShareFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to get Temporary directory")
-            return QrResult.Error(QrError.ShareError.TEMP_FILE_FAILED)
+            return QrResult.Error(QrError.ShareError.TempFileFailed())
         }
     }
 }

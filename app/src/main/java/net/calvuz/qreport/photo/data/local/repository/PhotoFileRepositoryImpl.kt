@@ -43,7 +43,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to create thumbnails directory")
-            QrResult.Error(QrError.PhotoError.DIRECTORY_CREATE)
+            QrResult.Error(QrError.PhotoError.DirectoryCreate())
         }
     }
 
@@ -52,7 +52,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             coreFileRepo.createSubDirectory(DirectorySpec.Core.PHOTOS, checkItemId)
         } catch (e: Exception) {
             Timber.e(e, "Failed to create checkItem photo directory: $checkItemId")
-            QrResult.Error(QrError.PhotoError.DIRECTORY_CREATE)
+            QrResult.Error(QrError.PhotoError.DirectoryCreate())
         }
     }
 
@@ -75,7 +75,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to create photo file path")
-            QrResult.Error(QrError.PhotoError.FILE_CREATE)
+            QrResult.Error(QrError.PhotoError.FileCreate())
         }
     }
 
@@ -92,7 +92,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to create thumbnail path")
-            QrResult.Error(QrError.PhotoError.THUMBNAIL_CREATE)
+            QrResult.Error(QrError.PhotoError.ThumbnailCreate())
         }
     }
 
@@ -100,11 +100,11 @@ class PhotoFileRepositoryImpl @Inject constructor(
         return try {
             when (val sizeResult = coreFileRepo.getFileSize(photoFilePath)) {
                 is QrResult.Success -> QrResult.Success(sizeResult.data)
-                is QrResult.Error -> QrResult.Error(QrError.PhotoError.FILE_ACCESS)
+                is QrResult.Error -> QrResult.Error(QrError.PhotoError.FileAccess())
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to get photo file size")
-            QrResult.Error(QrError.PhotoError.FILE_ACCESS)
+            QrResult.Error(QrError.PhotoError.FileAccess())
         }
     }
 
@@ -116,7 +116,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             QrResult.Success(exists)
         } catch (e: Exception) {
             Timber.e(e, "Failed to validate photo file")
-            QrResult.Error(QrError.PhotoError.VALIDATION)
+            QrResult.Error(QrError.PhotoError.Validation())
         }
     }
 
@@ -153,13 +153,13 @@ class PhotoFileRepositoryImpl @Inject constructor(
 
                             QrResult.Success(storageInfo)
                         }
-                        is QrResult.Error -> QrResult.Error(QrError.PhotoError.STORAGE_ACCESS)
+                        is QrResult.Error -> QrResult.Error(QrError.PhotoError.StorageAccess())
                     }
                 }
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to get storage info")
-            QrResult.Error(QrError.PhotoError.STORAGE_ACCESS)
+            QrResult.Error(QrError.PhotoError.StorageAccess())
         }
     }
 
@@ -190,14 +190,14 @@ class PhotoFileRepositoryImpl @Inject constructor(
             }
 
             if (hasErrors) {
-                QrResult.Error(QrError.PhotoError.DELETE)
+                QrResult.Error(QrError.PhotoError.Delete())
             } else {
                 QrResult.Success(Unit)
             }
 
         } catch (e: Exception) {
             Timber.e(e, "Error deleting photo files")
-            QrResult.Error(QrError.PhotoError.DELETE)
+            QrResult.Error(QrError.PhotoError.Delete())
         }
     }
 
@@ -208,7 +208,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             Timber.d("Orphaned photos cleanup not implemented yet")
             QrResult.Success(0)
         } catch (e: Exception) {
-            QrResult.Error(QrError.PhotoError.CLEANUP)
+            QrResult.Error(QrError.PhotoError.Cleanup())
         }
     }
 
@@ -245,7 +245,7 @@ class PhotoFileRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to list checkItem photos")
-            QrResult.Error(QrError.PhotoError.LIST)
+            QrResult.Error(QrError.PhotoError.List())
         }
     }
 

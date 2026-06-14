@@ -11,7 +11,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 
 @Composable
 fun ActiveFiltersChipRow(
@@ -34,11 +36,11 @@ fun ActiveFiltersChipRow(
                     FilterChip(
                         selected = true,
                         onClick = onClearFilter,
-                        label = { Text("Filtro: $selectedFilter") },
+                        label = { Text(stringResource(R.string.filter_chip_row_filter_label, selectedFilter)) },
                         trailingIcon = {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = "Rimuovi filtro",
+                                contentDescription = stringResource(R.string.filter_chip_row_remove_filter),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
@@ -53,11 +55,11 @@ fun ActiveFiltersChipRow(
                     FilterChip(
                         selected = true,
                         onClick = onClearSort,
-                        label = { Text("Ordine: $selectedSort") },
+                        label = { Text(stringResource(R.string.filter_chip_row_sort_label, selectedSort)) },
                         trailingIcon = {
                             Icon(
                                 Icons.Default.Close,
-                                contentDescription = "Rimuovi ordinamento",
+                                contentDescription = stringResource(R.string.filter_chip_row_remove_sort),
                                 modifier = Modifier.size(18.dp)
                             )
                         }

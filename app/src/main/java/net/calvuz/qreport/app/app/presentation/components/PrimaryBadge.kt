@@ -11,8 +11,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 
 @Composable
 fun PrimaryBadge() {
@@ -27,7 +29,7 @@ fun PrimaryBadge() {
             tint = MaterialTheme.colorScheme.primary
         )
         Text(
-            text = "Primario",
+            text = stringResource(R.string.primary_badge_label),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Medium
