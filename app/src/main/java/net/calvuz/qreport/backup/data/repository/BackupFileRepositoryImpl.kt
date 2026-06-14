@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral", "unused")
 package net.calvuz.qreport.backup.data.repository
 
 import kotlinx.datetime.Clock
@@ -111,8 +112,7 @@ class BackupFileRepositoryImpl @Inject constructor(
             when (backupsDirResult) {
                 is QrResult.Error -> QrResult.Error(backupsDirResult.error)
                 is QrResult.Success -> {
-                    val listResult = coreFileRepo.listFiles(backupsDirResult.data)
-                    when (listResult) {
+                    when (val listResult = coreFileRepo.listFiles(backupsDirResult.data)) {
                         is QrResult.Error -> QrResult.Error(listResult.error)
                         is QrResult.Success -> {
                             val backupInfos = listResult.data.mapNotNull { fileInfo ->
@@ -131,8 +131,7 @@ class BackupFileRepositoryImpl @Inject constructor(
 
     override suspend fun deleteBackupById(backupId: String): QrResult<Unit, QrError> {
         return try {
-            val listResult = listBackups()
-            when (listResult) {
+            when (val listResult = listBackups()) {
                 is QrResult.Error -> QrResult.Error(listResult.error)
                 is QrResult.Success -> {
                     val backup = listResult.data.find { it.id == backupId }
@@ -158,19 +157,23 @@ class BackupFileRepositoryImpl @Inject constructor(
             QrResult.Success(validationResult)
         } catch (e: Exception) {
             Timber.e(e, "Validate backup failed")
-            QrResult.Success(BackupValidationResult.invalid(listOf("Validation error: ${e.message}")))
+            QrResult.Success(BackupValidationResult.invalid(listOf("${e.message}")))
         }
     }
 
     override suspend fun getPhotosDirectory(): QrResult<String, QrError> {
-        return coreFileRepo.getOrCreateDirectory(DirectorySpec.Core.PHOTOS)
+        return coreFileRepo.getOrCreateDirectory(DirectorySpec.PHOTOS)
     }
 
     override suspend fun getSignaturesDirectory(): QrResult<String, QrError> {
-        return coreFileRepo.getOrCreateDirectory(DirectorySpec.Core.SIGNATURES)
+        return coreFileRepo.getOrCreateDirectory(DirectorySpec.SIGNATURES)
     }
 
-    /*override*/ suspend fun getBackupStats(backupPath: String): QrResult<BackupStats, QrError> {
+    override suspend fun getDocumentsDirectory(): QrResult<String, QrError> {
+        return coreFileRepo.getOrCreateDirectory(DirectorySpec.DOCUMENTS)
+    }
+
+    fun getBackupStats(backupPath: String): QrResult<BackupStats, QrError> {
         return try {
             val file = File(backupPath)
             QrResult.Success(BackupStats(
@@ -188,10 +191,9 @@ class BackupFileRepositoryImpl @Inject constructor(
         }
     }
 
-    /*override*/ suspend fun cleanupTemporaryFiles(): QrResult<Int, QrError> {
+    suspend fun cleanupTemporaryFiles(): QrResult<Int, QrError> {
         return try {
-            val tempDirResult = coreFileRepo.getOrCreateDirectory(DirectorySpec.Core.TEMP)
-            when (tempDirResult) {
+            when (val tempDirResult = coreFileRepo.getOrCreateDirectory(DirectorySpec.TEMP)) {
                 is QrResult.Error -> QrResult.Error(tempDirResult.error)
                 is QrResult.Success -> coreFileRepo.cleanupOldFiles(tempDirResult.data, 0)
             }

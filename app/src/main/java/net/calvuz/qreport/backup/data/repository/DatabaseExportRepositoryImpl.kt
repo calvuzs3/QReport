@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.backup.data.repository
 
 import kotlinx.datetime.Clock
@@ -25,12 +26,12 @@ class DatabaseExportRepositoryImpl @Inject constructor(
      * Export all tables
      */
     override suspend fun exportAllTables(): DatabaseBackup {
-        Timber.Forest.i("Export db tables via repository")
+        Timber.i("Export db tables via repository")
 
         return try {
             databaseExporter.exportAllTables()
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Export db tables via repository failed")
+            Timber.e(e, "Export db tables via repository failed")
             throw e
         }
     }
@@ -42,12 +43,12 @@ class DatabaseExportRepositoryImpl @Inject constructor(
         databaseBackup: DatabaseBackup,
         strategy: RestoreStrategy
     ): Result<Unit> {
-        Timber.Forest.i("Import db tables via repository (strategy: $strategy)")
+        Timber.i("Import db tables via repository (strategy: $strategy)")
 
         return try {
             databaseImporter.importAllTables(databaseBackup, strategy)
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Import db tables via repository failed")
+            Timber.e(e, "Import db tables via repository failed")
             Result.failure(e)
         }
     }
@@ -56,22 +57,22 @@ class DatabaseExportRepositoryImpl @Inject constructor(
      * DB integrity check
      */
     override suspend fun validateDatabaseIntegrity(): BackupValidationResult {
-        Timber.Forest.i("Database integrity check")
+        Timber.i("Database integrity check")
 
         return try {
             databaseExporter.validateDatabaseIntegrity()
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Database integrity check failed")
-            BackupValidationResult.Companion.invalid(listOf("Database integrity check failed: ${e.message}"))
+            Timber.e(e, "Database integrity check failed")
+            BackupValidationResult.invalid(listOf("Database integrity check failed: ${e.message}"))
         }
     }
 
     /**
      * Clear all tables
-     * tips: use DatabaseImporter for a secure clean up with FK order
+     * tips: use DatabaseImporter for a secure cleanup with FK order
      */
     override suspend fun clearAllTables(): Result<Unit> {
-        Timber.Forest.w("Clear all tables")
+        Timber.w("Clear all tables")
 
         return try {
             val emptyBackup = DatabaseBackup(
@@ -86,6 +87,9 @@ class DatabaseExportRepositoryImpl @Inject constructor(
                 facilityIslands = emptyList(),
                 mechanicalUnits = emptyList(),
                 checkUpAssociations = emptyList(),
+                technicalInterventions = emptyList(),
+                maintenanceLogs = emptyList(),
+                documents = emptyList(),
                 exportedAt = Clock.System.now()
             )
 
@@ -93,7 +97,7 @@ class DatabaseExportRepositoryImpl @Inject constructor(
             databaseImporter.importAllTables(emptyBackup, RestoreStrategy.REPLACE_ALL)
 
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Clear all tables failed")
+            Timber.e(e, "Clear all tables failed")
             Result.failure(e)
         }
     }
@@ -102,12 +106,12 @@ class DatabaseExportRepositoryImpl @Inject constructor(
      * Count total records
      */
     override suspend fun getEstimatedRecordCount(): Int {
-        Timber.Forest.i("Get estimated record count")
+        Timber.i("Get estimated record count")
 
         return try {
             databaseExporter.getEstimatedRecordCount()
         } catch (e: Exception) {
-            Timber.Forest.e(e, "Get estimated record count failed")
+            Timber.e(e, "Get estimated record count failed")
             0
         }
     }

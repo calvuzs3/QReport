@@ -21,10 +21,15 @@ import net.calvuz.qreport.backup.domain.repository.BackupFileRepository
 import net.calvuz.qreport.backup.domain.repository.DatabaseExportRepository
 import net.calvuz.qreport.backup.domain.repository.BackupRepository
 import net.calvuz.qreport.backup.domain.repository.PhotoArchiveRepository
+import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.domain.AppVersionInfo
+import net.calvuz.qreport.app.error.presentation.UiText.StringResource
+import net.calvuz.qreport.app.error.presentation.UiText.StringResources
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.backup.domain.model.SignatureManifest
 import net.calvuz.qreport.backup.domain.repository.SignatureArchiveRepository
+import net.calvuz.qreport.backup.domain.model.DocumentManifest
+import net.calvuz.qreport.backup.domain.repository.DocumentArchiveRepository
 import net.calvuz.qreport.settings.domain.repository.SettingsRepository
 import timber.log.Timber
 import java.io.File
@@ -44,7 +49,8 @@ class BackupRepositoryImpl @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val jsonSerializer: BackupJsonSerializer,
     private val backupFileRepo: BackupFileRepository,
-    private val signatureArchiveRepository: SignatureArchiveRepository
+    private val signatureArchiveRepository: SignatureArchiveRepository,
+    private val documentArchiveRepository: DocumentArchiveRepository
 
 ) : BackupRepository {
 
@@ -58,7 +64,7 @@ class BackupRepositoryImpl @Inject constructor(
         description: String?
     ): Flow<BackupProgress> = flow {
 
-        emit(BackupProgress.InProgress("Full backup start", 0f))
+        emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_start), 0f))
 
         try {
             // ID CREATION
@@ -70,12 +76,15 @@ class BackupRepositoryImpl @Inject constructor(
             var signatureManifest = SignatureManifest.empty()
             var signatureError: String? = null
 
+            var documentManifest = DocumentManifest.empty()
+            var documentError: String? = null
+
 
             // Select a PATH
             val archivePath = when (val result = backupFileRepo.generateBackupPath(backupId)) {
                 is QrResult.Success -> result.data
                 is QrResult.Error -> {
-                    emit(BackupProgress.Error("Failed to generate backup path"))
+                    emit(BackupProgress.Error(StringResource(R.string.backup_progress_error_path_generation)))
                     return@flow
                 }
             }
@@ -85,28 +94,31 @@ class BackupRepositoryImpl @Inject constructor(
             // Selcect a Signatures ArchivePath
             val signatureArchivePath = File(archivePath, "signatures.zip").absolutePath
 
+            // Select a Documents ArchivePath
+            val documentArchivePath = File(archivePath, "documents.zip").absolutePath
+
             // 1. Database validation
             //
             Timber.d("1. DB validation")
-            emit(BackupProgress.InProgress("1. Database validation", 0.05f))
+            emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_db_validation), 0.05f))
             val validation = databaseExportRepository.validateDatabaseIntegrity()
             if (!validation.isValid) {
-                emit(BackupProgress.Error("- Database is invalid: ${validation.issues.joinToString()}"))
+                emit(BackupProgress.Error(StringResources(R.string.backup_progress_error_db_invalid, validation.issues.joinToString())))
             } else {
                 if (validation.warnings.isNotEmpty())
                     for (w in validation.warnings)
                         Timber.w("Backup warnings: $w")
 
-                emit(BackupProgress.InProgress("- Database is valid", 0.09f))
+                emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_db_valid), 0.09f))
 
                 // 2. Export database
                 //
                 Timber.d("2. Export DB")
-                emit(BackupProgress.InProgress("2. Export DB", 0.1f, currentTable = "Tutte"))
+                emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_export_db), 0.1f, currentTable = StringResource(R.string.backup_table_all)))
                 val databaseBackup = databaseExportRepository.exportAllTables()
                 emit(
                     BackupProgress.InProgress(
-                        "- Database exported",
+                        StringResource(R.string.backup_progress_step_db_exported),
                         0.3f,
                         processedRecords = databaseBackup.getTotalRecordCount(),
                         totalRecords = databaseBackup.getTotalRecordCount()
@@ -116,11 +128,11 @@ class BackupRepositoryImpl @Inject constructor(
                 // 3. Settings backup
                 //
                 Timber.d("3. Export settings")
-                emit(BackupProgress.InProgress("3. Export settings", 0.3f))
+                emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_export_settings), 0.3f))
                 val settingsBackup = settingsRepository.exportSettings()
                 emit(
                     BackupProgress.InProgress(
-                        "- Settings exported", 0.35f
+                        StringResource(R.string.backup_progress_step_settings_exported), 0.35f
                     )
                 )
 
@@ -128,7 +140,7 @@ class BackupRepositoryImpl @Inject constructor(
                 //
                 if (includePhotos) {
                     Timber.d("4. Export photos")
-                    emit(BackupProgress.InProgress("4. Export photos", 0.4f))
+                    emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_export_photos), 0.4f))
 
                     Timber.d("PhotoPath = $photoArchivePath")
 
@@ -140,9 +152,9 @@ class BackupRepositoryImpl @Inject constructor(
                             is ArchiveProgress.InProgress -> {
                                 emit(
                                     BackupProgress.InProgress(
-                                        "- Photos backup: ${progress.processedFiles}/${progress.totalFiles}",
+                                        StringResources(R.string.backup_progress_step_photos_progress, progress.processedFiles, progress.totalFiles),
                                         0.4f + (progress.progress * 0.4f),
-                                        currentTable = "Photos",
+                                        currentTable = StringResource(R.string.backup_table_photos),
                                         processedRecords = progress.processedFiles,
                                         totalRecords = progress.totalFiles
                                     )
@@ -164,13 +176,13 @@ class BackupRepositoryImpl @Inject constructor(
                 // Photo export error check
                 //
                 if (photoError != null) {
-                    emit(BackupProgress.Error("Export photos failed: $photoError"))
+                    emit(BackupProgress.Error(StringResources(R.string.backup_progress_error_export_photos, photoError ?: "")))
                 } else {
-                    emit(BackupProgress.InProgress("- Photos exported", 0.8f))
+                    emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_photos_exported), 0.8f))
                     // 5. Metadata creation
                     //
                     Timber.d("5. Metadata creation")
-                    emit(BackupProgress.InProgress("5. Metadata creation", 0.85f))
+                    emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_metadata_creation), 0.85f))
                     val deviceInfo = DeviceInfo.current()
                     val appVersion = appVersionInfo.appVersion
                     val databaseVersion = appVersionInfo.databaseVersion
@@ -188,7 +200,7 @@ class BackupRepositoryImpl @Inject constructor(
 
                     // 4b. Backup signatures
                     Timber.d("4b. Export signatures")
-                    emit(BackupProgress.InProgress("4b. Export signatures", 0.75f))
+                    emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_export_signatures), 0.75f))
 
                     signatureArchiveRepository.createSignatureArchive(
                         outputPath = signatureArchivePath
@@ -197,9 +209,9 @@ class BackupRepositoryImpl @Inject constructor(
                             is ArchiveProgress.InProgress -> {
                                 emit(
                                     BackupProgress.InProgress(
-                                        "- Signatures backup: ${progress.processedFiles}/${progress.totalFiles}",
+                                        StringResources(R.string.backup_progress_step_signatures_progress, progress.processedFiles, progress.totalFiles),
                                         0.75f + (progress.progress * 0.05f),
-                                        currentTable = "Signatures",
+                                        currentTable = StringResource(R.string.backup_table_signatures),
                                         processedRecords = progress.processedFiles,
                                         totalRecords = progress.totalFiles
                                     )
@@ -223,24 +235,62 @@ class BackupRepositoryImpl @Inject constructor(
                         // Non-blocking: continue without signatures
                     }
 
+                    // 4c. Backup documents
+                    Timber.d("4c. Export documents")
+                    emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_export_documents), 0.8f))
+
+                    documentArchiveRepository.createDocumentArchive(
+                        outputPath = documentArchivePath
+                    ).collect { progress ->
+                        when (progress) {
+                            is ArchiveProgress.InProgress -> {
+                                emit(
+                                    BackupProgress.InProgress(
+                                        StringResources(R.string.backup_progress_step_documents_progress, progress.processedFiles, progress.totalFiles),
+                                        0.8f + (progress.progress * 0.05f),
+                                        currentTable = StringResource(R.string.backup_table_documents),
+                                        processedRecords = progress.processedFiles,
+                                        totalRecords = progress.totalFiles
+                                    )
+                                )
+                            }
+
+                            is ArchiveProgress.Completed -> {
+                                documentManifest =
+                                    documentArchiveRepository.generateDocumentManifest()
+                            }
+
+                            is ArchiveProgress.Error -> {
+                                documentError = progress.message
+                            }
+                        }
+                    }
+
+                    // Document export error check
+                    if (documentError != null) {
+                        Timber.w("Document export failed: $documentError (continuing without documents)")
+                        // Non-blocking: continue without documents
+                    }
+
 
                     // 6. Assemblaggio backup finale
                     //
-                    emit(BackupProgress.InProgress("Finalizing backup", 0.9f))
+                    emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_finalizing), 0.9f))
                     val backupData = BackupData(
                         metadata = metadata,
                         database = databaseBackup,
                         settings = settingsBackup,
                         photoManifest = photoManifest,
-                        signatureManifest = signatureManifest
+                        signatureManifest = signatureManifest,
+                        documentManifest = documentManifest
                     )
 
                     // 7. Calcolo checksum
                     //
-                    emit(BackupProgress.InProgress("Checking checksum", 0.95f))
+                    emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_checking_checksum), 0.95f))
                     val checksumResult = jsonSerializer.calculateBackupChecksum(backupData)
                     if (checksumResult.isFailure) {
-                        emit(BackupProgress.Error("Checksum check failed"))
+                        emit(BackupProgress.Error(StringResource(R.string.backup_progress_error_checksum_failed)))
                     } else {
                         val finalBackupData = backupData.copy(
                             metadata = metadata.copy(
@@ -252,12 +302,12 @@ class BackupRepositoryImpl @Inject constructor(
                         // 8. Salvataggio finale
                         //
                         Timber.d("Saving Backup in $archivePath")
-                        emit(BackupProgress.InProgress("Saving Backup", 0.95f))
+                        emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_saving), 0.95f))
                         val backupPath = when (val result =
                             backupFileRepo.saveBackup(finalBackupData, backupMode, archivePath)) {
                             is QrResult.Success -> result.data
                             is QrResult.Error -> {
-                                emit(BackupProgress.Error("Failed to save backup"))
+                                emit(BackupProgress.Error(StringResource(R.string.backup_progress_error_save_failed)))
                                 return@flow
                             }
                         }
@@ -270,7 +320,7 @@ class BackupRepositoryImpl @Inject constructor(
                                 backupPath = backupPath,
                                 totalSize = finalBackupData.metadata.totalSize,
                                 duration = duration,
-                                tablesBackedUp = 9
+                                tablesBackedUp = 14
                             )
                         )
                     }
@@ -279,7 +329,7 @@ class BackupRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Backup creation failed")
-            emit(BackupProgress.Error("Backup failed: ${e.message}", e))
+            emit(BackupProgress.Error(StringResources(R.string.backup_progress_error_generic, e.message ?: ""), e))
         }
     }
 
@@ -292,7 +342,7 @@ class BackupRepositoryImpl @Inject constructor(
         strategy: RestoreStrategy
     ): Flow<RestoreProgress> = flow {
 
-        emit(RestoreProgress.InProgress("Loading backup", 0f))
+        emit(RestoreProgress.InProgress(StringResource(R.string.backup_restore_progress_step_loading), 0f))
 
         try {
             // 1. Caricamento backup
@@ -300,34 +350,34 @@ class BackupRepositoryImpl @Inject constructor(
             val backupData = when (val result = backupFileRepo.loadBackup(backupPath)) {
                 is QrResult.Success -> result.data
                 is QrResult.Error -> {
-                    emit(RestoreProgress.Error("Failed to load backup"))
+                    emit(RestoreProgress.Error(StringResource(R.string.backup_restore_progress_error_load_failed)))
                     return@flow
                 }
             }
 
             // 2. Validazione backup
             //
-            emit(RestoreProgress.InProgress("Validating backup", 0.05f))
+            emit(RestoreProgress.InProgress(StringResource(R.string.backup_restore_progress_step_validating), 0.05f))
             val validation = validateBackup(backupPath)
 
             if (!validation.isValid) {
-                emit(RestoreProgress.Error("Backup is invalid: ${validation.issues.joinToString()}"))
+                emit(RestoreProgress.Error(StringResources(R.string.backup_restore_progress_error_invalid, validation.issues.joinToString())))
             } else {
 
                 // 3. Checksum check
                 //
-                emit(RestoreProgress.InProgress("Checking checksum", 0.1f))
+                emit(RestoreProgress.InProgress(StringResource(R.string.backup_progress_step_checking_checksum), 0.1f))
                 val checksumValid = jsonSerializer.verifyBackupIntegrity(
                     backupData
                 )
 
                 if (!checksumValid) {
-                    emit(RestoreProgress.Error("Checksum invalid - possible corruption"))
+                    emit(RestoreProgress.Error(StringResource(R.string.backup_restore_progress_error_checksum_invalid)))
                 } else {
 
                     // 4. DB restoration
                     //
-                    emit(RestoreProgress.InProgress("Restoring database", 0.2f))
+                    emit(RestoreProgress.InProgress(StringResource(R.string.backup_restore_progress_step_db_restoring), 0.2f))
                     val importResult = databaseExportRepository.importAllTables(
                         backupData.database,
                         strategy
@@ -337,7 +387,7 @@ class BackupRepositoryImpl @Inject constructor(
                         onSuccess = {
                             emit(
                                 RestoreProgress.InProgress(
-                                    "Database restored",
+                                    StringResource(R.string.backup_restore_progress_step_db_restored),
                                     0.6f,
                                     processedRecords = backupData.database.getTotalRecordCount()
                                 )
@@ -348,7 +398,7 @@ class BackupRepositoryImpl @Inject constructor(
                             var photoError: String? = null
 
                             if (backupData.includesPhotos()) {
-                                emit(RestoreProgress.InProgress("Restoring photos", 0.65f))
+                                emit(RestoreProgress.InProgress(StringResource(R.string.backup_restore_progress_step_photos_restoring), 0.65f))
 
                                 val photoArchivePath =
                                     "${dirPath}/photos.zip" //fileManager.getPhotoArchivePathFromBackup(backupPath)
@@ -356,7 +406,7 @@ class BackupRepositoryImpl @Inject constructor(
                                     when (val result = backupFileRepo.getPhotosDirectory()) {
                                         is QrResult.Success -> result.data
                                         is QrResult.Error -> {
-                                            emit(RestoreProgress.Error("Failed to get photos directory"))
+                                            emit(RestoreProgress.Error(StringResource(R.string.backup_restore_progress_error_photos_dir_failed)))
                                             return@flow
 
                                         }
@@ -370,9 +420,9 @@ class BackupRepositoryImpl @Inject constructor(
                                         is ExtractionProgress.InProgress -> {
                                             emit(
                                                 RestoreProgress.InProgress(
-                                                    "Restoring photos: ${progress.extractedFiles}/${progress.totalFiles}",
+                                                    StringResources(R.string.backup_restore_progress_step_photos_progress, progress.extractedFiles, progress.totalFiles),
                                                     0.65f + (progress.progress * 0.25f),
-                                                    currentTable = "Photos",
+                                                    currentTable = StringResource(R.string.backup_table_photos),
                                                     processedRecords = progress.extractedFiles,
                                                     totalRecords = progress.totalFiles
                                                 )
@@ -395,7 +445,7 @@ class BackupRepositoryImpl @Inject constructor(
                             var signatureError: String? = null
 
                             if (backupData.includesSignatures()) {
-                                emit(RestoreProgress.InProgress("Ripristino firme...", 0.88f))
+                                emit(RestoreProgress.InProgress(StringResource(R.string.backup_restore_progress_step_signatures_restoring), 0.88f))
 
                                 val signatureArchivePath = "${dirPath}/signatures.zip"
                                 val signatureArchiveFile = File(signatureArchivePath)
@@ -420,9 +470,9 @@ class BackupRepositoryImpl @Inject constructor(
                                                 is ExtractionProgress.InProgress -> {
                                                     emit(
                                                         RestoreProgress.InProgress(
-                                                            "Ripristino firme: ${progress.extractedFiles}/${progress.totalFiles}",
+                                                            StringResources(R.string.backup_restore_progress_step_signatures_progress, progress.extractedFiles, progress.totalFiles),
                                                             0.88f + (progress.progress * 0.05f),
-                                                            currentTable = "Signatures",
+                                                            currentTable = StringResource(R.string.backup_table_signatures),
                                                             processedRecords = progress.extractedFiles,
                                                             totalRecords = progress.totalFiles
                                                         )
@@ -451,13 +501,72 @@ class BackupRepositoryImpl @Inject constructor(
                                 Timber.w("Signature restore had errors but continuing: $signatureError")
                             }
 
+                            // 5c. Restore documents
+                            //
+                            var documentError: String? = null
+
+                            if (backupData.includesDocuments()) {
+                                emit(RestoreProgress.InProgress(StringResource(R.string.backup_restore_progress_step_documents_restoring), 0.93f))
+
+                                val documentArchivePath = "${dirPath}/documents.zip"
+                                val documentArchiveFile = File(documentArchivePath)
+
+                                if (documentArchiveFile.exists()) {
+                                    val documentsDir = when (val result =
+                                        backupFileRepo.getDocumentsDirectory()) {
+                                        is QrResult.Success -> result.data
+                                        is QrResult.Error -> {
+                                            Timber.w("Failed to get documents directory, skipping document restore")
+                                            null
+                                        }
+                                    }
+
+                                    if (documentsDir != null) {
+                                        documentArchiveRepository.extractDocumentArchive(
+                                            archivePath = documentArchivePath,
+                                            outputDir = documentsDir
+                                        ).collect { progress ->
+                                            when (progress) {
+                                                is ExtractionProgress.InProgress -> {
+                                                    emit(
+                                                        RestoreProgress.InProgress(
+                                                            StringResources(R.string.backup_restore_progress_step_documents_progress, progress.extractedFiles, progress.totalFiles),
+                                                            0.93f + (progress.progress * 0.02f),
+                                                            currentTable = StringResource(R.string.backup_table_documents),
+                                                            processedRecords = progress.extractedFiles,
+                                                            totalRecords = progress.totalFiles
+                                                        )
+                                                    )
+                                                }
+
+                                                is ExtractionProgress.Error -> {
+                                                    documentError = progress.message
+                                                    Timber.w("Document restoration failed: ${progress.message}")
+                                                }
+
+                                                is ExtractionProgress.Completed -> {
+                                                    Timber.d("Documents restored: ${progress.extractedFiles} files to $documentsDir")
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Timber.d("No documents.zip found in backup, skipping document restore")
+                                }
+                            }
+
+                            // Note: documentError is non-blocking - we continue even if document restore fails
+                            if (documentError != null) {
+                                Timber.w("Document restore had errors but continuing: $documentError")
+                            }
+
                             // Check for photos errors
                             if (photoError != null) {
-                                emit(RestoreProgress.Error("Photos restoration failed: $photoError"))
+                                emit(RestoreProgress.Error(StringResources(R.string.backup_restore_progress_error_photos_failed, photoError ?: "")))
                             } else {
                                 // 6. Ripristino impostazioni
                                 //
-                                emit(RestoreProgress.InProgress("Restoring settings", 0.95f))
+                                emit(RestoreProgress.InProgress(StringResource(R.string.backup_restore_progress_step_settings_restoring), 0.95f))
                                 val settingsResult =
                                     settingsRepository.importSettings(backupData.settings)
 
@@ -473,7 +582,7 @@ class BackupRepositoryImpl @Inject constructor(
                             }
                         },
                         onFailure = { error ->
-                            emit(RestoreProgress.Error("Database restoration failed: ${error.message}"))
+                            emit(RestoreProgress.Error(StringResources(R.string.backup_restore_progress_error_db_failed, error.message ?: "")))
                         }
                     )
                 }
@@ -481,7 +590,7 @@ class BackupRepositoryImpl @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Backup restoration failed")
-            emit(RestoreProgress.Error("Backup restoration failed: ${e.message}", e))
+            emit(RestoreProgress.Error(StringResources(R.string.backup_restore_progress_error_generic, e.message ?: ""), e))
         }
     }
 
@@ -554,6 +663,10 @@ class BackupRepositoryImpl @Inject constructor(
             val signatureManifest = signatureArchiveRepository.generateSignatureManifest()
             estimatedSize += (signatureManifest.totalSizeMB * 1024 * 1024).toLong()
 
+            // Documents size
+            val documentManifest = documentArchiveRepository.generateDocumentManifest()
+            estimatedSize += (documentManifest.totalSizeMB * 1024 * 1024).toLong()
+
             // Settings (piccolo)
             estimatedSize += 64L * 1024L // 64KB
 
@@ -578,6 +691,9 @@ class BackupRepositoryImpl @Inject constructor(
 
         // Photo archive size
         totalSize += photoManifest.totalSize
+
+        // Document archive size
+        totalSize += (backupData.documentManifest.totalSizeMB * 1024 * 1024).toLong()
 
         // Settings size (small)
         totalSize += 64L * 1024L

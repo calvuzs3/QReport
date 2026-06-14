@@ -18,6 +18,12 @@ import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.backup.domain.model.backup.ContractBackup
 import net.calvuz.qreport.backup.domain.model.backup.MechanicalUnitBackup
 import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
+import net.calvuz.qreport.backup.domain.model.backup.MaintenanceLogBackup
+import net.calvuz.qreport.backup.domain.model.backup.DocumentBackup
+import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
+import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
+import net.calvuz.qreport.client.document.data.local.dao.DocumentDao
+import net.calvuz.qreport.client.document.data.local.entity.DocumentEntity
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -67,7 +73,9 @@ class DatabaseExporter @Inject constructor(
     private val islandDao: IslandDao,
     private val mechanicalUnitDao: MechanicalUnitDao,
     private val checkUpAssociationDao: CheckUpAssociationDao,
-    private val technicalInterventionDao: TechnicalInterventionDao
+    private val technicalInterventionDao: TechnicalInterventionDao,
+    private val maintenanceLogDao: MaintenanceLogDao,
+    private val documentDao: DocumentDao
 
 ) {
 
@@ -122,6 +130,12 @@ class DatabaseExporter @Inject constructor(
                 technicalInterventionDao.getAllForBackup().map { it.toBackup() }
             Timber.v("Exported ${technicalInterventions.size} technical interventions")
 
+            val maintenanceLogs = maintenanceLogDao.getAllForBackup().map { it.toBackup() }
+            Timber.v("Exported ${maintenanceLogs.size} maintenance logs")
+
+            val documents = documentDao.getAllForBackup().map { it.toBackup() }
+            Timber.v("Exported ${documents.size} documents")
+
             val databaseBackup = DatabaseBackup(
                 // Core entities
                 checkUps = checkUps,
@@ -143,6 +157,12 @@ class DatabaseExporter @Inject constructor(
                 // Technical Intervention
                 technicalInterventions = technicalInterventions,
 
+                // Island maintenance
+                maintenanceLogs = maintenanceLogs,
+
+                // Documents
+                documents = documents,
+
                 // Metadata
                 exportedAt = Clock.System.now()
             )
@@ -159,6 +179,8 @@ class DatabaseExporter @Inject constructor(
                 append("FacilityError=${facilities.size}, Islands=${facilityIslands.size}, ")
                 append("Associations=${associations.size}")
                 append("TechnicalInterventions=${technicalInterventions.size}, ")
+                append("MaintenanceLogs=${maintenanceLogs.size}, ")
+                append("Documents=${documents.size}")
             })
 
             databaseBackup
@@ -186,7 +208,9 @@ class DatabaseExporter @Inject constructor(
                 islandDao.count(),
                 mechanicalUnitDao.count(),
                 checkUpAssociationDao.count(),
-                technicalInterventionDao.count()
+                technicalInterventionDao.count(),
+                maintenanceLogDao.count(),
+                documentDao.count()
             )
 
             val total = counts.sum()
@@ -514,5 +538,59 @@ fun TechnicalInterventionEntity.toBackup(): TechnicalInterventionBackup {
         technicianSignatureJson = technician_signature,
         customerSignatureJson = customer_signature,
         customerName = customer_name
+    )
+}
+
+/**
+ * Mapping da MaintenanceLogEntity a MaintenanceLogBackup
+ */
+fun MaintenanceLogEntity.toBackup(): MaintenanceLogBackup {
+    return MaintenanceLogBackup(
+        id = id,
+        islandId = islandId,
+        operationType = operationType,
+        customOperationLabel = customOperationLabel,
+        mechanicalUnitId = mechanicalUnitId,
+        componentLabel = componentLabel,
+        description = description,
+        technicianName = technicianName,
+        technicianCompany = technicianCompany,
+        operatingHoursAtEvent = operatingHoursAtEvent,
+        cycleCountAtEvent = cycleCountAtEvent,
+        outcome = outcome,
+        durationMinutes = durationMinutes,
+        notes = notes,
+        performedAt = Instant.fromEpochMilliseconds(performedAt),
+        createdAt = Instant.fromEpochMilliseconds(createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+        syncedAt = syncedAt,
+        isActive = isActive,
+        isDeleted = isDeleted
+    )
+}
+
+/**
+ * Mapping da DocumentEntity a DocumentBackup
+ */
+fun DocumentEntity.toBackup(): DocumentBackup {
+    return DocumentBackup(
+        id = id,
+        scope = scope,
+        islandId = islandId,
+        facilityId = facilityId,
+        clientId = clientId,
+        fileName = fileName,
+        filePath = filePath,
+        fileSize = fileSize,
+        mimeType = mimeType,
+        fileHash = fileHash,
+        title = title,
+        category = category,
+        notes = notes,
+        createdAt = Instant.fromEpochMilliseconds(createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+        isActive = isActive,
+        isDeleted = isDeleted,
+        syncedAt = syncedAt
     )
 }

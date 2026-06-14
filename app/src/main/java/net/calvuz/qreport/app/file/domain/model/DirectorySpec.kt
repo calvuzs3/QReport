@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.app.file.domain.model
 
 /**
@@ -15,6 +16,7 @@ value class DirectorySpec(val name: String) {
         val TEMP = DirectorySpec("temp")
         val CACHE = DirectorySpec("cache")
         val SIGNATURES = DirectorySpec("signatures")
+        val DOCUMENTS = DirectorySpec("documents")
     }
 
     override fun toString(): String = name
@@ -40,6 +42,6 @@ value class DirectorySpec(val name: String) {
  * object PhotoDirectories {
  *     val PHOTOS = DirectorySpec("photos")
  *     val THUMBNAILS = DirectorySpec("photos/thumbnails")
- *     ..val PROCESSED = DirectorySpec("photos/processed")
+ *     ...val PROCESSED = DirectorySpec("photos/processed")
  * }
  */

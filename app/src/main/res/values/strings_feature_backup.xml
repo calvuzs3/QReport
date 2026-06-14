@@ -36,6 +36,29 @@
     <string name="backup_restore_progress_error_title">Errore Ripristino</string>
     <string name="backup_restore_progress_idle">Nessuna operazione in corso</string>
 
+    <!-- RestoreBackupProgressDialog - restoreFromBackup steps -->
+    <string name="backup_restore_progress_step_starting">Avvio ripristino...</string>
+    <string name="backup_restore_progress_step_loading">Caricamento backup</string>
+    <string name="backup_restore_progress_step_validating">Validazione backup</string>
+    <string name="backup_restore_progress_step_db_restoring">Ripristino database</string>
+    <string name="backup_restore_progress_step_db_restored">Database ripristinato</string>
+    <string name="backup_restore_progress_step_photos_restoring">Ripristino foto</string>
+    <string name="backup_restore_progress_step_photos_progress">Ripristino foto: %1$d/%2$d</string>
+    <string name="backup_restore_progress_step_signatures_restoring">Ripristino firme...</string>
+    <string name="backup_restore_progress_step_signatures_progress">Ripristino firme: %1$d/%2$d</string>
+    <string name="backup_restore_progress_step_documents_restoring">Ripristino documenti...</string>
+    <string name="backup_restore_progress_step_documents_progress">Ripristino documenti: %1$d/%2$d</string>
+    <string name="backup_restore_progress_step_settings_restoring">Ripristino impostazioni</string>
+
+    <!-- RestoreBackupProgressDialog - restoreFromBackup errors -->
+    <string name="backup_restore_progress_error_load_failed">Caricamento backup non riuscito</string>
+    <string name="backup_restore_progress_error_invalid">Backup non valido: %1$s</string>
+    <string name="backup_restore_progress_error_checksum_invalid">Checksum non valido - possibile corruzione</string>
+    <string name="backup_restore_progress_error_photos_dir_failed">Impossibile ottenere la cartella foto</string>
+    <string name="backup_restore_progress_error_photos_failed">Ripristino foto non riuscito: %1$s</string>
+    <string name="backup_restore_progress_error_db_failed">Ripristino database non riuscito: %1$s</string>
+    <string name="backup_restore_progress_error_generic">Ripristino backup non riuscito: %1$s</string>
+
     <!-- BackupItemCard -->
     <string name="backup_item_card_with_photos">Con foto</string>
     <string name="backup_item_card_record_count">%1$d record</string>
@@ -51,6 +74,42 @@
     <string name="backup_progress_data_saved_label">Dati salvati</string>
     <string name="backup_progress_time_elapsed_label">Tempo impiegato</string>
     <string name="backup_progress_error_title">Errore Backup</string>
+
+    <!-- BackupProgressDialog - current table names (shared backup/restore) -->
+    <string name="backup_table_all">Tutte</string>
+    <string name="backup_table_photos">Foto</string>
+    <string name="backup_table_signatures">Firme</string>
+    <string name="backup_table_documents">Documenti</string>
+
+    <!-- BackupProgressDialog - createFullBackup steps -->
+    <string name="backup_progress_step_initializing">Inizializzazione backup...</string>
+    <string name="backup_progress_step_start">Avvio backup completo</string>
+    <string name="backup_progress_step_db_validation">1. Validazione database</string>
+    <string name="backup_progress_step_db_valid">- Database valido</string>
+    <string name="backup_progress_step_export_db">2. Esportazione database</string>
+    <string name="backup_progress_step_db_exported">- Database esportato</string>
+    <string name="backup_progress_step_export_settings">3. Esportazione impostazioni</string>
+    <string name="backup_progress_step_settings_exported">- Impostazioni esportate</string>
+    <string name="backup_progress_step_export_photos">4. Esportazione foto</string>
+    <string name="backup_progress_step_photos_progress">- Backup foto: %1$d/%2$d</string>
+    <string name="backup_progress_step_photos_exported">- Foto esportate</string>
+    <string name="backup_progress_step_metadata_creation">5. Creazione metadati</string>
+    <string name="backup_progress_step_export_signatures">4b. Esportazione firme</string>
+    <string name="backup_progress_step_signatures_progress">- Backup firme: %1$d/%2$d</string>
+    <string name="backup_progress_step_export_documents">4c. Esportazione documenti</string>
+    <string name="backup_progress_step_documents_progress">- Backup documenti: %1$d/%2$d</string>
+    <string name="backup_progress_step_finalizing">Finalizzazione backup</string>
+    <string name="backup_progress_step_checking_checksum">Verifica checksum</string>
+    <string name="backup_progress_step_saving">Salvataggio backup</string>
+
+    <!-- BackupProgressDialog - createFullBackup errors -->
+    <string name="backup_progress_error_thumbnails_without_photos">Impossibile includere le miniature senza le foto</string>
+    <string name="backup_progress_error_path_generation">Impossibile generare il percorso di backup</string>
+    <string name="backup_progress_error_db_invalid">Database non valido: %1$s</string>
+    <string name="backup_progress_error_export_photos">Esportazione foto non riuscita: %1$s</string>
+    <string name="backup_progress_error_checksum_failed">Verifica checksum non riuscita</string>
+    <string name="backup_progress_error_save_failed">Salvataggio backup non riuscito</string>
+    <string name="backup_progress_error_generic">Backup non riuscito: %1$s</string>
 
     <!-- BackupConfirmationDialog -->
     <string name="backup_confirmation_title">Conferma Backup</string>

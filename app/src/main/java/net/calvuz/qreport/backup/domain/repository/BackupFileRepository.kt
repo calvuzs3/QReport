@@ -52,4 +52,7 @@ interface BackupFileRepository {
 
     // ===== DIRECTORY ACCESS for SignatureArchive =====
     suspend fun getSignaturesDirectory(): QrResult<String, QrError>
+
+    // ===== DIRECTORY ACCESS for DocumentArchive =====
+    suspend fun getDocumentsDirectory(): QrResult<String, QrError>
 }

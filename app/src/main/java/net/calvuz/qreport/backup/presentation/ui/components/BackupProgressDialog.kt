@@ -93,11 +93,10 @@ fun BackupProgressDialog(
                         }
                         HorizontalDivider()
 
-                        // TODO verificare se --> .message
                         DialogItemRow(
                             icon = Icons.Default.Restore,
                             label = stringResource(R.string.backup_progress_in_progress),
-                            value = progress.step,
+                            value = progress.step.asString(),
                             enabled = true
                         )
 
@@ -115,7 +114,7 @@ fun BackupProgressDialog(
                             DialogItemRow(
                                 icon = Icons.Default.Tab,
                                 label = stringResource(R.string.backup_restore_progress_table_label),
-                                value = progress.currentTable,
+                                value = progress.currentTable.asString(),
                                 enabled = true
                             )
                             DialogItemRow(
@@ -207,7 +206,7 @@ fun BackupProgressDialog(
                         DialogItemRow(
                             icon = Icons.Default.Error,
                             label = null,
-                            value = progress.message,
+                            value = progress.message.asString(),
                             enabled = true
                         )
                     }

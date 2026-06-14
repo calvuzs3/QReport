@@ -6,6 +6,19 @@ import kotlinx.serialization.Serializable
 
 /**
  * DatabaseBackup - Contenitore per tutti i dati del database
+ *
+ * ===== CHECKLIST: aggiungere una nuova tabella al backup =====
+ * Non esiste un registry: ogni tabella va wired a mano nei seguenti punti:
+ * 1. DTO `XxxBackup.kt` in `backup/domain/model/backup/`
+ * 2. Campo qui in [DatabaseBackup] + [getTotalRecordCount] + [empty]
+ * 3. `DatabaseExporter`: DAO nel costruttore, export + mapper `toBackup()`
+ * 4. `DatabaseImporter`: DAO nel costruttore, `clearAllTablesInOrder()` (ordine FK
+ *    inverso), `importAllTablesInOrder()` (ordine FK), `validateImportedData()`,
+ *    `logImportStatistics()`, mapper `toEntity()`
+ * 5. Il DAO deve esporre `getAllForBackup/insertAllFromBackup/deleteAll/count`
+ * 6. `DatabaseExportRepositoryImpl.clearAllTables()` - empty literal
+ * 7. `BackupJsonSerializer.validateBackupJson()` - `expectedTables` (opzionale)
+ * ================================================================
  */
 @Serializable
 data class DatabaseBackup(
@@ -29,6 +42,12 @@ data class DatabaseBackup(
     // ===== TECHNICAL INTERVENTIONS =====
     val technicalInterventions: List<TechnicalInterventionBackup> = emptyList(),
 
+    // ===== ISLAND MAINTENANCE =====
+    val maintenanceLogs: List<MaintenanceLogBackup> = emptyList(),
+
+    // ===== DOCUMENTS =====
+    val documents: List<DocumentBackup> = emptyList(),
+
     // ===== METADATA =====
     @Contextual val exportedAt: Instant
 ) {
@@ -45,8 +64,11 @@ data class DatabaseBackup(
                 contracts.size +
                 facilities.size +
                 facilityIslands.size +
+                mechanicalUnits.size +
                 checkUpAssociations.size +
-                technicalInterventions.size
+                technicalInterventions.size +
+                maintenanceLogs.size +
+                documents.size
     }
 
     /**
@@ -71,6 +93,8 @@ data class DatabaseBackup(
                 mechanicalUnits = emptyList(),
                 checkUpAssociations = emptyList(),
                 technicalInterventions = emptyList(),
+                maintenanceLogs = emptyList(),
+                documents = emptyList(),
                 exportedAt = Instant.fromEpochMilliseconds(0)
             )
         }

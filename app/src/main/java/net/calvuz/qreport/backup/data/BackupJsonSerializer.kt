@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral", "unused")
 package net.calvuz.qreport.backup.data
 
 import kotlinx.datetime.Instant
@@ -62,7 +63,7 @@ class BackupJsonSerializer @Inject constructor() {
     fun deserializeBackup(jsonString: String): Result<BackupData> {
         return try {
             val backupData = json.decodeFromString<BackupData>( jsonString)
-            Timber.d("Deserializad backup: ${backupData.database.getTotalRecordCount()} records")
+            Timber.d("Deserialized backup: ${backupData.database.getTotalRecordCount()} records")
             Result.success(backupData)
 
         } catch (e: Exception) {
@@ -161,8 +162,8 @@ class BackupJsonSerializer @Inject constructor() {
                 val expectedTables = listOf(
                     "checkUps", "checkItems", "photos", "spareParts",
                     "clients", "contacts", "contracts", "facilities", "facilityIslands",
-                    "checkUpAssociations",
-                         "technicalInterventions"
+                    "mechanicalUnits", "checkUpAssociations",
+                    "technicalInterventions", "maintenanceLogs", "documents"
                 )
 
                 for (table in expectedTables) {

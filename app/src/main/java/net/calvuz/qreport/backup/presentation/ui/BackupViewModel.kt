@@ -254,7 +254,7 @@ class BackupViewModel @Inject constructor(
 
                         is BackupProgress.Error -> {
                             Timber.e("Backup failed: ${progress.message}")
-                            showErrorMessage(UiText.StringResources(R.string.backup_vm_err_during_backup, progress.message))
+                            showErrorMessage(progress.message)
                         }
 
                         else -> {
@@ -264,7 +264,7 @@ class BackupViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Backup creation failed")
-                _backupProgress.value = BackupProgress.Error("Errore imprevisto: ${e.message}")
+                _backupProgress.value = BackupProgress.Error(UiText.StringResources(R.string.backup_vm_err_during_backup, e.message ?: ""))
                 showErrorMessage(UiText.StringResource(R.string.backup_vm_err_unexpected_backup))
             }
         }
@@ -327,7 +327,7 @@ class BackupViewModel @Inject constructor(
 
                         is RestoreProgress.Error -> {
                             Timber.e("Restore failed: ${progress.message}")
-                            showErrorMessage(UiText.StringResources(R.string.backup_vm_err_during_restore, progress.message))
+                            showErrorMessage(progress.message)
                         }
 
                         else -> {
@@ -337,7 +337,7 @@ class BackupViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Timber.e(e, "Unexpected error during restore")
-                _restoreProgress.value = RestoreProgress.Error("Errore imprevisto: ${e.message}")
+                _restoreProgress.value = RestoreProgress.Error(UiText.StringResources(R.string.backup_vm_err_during_restore, e.message ?: ""))
                 showErrorMessage(UiText.StringResource(R.string.backup_vm_err_unexpected_restore))
             }
         }

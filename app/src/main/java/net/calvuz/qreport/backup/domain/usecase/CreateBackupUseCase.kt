@@ -2,6 +2,9 @@ package net.calvuz.qreport.backup.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText.StringResource
+import net.calvuz.qreport.app.error.presentation.UiText.StringResources
 import net.calvuz.qreport.backup.domain.model.enum.BackupMode
 import net.calvuz.qreport.backup.presentation.ui.model.BackupProgress
 import net.calvuz.qreport.backup.domain.repository.BackupRepository
@@ -31,12 +34,12 @@ class CreateBackupUseCase @Inject constructor(
         try {
             // Validate inputs
             if (includeThumbnails && !includePhotos) {
-                emit(BackupProgress.Error("Cannot include thumbnails without photos"))
+                emit(BackupProgress.Error(StringResource(R.string.backup_progress_error_thumbnails_without_photos)))
                 return@flow
             }
 
             // Start backup process
-            emit(BackupProgress.InProgress("Inizializing backup...", 0.0f))
+            emit(BackupProgress.InProgress(StringResource(R.string.backup_progress_step_initializing), 0.0f))
 
             // Delegate to repository
             backupRepository.createFullBackup(
@@ -50,7 +53,7 @@ class CreateBackupUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Timber.e(e, "Error in CreateBackupUseCase")
-            emit(BackupProgress.Error("Backup creation failed: ${e.message}"))
+            emit(BackupProgress.Error(StringResources(R.string.backup_progress_error_generic, e.message ?: "")))
         }
     }
 }

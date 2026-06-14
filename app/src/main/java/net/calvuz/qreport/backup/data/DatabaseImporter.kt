@@ -17,6 +17,12 @@ import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.backup.domain.model.backup.ContractBackup
 import net.calvuz.qreport.backup.domain.model.backup.MechanicalUnitBackup
 import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
+import net.calvuz.qreport.backup.domain.model.backup.MaintenanceLogBackup
+import net.calvuz.qreport.backup.domain.model.backup.DocumentBackup
+import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
+import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
+import net.calvuz.qreport.client.document.data.local.dao.DocumentDao
+import net.calvuz.qreport.client.document.data.local.entity.DocumentEntity
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
@@ -68,7 +74,9 @@ class DatabaseImporter @Inject constructor(
     private val islandDao: IslandDao,
     private val mechanicalUnitDao: MechanicalUnitDao,
     private val checkUpAssociationDao: CheckUpAssociationDao,
-    private val technicalInterventionDao: TechnicalInterventionDao
+    private val technicalInterventionDao: TechnicalInterventionDao,
+    private val maintenanceLogDao: MaintenanceLogDao,
+    private val documentDao: DocumentDao
 ) {
 
     /**
@@ -94,19 +102,19 @@ class DatabaseImporter @Inject constructor(
 
                 RestoreStrategy.MERGE -> {
                     // TODO: Implementazione merge (future)
-                    throw UnsupportedOperationException("Merge strategy not implemented yet")
+                    throw UnsupportedOperationException("Strategia di unione non ancora implementata")
                 }
 
                 RestoreStrategy.SELECTIVE -> {
                     // TODO: Implementazione selettiva (future)
-                    throw UnsupportedOperationException("Selective strategy not implemented yet")
+                    throw UnsupportedOperationException("Strategia di ripristino selettivo non ancora implementata")
                 }
             }
 
             // Validazione post-import
             val validation = validateImportedData(databaseBackup)
             if (!validation.isValid) {
-                throw DatabaseImportException("Post-import validation failed: ${validation.issues.joinToString()}")
+                throw DatabaseImportException("Validazione post-importazione non riuscita: ${validation.issues.joinToString()}")
             }
 
             val duration = System.currentTimeMillis() - startTime
@@ -120,7 +128,7 @@ class DatabaseImporter @Inject constructor(
 
     } catch (e: Exception) {
         Timber.e(e, "Database import failed")
-        Result.failure(DatabaseImportException("Database import failed: ${e.message}", e))
+        Result.failure(DatabaseImportException("Importazione database non riuscita: ${e.message}", e))
     }
 
     /**
@@ -138,6 +146,15 @@ class DatabaseImporter @Inject constructor(
             // 1b. Technical Interventions (no FK dependencies)
             technicalInterventionDao.deleteAll()
             Timber.v("Cleared technical_interventions")
+
+            // 1c. Documents (no FK dependencies)
+            documentDao.deleteAll()
+            Timber.v("Cleared island_documents")
+
+            // 1d. Maintenance logs (CASCADE FK su island_id, ma cancellati
+            // esplicitamente prima delle islands per chiarezza)
+            maintenanceLogDao.deleteAll()
+            Timber.v("Cleared maintenance_logs")
 
             // 2. Foto (dipende da check_items)
             photoDao.deleteAll()
@@ -228,9 +245,14 @@ class DatabaseImporter @Inject constructor(
             // 4. Mechanical Units (dipende da islands)
             if (backup.mechanicalUnits.isNotEmpty()) {
                 mechanicalUnitDao.insertAllFromBackup(backup.mechanicalUnits.map { it.toEntity() })
-                Timber.v("Imported ${backup.facilityIslands.size} facility islands")
+                Timber.v("Imported ${backup.mechanicalUnits.size} mechanical units")
             }
 
+            // 4b. Maintenance Logs (dipende da islands, opzionalmente da mechanical units)
+            if (backup.maintenanceLogs.isNotEmpty()) {
+                maintenanceLogDao.insertAllFromBackup(backup.maintenanceLogs.map { it.toEntity() })
+                Timber.v("Imported ${backup.maintenanceLogs.size} maintenance logs")
+            }
 
             // 5. Checkups (dipende da facility_islands tramite associations)
             if (backup.checkUps.isNotEmpty()) {
@@ -270,6 +292,12 @@ class DatabaseImporter @Inject constructor(
                 Timber.v("Imported ${backup.technicalInterventions.size} technical interventions")
             }
 
+            // 11. Documents (no FK dependencies)
+            if (backup.documents.isNotEmpty()) {
+                documentDao.insertAllFromBackup(backup.documents.map { it.toEntity() })
+                Timber.v("Imported ${backup.documents.size} documents")
+            }
+
             Timber.v("Database import completed")
 
         } catch (e: Exception) {
@@ -301,7 +329,9 @@ class DatabaseImporter @Inject constructor(
                 "photos" to photoDao.count(),
                 "spareParts" to sparePartDao.count(),
                 "associations" to checkUpAssociationDao.count(),
-                "technicalInterventions" to technicalInterventionDao.count()
+                "technicalInterventions" to technicalInterventionDao.count(),
+                "maintenanceLogs" to maintenanceLogDao.count(),
+                "documents" to documentDao.count()
             )
 
             val expectedCounts = mapOf(
@@ -316,7 +346,9 @@ class DatabaseImporter @Inject constructor(
                 "photos" to originalBackup.photos.size,
                 "spareParts" to originalBackup.spareParts.size,
                 "associations" to originalBackup.checkUpAssociations.size,
-                "technicalInterventions" to originalBackup.technicalInterventions.size
+                "technicalInterventions" to originalBackup.technicalInterventions.size,
+                "maintenanceLogs" to originalBackup.maintenanceLogs.size,
+                "documents" to originalBackup.documents.size
             )
 
             for ((table, expectedCount) in expectedCounts) {
@@ -377,7 +409,9 @@ class DatabaseImporter @Inject constructor(
                 "Photos" to photoDao.count(),
                 "Spare Parts" to sparePartDao.count(),
                 "Associations" to checkUpAssociationDao.count(),
-                "Technical Interventions" to technicalInterventionDao.count()
+                "Technical Interventions" to technicalInterventionDao.count(),
+                "Maintenance Logs" to maintenanceLogDao.count(),
+                "Documents" to documentDao.count()
             )
 
             val total = stats.values.sum()
@@ -662,5 +696,59 @@ fun TechnicalInterventionBackup.toEntity(): TechnicalInterventionEntity {
         technician_signature = technicianSignatureJson,
         customer_signature = customerSignatureJson,
         customer_name = customerName
+    )
+}
+
+/**
+ * Mapping da MaintenanceLogBackup a MaintenanceLogEntity
+ */
+fun MaintenanceLogBackup.toEntity(): MaintenanceLogEntity {
+    return MaintenanceLogEntity(
+        id = id,
+        islandId = islandId,
+        operationType = operationType,
+        customOperationLabel = customOperationLabel,
+        mechanicalUnitId = mechanicalUnitId,
+        componentLabel = componentLabel,
+        description = description,
+        technicianName = technicianName,
+        technicianCompany = technicianCompany,
+        operatingHoursAtEvent = operatingHoursAtEvent,
+        cycleCountAtEvent = cycleCountAtEvent,
+        outcome = outcome,
+        durationMinutes = durationMinutes,
+        notes = notes,
+        performedAt = performedAt.toEpochMilliseconds(),
+        createdAt = createdAt.toEpochMilliseconds(),
+        updatedAt = updatedAt.toEpochMilliseconds(),
+        syncedAt = syncedAt,
+        isActive = isActive,
+        isDeleted = isDeleted
+    )
+}
+
+/**
+ * Mapping da DocumentBackup a DocumentEntity
+ */
+fun DocumentBackup.toEntity(): DocumentEntity {
+    return DocumentEntity(
+        id = id,
+        scope = scope,
+        islandId = islandId,
+        facilityId = facilityId,
+        clientId = clientId,
+        fileName = fileName,
+        filePath = filePath,
+        fileSize = fileSize,
+        mimeType = mimeType,
+        fileHash = fileHash,
+        title = title,
+        category = category,
+        notes = notes,
+        createdAt = createdAt.toEpochMilliseconds(),
+        updatedAt = updatedAt.toEpochMilliseconds(),
+        isActive = isActive,
+        isDeleted = isDeleted,
+        syncedAt = syncedAt
     )
 }

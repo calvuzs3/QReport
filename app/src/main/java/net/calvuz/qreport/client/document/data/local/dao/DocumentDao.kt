@@ -224,4 +224,21 @@ interface DocumentDao {
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertDocuments(documents: List<DocumentEntity>)
+
+    // =========================================================================
+    // BACKUP
+    // =========================================================================
+
+    /** Returns all documents regardless of lifecycle state — used for full backup export. */
+    @Query("SELECT * FROM island_documents ORDER BY created_at ASC")
+    suspend fun getAllForBackup(): List<DocumentEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAllFromBackup(documents: List<DocumentEntity>)
+
+    @Query("DELETE FROM island_documents")
+    suspend fun deleteAll()
+
+    @Query("SELECT COUNT(*) FROM island_documents")
+    suspend fun count(): Int
 }

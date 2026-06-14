@@ -464,7 +464,7 @@ private fun BackupProgressContent(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = progress.step, // TODO: verificare se coincide con .currentOperation,
+                        text = progress.step.asString(),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
@@ -478,11 +478,12 @@ private fun BackupProgressContent(
                 }
 
                 if (progress.currentTable != null) {
-                    if (progress.currentTable.isNotEmpty()) {
+                    val currentTableText = progress.currentTable.asString()
+                    if (currentTableText.isNotEmpty()) {
                         Text(
                             text = stringResource(
                                 R.string.backup_action_table_progress,
-                                progress.currentTable,
+                                currentTableText,
                                 progress.processedRecords,
                                 progress.totalRecords
                             ),
@@ -583,7 +584,7 @@ private fun BackupActionContent(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = progress.message,
+                        text = progress.message.asString(),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         textAlign = TextAlign.Center
