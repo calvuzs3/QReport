@@ -30,6 +30,7 @@ import net.calvuz.qreport.R
  *
  * UPDATED: Unified card styling matching WorkDayFormScreen and SignaturesFormScreen
  */
+@Suppress("ParamsComparedByRef")
 @Composable
 fun DetailsFormScreen(
     interventionId: String,

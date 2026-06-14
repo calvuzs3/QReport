@@ -9,12 +9,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.delay
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.settings.domain.model.TechnicianInfo
 
 /**
@@ -50,10 +53,10 @@ fun TechnicianSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Informazioni Tecnico") },
+                title = { Text(stringResource(R.string.settings_screen_technician_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = "Indietro")
+                        Icon(Icons.Default.ArrowBackIosNew, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
@@ -63,7 +66,7 @@ fun TechnicianSettingsScreen(
                     ) {
                         Icon(
                             Icons.Default.RestartAlt,
-                            contentDescription = "Reset Impostazioni"
+                            contentDescription = stringResource(R.string.settings_screen_technician_action_reset)
                         )
                     }
                 }
@@ -118,7 +121,12 @@ fun TechnicianSettingsScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
-                Text(if (uiState.isSaving) "Salvataggio..." else "Salva Impostazioni")
+                Text(
+                    stringResource(
+                        if (uiState.isSaving) R.string.settings_screen_technician_saving
+                        else R.string.settings_screen_technician_save
+                    )
+                )
             }
 
             // Preview Card (show only if has saved data)
@@ -166,12 +174,12 @@ private fun InfoBannerCard() {
             )
             Column {
                 Text(
-                    text = "Pre-compilazione CheckUp",
+                    text = stringResource(R.string.settings_screen_technician_info_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "I dati inseriti qui verranno utilizzati per pre-compilare automaticamente le informazioni del tecnico nei nuovi CheckUp.",
+                    text = stringResource(R.string.settings_screen_technician_info_message),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -206,7 +214,7 @@ private fun TechnicianFormCard(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Dati Tecnico",
+                    text = stringResource(R.string.settings_screen_technician_form_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -216,7 +224,7 @@ private fun TechnicianFormCard(
             OutlinedTextField(
                 value = formState.name,
                 onValueChange = { onFieldUpdate(TechnicianField.NAME, it) },
-                label = { Text("Nome Tecnico") },
+                label = { Text(stringResource(R.string.field_technician_name)) },
                 leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
@@ -227,7 +235,7 @@ private fun TechnicianFormCard(
             OutlinedTextField(
                 value = formState.company,
                 onValueChange = { onFieldUpdate(TechnicianField.COMPANY, it) },
-                label = { Text("Azienda") },
+                label = { Text(stringResource(R.string.settings_screen_technician_field_company)) },
                 leadingIcon = { Icon(Icons.Default.Business, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
@@ -238,7 +246,7 @@ private fun TechnicianFormCard(
             OutlinedTextField(
                 value = formState.certification,
                 onValueChange = { onFieldUpdate(TechnicianField.CERTIFICATION, it) },
-                label = { Text("Certificazione") },
+                label = { Text(stringResource(R.string.settings_screen_technician_field_certification)) },
                 leadingIcon = { Icon(Icons.Default.Verified, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
@@ -254,24 +262,24 @@ private fun TechnicianFormCard(
                 OutlinedTextField(
                     value = formState.phone,
                     onValueChange = { onFieldUpdate(TechnicianField.PHONE, it) },
-                    label = { Text("Telefono") },
+                    label = { Text(stringResource(R.string.field_phone)) },
                     leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                     modifier = Modifier.weight(1f),
                     enabled = !isLoading,
                     singleLine = true,
-                    placeholder = { Text("+39 123 456 7890") }
+                    placeholder = { Text(stringResource(R.string.settings_screen_technician_phone_placeholder)) }
                 )
 
                 // Email Field
                 OutlinedTextField(
                     value = formState.email,
                     onValueChange = { onFieldUpdate(TechnicianField.EMAIL, it) },
-                    label = { Text("Email") },
+                    label = { Text(stringResource(R.string.field_email)) },
                     leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                     modifier = Modifier.weight(1f),
                     enabled = !isLoading,
                     singleLine = true,
-                    placeholder = { Text("nome@azienda.it") }
+                    placeholder = { Text(stringResource(R.string.settings_screen_technician_email_placeholder)) }
                 )
             }
         }
@@ -304,26 +312,26 @@ private fun PreviewCard(technicianInfo: TechnicianInfo) {
                     modifier = Modifier.size(20.dp)
                 )
                 Text(
-                    text = "Dati Salvati",
+                    text = stringResource(R.string.settings_screen_technician_preview_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
             }
 
             if (technicianInfo.name.isNotBlank()) {
-                PreviewItem("Nome", technicianInfo.name)
+                PreviewItem(stringResource(R.string.settings_screen_technician_preview_name), technicianInfo.name)
             }
             if (technicianInfo.company.isNotBlank()) {
-                PreviewItem("Azienda", technicianInfo.company)
+                PreviewItem(stringResource(R.string.settings_screen_technician_preview_company), technicianInfo.company)
             }
             if (technicianInfo.certification.isNotBlank()) {
-                PreviewItem("Certificazione", technicianInfo.certification)
+                PreviewItem(stringResource(R.string.settings_screen_technician_preview_certification), technicianInfo.certification)
             }
             if (technicianInfo.phone.isNotBlank()) {
-                PreviewItem("Telefono", technicianInfo.phone)
+                PreviewItem(stringResource(R.string.settings_screen_technician_preview_phone), technicianInfo.phone)
             }
             if (technicianInfo.email.isNotBlank()) {
-                PreviewItem("Email", technicianInfo.email)
+                PreviewItem(stringResource(R.string.settings_screen_technician_preview_email), technicianInfo.email)
             }
         }
     }
@@ -355,7 +363,7 @@ private fun PreviewItem(label: String, value: String) {
  * Validation errors card
  */
 @Composable
-private fun ValidationErrorsCard(errors: List<String>) {
+private fun ValidationErrorsCard(errors: List<UiText>) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
@@ -376,7 +384,7 @@ private fun ValidationErrorsCard(errors: List<String>) {
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Text(
-                    text = "Errori di validazione",
+                    text = stringResource(R.string.settings_screen_technician_validation_errors_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     fontWeight = FontWeight.SemiBold
@@ -384,7 +392,7 @@ private fun ValidationErrorsCard(errors: List<String>) {
             }
             errors.forEach { error ->
                 Text(
-                    text = "• $error",
+                    text = "• ${error.asString()}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
@@ -397,7 +405,7 @@ private fun ValidationErrorsCard(errors: List<String>) {
  * Error card for general errors
  */
 @Composable
-private fun ErrorCard(message: String) {
+private fun ErrorCard(message: UiText) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
@@ -415,7 +423,7 @@ private fun ErrorCard(message: String) {
                 tint = MaterialTheme.colorScheme.onErrorContainer
             )
             Text(
-                text = message,
+                text = message.asString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
@@ -427,7 +435,7 @@ private fun ErrorCard(message: String) {
  * Success card for success messages
  */
 @Composable
-private fun SuccessCard(message: String) {
+private fun SuccessCard(message: UiText) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -445,7 +453,7 @@ private fun SuccessCard(message: String) {
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Text(
-                text = message,
+                text = message.asString(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -471,12 +479,11 @@ private fun ResetConfirmationDialog(
             )
         },
         title = {
-            Text("Conferma Reset")
+            Text(stringResource(R.string.settings_screen_technician_reset_dialog_title))
         },
         text = {
             Text(
-                "Sei sicuro di voler eliminare tutte le informazioni del tecnico salvate? " +
-                        "Questa azione non può essere annullata.",
+                stringResource(R.string.settings_screen_technician_reset_dialog_message),
                 textAlign = TextAlign.Center
             )
         },
@@ -487,12 +494,12 @@ private fun ResetConfirmationDialog(
                     containerColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text("Elimina")
+                Text(stringResource(R.string.action_delete))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Annulla")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

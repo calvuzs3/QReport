@@ -7,7 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,34 +23,34 @@ fun SettingsScreen(
         modifier = modifier.fillMaxSize()
     ) {
         TopAppBar(
-            title = { Text("Impostazioni") },
+            title = { Text(stringResource(R.string.settings_screen_main_title)) },
         )
 
         // Technician info
-        SettingsSection(title = "Profilo Utente") {
+        SettingsSection(title = stringResource(R.string.settings_screen_main_section_profile)) {
             SettingsItem(
-                title = "Informazioni Tecnico",
-                subtitle = "Dati per pre-compilazione CheckUp",
+                title = stringResource(R.string.settings_screen_main_technician_title),
+                subtitle = stringResource(R.string.settings_screen_main_technician_subtitle),
                 icon = Icons.Default.Engineering,
                 onClick = onNavigateToTechnicianSettings
             )
         }
 
         // Data
-        SettingsSection(title = "Dati") {
+        SettingsSection(title = stringResource(R.string.settings_screen_main_section_data)) {
             SettingsItem(
-                title = "Backup Database",
-                subtitle = "Backup e ripristino dati QReport",
+                title = stringResource(R.string.settings_screen_main_backup_title),
+                subtitle = stringResource(R.string.settings_screen_main_backup_subtitle),
                 icon = Icons.Default.Backup,
                 onClick = onNavigateToBackup
             )
         }
 
         // Sync
-        SettingsSection(title = "Sincronizzazione") {
+        SettingsSection(title = stringResource(R.string.settings_screen_main_section_sync)) {
             SettingsItem(
-                title = "Sincronizzazione Remota",
-                subtitle = "Configura la sincronizzazione con il server",
+                title = stringResource(R.string.settings_screen_main_sync_title),
+                subtitle = stringResource(R.string.settings_screen_main_sync_subtitle),
                 icon = Icons.Default.CloudSync,
                 onClick = onNavigateToSyncSettings
             )

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ======================================================= -->
+    <!-- SettingsScreen                                           -->
+    <!-- ======================================================= -->
+
+    <string name="settings_screen_main_title">Impostazioni</string>
+    <string name="settings_screen_main_section_profile">Profilo Utente</string>
+    <string name="settings_screen_main_technician_title">Informazioni Tecnico</string>
+    <string name="settings_screen_main_technician_subtitle">Dati per pre-compilazione CheckUp</string>
+    <string name="settings_screen_main_section_data">Dati</string>
+    <string name="settings_screen_main_backup_title">Backup Database</string>
+    <string name="settings_screen_main_backup_subtitle">Backup e ripristino dati QReport</string>
+    <string name="settings_screen_main_section_sync">Sincronizzazione</string>
+    <string name="settings_screen_main_sync_title">Sincronizzazione Remota</string>
+    <string name="settings_screen_main_sync_subtitle">Configura la sincronizzazione con il server</string>
+
+    <!-- ======================================================= -->
+    <!-- TechnicianSettingsScreen                                 -->
+    <!-- ======================================================= -->
+
+    <string name="settings_screen_technician_title">Informazioni Tecnico</string>
+    <string name="settings_screen_technician_action_reset">Reset Impostazioni</string>
+    <string name="settings_screen_technician_info_title">Pre-compilazione CheckUp</string>
+    <string name="settings_screen_technician_info_message">I dati inseriti qui verranno utilizzati per pre-compilare automaticamente le informazioni del tecnico nei nuovi CheckUp.</string>
+    <string name="settings_screen_technician_saving">Salvataggio…</string>
+    <string name="settings_screen_technician_save">Salva Impostazioni</string>
+    <string name="settings_screen_technician_form_title">Dati Tecnico</string>
+    <string name="settings_screen_technician_field_company">Azienda</string>
+    <string name="settings_screen_technician_field_certification">Certificazione</string>
+    <string name="settings_screen_technician_phone_placeholder" translatable="false">+39 123 456 7890</string>
+    <string name="settings_screen_technician_email_placeholder" translatable="false">nome@azienda.it</string>
+    <string name="settings_screen_technician_preview_title">Dati Salvati</string>
+    <string name="settings_screen_technician_preview_name">Nome</string>
+    <string name="settings_screen_technician_preview_company">Azienda</string>
+    <string name="settings_screen_technician_preview_certification">Certificazione</string>
+    <string name="settings_screen_technician_preview_phone">Telefono</string>
+    <string name="settings_screen_technician_preview_email">Email</string>
+    <string name="settings_screen_technician_validation_errors_title">Errori di validazione</string>
+    <string name="settings_screen_technician_reset_dialog_title">Conferma Reset</string>
+    <string name="settings_screen_technician_reset_dialog_message">Sei sicuro di voler eliminare tutte le informazioni del tecnico salvate? Questa azione non può essere annullata.</string>
+
+    <!-- ======================================================= -->
+    <!-- TechnicianSettingsViewModel - messages and errors        -->
+    <!-- ======================================================= -->
+
+    <string name="settings_technician_msg_saved">Informazioni tecnico salvate con successo</string>
+    <string name="settings_technician_msg_reset">Impostazioni tecnico ripristinate</string>
+    <string name="settings_technician_err_save">Errore nel salvataggio: %1$s</string>
+    <string name="settings_technician_err_reset">Errore nel reset: %1$s</string>
+    <string name="settings_technician_err_unexpected">Errore inaspettato: %1$s</string>
+    <string name="settings_technician_err_name_too_short">Il nome deve avere almeno 2 caratteri</string>
+    <string name="settings_technician_err_company_too_short">Il nome dell\'azienda deve avere almeno 2 caratteri</string>
+    <string name="settings_technician_err_invalid_phone">Formato telefono non valido</string>
+    <string name="settings_technician_err_invalid_email">Formato email non valido</string>
+
+    <!-- ======================================================= -->
+    <!-- ListViewMode - card variant descriptions                 -->
+    <!-- ======================================================= -->
+
+    <string name="settings_card_variant_full">Vista completa</string>
+    <string name="settings_card_variant_compact">Vista compatta</string>
+    <string name="settings_card_variant_minimal">Vista minimale</string>
+
+</resources>

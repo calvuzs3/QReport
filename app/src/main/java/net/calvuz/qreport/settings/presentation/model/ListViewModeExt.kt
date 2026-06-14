@@ -4,6 +4,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.ViewAgenda
 import androidx.compose.material.icons.filled.ViewHeadline
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import net.calvuz.qreport.R
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
 
@@ -20,8 +23,9 @@ fun ListViewMode.getCardVariantIcon() = when (this) {
 /**
  * Returns the accessibility description for the card variant toggle.
  */
-fun  ListViewMode.getCardVariantDescription() = when (this) {
-    ListViewMode.FULL -> "Vista completa"
-    ListViewMode.COMPACT -> "Vista compatta"
-    ListViewMode.MINIMAL -> "Vista minimale"
+@Composable
+fun ListViewMode.getCardVariantDescription() = when (this) {
+    ListViewMode.FULL -> stringResource(R.string.settings_card_variant_full)
+    ListViewMode.COMPACT -> stringResource(R.string.settings_card_variant_compact)
+    ListViewMode.MINIMAL -> stringResource(R.string.settings_card_variant_minimal)
 }

@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.R
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.settings.domain.model.TechnicianInfo
 import net.calvuz.qreport.settings.domain.repository.TechnicianSettingsRepository
 import javax.inject.Inject
@@ -100,20 +102,23 @@ class TechnicianSettingsViewModel @Inject constructor(
                 if (result.isSuccess) {
                     _uiState.value = _uiState.value.copy(
                         isSaving = false,
-                        message = "Informazioni tecnico salvate con successo"
+                        message = UiText.StringResource(R.string.settings_technician_msg_saved)
                     )
                     _formState.value = form.copy(isModified = false)
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isSaving = false,
-                        error = "Errore nel salvataggio: ${result.exceptionOrNull()?.message}"
+                        error = UiText.StringResources(
+                            R.string.settings_technician_err_save,
+                            result.exceptionOrNull()?.message ?: ""
+                        )
                     )
                 }
 
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isSaving = false,
-                    error = "Errore inaspettato: ${e.message}"
+                    error = UiText.StringResources(R.string.settings_technician_err_unexpected, e.message ?: "")
                 )
             }
         }
@@ -132,20 +137,23 @@ class TechnicianSettingsViewModel @Inject constructor(
                 if (result.isSuccess) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        message = "Impostazioni tecnico ripristinate"
+                        message = UiText.StringResource(R.string.settings_technician_msg_reset)
                     )
                     _formState.value = TechnicianFormState() // Reset form
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        error = "Errore nel reset: ${result.exceptionOrNull()?.message}"
+                        error = UiText.StringResources(
+                            R.string.settings_technician_err_reset,
+                            result.exceptionOrNull()?.message ?: ""
+                        )
                     )
                 }
 
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Errore inaspettato: ${e.message}"
+                    error = UiText.StringResources(R.string.settings_technician_err_unexpected, e.message ?: "")
                 )
             }
         }
@@ -176,27 +184,27 @@ class TechnicianSettingsViewModel @Inject constructor(
     /**
      * Validate form data
      */
-    private fun validateForm(form: TechnicianFormState): List<String> {
-        val errors = mutableListOf<String>()
+    private fun validateForm(form: TechnicianFormState): List<UiText> {
+        val errors = mutableListOf<UiText>()
 
         // Name validation
         if (form.name.isNotBlank() && form.name.trim().length < 2) {
-            errors.add("Il nome deve avere almeno 2 caratteri")
+            errors.add(UiText.StringResource(R.string.settings_technician_err_name_too_short))
         }
 
         // Company validation
         if (form.company.isNotBlank() && form.company.trim().length < 2) {
-            errors.add("Il nome dell'azienda deve avere almeno 2 caratteri")
+            errors.add(UiText.StringResource(R.string.settings_technician_err_company_too_short))
         }
 
         // Phone validation
         if (form.phone.isNotBlank() && !isValidPhone(form.phone)) {
-            errors.add("Formato telefono non valido")
+            errors.add(UiText.StringResource(R.string.settings_technician_err_invalid_phone))
         }
 
         // Email validation
         if (form.email.isNotBlank() && !isValidEmail(form.email)) {
-            errors.add("Formato email non valido")
+            errors.add(UiText.StringResource(R.string.settings_technician_err_invalid_email))
         }
 
         return errors
@@ -225,8 +233,8 @@ class TechnicianSettingsViewModel @Inject constructor(
 data class TechnicianSettingsUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
-    val error: String? = null,
-    val message: String? = null
+    val error: UiText? = null,
+    val message: UiText? = null
 )
 
 /**
@@ -238,7 +246,7 @@ data class TechnicianFormState(
     val certification: String = "",
     val phone: String = "",
     val email: String = "",
-    val validationErrors: List<String> = emptyList(),
+    val validationErrors: List<UiText> = emptyList(),
     val isModified: Boolean = false
 ) {
     val isValid: Boolean get() = validationErrors.isEmpty()

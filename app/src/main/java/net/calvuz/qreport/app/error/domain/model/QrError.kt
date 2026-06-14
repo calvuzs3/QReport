@@ -120,20 +120,19 @@ interface QrError {
             val facilitiesCount: Int = 0, val contactsCount: Int = 0, val contractsCount: Int = 0
         ) : ClientError
     }
-
-
+    
     sealed interface ContractsError : QrError {
-
+        
         // ── CRUD ─────────────────────────────────────────────────────────────
-
-        data class LoadError(val message: String? = null) : ContractsError
+        
         data class NotFound(val message: String? = null) : ContractsError
+        data class LoadError(val message: String? = null) : ContractsError
         data class CreateError(val message: String? = null) : ContractsError
         data class UpdateError(val message: String? = null) : ContractsError
         data class DeleteError(val message: String? = null) : ContractsError
-
+        
         // ── Business rules ───────────────────────────────────────────────────
-
+        
         data class MissingClientId(val message: String? = null) : ContractsError
         data class MissingContractId(val message: String? = null) : ContractsError
         data class ClientNotFound(val message: String? = null) : ContractsError
@@ -368,15 +367,6 @@ interface QrError {
         data class SyncDisabled(val message: String? = null) : NetworkError
         data class ParseError(val message: String? = null) : NetworkError
     }
-
-    // Replace the existing `enum class FileError` in QrError.kt with this block.
-    //
-    // Migration notes for QrErrorExt.kt:
-    //   - All branches change from  `QrError.FileError.XYZ ->`
-    //                            to  `is QrError.FileError.XYZ ->`
-    //   - Branches that carry payload can now access it:
-    //       is QrError.FileError.IoError -> it.cause?.message ?: ...
-    //   - The compiler will flag every unhandled branch — follow the errors top to bottom.
 
     sealed interface FileError : QrError {
 
@@ -643,33 +633,33 @@ interface QrError {
         FILE_SHARE_FAILED,          // Errore di condivisione file
     }
 
-    enum class ShareError : QrError {
+    sealed interface ShareError : QrError {
         // ===== BASIC SHARING =====
-        SHARE_FAILED,              // General sharing failure
-        INTENT_CREATION_FAILED,    // Failed to create share intent
-        APP_NOT_FOUND,             // Target app not found/available
-        NO_COMPATIBLE_APP,         // No compatible apps found
-        OPEN_FAILED,               // Failed to open file
+        data class ShareFailed(val message: String? = null) : ShareError          // General sharing failure
+        data class IntentCreationFailed(val message: String? = null) : ShareError // Failed to create share intent
+        data class AppNotFound(val message: String? = null) : ShareError          // Target app not found/available
+        data class NoCompatibleApp(val message: String? = null) : ShareError      // No compatible apps found
+        data class OpenFailed(val message: String? = null) : ShareError           // Failed to open file
 
         // ===== FILE OPERATIONS =====
-        FILE_NOT_FOUND,            // File doesn't exist
-        TEMP_FILE_FAILED,          // Temporary file creation failed
-        ZIP_CREATION_FAILED,       // ZIP archive creation failed
+        data class FileNotFound(val message: String? = null) : ShareError         // File doesn't exist
+        data class TempFileFailed(val message: String? = null) : ShareError       // Temporary file creation failed
+        data class ZipCreationFailed(val message: String? = null) : ShareError    // ZIP archive creation failed
 
         // ===== URI & PROVIDER =====
-        URI_CREATION_FAILED,       // FileProvider URI creation failed
-        FILEPROVIDER_FAILED,       // FileProvider configuration issue
+        data class UriCreationFailed(val message: String? = null) : ShareError    // FileProvider URI creation failed
+        data class FileProviderFailed(val message: String? = null) : ShareError   // FileProvider configuration issue
 
         // ===== VALIDATION =====
-        VALIDATION_FAILED,         // Share validation failed
-        METADATA_FAILED,           // File metadata extraction failed
+        data class ValidationFailed(val message: String? = null) : ShareError     // Share validation failed
+        data class MetadataFailed(val message: String? = null) : ShareError       // File metadata extraction failed
 
         // ===== APP QUERIES =====
-        APP_QUERY_FAILED,          // Failed to query compatible apps
-        PERMISSION_DENIED,         // Storage permission denied
+        data class AppQueryFailed(val message: String? = null) : ShareError       // Failed to query compatible apps
+        data class PermissionDenied(val message: String? = null) : ShareError     // Storage permission denied
 
         // ===== CLEANUP =====
-        CLEANUP_FAILED             // Temporary file cleanup failed
+        data class CleanupFailed(val message: String? = null) : ShareError        // Temporary file cleanup failed
     }
 
     enum class PhotoError : QrError {

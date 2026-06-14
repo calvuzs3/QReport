@@ -197,18 +197,6 @@ fun QrError.ClientError.toUiText(): UiText {
     }
 }
 
-fun QrError.ContractsError.toUiText(): UiText {
-    return when (this) {
-        is QrError.ContractsError.MissingClientId -> StringResources(R.string.err_contracts_client_id_empty)
-        is QrError.ContractsError.ClientNotFound -> StringResources(R.string.err_contracts_client_not_found)
-        is QrError.ContractsError.NotFound -> StringResources(R.string.err_contracts_contract_not_found)
-        is QrError.ContractsError.DeleteError -> StringResources(R.string.err_delete)
-        is QrError.ContractsError.MissingContractId -> StringResources(R.string.err_contracts_contract_id_empty)
-        is QrError.ContractsError.CreateError -> StringResources(R.string.err_contracts_create)
-        is QrError.ContractsError.LoadError -> StringResources(R.string.err_contracts_load)
-        is QrError.ContractsError.UpdateError -> StringResources(R.string.err_contracts_update)
-    }
-}
 
 fun QrError.ContactsError.toUiText(): UiText {
     return when (this) {
@@ -239,6 +227,19 @@ fun QrError.ContactsError.toUiText(): UiText {
         is QrError.ContactsError.ValidationError.InvalidTitleLength -> StringResources(R.string.err_contact_validation_invalid_title_length)
         is QrError.ContactsError.ValidationError.InvalidContactInfo -> StringResources(R.string.err_contact_validation_invalid_contact_info)
 
+    }
+}
+
+fun QrError.ContractsError.toUiText(): UiText {
+    return when (this) {
+        is QrError.ContractsError.NotFound -> StringResources(R.string.err_contracts_contract_not_found)
+        is QrError.ContractsError.LoadError -> StringResources(R.string.err_contracts_load)
+        is QrError.ContractsError.CreateError -> StringResources(R.string.err_contracts_create)
+        is QrError.ContractsError.UpdateError -> StringResources(R.string.err_contracts_update)
+        is QrError.ContractsError.DeleteError -> StringResources(R.string.err_delete)
+        is QrError.ContractsError.MissingClientId -> StringResources(R.string.err_contracts_client_id_empty)
+        is QrError.ContractsError.MissingContractId -> StringResources(R.string.err_contracts_contract_id_empty)
+        is QrError.ContractsError.ClientNotFound -> StringResources(R.string.err_contracts_client_not_found)
     }
 }
 
@@ -348,6 +349,26 @@ fun QrError.Export.toUiText(): UiText {
     }
 }
 
+fun QrError.ShareError.toUiText(): UiText {
+    return when (this) {
+        is QrError.ShareError.ShareFailed -> StringResources(R.string.err_share_failed)
+        is QrError.ShareError.IntentCreationFailed -> StringResources(R.string.err_share_intent_creation_failed)
+        is QrError.ShareError.AppNotFound -> StringResources(R.string.err_share_app_not_found)
+        is QrError.ShareError.NoCompatibleApp -> StringResources(R.string.err_share_no_compatible_app)
+        is QrError.ShareError.OpenFailed -> StringResources(R.string.err_share_open_failed)
+        is QrError.ShareError.FileNotFound -> StringResources(R.string.err_share_file_not_found)
+        is QrError.ShareError.TempFileFailed -> StringResources(R.string.err_share_temp_file_failed)
+        is QrError.ShareError.ZipCreationFailed -> StringResources(R.string.err_share_zip_creation_failed)
+        is QrError.ShareError.UriCreationFailed -> StringResources(R.string.err_share_uri_creation_failed)
+        is QrError.ShareError.FileProviderFailed -> StringResources(R.string.err_share_file_provider_failed)
+        is QrError.ShareError.ValidationFailed -> StringResources(R.string.err_share_validation_failed)
+        is QrError.ShareError.MetadataFailed -> StringResources(R.string.err_share_metadata_failed)
+        is QrError.ShareError.AppQueryFailed -> StringResources(R.string.err_share_app_query_failed)
+        is QrError.ShareError.PermissionDenied -> StringResources(R.string.err_share_permission_denied)
+        is QrError.ShareError.CleanupFailed -> StringResources(R.string.err_share_cleanup_failed)
+    }
+}
+
 fun QrError.asUiText(): UiText {
     return when (this) {
 
@@ -360,13 +381,13 @@ fun QrError.asUiText(): UiText {
         is QrError.App -> this.toUiText()
         is QrError.ValidationError -> this.toUiText()
         is QrError.ClientError -> this.toUiText()
-        is QrError.ContactsError -> this.toUiText()
         is QrError.ContractsError -> this.toUiText()
         is QrError.FacilityError -> this.toUiText()
         is QrError.IslandError -> this.toUiText()
         is QrError.UnitError -> this.toUiText()
         is QrError.MaintenanceLogError -> this.toUiText()
         is QrError.IslandDocumentError -> this.toUiText()
+        is QrError.ShareError -> this.toUiText()
 
         // Export Error Mappings
         QrError.ExportError.DIRECTORY_CREATE -> StringResources(R.string.err_export_directory_create)
@@ -416,24 +437,6 @@ fun QrError.asUiText(): UiText {
         QrError.ExportError.LIBRARY_ERROR -> StringResources(R.string.err_export_library_error)
         QrError.ExportError.SYSTEM_RESOURCE_UNAVAILABLE -> StringResources(R.string.err_export_system_resource_unavailable)
         QrError.ExportError.FILE_SHARE_FAILED -> StringResources(R.string.err_export_file_share_failed)
-
-
-        // Share error mappings
-        QrError.ShareError.SHARE_FAILED -> StringResources(R.string.err_share_failed)
-        QrError.ShareError.INTENT_CREATION_FAILED -> StringResources(R.string.err_share_intent_creation_failed)
-        QrError.ShareError.APP_NOT_FOUND -> StringResources(R.string.err_share_app_not_found)
-        QrError.ShareError.NO_COMPATIBLE_APP -> StringResources(R.string.err_share_no_compatible_app)
-        QrError.ShareError.OPEN_FAILED -> StringResources(R.string.err_share_open_failed)
-        QrError.ShareError.FILE_NOT_FOUND -> StringResources(R.string.err_share_file_not_found)
-        QrError.ShareError.TEMP_FILE_FAILED -> StringResources(R.string.err_share_temp_file_failed)
-        QrError.ShareError.ZIP_CREATION_FAILED -> StringResources(R.string.err_share_zip_creation_failed)
-        QrError.ShareError.URI_CREATION_FAILED -> StringResources(R.string.err_share_uri_creation_failed)
-        QrError.ShareError.FILEPROVIDER_FAILED -> StringResources(R.string.err_share_file_provider_failed)
-        QrError.ShareError.VALIDATION_FAILED -> StringResources(R.string.err_share_validation_failed)
-        QrError.ShareError.METADATA_FAILED -> StringResources(R.string.err_share_metadata_failed)
-        QrError.ShareError.APP_QUERY_FAILED -> StringResources(R.string.err_share_app_query_failed)
-        QrError.ShareError.PERMISSION_DENIED -> StringResources(R.string.err_share_permission_denied)
-        QrError.ShareError.CLEANUP_FAILED -> StringResources(R.string.err_share_cleanup_failed)
 
         // ===== NEW PHOTO ERROR MAPPINGS =====
 
