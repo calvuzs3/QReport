@@ -184,7 +184,7 @@ private fun AssociationDialogHeader(
 }
 
 @Composable
-private fun ClientSelectionStep(
+internal fun ClientSelectionStep(
     clients: List<Client>,
     selectedClientId: String?,
     onClientSelected: (String) -> Unit
@@ -213,7 +213,7 @@ private fun ClientSelectionStep(
 }
 
 @Composable
-private fun FacilitySelectionStep(
+internal fun FacilitySelectionStep(
     facilities: List<Facility>,
     selectedFacilityId: String?,
     onFacilitySelected: (String) -> Unit
@@ -240,7 +240,7 @@ private fun FacilitySelectionStep(
 }
 
 @Composable
-private fun IslandSelectionStep(
+internal fun IslandSelectionStep(
     islands: List<Island>,
     onIslandSelected: (String) -> Unit
 ) {
@@ -277,7 +277,7 @@ private fun IslandSelectionStep(
 }
 
 @Composable
-private fun SelectionStepCard(
+internal fun SelectionStepCard(
     stepNumber: Int,
     title: String,
     isCompleted: Boolean,
@@ -348,7 +348,7 @@ private fun SelectionStepCard(
 }
 
 @Composable
-private fun SelectionItem(
+internal fun SelectionItem(
     title: String,
     subtitle: String,
     isSelected: Boolean,
@@ -408,7 +408,7 @@ private fun SelectionItem(
 }
 
 @Composable
-private fun EmptyStateMessage(message: String) {
+internal fun EmptyStateMessage(message: String) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Build
@@ -81,6 +82,7 @@ fun IslandDetailScreen(
     onIslandDeleted: () -> Unit = {},
     onNavigateToCreateMaintenanceLog: (islandId: String) -> Unit,
     onNavigateToIslandHealth: (islandId: String) -> Unit,
+    onNavigateToCreateCheckUp: (islandId: String) -> Unit,
     viewModel: IslandDetailViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -161,6 +163,15 @@ fun IslandDetailScreen(
                         leadingIcon = {
                             Icon(
                                 Icons.Default.HealthAndSafety,
+                                contentDescription = null
+                            )
+                        })
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.island_detail_menu_new_checkup)) },
+                        onClick = { onNavigateToCreateCheckUp(islandId); showMoreMenu = false },
+                        leadingIcon = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.Assignment,
                                 contentDescription = null
                             )
                         })

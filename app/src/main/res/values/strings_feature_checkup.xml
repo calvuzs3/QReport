@@ -33,6 +33,13 @@
 
 
     <!-- ========================================== -->
+    <!-- ClientFacilityIslandSelectorDialog.kt -->
+    <!-- ========================================== -->
+
+    <string name="checkup_component_source_dialog_title">Seleziona Cliente/Isola</string>
+
+
+    <!-- ========================================== -->
     <!-- CheckupCard.kt -->
     <!-- ========================================== -->
 
@@ -119,6 +126,12 @@
     <!-- Top Bar -->
     <string name="checkup_screen_new_title">Nuovo Check-up</string>
     <string name="checkup_screen_new_back">Indietro</string>
+
+    <!-- Source Selection -->
+    <string name="checkup_screen_new_section_source_title">Origine Dati</string>
+    <string name="checkup_screen_new_link_source_button">Collega a cliente esistente</string>
+    <string name="checkup_screen_new_linked_banner">Collegato a: %1$s · %2$s · %3$s</string>
+    <string name="checkup_screen_new_unlink_source">Rimuovi collegamento</string>
 
     <!-- Client Info Section -->
     <string name="checkup_screen_new_section_client_title">Informazioni Cliente</string>

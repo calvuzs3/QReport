@@ -173,6 +173,7 @@
     <string name="island_detail_action_more">Altre azioni</string>
     <string name="island_detail_action_refresh">Aggiorna</string>
     <string name="island_detail_menu_record_maintenance">Registra Manutenzione</string>
+    <string name="island_detail_menu_new_checkup">Nuovo Check-up</string>
     <string name="island_detail_loading">Caricamento dettagli isola…</string>
     <string name="island_detail_object_name">isola</string>
     <string name="island_detail_empty_title">Nessuna Isola</string>

@@ -125,7 +125,7 @@ object QReportRoutes {
     const val SYNC_LOGIN = "sync_login"
 
     // Check-up management routes
-    const val CHECKUP_CREATE = "checkup_create"
+    const val CHECKUP_CREATE = "checkup_create?islandId={islandId}"
     const val CHECKUP_DETAIL = "checkup_detail/{checkUpId}"
     const val CAMERA = "camera/{checkItemId}"
     const val PHOTO_GALLERY = "photo_gallery/{checkItemId}"
@@ -244,7 +244,8 @@ object QReportRoutes {
     fun islandHealthRoute(islandId: String) = "island_health/$islandId"
 
     // Check-up
-    fun checkUpCreateRoute(clientId: String? = null) = "checkup_create"
+    fun checkUpCreateRoute(islandId: String? = null) =
+        if (islandId != null) "checkup_create?islandId=$islandId" else "checkup_create"
     fun checkupDetail(checkUpId: String) = "checkup_detail/$checkUpId"
     fun camera(checkItemId: String) = "camera/$checkItemId"
     fun photoGallery(checkItemId: String) = "photo_gallery/$checkItemId"
@@ -450,7 +451,16 @@ fun QReportNavigation(
                 // ============================================================
 
                 // New Check-up Creation
-                composable(QReportRoutes.CHECKUP_CREATE) {
+                composable(
+                    QReportRoutes.CHECKUP_CREATE,
+                    arguments = listOf(
+                        navArgument("islandId") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        }
+                    )
+                ) {
                     NewCheckUpScreen(
                         onNavigateBack = {
                             navController.popBackStack()
@@ -680,9 +690,9 @@ fun QReportNavigation(
                                 QReportRoutes.islandDetailRoute(facilityId, islandId)
                             )
                         },
-                        onNavigateToCreateCheckUp = { clientId ->
+                        onNavigateToCreateCheckUp = {
                             navController.navigate(
-                                QReportRoutes.checkUpCreateRoute(clientId)
+                                QReportRoutes.checkUpCreateRoute()
                             )
                         },
                     )
@@ -1182,6 +1192,9 @@ fun QReportNavigation(
                         },
                         onNavigateToIslandHealth = { iId ->
                             navController.navigate(QReportRoutes.islandHealthRoute(iId))
+                        },
+                        onNavigateToCreateCheckUp = { iId ->
+                            navController.navigate(QReportRoutes.checkUpCreateRoute(iId))
                         }
                     )
                 }

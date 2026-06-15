@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
+import net.calvuz.qreport.checkup.presentation.components.ClientFacilityIslandSelectorDialog
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.presentation.model.icon
 
@@ -68,6 +69,18 @@ fun NewCheckUpScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Step 0: Link to existing client/facility/island (optional)
+            item {
+                SourceSelectionSection(
+                    selectedIslandType = uiState.selectedIslandType,
+                    isLinked = uiState.selectedIslandId != null,
+                    clientName = uiState.clientName,
+                    site = uiState.site,
+                    onLinkSource = viewModel::openSourceSelectionDialog,
+                    onUnlinkSource = viewModel::clearLinkedSource
+                )
+            }
+
             // Step 1: Client Info
             item {
                 ClientInfoSection(
@@ -141,6 +154,93 @@ fun NewCheckUpScreen(
 //            // Show snackbar or dialog
 //        }
 //    }
+
+    // Source selection dialog (Cliente -> Stabilimento -> Isola)
+    if (uiState.showSourceSelectionDialog) {
+        ClientFacilityIslandSelectorDialog(
+            availableClients = uiState.availableClients,
+            availableFacilities = uiState.availableFacilities,
+            availableIslands = uiState.availableIslands,
+            selectedClientId = uiState.selectedClientId,
+            selectedFacilityId = uiState.selectedFacilityId,
+            isLoading = uiState.isLoadingSelection,
+            onDismiss = viewModel::dismissSourceSelectionDialog,
+            onClientSelected = viewModel::onClientSelectedForSource,
+            onFacilitySelected = viewModel::onFacilitySelectedForSource,
+            onIslandSelected = viewModel::onIslandSelectedForSource
+        )
+    }
+}
+
+@Composable
+private fun SourceSelectionSection(
+    selectedIslandType: IslandType?,
+    isLinked: Boolean,
+    clientName: String,
+    site: String,
+    onLinkSource: () -> Unit,
+    onUnlinkSource: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.checkup_screen_new_section_source_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            if (isLinked) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Link,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.checkup_screen_new_linked_banner,
+                            clientName,
+                            site,
+                            selectedIslandType?.let { stringResource(it.labelResId) } ?: ""
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                TextButton(onClick = onUnlinkSource) {
+                    Icon(
+                        imageVector = Icons.Default.LinkOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.checkup_screen_new_unlink_source))
+                }
+            } else {
+                OutlinedButton(
+                    onClick = onLinkSource,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Link,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.checkup_screen_new_link_source_button))
+                }
+            }
+        }
+    }
 }
 
 @Composable
