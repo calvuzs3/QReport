@@ -17,10 +17,23 @@
 -keep class net.calvuz.qreport.domain.model.** { *; }
 
 # Apache POI
--keep class org.apache.poi.** { *; }
+#-keep class org.apache.poi.** { *; }
 -dontwarn org.apache.poi.**
 -dontwarn org.apache.xmlbeans.**
 -dontwarn org.apache.commons.codec.**
+
+# Apache POI / Log4j - OSGi and AWT classes not present on Android
+-dontwarn aQute.bnd.annotation.**
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn java.awt.**
+-dontwarn org.osgi.**
+-dontwarn org.apache.logging.log4j.**
+
+# Apache POI graph builder
+-dontwarn com.graphbuilder.**
+
+# Tink crypto
+-dontwarn com.google.crypto.tink.**
 
 # CameraX
 -keep class androidx.camera.** { *; }
