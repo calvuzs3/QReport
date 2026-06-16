@@ -51,6 +51,7 @@ fun ClientFormScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .imePadding()
     ) {
         // Top App Bar

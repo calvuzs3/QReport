@@ -18,6 +18,9 @@ import net.calvuz.qreport.R
 @Serializable
 enum class MaintenanceOperationType(val labelResId: Int) {
 
+    // ===== CHECKUP =====
+    GENERAL_CHECKUP(R.string.maint_op_general_checkup),
+
     // ===== SCHEDULED MAINTENANCE =====
     ROUTINE_INSPECTION(R.string.maint_op_routine_inspection),
     OIL_CHANGE(R.string.maint_op_oil_change),

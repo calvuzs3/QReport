@@ -8,6 +8,7 @@
     <!-- ============================================================ -->
 
     <!-- ===== MaintenanceOperationType labels ===== -->
+    <string name="maint_op_general_checkup">Checkup generale</string>
     <string name="maint_op_routine_inspection">Ispezione programmata</string>
     <string name="maint_op_oil_change">Cambio olio</string>
     <string name="maint_op_filter_replacement">Sostituzione filtro</string>
@@ -80,6 +81,10 @@
     <string name="maint_health_last_intervention">Ultimo intervento</string>
     <string name="maint_health_last_outcome">Ultimo esito</string>
     <string name="maint_health_no_data">Nessun dato disponibile</string>
+
+    <!-- ===== Auto-generated log strings ===== -->
+    <string name="maint_log_unknown_technician">Tecnico sconosciuto</string>
+    <string name="maint_log_general_checkup_description">Checkup generale completato automaticamente al termine del collaudo</string>
 
     <!-- ===== Errors ===== -->
     <string name="maint_error_missing_description">La descrizione dell\'intervento è obbligatoria</string>

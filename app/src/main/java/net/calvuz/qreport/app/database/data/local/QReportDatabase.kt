@@ -36,6 +36,12 @@ import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
 import net.calvuz.qreport.sync.data.local.dao.SyncDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
+import net.calvuz.qreport.checkup.data.local.dao.CheckUpMaintenanceLogAssociationDao
+import net.calvuz.qreport.checkup.data.local.entity.CheckUpMaintenanceLogAssociationEntity
+import net.calvuz.qreport.ti.data.local.dao.TiAssociationDao
+import net.calvuz.qreport.ti.data.local.dao.TiMaintenanceLogAssociationDao
+import net.calvuz.qreport.ti.data.local.entity.TiIslandAssociationEntity
+import net.calvuz.qreport.ti.data.local.entity.TiMaintenanceLogAssociationEntity
 
 /**
  * QReport Room Database
@@ -71,7 +77,13 @@ import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
         // client-contract association
         ContractEntity::class,
         // IRF
-        TechnicalInterventionEntity::class
+        TechnicalInterventionEntity::class,
+        // TI-Island association
+        TiIslandAssociationEntity::class,
+        // CheckUp-MaintenanceLog association
+        CheckUpMaintenanceLogAssociationEntity::class,
+        // TI-MaintenanceLog association
+        TiMaintenanceLogAssociationEntity::class
     ],
     version = QReportApplication.DATABASE_VERSION,
     exportSchema = true,
@@ -102,6 +114,9 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun checkUpAssociationDao(): CheckUpAssociationDao
     abstract fun contractDao(): ContractDao
     abstract fun technicalInterventionDao(): TechnicalInterventionDao
+    abstract fun tiAssociationDao(): TiAssociationDao
+    abstract fun tiMaintenanceLogAssociationDao(): TiMaintenanceLogAssociationDao
+    abstract fun checkUpMaintenanceLogAssociationDao(): CheckUpMaintenanceLogAssociationDao
     abstract fun syncDao(): SyncDao
 
     companion object {

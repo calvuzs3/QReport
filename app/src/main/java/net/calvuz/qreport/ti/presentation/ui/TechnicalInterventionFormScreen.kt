@@ -10,6 +10,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBackIosNew
 import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.PrecisionManufacturing
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
+import net.calvuz.qreport.checkup.presentation.components.ClientFacilityIslandSelectorDialog
 import net.calvuz.qreport.ti.domain.model.WorkLocationType
 
 /**
@@ -56,6 +59,21 @@ fun TechnicalInterventionFormScreen(
     }
 
     BackHandler(onBack = handleBackPress)
+
+    if (state.showSourceSelectionDialog) {
+        ClientFacilityIslandSelectorDialog(
+            availableClients = state.availableClients,
+            availableFacilities = state.availableFacilities,
+            availableIslands = state.availableIslands,
+            selectedClientId = state.selectedClientId,
+            selectedFacilityId = state.selectedFacilityId,
+            isLoading = state.isLoadingSelection,
+            onDismiss = viewModel::dismissSourceSelectionDialog,
+            onClientSelected = viewModel::onClientSelectedForSource,
+            onFacilitySelected = viewModel::onFacilitySelectedForSource,
+            onIslandSelected = viewModel::onIslandSelectedForSource
+        )
+    }
 
     if (showUnsavedChangesDialog) {
         AlertDialog(
@@ -137,8 +155,20 @@ fun TechnicalInterventionFormScreen(
                 }
             }
 
+            // ===== SOURCE SELECTION SECTION =====
+            TiSourceSelectionSection(
+                isLinked = state.isLinked,
+                linkedClientName = state.linkedClientName,
+                linkedIslandLabel = state.linkedIslandLabel,
+                onLinkSource = viewModel::openSourceSelectionDialog,
+                onUnlinkSource = viewModel::clearLinkedSource
+            )
+
+            HorizontalDivider()
+
             // ===== CUSTOMER SECTION =====
             CustomerDataSection(
+                isLinked = state.isLinked,
                 customerName = state.customerName,
                 onCustomerNameChange = viewModel::updateCustomerName,
                 customerContact = state.customerContact,
@@ -154,14 +184,16 @@ fun TechnicalInterventionFormScreen(
             HorizontalDivider()
 
             // ===== ROBOT DATA SECTION =====
-            RobotDataSection(
-                serialNumber = state.serialNumber,
-                onSerialNumberChange = viewModel::updateSerialNumber,
-                hoursOfDuty = state.hoursOfDuty,
-                onHoursOfDutyChange = viewModel::updateHoursOfDuty
-            )
+            if (!state.isLinked) {
+                RobotDataSection(
+                    serialNumber = state.serialNumber,
+                    onSerialNumberChange = viewModel::updateSerialNumber,
+                    hoursOfDuty = state.hoursOfDuty,
+                    onHoursOfDutyChange = viewModel::updateHoursOfDuty
+                )
 
-            HorizontalDivider()
+                HorizontalDivider()
+            }
 
             // ===== WORK LOCATION SECTION =====
             WorkLocationSection(
@@ -186,8 +218,72 @@ fun TechnicalInterventionFormScreen(
 }
 
 @Composable
+private fun TiSourceSelectionSection(
+    isLinked: Boolean,
+    linkedClientName: String?,
+    linkedIslandLabel: String?,
+    onLinkSource: () -> Unit,
+    onUnlinkSource: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringResource(R.string.intervention_form_section_source),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        if (isLinked) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Link,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = stringResource(
+                        R.string.intervention_form_linked_banner,
+                        linkedClientName ?: "",
+                        linkedIslandLabel ?: ""
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            TextButton(onClick = onUnlinkSource) {
+                Icon(
+                    imageVector = Icons.Default.LinkOff,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.intervention_form_unlink_source))
+            }
+        } else {
+            OutlinedButton(
+                onClick = onLinkSource,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Link,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.intervention_form_link_source_button))
+            }
+        }
+    }
+}
+
+@Composable
 private fun CustomerDataSection(
     modifier: Modifier = Modifier,
+    isLinked: Boolean = false,
     customerName: String,
     onCustomerNameChange: (String) -> Unit,
     customerContact: String,
@@ -221,25 +317,27 @@ private fun CustomerDataSection(
             )
         }
 
-        // Customer name (required)
-        OutlinedTextField(
-            value = customerName,
-            onValueChange = onCustomerNameChange,
-            label = { Text(stringResource(R.string.intervention_form_customer_name_label)) },
-            isError = customerName.isBlank(),
-            supportingText = if (customerName.isBlank()) {
-                { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
-            } else null,
-            modifier = Modifier.fillMaxWidth()
-        )
+        // Customer name — hidden when linked (snapshot comes from Client entity)
+        if (!isLinked) {
+            OutlinedTextField(
+                value = customerName,
+                onValueChange = onCustomerNameChange,
+                label = { Text(stringResource(R.string.intervention_form_customer_name_label)) },
+                isError = customerName.isBlank(),
+                supportingText = if (customerName.isBlank()) {
+                    { Text(stringResource(R.string.err_field_required), color = MaterialTheme.colorScheme.error) }
+                } else null,
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        // Customer contact (optional)
-        OutlinedTextField(
-            value = customerContact,
-            onValueChange = onCustomerContactChange,
-            label = { Text(stringResource(R.string.intervention_form_customer_contact_label)) },
-            modifier = Modifier.fillMaxWidth()
-        )
+            // Customer contact (optional)
+            OutlinedTextField(
+                value = customerContact,
+                onValueChange = onCustomerContactChange,
+                label = { Text(stringResource(R.string.intervention_form_customer_contact_label)) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         // Ticket number (required)
         OutlinedTextField(

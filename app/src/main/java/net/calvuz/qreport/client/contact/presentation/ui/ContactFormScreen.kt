@@ -76,6 +76,7 @@ fun ContactFormScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .imePadding()
 //            .verticalScroll(rememberScrollState())
     ) {

@@ -49,6 +49,7 @@ fun FacilityFormScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .imePadding()
     ) {
         TopAppBar(

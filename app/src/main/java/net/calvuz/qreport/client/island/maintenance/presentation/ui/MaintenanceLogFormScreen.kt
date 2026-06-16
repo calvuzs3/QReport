@@ -81,6 +81,7 @@ fun MaintenanceLogFormScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .imePadding()
     ) {
         TopAppBar(

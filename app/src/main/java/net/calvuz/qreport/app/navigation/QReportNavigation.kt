@@ -114,7 +114,7 @@ object QReportRoutes {
     const val TI = "tis"
 
     // Intervention routes
-    const val TI_CREATE = "ti_form"
+    const val TI_CREATE = "ti_form?islandId={islandId}"
     const val TI_EDIT = "ti_edit_form/{interventionId}"
 
     // Settings routes
@@ -180,7 +180,8 @@ object QReportRoutes {
 
     // Intervention
     fun ti() = "tis"
-    fun tiCreateRoute() = "ti_form"
+    fun tiCreateRoute(islandId: String? = null) =
+        if (islandId != null) "ti_form?islandId=$islandId" else "ti_form"
     fun tiEditRoute(interventionId: String) = "ti_edit_form/$interventionId"
 
     // Client
@@ -383,14 +384,19 @@ fun QReportNavigation(
                 // INTERVENTION DESTINATIONS
                 // ============================================================
 
-                composable(QReportRoutes.TI_CREATE) {
-                    TechnicalInterventionFormScreen(
-                        onNavigateBack = {
-                            navController.popBackStack()
-                        },
-                        onInterventionSaved = {
-                            navController.popBackStack()
+                composable(
+                    route = QReportRoutes.TI_CREATE,
+                    arguments = listOf(
+                        navArgument("islandId") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
                         }
+                    )
+                ) {
+                    TechnicalInterventionFormScreen(
+                        onNavigateBack = { navController.popBackStack() },
+                        onInterventionSaved = { navController.popBackStack() }
                     )
                 }
 
@@ -1195,6 +1201,9 @@ fun QReportNavigation(
                         },
                         onNavigateToCreateCheckUp = { iId ->
                             navController.navigate(QReportRoutes.checkUpCreateRoute(iId))
+                        },
+                        onNavigateToCreateIntervention = { iId ->
+                            navController.navigate(QReportRoutes.tiCreateRoute(iId))
                         }
                     )
                 }

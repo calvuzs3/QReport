@@ -38,6 +38,9 @@ data class DatabaseBackup(
 
     // ===== ASSOCIATIONS =====
     val checkUpAssociations: List<CheckUpAssociationBackup>,
+    val tiIslandAssociations: List<TiAssociationBackup> = emptyList(),
+    val checkUpMaintenanceLogAssociations: List<CheckUpMaintenanceLogAssociationBackup> = emptyList(),
+    val tiMaintenanceLogAssociations: List<TiMaintenanceLogAssociationBackup> = emptyList(),
 
     // ===== TECHNICAL INTERVENTIONS =====
     val technicalInterventions: List<TechnicalInterventionBackup> = emptyList(),
@@ -66,6 +69,9 @@ data class DatabaseBackup(
                 facilityIslands.size +
                 mechanicalUnits.size +
                 checkUpAssociations.size +
+                tiIslandAssociations.size +
+                checkUpMaintenanceLogAssociations.size +
+                tiMaintenanceLogAssociations.size +
                 technicalInterventions.size +
                 maintenanceLogs.size +
                 documents.size
@@ -92,6 +98,9 @@ data class DatabaseBackup(
                 facilityIslands = emptyList(),
                 mechanicalUnits = emptyList(),
                 checkUpAssociations = emptyList(),
+                tiIslandAssociations = emptyList(),
+                checkUpMaintenanceLogAssociations = emptyList(),
+                tiMaintenanceLogAssociations = emptyList(),
                 technicalInterventions = emptyList(),
                 maintenanceLogs = emptyList(),
                 documents = emptyList(),

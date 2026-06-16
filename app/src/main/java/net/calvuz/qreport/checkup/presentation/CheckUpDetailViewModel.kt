@@ -24,6 +24,7 @@ import net.calvuz.qreport.checkup.domain.usecase.GetAssociationsForCheckUpUseCas
 import net.calvuz.qreport.checkup.domain.usecase.RemoveCheckUpAssociationUseCase
 import net.calvuz.qreport.checkup.domain.usecase.UpdateCheckItemStatusUseCase
 import net.calvuz.qreport.checkup.domain.usecase.UpdateCheckUpStatusUseCase
+import net.calvuz.qreport.checkup.domain.usecase.CompleteCheckUpUseCase
 import net.calvuz.qreport.checkup.presentation.model.AssociationDialogState
 import net.calvuz.qreport.checkup.presentation.model.CheckUpDetailUiState
 import net.calvuz.qreport.client.client.domain.usecase.GetClientsUseCase
@@ -54,6 +55,7 @@ class CheckUpDetailViewModel @Inject constructor(
     private val getCheckUpDetailsUseCase: GetCheckUpDetailsUseCase,
     private val deleteCheckUpUseCase: DeleteCheckUpUseCase,
     private val updateCheckUpStatusUseCase: UpdateCheckUpStatusUseCase,
+    private val completeCheckUpUseCase: CompleteCheckUpUseCase,
     private val updateCheckItemStatusUseCase: UpdateCheckItemStatusUseCase,
     private val updateCheckItemNotesUseCase: UpdateCheckItemNotesUseCase,
     private val addSparePartUseCase: AddSparePartUseCase,
@@ -369,7 +371,7 @@ class CheckUpDetailViewModel @Inject constructor(
 
                 _uiState.value = _uiState.value.copy(isUpdating = true)
 
-                when( val result = updateCheckUpStatusUseCase(checkUpId, CheckUpStatus.COMPLETED)) {
+                when( val result = completeCheckUpUseCase(checkUpId)) {
                     is QrResult.Success -> {
                         Timber.d("Check-up finalized: ${result.data}")
                         // Reload to update status

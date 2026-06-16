@@ -163,6 +163,7 @@ class BackupJsonSerializer @Inject constructor() {
                     "checkUps", "checkItems", "photos", "spareParts",
                     "clients", "contacts", "contracts", "facilities", "facilityIslands",
                     "mechanicalUnits", "checkUpAssociations",
+                    "tiIslandAssociations", "checkUpMaintenanceLogAssociations", "tiMaintenanceLogAssociations",
                     "technicalInterventions", "maintenanceLogs", "documents"
                 )
 

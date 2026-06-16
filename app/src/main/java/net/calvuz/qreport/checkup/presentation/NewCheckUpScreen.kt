@@ -47,7 +47,10 @@ fun NewCheckUpScreen(
     }
 
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .imePadding()
     ) {
         // Top App Bar
         TopAppBar(

@@ -147,6 +147,10 @@
     <string name="form_status_saved">Salvato con successo</string>
 
     <!-- Technical Intervention Form -->
+    <string name="intervention_form_section_source">Collega a isola esistente</string>
+    <string name="intervention_form_link_source_button">Collega a cliente/isola esistente</string>
+    <string name="intervention_form_linked_banner">Collegato a %1$s · %2$s</string>
+    <string name="intervention_form_unlink_source">Rimuovi collegamento</string>
     <string name="intervention_form_edit_mode_badge">Modalità modifica</string>
     <string name="intervention_form_immutable_in_edit">Immutabili in modifica</string>
     <string name="intervention_form_section_customer">Dati cliente</string>

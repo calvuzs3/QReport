@@ -7,6 +7,7 @@ import net.calvuz.qreport.backup.domain.model.BackupValidationResult
 import net.calvuz.qreport.backup.domain.model.backup.CheckItemBackup
 import net.calvuz.qreport.backup.domain.model.backup.CheckUpAssociationBackup
 import net.calvuz.qreport.backup.domain.model.backup.CheckUpBackup
+import net.calvuz.qreport.backup.domain.model.backup.CheckUpMaintenanceLogAssociationBackup
 import net.calvuz.qreport.backup.domain.model.backup.ClientBackup
 import net.calvuz.qreport.backup.domain.model.backup.ContactBackup
 import net.calvuz.qreport.backup.domain.model.backup.DatabaseBackup
@@ -14,12 +15,15 @@ import net.calvuz.qreport.backup.domain.model.backup.FacilityBackup
 import net.calvuz.qreport.backup.domain.model.backup.FacilityIslandBackup
 import net.calvuz.qreport.backup.domain.model.backup.PhotoBackup
 import net.calvuz.qreport.backup.domain.model.backup.SparePartBackup
+import net.calvuz.qreport.backup.domain.model.backup.TiAssociationBackup
+import net.calvuz.qreport.backup.domain.model.backup.TiMaintenanceLogAssociationBackup
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
 import net.calvuz.qreport.backup.domain.model.backup.ContractBackup
 import net.calvuz.qreport.backup.domain.model.backup.MechanicalUnitBackup
 import net.calvuz.qreport.backup.domain.model.backup.TechnicalInterventionBackup
 import net.calvuz.qreport.backup.domain.model.backup.MaintenanceLogBackup
 import net.calvuz.qreport.backup.domain.model.backup.DocumentBackup
+import net.calvuz.qreport.checkup.data.local.dao.CheckUpMaintenanceLogAssociationDao
 import net.calvuz.qreport.client.island.maintenance.data.local.dao.MaintenanceLogDao
 import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 import net.calvuz.qreport.client.document.data.local.dao.DocumentDao
@@ -35,6 +39,7 @@ import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.checkup.data.local.entity.CheckItemEntity
 import net.calvuz.qreport.checkup.data.local.entity.CheckUpEntity
 import net.calvuz.qreport.checkup.data.local.entity.CheckUpIslandAssociationEntity
+import net.calvuz.qreport.checkup.data.local.entity.CheckUpMaintenanceLogAssociationEntity
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
@@ -46,8 +51,12 @@ import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
+import net.calvuz.qreport.ti.data.local.dao.TiAssociationDao
+import net.calvuz.qreport.ti.data.local.dao.TiMaintenanceLogAssociationDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.ti.data.local.entity.TechnicalInterventionEntity
+import net.calvuz.qreport.ti.data.local.entity.TiIslandAssociationEntity
+import net.calvuz.qreport.ti.data.local.entity.TiMaintenanceLogAssociationEntity
 import timber.log.Timber
 import java.io.File
 import javax.inject.Inject
@@ -73,6 +82,9 @@ class DatabaseExporter @Inject constructor(
     private val islandDao: IslandDao,
     private val mechanicalUnitDao: MechanicalUnitDao,
     private val checkUpAssociationDao: CheckUpAssociationDao,
+    private val tiAssociationDao: TiAssociationDao,
+    private val checkUpMaintenanceLogAssociationDao: CheckUpMaintenanceLogAssociationDao,
+    private val tiMaintenanceLogAssociationDao: TiMaintenanceLogAssociationDao,
     private val technicalInterventionDao: TechnicalInterventionDao,
     private val maintenanceLogDao: MaintenanceLogDao,
     private val documentDao: DocumentDao
@@ -126,6 +138,15 @@ class DatabaseExporter @Inject constructor(
             val associations = checkUpAssociationDao.getAllForBackup().map { it.toBackup() }
             Timber.v("Exported ${associations.size} checkup associations")
 
+            val tiIslandAssociations = tiAssociationDao.getAllForBackup().map { it.toBackup() }
+            Timber.v("Exported ${tiIslandAssociations.size} ti island associations")
+
+            val checkUpMaintenanceLogAssociations = checkUpMaintenanceLogAssociationDao.getAllForBackup().map { it.toBackup() }
+            Timber.v("Exported ${checkUpMaintenanceLogAssociations.size} checkup maintenance log associations")
+
+            val tiMaintenanceLogAssociations = tiMaintenanceLogAssociationDao.getAllForBackup().map { it.toBackup() }
+            Timber.v("Exported ${tiMaintenanceLogAssociations.size} ti maintenance log associations")
+
             val technicalInterventions =
                 technicalInterventionDao.getAllForBackup().map { it.toBackup() }
             Timber.v("Exported ${technicalInterventions.size} technical interventions")
@@ -153,6 +174,9 @@ class DatabaseExporter @Inject constructor(
 
                 // Associations
                 checkUpAssociations = associations,
+                tiIslandAssociations = tiIslandAssociations,
+                checkUpMaintenanceLogAssociations = checkUpMaintenanceLogAssociations,
+                tiMaintenanceLogAssociations = tiMaintenanceLogAssociations,
 
                 // Technical Intervention
                 technicalInterventions = technicalInterventions,
@@ -208,6 +232,9 @@ class DatabaseExporter @Inject constructor(
                 islandDao.count(),
                 mechanicalUnitDao.count(),
                 checkUpAssociationDao.count(),
+                tiAssociationDao.count(),
+                checkUpMaintenanceLogAssociationDao.count(),
+                tiMaintenanceLogAssociationDao.count(),
                 technicalInterventionDao.count(),
                 maintenanceLogDao.count(),
                 documentDao.count()
@@ -511,6 +538,44 @@ fun CheckUpIslandAssociationEntity.toBackup(): CheckUpAssociationBackup {
         notes = notes,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         updatedAt = Instant.fromEpochMilliseconds(updatedAt)
+    )
+}
+
+fun TiIslandAssociationEntity.toBackup(): TiAssociationBackup {
+    return TiAssociationBackup(
+        id = id,
+        interventionId = interventionId,
+        islandId = islandId,
+        associationType = associationType,
+        notes = notes,
+        createdAt = Instant.fromEpochMilliseconds(createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+        syncedAt = syncedAt,
+        isDeleted = isDeleted
+    )
+}
+
+fun CheckUpMaintenanceLogAssociationEntity.toBackup(): CheckUpMaintenanceLogAssociationBackup {
+    return CheckUpMaintenanceLogAssociationBackup(
+        id = id,
+        checkupId = checkupId,
+        maintenanceLogId = maintenanceLogId,
+        createdAt = Instant.fromEpochMilliseconds(createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+        syncedAt = syncedAt,
+        isDeleted = isDeleted
+    )
+}
+
+fun TiMaintenanceLogAssociationEntity.toBackup(): TiMaintenanceLogAssociationBackup {
+    return TiMaintenanceLogAssociationBackup(
+        id = id,
+        interventionId = interventionId,
+        maintenanceLogId = maintenanceLogId,
+        createdAt = Instant.fromEpochMilliseconds(createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+        syncedAt = syncedAt,
+        isDeleted = isDeleted
     )
 }
 

@@ -43,6 +43,7 @@ fun IslandFormScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .imePadding()
     ) {
         TopAppBar(

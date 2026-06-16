@@ -32,7 +32,7 @@ class CreateMaintenanceLogUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         log: MaintenanceLog
-    ): QrResult<Unit, QrError.MaintenanceLogError> {
+    ): QrResult<String, QrError.MaintenanceLogError> {
 
         // 1. Description required
         if (log.description.isBlank())
@@ -69,14 +69,15 @@ class CreateMaintenanceLogUseCase @Inject constructor(
 
         // 7. Assign ID and timestamps, then persist
         val now = Clock.System.now()
+        val logId = UUID.randomUUID().toString()
         val readyLog = log.copy(
-            id = UUID.randomUUID().toString(),
+            id = logId,
             createdAt = now,
             updatedAt = now
         )
 
         return logRepository.createLog(readyLog).fold(
-            onSuccess = { QrResult.Success(Unit) },
+            onSuccess = { QrResult.Success(logId) },
             onFailure = { QrResult.Error(QrError.MaintenanceLogError.CreateError(it.message)) }
         )
     }

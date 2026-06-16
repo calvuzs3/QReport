@@ -15,6 +15,7 @@ import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_1_2
 import javax.inject.Singleton
 
 /**
@@ -48,8 +49,7 @@ object DatabaseModule {
             .addCallback(QReportDatabase.CALLBACK)
             //.fallbackToDestructiveMigration()  // Only in development
             .addMigrations(
-                // Migrations go here...
-                //MIGRATION_1_2,
+                MIGRATION_1_2,
             )
             .build()
     }

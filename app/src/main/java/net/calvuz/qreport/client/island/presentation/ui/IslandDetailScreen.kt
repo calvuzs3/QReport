@@ -83,6 +83,7 @@ fun IslandDetailScreen(
     onNavigateToCreateMaintenanceLog: (islandId: String) -> Unit,
     onNavigateToIslandHealth: (islandId: String) -> Unit,
     onNavigateToCreateCheckUp: (islandId: String) -> Unit,
+    onNavigateToCreateIntervention: (islandId: String) -> Unit = {},
     viewModel: IslandDetailViewModel = hiltViewModel()
 ) {
     val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
@@ -172,6 +173,15 @@ fun IslandDetailScreen(
                         leadingIcon = {
                             Icon(
                                 Icons.AutoMirrored.Filled.Assignment,
+                                contentDescription = null
+                            )
+                        })
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.island_detail_menu_new_intervention)) },
+                        onClick = { onNavigateToCreateIntervention(islandId); showMoreMenu = false },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Default.PrecisionManufacturing,
                                 contentDescription = null
                             )
                         })
