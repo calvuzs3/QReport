@@ -14,9 +14,9 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
                 `label` TEXT NOT NULL,
                 `description` TEXT,
                 `icon_name` TEXT,
-                `maintenance_interval_days` INTEGER NOT NULL DEFAULT 180,
-                `sort_order` INTEGER NOT NULL DEFAULT 0,
-                `is_active` INTEGER NOT NULL DEFAULT 1,
+                `maintenance_interval_days` INTEGER NOT NULL,
+                `sort_order` INTEGER NOT NULL,
+                `is_active` INTEGER NOT NULL,
                 `created_at` INTEGER NOT NULL,
                 `updated_at` INTEGER NOT NULL,
                 PRIMARY KEY(`id`)
@@ -24,13 +24,13 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
             """.trimIndent()
         )
         db.execSQL(
-            "CREATE UNIQUE INDEX IF NOT EXISTS `idx_island_types_code` ON `island_types` (`code`)"
+            "CREATE UNIQUE INDEX IF NOT EXISTS `index_island_types_code` ON `island_types` (`code`)"
         )
         db.execSQL(
-            "CREATE INDEX IF NOT EXISTS `idx_island_types_is_active` ON `island_types` (`is_active`)"
+            "CREATE INDEX IF NOT EXISTS `index_island_types_is_active` ON `island_types` (`is_active`)"
         )
         db.execSQL(
-            "CREATE INDEX IF NOT EXISTS `idx_island_types_sort_order` ON `island_types` (`sort_order`)"
+            "CREATE INDEX IF NOT EXISTS `index_island_types_sort_order` ON `island_types` (`sort_order`)"
         )
 
         // Add nullable island_type_id to facility_islands (Expand — old column kept)
