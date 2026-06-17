@@ -9,12 +9,14 @@ import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
+import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
 import net.calvuz.qreport.sync.data.remote.dto.ClientDto
 import net.calvuz.qreport.sync.data.remote.dto.ContactDto
 import net.calvuz.qreport.sync.data.remote.dto.ContractDto
 import net.calvuz.qreport.sync.data.remote.dto.FacilityDto
 import net.calvuz.qreport.sync.data.remote.dto.FacilityIslandDto
 import net.calvuz.qreport.sync.data.remote.dto.IslandDocumentDto
+import net.calvuz.qreport.sync.data.remote.dto.IslandTypeDto
 import net.calvuz.qreport.sync.data.remote.dto.MaintenanceLogDto
 import net.calvuz.qreport.sync.data.remote.dto.MechanicalUnitDto
 import javax.inject.Inject
@@ -25,6 +27,21 @@ import javax.inject.Singleton
  */
 @Singleton
 class SyncMapper @Inject constructor() {
+
+    // ===== ISLAND TYPE =====
+
+    fun islandTypeToEntity(dto: IslandTypeDto) = IslandTypeEntity(
+        id = dto.id,
+        code = dto.code,
+        label = dto.label,
+        description = dto.description,
+        iconName = dto.iconName,
+        maintenanceIntervalDays = dto.maintenanceIntervalDays,
+        sortOrder = dto.sortOrder,
+        isActive = dto.isActive,
+        createdAt = dto.createdAt,
+        updatedAt = dto.updatedAt
+    )
 
     // ===== CLIENT =====
 
@@ -177,6 +194,7 @@ class SyncMapper @Inject constructor() {
         facilityId = entity.facilityId,
         commissioningNumber = entity.commissioningNumber,
         islandType = entity.islandType,
+        islandTypeId = entity.islandTypeId,
         serialNumber = entity.serialNumber,
         modelNumber = entity.modelNumber,
         model = entity.model,
@@ -201,6 +219,7 @@ class SyncMapper @Inject constructor() {
         facilityId = dto.facilityId,
         commissioningNumber = dto.commissioningNumber,
         islandType = dto.islandType,
+        islandTypeId = dto.islandTypeId,
         serialNumber = dto.serialNumber,
         modelNumber = dto.modelNumber,
         model = dto.model,

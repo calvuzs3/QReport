@@ -19,9 +19,24 @@ data class LoginResponse(
 // ===== SYNC =====
 
 @Serializable
+data class IslandTypeDto(
+    val id: String,
+    val code: String,
+    val label: String,
+    val description: String? = null,
+    val iconName: String? = null,
+    val maintenanceIntervalDays: Int = 180,
+    val sortOrder: Int = 0,
+    val isActive: Boolean = true,
+    val createdAt: Long,
+    val updatedAt: Long
+)
+
+@Serializable
 data class SyncPayloadDto(
     val deviceId: String,
     val syncTimestamp: Long,
+    val islandTypes: List<IslandTypeDto> = emptyList(),
     val clients: List<ClientDto> = emptyList(),
     val contacts: List<ContactDto> = emptyList(),
     val contracts: List<ContractDto> = emptyList(),
@@ -118,6 +133,7 @@ data class FacilityIslandDto(
     val facilityId: String,
     val commissioningNumber: String? = null,
     val islandType: String,
+    val islandTypeId: String? = null,
     val serialNumber: String,
     val modelNumber: String? = null,
     val model: String? = null,

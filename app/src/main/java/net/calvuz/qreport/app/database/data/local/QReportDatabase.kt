@@ -14,6 +14,7 @@ import net.calvuz.qreport.client.client.data.local.dao.ClientDao
 import net.calvuz.qreport.client.contact.data.local.dao.ContactDao
 import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandDao
+import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.checkup.data.local.entity.CheckItemEntity
@@ -23,6 +24,7 @@ import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
+import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
 import net.calvuz.qreport.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
@@ -42,6 +44,7 @@ import net.calvuz.qreport.ti.data.local.dao.TiAssociationDao
 import net.calvuz.qreport.ti.data.local.dao.TiMaintenanceLogAssociationDao
 import net.calvuz.qreport.ti.data.local.entity.TiIslandAssociationEntity
 import net.calvuz.qreport.ti.data.local.entity.TiMaintenanceLogAssociationEntity
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
 
 /**
  * QReport Room Database
@@ -83,14 +86,13 @@ import net.calvuz.qreport.ti.data.local.entity.TiMaintenanceLogAssociationEntity
         // CheckUp-MaintenanceLog association
         CheckUpMaintenanceLogAssociationEntity::class,
         // TI-MaintenanceLog association
-        TiMaintenanceLogAssociationEntity::class
+        TiMaintenanceLogAssociationEntity::class,
+        // Island type definitions (server-authoritative, populated via sync)
+        IslandTypeEntity::class
     ],
     version = QReportApplication.DATABASE_VERSION,
     exportSchema = true,
-    autoMigrations = [
-        // Future migrations will be added here
-        // AutoMigration(from = 1, to = 2),
-    ]
+    autoMigrations = []
 )
 @TypeConverters(
     DatabaseConverters::class,
@@ -118,15 +120,12 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun tiMaintenanceLogAssociationDao(): TiMaintenanceLogAssociationDao
     abstract fun checkUpMaintenanceLogAssociationDao(): CheckUpMaintenanceLogAssociationDao
     abstract fun syncDao(): SyncDao
+    abstract fun islandTypeDao(): IslandTypeDao
 
     companion object {
 
-        /**
-         * Callback per inizializzazione database
-         * Popola dati di base se necessario
-         */
-        val CALLBACK = object : Callback() {
+        val MIGRATION_2_3 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
 
-        }
+        val CALLBACK = object : Callback() {}
     }
 }

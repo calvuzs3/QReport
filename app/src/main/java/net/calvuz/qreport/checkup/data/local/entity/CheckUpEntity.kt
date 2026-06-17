@@ -44,6 +44,7 @@ data class CheckUpEntity(
 
     // CheckUp data
     @ColumnInfo(name = "island_type") val islandType: String,
+    @ColumnInfo(name = "island_type_id") val islandTypeId: String? = null, // FK → island_types.id (nullable during Expand phase)
     @ColumnInfo(name = "status") val status: String,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
     @ColumnInfo(name = "updated_at") val updatedAt: Instant,

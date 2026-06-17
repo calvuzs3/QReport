@@ -44,7 +44,7 @@ fun CheckUpEntity.toDomain(): CheckUp {
             checkUpDate = this.checkUpDate,
             notes = this.headerNotes
         ),
-        islandType = IslandType.valueOf(this.islandType),
+        islandType = IslandType.entries.find { it.name == this.islandType } ?: IslandType.POLY_MOVE,
         status = CheckUpStatus.valueOf(this.status),
         checkItems = emptyList(), // Populated separately when needed
         spareParts = emptyList(), // Populated separately when needed

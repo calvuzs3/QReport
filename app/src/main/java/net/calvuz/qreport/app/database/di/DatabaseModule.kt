@@ -16,6 +16,8 @@ import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_1_2
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
+import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import javax.inject.Singleton
 
 /**
@@ -50,6 +52,7 @@ object DatabaseModule {
             //.fallbackToDestructiveMigration()  // Only in development
             .addMigrations(
                 MIGRATION_1_2,
+                MIGRATION_2_3,
             )
             .build()
     }
@@ -83,5 +86,10 @@ object DatabaseModule {
     fun provideTechnicianInterventionDao(
         database: QReportDatabase
     ): TechnicalInterventionDao = database.technicalInterventionDao()
+
+    @Provides
+    fun provideIslandTypeDao(
+        database: QReportDatabase
+    ): IslandTypeDao = database.islandTypeDao()
 
 }
