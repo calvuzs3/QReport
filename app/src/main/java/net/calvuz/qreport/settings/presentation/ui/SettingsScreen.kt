@@ -17,7 +17,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onNavigateToBackup: () -> Unit,
     onNavigateToTechnicianSettings: () -> Unit,
-    onNavigateToSyncSettings: () -> Unit
+    onNavigateToSyncSettings: () -> Unit,
+    onNavigateToIslandTypes: () -> Unit
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -53,6 +54,16 @@ fun SettingsScreen(
                 subtitle = stringResource(R.string.settings_screen_main_sync_subtitle),
                 icon = Icons.Default.CloudSync,
                 onClick = onNavigateToSyncSettings
+            )
+        }
+
+        // Master data
+        SettingsSection(title = stringResource(R.string.settings_screen_main_section_master_data)) {
+            SettingsItem(
+                title = stringResource(R.string.settings_screen_main_island_types_title),
+                subtitle = stringResource(R.string.settings_screen_main_island_types_subtitle),
+                icon = Icons.Default.Category,
+                onClick = onNavigateToIslandTypes
             )
         }
     }

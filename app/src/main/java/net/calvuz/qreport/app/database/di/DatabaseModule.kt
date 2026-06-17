@@ -17,6 +17,7 @@ import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_1_2
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
 import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import javax.inject.Singleton
 
@@ -53,6 +54,7 @@ object DatabaseModule {
             .addMigrations(
                 MIGRATION_1_2,
                 MIGRATION_2_3,
+                MIGRATION_3_4,
             )
             .build()
     }

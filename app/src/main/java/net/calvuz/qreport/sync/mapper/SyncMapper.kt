@@ -30,6 +30,21 @@ class SyncMapper @Inject constructor() {
 
     // ===== ISLAND TYPE =====
 
+    fun islandTypeToDto(entity: IslandTypeEntity) = IslandTypeDto(
+        id = entity.id,
+        code = entity.code,
+        label = entity.label,
+        description = entity.description,
+        iconName = entity.iconName,
+        maintenanceIntervalDays = entity.maintenanceIntervalDays,
+        sortOrder = entity.sortOrder,
+        isActive = entity.isActive,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        syncedAt = entity.syncedAt,
+        isDeleted = entity.isDeleted
+    )
+
     fun islandTypeToEntity(dto: IslandTypeDto) = IslandTypeEntity(
         id = dto.id,
         code = dto.code,
@@ -40,7 +55,9 @@ class SyncMapper @Inject constructor() {
         sortOrder = dto.sortOrder,
         isActive = dto.isActive,
         createdAt = dto.createdAt,
-        updatedAt = dto.updatedAt
+        updatedAt = dto.updatedAt,
+        syncedAt = dto.syncedAt,
+        isDeleted = dto.isDeleted
     )
 
     // ===== CLIENT =====

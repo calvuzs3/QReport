@@ -10,7 +10,8 @@ import androidx.room.PrimaryKey
     indices = [
         Index(value = ["code"], unique = true),
         Index(value = ["is_active"]),
-        Index(value = ["sort_order"])
+        Index(value = ["sort_order"]),
+        Index(value = ["updated_at"])
     ]
 )
 data class IslandTypeEntity(
@@ -43,5 +44,11 @@ data class IslandTypeEntity(
     val createdAt: Long,
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long
+    val updatedAt: Long,
+
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null,
+
+    @ColumnInfo(name = "is_deleted")
+    val isDeleted: Boolean = false
 )

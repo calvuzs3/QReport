@@ -15,6 +15,9 @@
     <string name="settings_screen_main_section_sync">Sincronizzazione</string>
     <string name="settings_screen_main_sync_title">Sincronizzazione Remota</string>
     <string name="settings_screen_main_sync_subtitle">Configura la sincronizzazione con il server</string>
+    <string name="settings_screen_main_section_master_data">Dati base</string>
+    <string name="settings_screen_main_island_types_title">Tipi isola</string>
+    <string name="settings_screen_main_island_types_subtitle">Gestisci i tipi di isola disponibili</string>
 
     <!-- ======================================================= -->
     <!-- TechnicianSettingsScreen                                 -->

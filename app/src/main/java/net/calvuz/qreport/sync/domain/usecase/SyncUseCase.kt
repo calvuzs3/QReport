@@ -3,6 +3,7 @@ package net.calvuz.qreport.sync.domain.usecase
 import kotlinx.coroutines.flow.first
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import net.calvuz.qreport.sync.data.local.SyncSettingsDataStore
 import net.calvuz.qreport.sync.data.local.TokenStorage
 import net.calvuz.qreport.sync.data.local.dao.SyncDao
@@ -26,6 +27,7 @@ import javax.inject.Inject
 class SyncUseCase @Inject constructor(
     private val remoteDataSource: RemoteDataSource,
     private val syncDao: SyncDao,
+    private val islandTypeDao: IslandTypeDao,
     private val syncSettingsDataStore: SyncSettingsDataStore,
     private val tokenStorage: TokenStorage,
     private val syncMapper: SyncMapper
@@ -61,7 +63,8 @@ class SyncUseCase @Inject constructor(
             // 3. Build push payload from local pending changes
             val payload = buildPushPayload(deviceId, now)
             Timber.d(buildString {
-                append("SyncUseCase: pushing ${payload.clients.size} clients, ")
+                append("SyncUseCase: pushing ${payload.islandTypes.size} island types, ")
+                append("${payload.clients.size} clients, ")
                 append("${payload.contacts.size} contacts, ${payload.contracts.size} contracts, ")
                 append("${payload.facilities.size} facilities, ")
                 append("${payload.facilityIslands.size} islands, ${payload.mechanicalUnits.size} units")
@@ -111,6 +114,7 @@ class SyncUseCase @Inject constructor(
         return SyncPayloadDto(
             deviceId = deviceId,
             syncTimestamp = now,
+            islandTypes = islandTypeDao.getPendingSync().map { syncMapper.islandTypeToDto(it) },
             clients = syncDao.getClientsPendingSync().map { syncMapper.clientToDto(it) },
             contacts = syncDao.getContactsPendingSync().map { syncMapper.contactToDto(it) },
             contracts = syncDao.getContractsPendingSync().map { syncMapper.contractToDto(it) },
@@ -124,6 +128,9 @@ class SyncUseCase @Inject constructor(
     }
 
     private suspend fun applyRemoteChanges(payload: SyncPayloadDto) {
+        if (payload.islandTypes.isNotEmpty()) islandTypeDao.upsertAll(payload.islandTypes.map {
+            syncMapper.islandTypeToEntity(it)
+        })
         if (payload.clients.isNotEmpty()) syncDao.upsertClients(payload.clients.map {
             syncMapper.clientToEntity(
                 it
@@ -164,6 +171,8 @@ class SyncUseCase @Inject constructor(
     }
 
     private suspend fun markPushedAsSynced(payload: SyncPayloadDto, now: Long) {
+        payload.islandTypes.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { islandTypeDao.markSynced(it, now) }
         payload.clients.map { it.id }.takeIf { it.isNotEmpty() }
             ?.let { syncDao.markClientsSynced(it, now) }
         payload.contacts.map { it.id }.takeIf { it.isNotEmpty() }
@@ -181,5 +190,5 @@ class SyncUseCase @Inject constructor(
     }
 
     private fun countPulled(payload: SyncPayloadDto): Int =
-        payload.clients.size + payload.contacts.size + payload.contracts.size + payload.facilities.size + payload.facilityIslands.size + payload.mechanicalUnits.size + payload.maintenanceLogs.size
+        payload.islandTypes.size + payload.clients.size + payload.contacts.size + payload.contracts.size + payload.facilities.size + payload.facilityIslands.size + payload.mechanicalUnits.size + payload.maintenanceLogs.size
 }

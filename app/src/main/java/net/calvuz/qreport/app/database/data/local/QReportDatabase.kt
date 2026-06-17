@@ -45,6 +45,7 @@ import net.calvuz.qreport.ti.data.local.dao.TiMaintenanceLogAssociationDao
 import net.calvuz.qreport.ti.data.local.entity.TiIslandAssociationEntity
 import net.calvuz.qreport.ti.data.local.entity.TiMaintenanceLogAssociationEntity
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
 
 /**
  * QReport Room Database
@@ -125,6 +126,7 @@ abstract class QReportDatabase : RoomDatabase() {
     companion object {
 
         val MIGRATION_2_3 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
+        val MIGRATION_3_4 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
 
         val CALLBACK = object : Callback() {}
     }

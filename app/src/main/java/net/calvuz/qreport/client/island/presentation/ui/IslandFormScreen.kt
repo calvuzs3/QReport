@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.QrDatePickerField
+import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
 import net.calvuz.qreport.client.island.domain.model.IslandType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -135,7 +136,9 @@ private fun IslandBasicInfoSection(
             )
 
             IslandTypeSelector(
-                selectedType = uiState.islandType,
+                availableTypes = uiState.availableIslandTypes,
+                selectedTypeId = uiState.islandTypeId,
+                fallbackType = uiState.islandType,
                 onTypeSelected = { onFormEvent(FacilityIslandFormEvent.IslandTypeChanged(it)) }
             )
 
@@ -167,17 +170,22 @@ private fun IslandBasicInfoSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IslandTypeSelector(
-    selectedType: IslandType,
-    onTypeSelected: (IslandType) -> Unit
+    availableTypes: List<IslandTypeEntity>,
+    selectedTypeId: String?,
+    fallbackType: IslandType,
+    onTypeSelected: (IslandTypeEntity) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val selected = availableTypes.find { it.id == selectedTypeId }
+    val selectedLabel = selected?.label ?: stringResource(fallbackType.labelResId)
+
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = it },
         modifier = Modifier.fillMaxWidth()
     ) {
         OutlinedTextField(
-            value = stringResource(selectedType.labelResId),
+            value = selectedLabel,
             onValueChange = { },
             readOnly = true,
             label = { Text(stringResource(R.string.island_form_field_type)) },
@@ -186,19 +194,20 @@ private fun IslandTypeSelector(
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
-                .fillMaxWidth()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            IslandType.entries.forEach { type ->
+            availableTypes.forEach { type ->
                 DropdownMenuItem(
                     text = {
                         Column {
-                            Text(stringResource(type.labelResId), style = MaterialTheme.typography.bodyMedium)
-                            Text(
-                                text = stringResource(type.descriptionResId),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Text(type.label, style = MaterialTheme.typography.bodyMedium)
+                            type.description?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     },
                     onClick = { onTypeSelected(type); expanded = false },

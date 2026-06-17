@@ -29,7 +29,9 @@ data class IslandTypeDto(
     val sortOrder: Int = 0,
     val isActive: Boolean = true,
     val createdAt: Long,
-    val updatedAt: Long
+    val updatedAt: Long,
+    val syncedAt: Long? = null,
+    val isDeleted: Boolean = false
 )
 
 @Serializable

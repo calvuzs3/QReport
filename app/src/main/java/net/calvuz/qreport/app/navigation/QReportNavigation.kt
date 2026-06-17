@@ -35,6 +35,7 @@ import net.calvuz.qreport.client.facility.presentation.ui.FacilityListScreen
 import net.calvuz.qreport.client.island.presentation.ui.IslandFormScreen
 import net.calvuz.qreport.client.island.presentation.ui.IslandDetailScreen
 import net.calvuz.qreport.client.island.presentation.ui.IslandListScreen
+import net.calvuz.qreport.client.island.presentation.ui.IslandTypesManagementScreen
 import net.calvuz.qreport.photo.presentation.ui.PhotoImportPreviewScreen
 import net.calvuz.qreport.settings.presentation.ui.TechnicianSettingsScreen
 import timber.log.Timber
@@ -119,6 +120,7 @@ object QReportRoutes {
 
     // Settings routes
     const val TECHNICIAN_SETTINGS = "technician_settings"
+    const val ISLAND_TYPES_MANAGEMENT = "island_types_management"
 
     // Sync routes
     const val SYNC_SETTINGS = "sync_settings"
@@ -360,7 +362,16 @@ fun QReportNavigation(
                         },
                         onNavigateToSyncSettings = {
                             navController.navigate(QReportRoutes.SYNC_SETTINGS)
+                        },
+                        onNavigateToIslandTypes = {
+                            navController.navigate(QReportRoutes.ISLAND_TYPES_MANAGEMENT)
                         }
+                    )
+                }
+
+                composable(QReportRoutes.ISLAND_TYPES_MANAGEMENT) {
+                    IslandTypesManagementScreen(
+                        onNavigateBack = { navController.popBackStack() }
                     )
                 }
 

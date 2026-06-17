@@ -332,4 +332,19 @@
     <string name="island_performance_health_value">%1$d%%</string>
     <string name="island_performance_no_data">Nessuna informazione sulla performance disponibile</string>
 
+    <!-- ======================================================= -->
+    <!-- IslandTypesManagementScreen + IslandTypeFormDialog       -->
+    <!-- ======================================================= -->
+
+    <string name="island_types_screen_title">Tipi isola</string>
+    <string name="island_type_dialog_title_create">Nuovo tipo isola</string>
+    <string name="island_type_dialog_title_edit">Modifica tipo isola</string>
+    <string name="island_type_field_code">Codice</string>
+    <string name="island_type_field_label">Nome</string>
+    <string name="island_type_field_description">Descrizione</string>
+    <string name="island_type_field_icon_name">Icona</string>
+    <string name="island_type_field_maintenance_interval">Intervallo manutenzione (giorni)</string>
+    <string name="island_type_field_sort_order">Ordine</string>
+    <string name="island_type_dialog_error">Codice già in uso o dati non validi</string>
+
 </resources>

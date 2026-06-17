@@ -22,6 +22,8 @@ data class Island(
 
     // ===== ISLAND TYPE =====
     val islandType: IslandType,
+    /** FK to the island_types master data table — nullable until every island has been re-saved through the new picker. */
+    val islandTypeId: String? = null,
 
     // ===== TECHNICAL DETAILS =====
     val modelNumber: String? = null,

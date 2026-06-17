@@ -10,10 +10,13 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
+import net.calvuz.qreport.client.island.data.local.mapper.parse
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.usecase.CreateIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandByIdUseCase
+import net.calvuz.qreport.client.island.domain.usecase.ObserveActiveIslandTypesUseCase
 import net.calvuz.qreport.client.island.domain.usecase.UpdateIslandUseCase
 import timber.log.Timber
 import java.util.UUID
@@ -34,6 +37,8 @@ data class FacilityIslandFormUiState(
     // ===== FORM FIELDS =====
     val serialNumber: String = "",
     val islandType: IslandType = IslandType.POLY_MOVE,
+    val islandTypeId: String? = null,
+    val availableIslandTypes: List<IslandTypeEntity> = emptyList(),
     val modelNumber: String = "",
     val customName: String = "",
     val location: String = "",
@@ -86,11 +91,20 @@ data class FacilityIslandFormUiState(
 class IslandFormViewModel @Inject constructor(
     private val createIslandUseCase: CreateIslandUseCase,
     private val updateIslandUseCase: UpdateIslandUseCase,
-    private val getIslandByIdUseCase: GetIslandByIdUseCase
+    private val getIslandByIdUseCase: GetIslandByIdUseCase,
+    private val observeActiveIslandTypes: ObserveActiveIslandTypesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityIslandFormUiState())
     val uiState = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            observeActiveIslandTypes().collect { types ->
+                _uiState.update { it.copy(availableIslandTypes = types) }
+            }
+        }
+    }
 
     // =========================================================================
     // INITIALIZATION
@@ -127,6 +141,7 @@ class IslandFormViewModel @Inject constructor(
                 facilityId = island.facilityId,
                 serialNumber = island.serialNumber,
                 islandType = island.islandType,
+                islandTypeId = island.islandTypeId,
                 modelNumber = island.modelNumber ?: "",
                 customName = island.customName ?: "",
                 location = island.location ?: "",
@@ -153,7 +168,12 @@ class IslandFormViewModel @Inject constructor(
                 _uiState.update { it.copy(serialNumber = event.serialNumber, serialNumberError = validateSerialNumber(event.serialNumber)) }
             }
             is FacilityIslandFormEvent.IslandTypeChanged ->
-                _uiState.update { it.copy(islandType = event.islandType) }
+                _uiState.update {
+                    it.copy(
+                        islandTypeId = event.type.id,
+                        islandType = IslandType.parse(event.type.code)
+                    )
+                }
             is FacilityIslandFormEvent.ModelChanged ->
                 _uiState.update { it.copy(modelNumber = event.model, modelNumberError = validateModelNumber(event.model)) }
             is FacilityIslandFormEvent.CustomNameChanged ->
@@ -311,6 +331,7 @@ class IslandFormViewModel @Inject constructor(
             facilityId = state.facilityId,
             serialNumber = state.serialNumber.trim(),
             islandType = state.islandType,
+            islandTypeId = state.islandTypeId,
             modelNumber = state.modelNumber.trim().takeIf { it.isNotBlank() },
             customName = state.customName.trim().takeIf { it.isNotBlank() },
             location = state.location.trim().takeIf { it.isNotBlank() },
@@ -342,7 +363,7 @@ class IslandFormViewModel @Inject constructor(
 
 sealed class FacilityIslandFormEvent {
     data class SerialNumberChanged(val serialNumber: String) : FacilityIslandFormEvent()
-    data class IslandTypeChanged(val islandType: IslandType) : FacilityIslandFormEvent()
+    data class IslandTypeChanged(val type: IslandTypeEntity) : FacilityIslandFormEvent()
     data class ModelChanged(val model: String) : FacilityIslandFormEvent()
     data class CustomNameChanged(val customName: String) : FacilityIslandFormEvent()
     data class LocationChanged(val location: String) : FacilityIslandFormEvent()
