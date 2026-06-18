@@ -504,6 +504,9 @@ object CheckItemModules {
             IslandType.POLY_TAG_FC -> LABELING_MACHINE_MODULE
             IslandType.POLY_TAG_V -> VISION_SYSTEM_MODULE + LABELING_MACHINE_MODULE + VIBRATORS_MODULE + DUAL_ROBOT_MODULE
             IslandType.POLY_SAMPLE -> CARTRIDGE_SYSTEMS_MODULE
+            IslandType.POLY_WELD -> emptyList() // Weld può usare solo moduli base
+            IslandType.POLY_PAINT -> emptyList() // Paint può usare solo moduli base
+            IslandType.OTHER -> emptyList() // Tipologia non classificata, solo moduli base
         }
 
         return (baseModules + specificModules)

@@ -88,7 +88,7 @@ class IslandDataValidator @Inject constructor() {
         }
     }
 
-    /** Alphanumeric, dashes, underscores. Blank is valid (field is optional). */
+    /** Alphanumeric, dashes, underscores, dots. Blank is valid (field is optional). */
     private fun isValidCode(value: String): Boolean =
-        value.isBlank() || value.matches(Regex("[A-Za-z0-9\\-_]+"))
+        value.isBlank() || value.matches(Regex("[A-Za-z0-9.\\-_]+"))
 }

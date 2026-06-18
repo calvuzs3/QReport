@@ -20,5 +20,8 @@ fun IslandType.icon(): ImageVector = when (this) {
     IslandType.POLY_TAG_FC -> Icons.Default.QrCode
     IslandType.POLY_TAG_V -> Icons.Default.CameraAlt
     IslandType.POLY_SAMPLE -> Icons.Default.Science
+    IslandType.POLY_WELD -> Icons.Default.Hardware
+    IslandType.POLY_PAINT -> Icons.Default.FormatPaint
+    IslandType.OTHER -> Icons.Default.Category
 }
 

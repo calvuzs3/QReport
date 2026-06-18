@@ -52,6 +52,21 @@ enum class IslandType(
         code = "SAMPLE",
         labelResId = R.string.island_type_poly_sample,
         descriptionResId = R.string.island_type_poly_sample_desc
+    ),
+    POLY_WELD(
+        code = "WELD",
+        labelResId = R.string.island_type_poly_weld,
+        descriptionResId = R.string.island_type_poly_weld_desc
+    ),
+    POLY_PAINT(
+        code = "PAINT",
+        labelResId = R.string.island_type_poly_paint,
+        descriptionResId = R.string.island_type_poly_paint_desc
+    ),
+    OTHER(
+        code = "OTHER",
+        labelResId = R.string.island_type_other,
+        descriptionResId = R.string.island_type_other_desc
     );
 
     companion object

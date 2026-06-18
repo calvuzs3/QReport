@@ -19,6 +19,12 @@
     <string name="island_type_poly_tag_v_desc">Sistema robotizzato per etichettatura con visione artificiale</string>
     <string name="island_type_poly_sample">POLY Sample</string>
     <string name="island_type_poly_sample_desc">Sistema robotizzato per campionamento e analisi</string>
+    <string name="island_type_poly_weld">POLY Weld</string>
+    <string name="island_type_poly_weld_desc">Isola di saldatura</string>
+    <string name="island_type_poly_paint">POLY Paint</string>
+    <string name="island_type_poly_paint_desc">Isola di verniciatura</string>
+    <string name="island_type_other">Altro</string>
+    <string name="island_type_other_desc">Tipologia non classificata</string>
 
     <!-- ======================================================= -->
     <!-- IslandOperationalStatus labels                           -->

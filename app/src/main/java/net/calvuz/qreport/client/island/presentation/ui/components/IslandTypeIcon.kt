@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Category
 import androidx.compose.material.icons.filled.ElectricalServices
+import androidx.compose.material.icons.filled.FormatPaint
+import androidx.compose.material.icons.filled.Hardware
 import androidx.compose.material.icons.filled.Opacity
 import androidx.compose.material.icons.filled.OpenWith
 import androidx.compose.material.icons.filled.Science
@@ -29,6 +32,9 @@ fun IslandTypeIcon(islandType: IslandType) {
         IslandType.POLY_TAG_FC -> Icons.Default.TextFields
         IslandType.POLY_TAG_V -> Icons.Default.Visibility
         IslandType.POLY_SAMPLE -> Icons.Default.Science
+        IslandType.POLY_WELD -> Icons.Default.Hardware
+        IslandType.POLY_PAINT -> Icons.Default.FormatPaint
+        IslandType.OTHER -> Icons.Default.Category
     }
 
     Surface(
