@@ -17,8 +17,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.checkup.presentation.components.ClientFacilityIslandSelectorDialog
-import net.calvuz.qreport.client.island.domain.model.IslandType
-import net.calvuz.qreport.client.island.presentation.model.icon
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
+import net.calvuz.qreport.client.island.presentation.model.IslandTypeIconRegistry
 
 /**
  * Screen per la creazione guidata di un nuovo check-up
@@ -75,7 +75,7 @@ fun NewCheckUpScreen(
             // Step 0: Link to existing client/facility/island (optional)
             item {
                 SourceSelectionSection(
-                    selectedIslandType = uiState.selectedIslandType,
+                    selectedIslandTypeMaster = uiState.selectedIslandTypeMaster,
                     isLinked = uiState.selectedIslandId != null,
                     clientName = uiState.clientName,
                     site = uiState.site,
@@ -99,13 +99,14 @@ fun NewCheckUpScreen(
             // Step 2: Island Type Selection
             item {
                 IslandTypeSection(
-                    selectedIslandType = uiState.selectedIslandType,
+                    islandTypes = uiState.islandTypes,
+                    selectedIslandTypeMaster = uiState.selectedIslandTypeMaster,
                     onIslandTypeSelected = viewModel::selectIslandType
                 )
             }
 
             // Step 3: Island Info (optional)
-            if (uiState.selectedIslandType != null) {
+            if (uiState.selectedIslandTypeMaster != null) {
                 item {
                     IslandInfoSection(
                         serialNumber = uiState.serialNumber,
@@ -177,7 +178,7 @@ fun NewCheckUpScreen(
 
 @Composable
 private fun SourceSelectionSection(
-    selectedIslandType: IslandType?,
+    selectedIslandTypeMaster: IslandTypeMaster?,
     isLinked: Boolean,
     clientName: String,
     site: String,
@@ -212,7 +213,7 @@ private fun SourceSelectionSection(
                             R.string.checkup_screen_new_linked_banner,
                             clientName,
                             site,
-                            selectedIslandType?.let { stringResource(it.labelResId) } ?: ""
+                            selectedIslandTypeMaster?.label ?: ""
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.weight(1f)
@@ -298,8 +299,9 @@ private fun ClientInfoSection(
 
 @Composable
 private fun IslandTypeSection(
-    selectedIslandType: IslandType?,
-    onIslandTypeSelected: (IslandType) -> Unit,
+    islandTypes: List<IslandTypeMaster>,
+    selectedIslandTypeMaster: IslandTypeMaster?,
+    onIslandTypeSelected: (IslandTypeMaster) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -322,10 +324,10 @@ private fun IslandTypeSection(
             )
 
             // Island type options
-            IslandType.entries.forEach { islandType ->
+            islandTypes.forEach { islandType ->
                 IslandTypeOption(
                     islandType = islandType,
-                    isSelected = selectedIslandType == islandType,
+                    isSelected = selectedIslandTypeMaster?.id == islandType.id,
                     onSelected = { onIslandTypeSelected(islandType) }
                 )
             }
@@ -335,7 +337,7 @@ private fun IslandTypeSection(
 
 @Composable
 private fun IslandTypeOption(
-    islandType: IslandType,
+    islandType: IslandTypeMaster,
     isSelected: Boolean,
     onSelected: () -> Unit,
     modifier: Modifier = Modifier
@@ -367,7 +369,7 @@ private fun IslandTypeOption(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = islandType.icon(),
+                imageVector = IslandTypeIconRegistry.iconFor(islandType.iconName ?: islandType.code),
                 contentDescription = null,
                 tint = if (isSelected) {
                     MaterialTheme.colorScheme.primary
@@ -378,15 +380,17 @@ private fun IslandTypeOption(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(islandType.labelResId),
+                    text = islandType.label,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )
-                Text(
-                    text = stringResource(islandType.descriptionResId),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                islandType.description?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             RadioButton(

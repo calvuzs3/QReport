@@ -15,9 +15,11 @@ import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.error.presentation.toUiText
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandByIdUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandStatisticsUseCase
+import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandTypesUseCase
 import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 import net.calvuz.qreport.client.island.domain.usecase.UpdateMaintenanceUseCase
 import net.calvuz.qreport.client.island.maintenance.domain.model.MaintenanceLog
@@ -69,6 +71,8 @@ data class FacilityIslandDetailUiState(
     val logs: List<MaintenanceLog> = emptyList(),
     val isLoadingLogs: Boolean = false,
 
+    val islandTypes: List<IslandTypeMaster> = emptyList(),
+
     val error: UiText? = null
 ) {
     val islandName: String
@@ -93,7 +97,8 @@ class IslandDetailViewModel @Inject constructor(
     private val updateMaintenanceUseCase: UpdateMaintenanceUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
     private val deleteMechanicalUnitUseCase: DeleteMechanicalUnitUseCase,
-    private val getLogsForIslandUseCase: GetLogsForIslandUseCase
+    private val getLogsForIslandUseCase: GetLogsForIslandUseCase,
+    private val observeIslandTypesUseCase: ObserveIslandTypesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityIslandDetailUiState())
@@ -105,6 +110,10 @@ class IslandDetailViewModel @Inject constructor(
 
     init {
         Timber.d("IslandDetailViewModel initialized")
+        observeIslandTypesUseCase()
+            .catch { e -> Timber.e(e) }
+            .onEach { types -> _uiState.update { it.copy(islandTypes = types) } }
+            .launchIn(viewModelScope)
     }
 
     fun onDetailEvent(event: IslandDetailEvent) {

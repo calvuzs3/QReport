@@ -27,7 +27,8 @@ class CreateIslandUseCase @Inject constructor(
     private val islandRepository: IslandRepository,
     private val validateIslandData: IslandDataValidator,
     private val checkFacilityExists: CheckFacilityExistsUseCase,
-    private val checkSerialNumberUniqueness: CheckSerialNumberUniquenessUseCase
+    private val checkSerialNumberUniqueness: CheckSerialNumberUniquenessUseCase,
+    private val resolveIslandTypeForIsland: ResolveIslandTypeForIslandUseCase
 ) {
     suspend operator fun invoke(island: Island): QrResult<Unit, QrError.IslandError> {
 
@@ -58,7 +59,7 @@ class CreateIslandUseCase @Inject constructor(
         validateIslandData.validateDates(island)?.let { return it }
 
         // 5. Auto-compute next maintenance if not provided
-        val finalIsland = autoScheduleNextMaintenance(island)
+        val finalIsland = autoScheduleNextMaintenance(island, resolveIslandTypeForIsland(island.islandTypeId, island.islandType)?.maintenanceIntervalDays)
         Timber.d("Next maintenance scheduled: ${finalIsland.nextScheduledMaintenance}")
 
         // 6. Persist
@@ -76,9 +77,10 @@ class CreateIslandUseCase @Inject constructor(
 
     // -------------------------------------------------------------------------
 
-    private fun autoScheduleNextMaintenance(island: Island): Island {
+    private fun autoScheduleNextMaintenance(island: Island, masterIntervalDays: Int?): Island {
         if (island.nextScheduledMaintenance != null) return island
         val base = island.lastMaintenanceDate ?: island.installationDate ?: Clock.System.now()
-        return island.copy(nextScheduledMaintenance = base + maintenanceIntervalFor(island.islandType).days)
+        val interval = masterIntervalDays ?: maintenanceIntervalFor(island.islandType)
+        return island.copy(nextScheduledMaintenance = base + interval.days)
     }
 }

@@ -7,6 +7,7 @@ import net.calvuz.qreport.client.facility.domain.model.IslandStatistics
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import net.calvuz.qreport.client.island.domain.repository.IslandTypeMasterRepository
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -18,7 +19,8 @@ import javax.inject.Inject
  */
 class GetFacilityWithIslandsUseCase @Inject constructor(
     private val facilityRepository: FacilityRepository,
-    private val islandRepository: IslandRepository
+    private val islandRepository: IslandRepository,
+    private val islandTypeMasterRepository: IslandTypeMasterRepository
 ) {
     suspend operator fun invoke(facilityId: String): QrResult<FacilityWithIslands, QrError.FacilityError> {
 
@@ -33,8 +35,12 @@ class GetFacilityWithIslandsUseCase @Inject constructor(
             onSuccess = { it ?: return QrResult.Error(QrError.FacilityError.NotFound()) },
             onFailure = { return QrResult.Error(QrError.FacilityError.LoadError(it.message)) })
 
+        val typeLabelsById = islandTypeMasterRepository.getIslandTypes().getOrNull()
+            ?.associate { it.id to it.label } ?: emptyMap()
+
         val islands = islandRepository.getIslandsByFacility(facilityId).getOrElse { emptyList() }
-            .sortedWith(compareByDescending<Island> { it.isActive }.thenBy { it.islandType.name }
+            .sortedWith(compareByDescending<Island> { it.isActive }
+                .thenBy { typeLabelsById[it.islandTypeId] ?: it.islandType.code }
                 .thenBy { (it.customName ?: it.serialNumber).lowercase() })
 
         Timber.d("Loaded facility $facilityId with ${islands.size} islands")

@@ -9,6 +9,7 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import net.calvuz.qreport.client.island.domain.repository.IslandTypeMasterRepository
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -20,8 +21,9 @@ import javax.inject.Inject
  */
 class GetIslandsByFacilityUseCase @Inject constructor(
     private val islandRepository: IslandRepository,
+    private val islandTypeMasterRepository: IslandTypeMasterRepository,
 ) {
-    
+
     @Suppress("HardCodedStringLiteral")
     suspend operator fun invoke(facilityId: String): QrResult<List<Island>, QrError.IslandError> {
 
@@ -37,7 +39,7 @@ class GetIslandsByFacilityUseCase @Inject constructor(
         islandRepository.getIslandsByFacility(facilityId).fold(
             onSuccess = { islands ->
                 Timber.d("Loaded islands for facility $facilityId: ${islands.size}")
-                return QrResult.Success(islands.sortedByTypeThenName())
+                return QrResult.Success(islands.sortedByTypeThenName(loadIslandTypeLabels()))
             },
             onFailure = {
                 Timber.d(it, "Failed to load islands for facility $facilityId")
@@ -56,7 +58,7 @@ class GetIslandsByFacilityUseCase @Inject constructor(
             islandRepository.getActiveIslandsByFacility(facilityId).fold(
                 onSuccess = { islands ->
                     Timber.d("Loaded active islands for facility $facilityId: ${islands.size}")
-                    QrResult.Success(islands.sortedByTypeThenName())
+                    QrResult.Success(islands.sortedByTypeThenName(loadIslandTypeLabels()))
                 },
                 onFailure = {
                     Timber.d(it, "Failed to load active islands for facility $facilityId")
@@ -67,7 +69,7 @@ class GetIslandsByFacilityUseCase @Inject constructor(
 
     fun observeIslandsByFacility(facilityId: String): Flow<List<Island>> =
         islandRepository.getAllActiveIslandsByFacilityFlow(facilityId)
-            .map { islands -> islands.sortedByTypeThenName() }
+            .map { islands -> islands.sortedByTypeThenName(emptyMap()) }
 
     suspend fun getIslandsDueMaintenance(
         facilityId: String,
@@ -123,9 +125,13 @@ class GetIslandsByFacilityUseCase @Inject constructor(
 
     // -------------------------------------------------------------------------
 
-    private fun List<Island>.sortedByTypeThenName(): List<Island> =
+    /** Island type labels keyed by id, for sorting — falls back silently if the master list can't be loaded. */
+    private suspend fun loadIslandTypeLabels(): Map<String, String> =
+        islandTypeMasterRepository.getIslandTypes().getOrNull()?.associate { it.id to it.label } ?: emptyMap()
+
+    private fun List<Island>.sortedByTypeThenName(typeLabelsById: Map<String, String>): List<Island> =
         sortedWith(
-            compareBy<Island> { it.islandType.name }
+            compareBy<Island> { typeLabelsById[it.islandTypeId] ?: it.islandType.code }
                 .thenBy { it.customName?.lowercase() ?: it.serialNumber.lowercase() }
         )
 }

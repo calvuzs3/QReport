@@ -28,6 +28,7 @@ class CreateCheckUpUseCase @Inject constructor(
     suspend operator fun invoke(
         header: CheckUpHeader,
         islandType: IslandType,
+        islandTypeId: String? = null,
         includeTemplateItems: Boolean = true
     ): Result<String> {
         return try {
@@ -44,6 +45,7 @@ class CreateCheckUpUseCase @Inject constructor(
                 id = checkUpId,
                 header = header,
                 islandType = islandType,
+                islandTypeId = islandTypeId,
                 status = CheckUpStatus.DRAFT,
                 checkItems = checkItems,
                 spareParts = emptyList(),

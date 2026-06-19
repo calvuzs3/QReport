@@ -26,7 +26,8 @@ import net.calvuz.qreport.app.app.presentation.ui.theme.warningContainer
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
-import net.calvuz.qreport.client.island.presentation.model.icon
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
+import net.calvuz.qreport.client.island.presentation.model.resolveIslandTypeDisplay
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.client.unit.presentation.ui.components.MechanicalUnitCard
 
@@ -45,6 +46,7 @@ import net.calvuz.qreport.client.unit.presentation.ui.components.MechanicalUnitC
 fun IslandCard(
     modifier: Modifier = Modifier,
     island: Island,
+    islandTypes: List<IslandTypeMaster> = emptyList(),
     onClick: () -> Unit,
     onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -64,6 +66,7 @@ fun IslandCard(
         when (variant) {
             ListViewMode.FULL -> FullIslandCard(
                 island = island,
+                islandTypes = islandTypes,
                 showActions = showActions,
                 onEdit = onEdit,
                 onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null,
@@ -71,6 +74,7 @@ fun IslandCard(
             )
             ListViewMode.COMPACT -> CompactIslandCard(
                 island = island,
+                islandTypes = islandTypes,
                 showActions = showActions,
                 onEdit = onEdit,
                 onDelete = if (onDelete != null) { { showDeleteDialog = true } } else null,
@@ -131,11 +135,13 @@ fun IslandCard(
 @Composable
 private fun FullIslandCard(
     island: Island,
+    islandTypes: List<IslandTypeMaster>,
     showActions: Boolean = false,
     onEdit: (() -> Unit)?,
     onDelete: (() -> Unit)?,
     onRestore: (() -> Unit)?
 ) {
+    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes)
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // ── Header ────────────────────────────────────────────────────────────
         Row(
@@ -147,13 +153,13 @@ private fun FullIslandCard(
                 onClick = {},
                 label = {
                     Icon(
-                        imageVector = island.islandType.icon(),
+                        imageVector = typeDisplay.icon,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = stringResource(island.islandType.labelResId),
+                        text = typeDisplay.label,
                         style = MaterialTheme.typography.labelMedium
                     )
                 },
@@ -252,11 +258,13 @@ private fun FullIslandCard(
 @Composable
 private fun CompactIslandCard(
     island: Island,
+    islandTypes: List<IslandTypeMaster>,
     showActions: Boolean = false,
     onEdit: (() -> Unit)?,
     onDelete: (() -> Unit)?,
     onRestore: (() -> Unit)?
 ) {
+    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -266,7 +274,7 @@ private fun CompactIslandCard(
     ) {
         // Icona tipo
         Icon(
-            imageVector = island.islandType.icon(),
+            imageVector = typeDisplay.icon,
             contentDescription = null,
             modifier = Modifier.size(22.dp),
             tint = MaterialTheme.colorScheme.primary
@@ -274,7 +282,7 @@ private fun CompactIslandCard(
 
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = stringResource(island.islandType.labelResId),
+                text = typeDisplay.label,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary
             )

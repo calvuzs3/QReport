@@ -15,13 +15,16 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.usecase.ObserveAllActiveFacilitiesUseCase
 import net.calvuz.qreport.client.island.presentation.model.FacilityOption
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandWithUnitsUseCase
+import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandTypesUseCase
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
 import net.calvuz.qreport.client.island.domain.usecase.RestoreIslandUseCase
 import net.calvuz.qreport.client.island.presentation.model.IslandFilter
 import net.calvuz.qreport.client.island.presentation.model.IslandSortOrder
+import net.calvuz.qreport.client.island.presentation.model.resolveIslandTypeDisplay
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 import net.calvuz.qreport.settings.domain.repository.AppSettingsRepository
@@ -45,7 +48,8 @@ data class FacilityIslandListUiState(
     val error: UiText? = null,              // UiText instead of raw String
     val cardVariant: ListViewMode = ListViewMode.FULL,
     val availableFacilities: List<FacilityOption> = listOf(FacilityOption.ALL),
-    val selectedFacility: FacilityOption = FacilityOption.ALL
+    val selectedFacility: FacilityOption = FacilityOption.ALL,
+    val islandTypes: List<IslandTypeMaster> = emptyList()
 )
 
 data class IslandWithStats(
@@ -65,6 +69,7 @@ class IslandListViewModel @Inject constructor(
     private val restoreIslandUseCase: RestoreIslandUseCase,
     private val observeIslandsUseCase: ObserveIslandsUseCase,
     private val observeAllActiveFacilitiesUseCase: ObserveAllActiveFacilitiesUseCase,
+    private val observeIslandTypesUseCase: ObserveIslandTypesUseCase,
     private val appSettingsRepository: AppSettingsRepository
 ) : ViewModel() {
 
@@ -82,6 +87,7 @@ class IslandListViewModel @Inject constructor(
         Timber.d("IslandListViewModel init")
         observeCardVariant()
         loadFacilitiesForDropdown()
+        observeIslandTypes()
     }
 
     // =========================================================================
@@ -283,6 +289,24 @@ class IslandListViewModel @Inject constructor(
         _uiState.update { it.copy(error = null) }
     }
 
+    private fun observeIslandTypes() {
+        viewModelScope.launch {
+            observeIslandTypesUseCase()
+                .catch { e -> Timber.e(e) }
+                .collect { types ->
+                    val current = _uiState.value
+                    _uiState.update {
+                        it.copy(
+                            islandTypes = types,
+                            filteredIslands = applyFiltersAndSort(
+                                current.islands, current.searchQuery, current.selectedFilter, current.sortOrder, types
+                            )
+                        )
+                    }
+                }
+        }
+    }
+
     private fun observeCardVariant() {
         viewModelScope.launch {
             appSettingsRepository.getListViewMode(KEY)
@@ -328,7 +352,8 @@ class IslandListViewModel @Inject constructor(
         islands: List<IslandWithStats>,
         searchQuery: String,
         filter: IslandFilter,
-        sortOrder: IslandSortOrder
+        sortOrder: IslandSortOrder,
+        islandTypes: List<IslandTypeMaster> = _uiState.value.islandTypes
     ): List<IslandWithStats> {
         var result = islands
 
@@ -353,7 +378,9 @@ class IslandListViewModel @Inject constructor(
 
         return when (sortOrder) {
             IslandSortOrder.SERIAL_NUMBER -> result.sortedBy { it.island.serialNumber.lowercase() }
-            IslandSortOrder.TYPE -> result.sortedBy { it.island.islandType.name }
+            IslandSortOrder.TYPE -> result.sortedBy {
+                resolveIslandTypeDisplay(it.island.islandTypeId, it.island.islandType, islandTypes).label
+            }
             IslandSortOrder.STATUS -> result.sortedBy { it.island.islandOperationalStatus.ordinal }
             IslandSortOrder.OPERATING_HOURS -> result.sortedByDescending { it.island.operatingHours }
             IslandSortOrder.MAINTENANCE_DATE -> result.sortedBy {

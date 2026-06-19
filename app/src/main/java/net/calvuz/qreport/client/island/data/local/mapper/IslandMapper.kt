@@ -80,6 +80,19 @@ fun IslandType.Companion.parse(value: String): IslandType {
         }
 }
 
+/**
+ * Parses an [IslandType] from an [net.calvuz.qreport.client.island.domain.model.IslandTypeMaster.code]
+ * value (e.g. "MOVE", "WELD") — distinct from [parse], which matches the enum's own [IslandType.name].
+ * Falls back to [IslandType.POLY_MOVE] for custom codes with no enum counterpart.
+ */
+fun IslandType.Companion.parseByCode(code: String): IslandType {
+    return IslandType.entries.find { it.code.equals(code, ignoreCase = true) }
+        ?: run {
+            Timber.w("Unknown IslandType code '$code' — falling back to POLY_MOVE")
+            IslandType.POLY_MOVE
+        }
+}
+
 // Convenience extensions
 
 fun IslandEntity.toDomain(mapper: IslandMapper): Island = mapper.toDomain(this)

@@ -45,6 +45,7 @@ fun CheckUpEntity.toDomain(): CheckUp {
             notes = this.headerNotes
         ),
         islandType = IslandType.entries.find { it.name == this.islandType } ?: IslandType.POLY_MOVE,
+        islandTypeId = this.islandTypeId,
         status = CheckUpStatus.valueOf(this.status),
         checkItems = emptyList(), // Populated separately when needed
         spareParts = emptyList(), // Populated separately when needed
@@ -81,6 +82,7 @@ fun CheckUp.toEntity(): CheckUpEntity {
         checkUpDate = this.header.checkUpDate,
         headerNotes = this.header.notes,
         islandType = this.islandType.name,
+        islandTypeId = this.islandTypeId,
         status = this.status.name,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,

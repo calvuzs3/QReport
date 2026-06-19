@@ -23,6 +23,8 @@ import net.calvuz.qreport.checkup.domain.model.CheckUpIslandAssociation
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
+import net.calvuz.qreport.client.island.presentation.model.resolveIslandTypeDisplay
 import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import timber.log.Timber
 
@@ -41,6 +43,7 @@ fun AssociationManagementDialog(
     availableClients: List<Client>,
     availableFacilities: List<Facility>,
     availableIslands: List<Island>,
+    islandTypes: List<IslandTypeMaster> = emptyList(),
     selectedClientId: String?,
     selectedFacilityId: String?,
     isLoading: Boolean = false,
@@ -112,6 +115,7 @@ fun AssociationManagementDialog(
                             item {
                                 IslandSelectionStep(
                                     islands = availableIslands,
+                                    islandTypes = islandTypes,
                                     onIslandSelected = onIslandSelected
                                 )
                             }
@@ -242,6 +246,7 @@ internal fun FacilitySelectionStep(
 @Composable
 internal fun IslandSelectionStep(
     islands: List<Island>,
+    islandTypes: List<IslandTypeMaster> = emptyList(),
     onIslandSelected: (String) -> Unit
 ) {
     SelectionStepCard(
@@ -257,7 +262,7 @@ internal fun IslandSelectionStep(
         } else {
             islands.forEach { island ->
                 SelectionItem(
-                    title = stringResource(island.islandType.labelResId),
+                    title = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes).label,
                     subtitle = island.serialNumber,
 //                        if (island.model != null) {
 //                            stringResource(

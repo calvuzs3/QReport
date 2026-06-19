@@ -301,6 +301,7 @@ private fun IslandDetailContent(
         when (uiState.selectedTab) {
             IslandDetailTab.INFO -> InfoTabContent(
                 island = uiState.island!!,
+                islandTypes = uiState.islandTypes,
                 statistics = uiState.statistics,
                 error = uiState.error,
                 onDismissError = onDismissError,

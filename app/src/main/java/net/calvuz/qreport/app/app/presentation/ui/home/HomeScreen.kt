@@ -33,8 +33,9 @@ import net.calvuz.qreport.checkup.presentation.components.CheckupStatusChip
 import net.calvuz.qreport.checkup.presentation.model.CheckupPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.presentation.model.IslandPkg
-import net.calvuz.qreport.client.island.presentation.model.icon
+import net.calvuz.qreport.client.island.presentation.model.resolveIslandTypeDisplay
 
 @Suppress("ParamsComparedByRef")@Composable
 fun HomeScreen(
@@ -147,6 +148,7 @@ fun HomeScreen(
                             uiState.recentIslands.forEach { island ->
                                 IslandPreviewRow(
                                     island = island,
+                                    islandTypes = uiState.islandTypes,
                                     onClick = { onNavigateToIslandDetail(island.facilityId, island.id) }
                                 )
                             }
@@ -303,14 +305,15 @@ private fun CheckUpPreviewRow(checkUp: CheckUp, onClick: () -> Unit) {
 }
 
 @Suppress("ParamsComparedByRef")@Composable
-private fun IslandPreviewRow(island: Island, onClick: () -> Unit) {
+private fun IslandPreviewRow(island: Island, islandTypes: List<IslandTypeMaster>, onClick: () -> Unit) {
+    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes)
     Surface(modifier = Modifier.fillMaxWidth(), onClick = onClick, shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
         Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(imageVector = island.islandType.icon(), contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
+                Icon(imageVector = typeDisplay.icon, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
                 Column {
                     Text(text = island.customName ?: island.serialNumber , style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(text = stringResource(island.islandType.labelResId), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(text = typeDisplay.label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             Icon(

@@ -9,8 +9,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.usecase.CreateIslandTypeUseCase
 import net.calvuz.qreport.client.island.domain.usecase.DeactivateIslandTypeUseCase
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandTypesUseCase
@@ -20,9 +21,9 @@ import java.util.UUID
 import javax.inject.Inject
 
 data class IslandTypesUiState(
-    val types: List<IslandTypeEntity> = emptyList(),
+    val types: List<IslandTypeMaster> = emptyList(),
     val isLoading: Boolean = true,
-    val editingType: IslandTypeEntity? = null,
+    val editingType: IslandTypeMaster? = null,
     val isCreatingNew: Boolean = false,
     val errorMessage: String? = null
 )
@@ -36,7 +37,7 @@ class IslandTypesViewModel @Inject constructor(
     private val restoreIslandType: RestoreIslandTypeUseCase
 ) : ViewModel() {
 
-    private val editingType = MutableStateFlow<IslandTypeEntity?>(null)
+    private val editingType = MutableStateFlow<IslandTypeMaster?>(null)
     private val isCreatingNew = MutableStateFlow(false)
     private val errorMessage = MutableStateFlow<String?>(null)
 
@@ -59,7 +60,7 @@ class IslandTypesViewModel @Inject constructor(
         isCreatingNew.value = true
     }
 
-    fun onEditClick(type: IslandTypeEntity) {
+    fun onEditClick(type: IslandTypeMaster) {
         editingType.value = type
     }
 
@@ -78,7 +79,7 @@ class IslandTypesViewModel @Inject constructor(
         sortOrder: Int
     ) {
         viewModelScope.launch {
-            val now = System.currentTimeMillis()
+            val now = Instant.fromEpochMilliseconds(System.currentTimeMillis())
             val current = editingType.value
 
             val type = if (current != null) {
@@ -92,7 +93,7 @@ class IslandTypesViewModel @Inject constructor(
                     updatedAt = now
                 )
             } else {
-                IslandTypeEntity(
+                IslandTypeMaster(
                     id = UUID.randomUUID().toString(),
                     code = code,
                     label = label,

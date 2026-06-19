@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.presentation.ui.IslandWithStats
 import net.calvuz.qreport.settings.domain.model.ListViewMode
 
@@ -15,6 +16,7 @@ import net.calvuz.qreport.settings.domain.model.ListViewMode
 @Composable
 fun IslandListContent(
     islands: List<IslandWithStats>,
+    islandTypes: List<IslandTypeMaster> = emptyList(),
     variant: ListViewMode,
     onIslandClick: (String) -> Unit,
     onIslandDelete: (String) -> Unit,
@@ -29,6 +31,7 @@ fun IslandListContent(
             items = islands, key = { it.island.id }) { islandWithStats ->
             IslandCard(
                 island = islandWithStats.island,
+                islandTypes = islandTypes,
                 onClick = { onIslandClick(islandWithStats.island.id) },
                 onDelete = if (islandWithStats.island.isActive) {
                     { onIslandDelete(islandWithStats.island.id) }

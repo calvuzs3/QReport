@@ -14,11 +14,13 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.usecase.SingleIslandStatistics
 
 @Composable
 fun InfoTabContent(
     island: Island,
+    islandTypes: List<IslandTypeMaster> = emptyList(),
     statistics: SingleIslandStatistics?,
     error: UiText?,              // UiText instead of String
     onEdit: () -> Unit,
@@ -60,7 +62,7 @@ fun InfoTabContent(
                 }
             }
 
-            item { IslandBasicInfoCard(island = island) }
+            item { IslandBasicInfoCard(island = island, islandTypes = islandTypes) }
             statistics?.let { item { OperationalStatsCard(statistics = it) } }
             item { WarrantyStatusCard(island = island, statistics = statistics) }
             item { PerformanceMetricsCard(statistics = statistics) }

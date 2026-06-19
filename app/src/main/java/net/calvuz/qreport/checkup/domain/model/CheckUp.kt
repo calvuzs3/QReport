@@ -14,6 +14,7 @@ data class CheckUp(
     val id: String,
     val header: CheckUpHeader,
     val islandType: IslandType,
+    val islandTypeId: String? = null,
     val status: CheckUpStatus,
     val checkItems: List<CheckItem> = emptyList(),
     val spareParts: List<SparePart> = emptyList(),

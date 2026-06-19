@@ -30,6 +30,7 @@ import net.calvuz.qreport.checkup.presentation.model.CheckUpDetailUiState
 import net.calvuz.qreport.client.client.domain.usecase.GetClientsUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilitiesByClientUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
+import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandTypesUseCase
 import net.calvuz.qreport.photo.domain.usecase.CapturePhotoUseCase
 import net.calvuz.qreport.photo.domain.usecase.DeletePhotoUseCase
 import net.calvuz.qreport.photo.domain.usecase.GetCheckItemPhotosUseCase
@@ -72,7 +73,8 @@ class CheckUpDetailViewModel @Inject constructor(
     private val getIslandsByFacilityUseCase: GetIslandsByFacilityUseCase,
     private val associateCheckUpToIslandUseCase: AssociateCheckUpToIslandUseCase,
     private val getAssociationsForCheckUpUseCase: GetAssociationsForCheckUpUseCase,
-    private val removeCheckUpAssociationUseCase: RemoveCheckUpAssociationUseCase
+    private val removeCheckUpAssociationUseCase: RemoveCheckUpAssociationUseCase,
+    private val observeIslandTypesUseCase: ObserveIslandTypesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
@@ -89,6 +91,10 @@ class CheckUpDetailViewModel @Inject constructor(
 
     init {
         Timber.i("CheckUpDetailViewModel initialized")
+        observeIslandTypesUseCase()
+            .catch { e -> Timber.e(e) }
+            .onEach { types -> _associationState.update { it.copy(islandTypes = types) } }
+            .launchIn(viewModelScope)
     }
 
     // ============================================================

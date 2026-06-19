@@ -1,5 +1,7 @@
 package net.calvuz.qreport.export.data.repository
 
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -54,7 +56,8 @@ class ExportRepositoryImpl @Inject constructor(
     private val wordReportGenerator: WordReportGenerator,
     private val textReportGenerator: TextReportGenerator,
     private val photoExportManager: PhotoExportManager,
-    private val exportFileRepository: ExportFileRepository
+    private val exportFileRepository: ExportFileRepository,
+    @ApplicationContext private val context: Context
 ) : ExportRepository {
 
     companion object {
@@ -473,7 +476,7 @@ class ExportRepositoryImpl @Inject constructor(
                 appendLine()
                 appendLine("📅 Generato il: $timestamp")
                 appendLine("🏭 Cliente: ${exportData.checkup.header.clientInfo.companyName}")
-                appendLine("🏝️ Isola: ${exportData.checkup.islandType.labelResId}")
+                appendLine("🏝️ Isola: ${context.getString(exportData.checkup.islandType.labelResId)}")
                 appendLine("👨‍🔧 Tecnico: ${exportData.checkup.header.technicianInfo.name}")
                 appendLine()
                 appendLine("📁 CONTENUTO PACKAGE:")

@@ -35,7 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.QrStatusIndicator
-import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,7 +92,7 @@ fun IslandTypesManagementScreen(
 
 @Composable
 private fun IslandTypeRow(
-    type: IslandTypeEntity,
+    type: IslandTypeMaster,
     onEdit: () -> Unit,
     onDeactivate: () -> Unit,
     onRestore: () -> Unit

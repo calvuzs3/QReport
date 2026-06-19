@@ -18,7 +18,8 @@ import kotlin.time.Duration.Companion.days
  */
 class UpdateMaintenanceUseCase @Inject constructor(
     private val islandRepository: IslandRepository,
-    private val checkIslandExists: CheckIslandExistsUseCase
+    private val checkIslandExists: CheckIslandExistsUseCase,
+    private val resolveIslandTypeForIsland: ResolveIslandTypeForIslandUseCase
 ) {
     suspend operator fun invoke(
         islandId: String,
@@ -57,7 +58,9 @@ class UpdateMaintenanceUseCase @Inject constructor(
             return QrResult.Error(QrError.IslandError.ValidationError.InvalidMaintenanceDate())
         }
 
-        val nextMaintenanceDate = maintenanceDate + maintenanceIntervalFor(island.islandType).days
+        val intervalDays = resolveIslandTypeForIsland(island.islandTypeId, island.islandType)?.maintenanceIntervalDays
+            ?: maintenanceIntervalFor(island.islandType)
+        val nextMaintenanceDate = maintenanceDate + intervalDays.days
 
         // Build updated notes — caller provides the text, domain only appends it
         val updatedNotes = if (notes != null) {

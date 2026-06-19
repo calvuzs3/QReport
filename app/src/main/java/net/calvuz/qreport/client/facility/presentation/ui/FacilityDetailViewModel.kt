@@ -17,11 +17,16 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.usecase.DeleteFacilityUseCase
 import net.calvuz.qreport.client.facility.domain.usecase.GetFacilityWithIslandsUseCase
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandType
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandsByFacilityUseCase
+import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandTypesUseCase
 import net.calvuz.qreport.client.island.domain.usecase.UpdateMaintenanceUseCase
 import timber.log.Timber
 import javax.inject.Inject
@@ -65,7 +70,8 @@ data class FacilityDetailUiState(
     val filteredIslands: List<Island> = emptyList(),
     val operationalSummary: FacilityOperationalSummary? = null,
     val islandsNeedingMaintenance: List<Island> = emptyList(),
-    val islandsUnderWarranty: List<Island> = emptyList()
+    val islandsUnderWarranty: List<Island> = emptyList(),
+    val islandTypes: List<IslandTypeMaster> = emptyList()
 
 ) {
     val hasData: Boolean get() = facility != null
@@ -89,7 +95,8 @@ class FacilityDetailViewModel @Inject constructor(
     private val getIslandsByFacilityUseCase: GetIslandsByFacilityUseCase,
     private val deleteFacilityUseCase: DeleteFacilityUseCase,
     private val deleteIslandUseCase: DeleteIslandUseCase,
-    private val updateMaintenanceUseCase: UpdateMaintenanceUseCase
+    private val updateMaintenanceUseCase: UpdateMaintenanceUseCase,
+    private val observeIslandTypesUseCase: ObserveIslandTypesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(FacilityDetailUiState())
@@ -97,6 +104,10 @@ class FacilityDetailViewModel @Inject constructor(
 
     init {
         Timber.d("FacilityDetailViewModel initialized")
+        observeIslandTypesUseCase()
+            .catch { e -> Timber.e(e) }
+            .onEach { types -> _uiState.update { it.copy(islandTypes = types) } }
+            .launchIn(viewModelScope)
     }
 
     // =========================================================================

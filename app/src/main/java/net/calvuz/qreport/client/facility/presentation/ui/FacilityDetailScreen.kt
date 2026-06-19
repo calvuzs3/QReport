@@ -65,6 +65,7 @@ import net.calvuz.qreport.app.app.presentation.components.QReportErrorState
 import net.calvuz.qreport.app.app.presentation.components.QrLoadingState
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
 import net.calvuz.qreport.client.island.presentation.model.IslandPkg
 import net.calvuz.qreport.client.island.presentation.ui.components.IslandCard
@@ -259,6 +260,7 @@ private fun FacilityDetailContent(
             FacilityDetailTab.ISLANDS -> IslandsTabContent(
                 islands = uiState.islands,
                 allIslands = uiState.islands,
+                islandTypes = uiState.islandTypes,
                 onIslandClick = onIslandClick,
                 onViewAll = onViewAll,
                 onCreateIsland = onCreateIsland,
@@ -386,6 +388,7 @@ private fun InfoTabContent(
 private fun IslandsTabContent(
     islands: List<Island>,
     allIslands: List<Island>,
+    islandTypes: List<IslandTypeMaster>,
     onIslandClick: (String) -> Unit,
     onViewAll: () -> Unit,
     onCreateIsland: () -> Unit,
@@ -439,6 +442,7 @@ private fun IslandsTabContent(
                 items(items = islands, key = { it.id }) { island ->
                     IslandCard(
                         island = island,
+                        islandTypes = islandTypes,
                         variant = ListViewMode.COMPACT,
                         onClick = { onIslandClick(island.id) },
                         onEdit = { onEditIsland(island.id) },

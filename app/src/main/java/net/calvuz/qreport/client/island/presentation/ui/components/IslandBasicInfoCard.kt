@@ -16,9 +16,12 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
+import net.calvuz.qreport.client.island.presentation.model.resolveIslandTypeDisplay
 
 @Composable
-fun IslandBasicInfoCard(island: Island) {
+fun IslandBasicInfoCard(island: Island, islandTypes: List<IslandTypeMaster> = emptyList()) {
+    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes)
     Card {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
@@ -28,7 +31,7 @@ fun IslandBasicInfoCard(island: Island) {
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                IslandTypeIcon(islandType = island.islandType)
+                IslandTypeIcon(code = typeDisplay.code, label = typeDisplay.label)
             }
 
             HorizontalDivider()
@@ -40,7 +43,7 @@ fun IslandBasicInfoCard(island: Island) {
             )
             InfoRow(
                 label = stringResource(R.string.island_detail_info_field_type),
-                value = stringResource(island.islandType.labelResId),
+                value = typeDisplay.label,
                 icon = Icons.Outlined.Category
             )
             island.customName?.let {

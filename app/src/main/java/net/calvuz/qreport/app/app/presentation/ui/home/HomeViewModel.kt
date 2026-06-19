@@ -14,6 +14,8 @@ import net.calvuz.qreport.checkup.domain.usecase.CreateCheckUpUseCase
 import net.calvuz.qreport.checkup.domain.usecase.GetCheckUpsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
+import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandTypesUseCase
 import net.calvuz.qreport.client.island.domain.usecase.ObserveIslandsUseCase
 import timber.log.Timber
 import javax.inject.Inject
@@ -75,6 +77,7 @@ data class HomeUiState(
     // Islands
     val islandStats: DashboardIslandStatistics = DashboardIslandStatistics(),
     val recentIslands: List<Island> = emptyList(),
+    val islandTypes: List<IslandTypeMaster> = emptyList(),
 
     val error: UiText? = null
 )
@@ -89,6 +92,7 @@ class HomeViewModel @Inject constructor(
     private val createCheckUpUseCase: CreateCheckUpUseCase,
     private val observeClientsUseCase: ObserveClientsUseCase,
     private val observeIslandsUseCase: ObserveIslandsUseCase,
+    private val observeIslandTypesUseCase: ObserveIslandTypesUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -99,6 +103,7 @@ class HomeViewModel @Inject constructor(
         loadCheckupData()
         observeClients()
         observeIslands()
+        observeIslandTypes()
     }
 
     // =========================================================================
@@ -220,6 +225,14 @@ class HomeViewModel @Inject constructor(
 
                     _uiState.update { it.copy(islandStats = stats, recentIslands = recent) }
                 }
+        }
+    }
+
+    private fun observeIslandTypes() {
+        viewModelScope.launch {
+            observeIslandTypesUseCase()
+                .catch { e -> Timber.e(e, "Failed to observe island types") }
+                .collect { types -> _uiState.update { it.copy(islandTypes = types) } }
         }
     }
 }

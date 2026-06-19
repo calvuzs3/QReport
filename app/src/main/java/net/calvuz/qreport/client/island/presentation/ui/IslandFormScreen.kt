@@ -17,7 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.QrDatePickerField
-import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.model.IslandType
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -170,10 +170,10 @@ private fun IslandBasicInfoSection(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IslandTypeSelector(
-    availableTypes: List<IslandTypeEntity>,
+    availableTypes: List<IslandTypeMaster>,
     selectedTypeId: String?,
     fallbackType: IslandType,
-    onTypeSelected: (IslandTypeEntity) -> Unit
+    onTypeSelected: (IslandTypeMaster) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = availableTypes.find { it.id == selectedTypeId }

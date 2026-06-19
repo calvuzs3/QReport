@@ -4,6 +4,7 @@ import net.calvuz.qreport.checkup.domain.model.CheckUpIslandAssociation
 import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.island.domain.model.Island
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 
 data class AssociationDialogState(
     val showDialog: Boolean = false,
@@ -21,5 +22,6 @@ data class AssociationDialogState(
     // Islands
     val selectedFacilityId: String? = null,
     val availableIslands: List<Island> = emptyList(),
-    val isLoadingIslands: Boolean = false
+    val isLoadingIslands: Boolean = false,
+    val islandTypes: List<IslandTypeMaster> = emptyList()
 )

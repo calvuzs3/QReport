@@ -273,6 +273,7 @@ fun CheckUpDetailScreen(
                 availableClients = associationState.availableClients,
                 availableFacilities = associationState.availableFacilities,
                 availableIslands = associationState.availableIslands,
+                islandTypes = associationState.islandTypes,
                 selectedClientId = associationState.selectedClientId,
                 selectedFacilityId = associationState.selectedFacilityId,
                 isLoading = associationState.isLoadingClients ||

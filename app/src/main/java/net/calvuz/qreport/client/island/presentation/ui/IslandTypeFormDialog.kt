@@ -19,7 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
-import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 
 /**
  * Create/edit dialog for an island type. A dialog is enough here — the fields
@@ -27,7 +27,7 @@ import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
  */
 @Composable
 fun IslandTypeFormDialog(
-    editingType: IslandTypeEntity?,
+    editingType: IslandTypeMaster?,
     errorMessage: String?,
     onDismiss: () -> Unit,
     onSave: (

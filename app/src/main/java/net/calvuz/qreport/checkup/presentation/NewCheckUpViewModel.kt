@@ -16,10 +16,13 @@ import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
+import net.calvuz.qreport.client.island.data.local.mapper.parseByCode
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandInfo
 import net.calvuz.qreport.client.island.domain.model.IslandType
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
+import net.calvuz.qreport.client.island.domain.usecase.ObserveActiveIslandTypesUseCase
 import net.calvuz.qreport.settings.domain.model.TechnicianInfo
 import net.calvuz.qreport.app.error.domain.model.QrError
 import timber.log.Timber
@@ -33,7 +36,8 @@ data class NewCheckUpUiState(
     val address: String = "",
 
     // Island selection
-    val selectedIslandType: IslandType? = null,
+    val selectedIslandTypeMaster: IslandTypeMaster? = null,
+    val islandTypes: List<IslandTypeMaster> = emptyList(),
 
     // Island info
     val serialNumber: String = "",
@@ -59,7 +63,7 @@ data class NewCheckUpUiState(
     val createdCheckUpId: String? = null
 ) {
     val canCreate: Boolean
-        get() = clientName.isNotBlank() && selectedIslandType != null
+        get() = clientName.isNotBlank() && selectedIslandTypeMaster != null
 }
 
 @HiltViewModel
@@ -69,6 +73,7 @@ class NewCheckUpViewModel @Inject constructor(
     private val clientRepository: ClientRepository,
     private val facilityRepository: FacilityRepository,
     private val islandRepository: IslandRepository,
+    private val observeActiveIslandTypesUseCase: ObserveActiveIslandTypesUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -77,6 +82,12 @@ class NewCheckUpViewModel @Inject constructor(
 
     init {
         Timber.d("NewCheckUpViewModel initialized")
+
+        viewModelScope.launch {
+            observeActiveIslandTypesUseCase()
+                .catch { e -> Timber.e(e) }
+                .collect { types -> _uiState.value = _uiState.value.copy(islandTypes = types) }
+        }
 
         val islandId = savedStateHandle.get<String>("islandId")
         if (!islandId.isNullOrBlank()) {
@@ -104,8 +115,8 @@ class NewCheckUpViewModel @Inject constructor(
     // ISLAND SELECTION
     // ============================================================
 
-    fun selectIslandType(islandType: IslandType) {
-        _uiState.value = _uiState.value.copy(selectedIslandType = islandType)
+    fun selectIslandType(islandTypeMaster: IslandTypeMaster) {
+        _uiState.value = _uiState.value.copy(selectedIslandTypeMaster = islandTypeMaster)
     }
 
     // ============================================================
@@ -213,11 +224,13 @@ class NewCheckUpViewModel @Inject constructor(
     }
 
     private fun prefillFromSelection(client: Client, facility: Facility, island: Island) {
+        val types = _uiState.value.islandTypes
+        val master = types.find { it.id == island.islandTypeId } ?: types.find { it.code == island.islandType.code }
         _uiState.value = _uiState.value.copy(
             clientName = client.companyName,
             site = facility.name,
             address = facility.address?.toDisplayString() ?: "",
-            selectedIslandType = island.islandType,
+            selectedIslandTypeMaster = master,
             serialNumber = island.serialNumber,
             model = island.modelNumber ?: "",
             installationDate = island.installationDate?.toItalianDate() ?: "",
@@ -250,7 +263,8 @@ class NewCheckUpViewModel @Inject constructor(
 
             try {
                 val header = createCheckUpHeader(currentState)
-                val islandType = currentState.selectedIslandType!!
+                val islandTypeMaster = currentState.selectedIslandTypeMaster!!
+                val islandType = IslandType.parseByCode(islandTypeMaster.code)
 
                 Timber.d("Creating check-up for client: ${currentState.clientName}, island: $islandType")
 
@@ -258,6 +272,7 @@ class NewCheckUpViewModel @Inject constructor(
                 val result = createCheckUpUseCase(
                     header = header,
                     islandType = islandType,
+                    islandTypeId = islandTypeMaster.id,
                     includeTemplateItems = true
                 )
 

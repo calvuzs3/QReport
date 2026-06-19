@@ -1,7 +1,7 @@
 package net.calvuz.qreport.client.island.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
-import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
+import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.repository.IslandTypeMasterRepository
 import javax.inject.Inject
 
@@ -12,5 +12,5 @@ import javax.inject.Inject
 class ObserveIslandTypesUseCase @Inject constructor(
     private val repository: IslandTypeMasterRepository
 ) {
-    operator fun invoke(): Flow<List<IslandTypeEntity>> = repository.observeIslandTypes()
+    operator fun invoke(): Flow<List<IslandTypeMaster>> = repository.observeIslandTypes()
 }
