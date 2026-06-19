@@ -3,7 +3,6 @@ package net.calvuz.qreport.checkup.domain.model
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 import net.calvuz.qreport.checkup.domain.model.spare.SparePart
-import net.calvuz.qreport.client.island.domain.model.IslandType
 
 /**
  * Check-up principale
@@ -13,7 +12,8 @@ import net.calvuz.qreport.client.island.domain.model.IslandType
 data class CheckUp(
     val id: String,
     val header: CheckUpHeader,
-    val islandType: IslandType,
+    /** Frozen display label of the island type at creation time (e.g. "POLY Move") — never re-queried from the master. */
+    val islandType: String,
     val islandTypeId: String? = null,
     val status: CheckUpStatus,
     val checkItems: List<CheckItem> = emptyList(),

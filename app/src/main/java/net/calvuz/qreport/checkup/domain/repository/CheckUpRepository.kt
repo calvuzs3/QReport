@@ -5,7 +5,6 @@ import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.checkup.domain.model.spare.SparePart
 
 interface CheckUpRepository {
@@ -18,7 +17,7 @@ interface CheckUpRepository {
 
     fun getCheckUpsByStatus(status: CheckUpStatus): Flow<List<CheckUp>>
 
-    fun getCheckUpsByIslandType(islandType: IslandType): Flow<List<CheckUp>>
+    fun getCheckUpsByIslandType(islandType: String): Flow<List<CheckUp>>
 
     suspend fun createCheckUp(checkUp: CheckUp): String
 

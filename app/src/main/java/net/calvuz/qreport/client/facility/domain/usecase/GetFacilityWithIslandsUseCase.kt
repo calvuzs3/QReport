@@ -40,7 +40,7 @@ class GetFacilityWithIslandsUseCase @Inject constructor(
 
         val islands = islandRepository.getIslandsByFacility(facilityId).getOrElse { emptyList() }
             .sortedWith(compareByDescending<Island> { it.isActive }
-                .thenBy { typeLabelsById[it.islandTypeId] ?: it.islandType.code }
+                .thenBy { typeLabelsById[it.islandTypeId] ?: it.islandType }
                 .thenBy { (it.customName ?: it.serialNumber).lowercase() })
 
         Timber.d("Loaded facility $facilityId with ${islands.size} islands")

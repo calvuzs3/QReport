@@ -22,7 +22,7 @@ class GetIslandWithUnitsUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(islandId: String): QrResult<IslandWithUnits, QrError.IslandError> {
 
-        Timber.d("Get island with units")
+        Timber.v("Get island with units")
 
         // Check input
         if (islandId.isBlank()) {
@@ -32,8 +32,14 @@ class GetIslandWithUnitsUseCase @Inject constructor(
 
         // Get
         val island = repository.getIslandById(islandId).fold(
-            onSuccess = { it ?: return QrResult.Error(QrError.IslandError.NotFound()) },
-            onFailure = { return QrResult.Error(QrError.IslandError.LoadError(it.message)) }
+            onSuccess = {
+                if (it == null) {
+                    Timber.d("Island not found for id $islandId")
+                    return QrResult.Error(QrError.IslandError.NotFound())
+                } else it },
+            onFailure = {
+                Timber.d(it, "Failed to load island")
+                return QrResult.Error(QrError.IslandError.LoadError(it.message)) }
         )
 
         val units = unitRepository.getUnitsByIsland(islandId)

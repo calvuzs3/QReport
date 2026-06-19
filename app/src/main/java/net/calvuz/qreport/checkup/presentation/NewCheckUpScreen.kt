@@ -369,7 +369,7 @@ private fun IslandTypeOption(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Icon(
-                imageVector = IslandTypeIconRegistry.iconFor(islandType.iconName ?: islandType.code),
+                imageVector = IslandTypeIconRegistry.iconFor(islandType.label),
                 contentDescription = null,
                 tint = if (isSelected) {
                     MaterialTheme.colorScheme.primary

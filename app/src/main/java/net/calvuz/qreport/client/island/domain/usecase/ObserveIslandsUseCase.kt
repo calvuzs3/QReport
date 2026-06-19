@@ -27,7 +27,7 @@ class ObserveIslandsUseCase @Inject constructor(
         }
         return flow.map { islands ->
             islands.sortedWith(
-                compareBy<Island> { it.islandType.name }
+                compareBy<Island> { it.islandType }
                     .thenBy { it.serialNumber }
             )
         }

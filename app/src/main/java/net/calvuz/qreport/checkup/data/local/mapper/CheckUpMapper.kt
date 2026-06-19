@@ -7,7 +7,6 @@ import net.calvuz.qreport.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.domain.model.ClientInfo
 import net.calvuz.qreport.client.island.domain.model.IslandInfo
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.settings.domain.model.TechnicianInfo
 
 // ===============================
@@ -44,7 +43,7 @@ fun CheckUpEntity.toDomain(): CheckUp {
             checkUpDate = this.checkUpDate,
             notes = this.headerNotes
         ),
-        islandType = IslandType.entries.find { it.name == this.islandType } ?: IslandType.POLY_MOVE,
+        islandType = this.islandType,
         islandTypeId = this.islandTypeId,
         status = CheckUpStatus.valueOf(this.status),
         checkItems = emptyList(), // Populated separately when needed
@@ -81,7 +80,7 @@ fun CheckUp.toEntity(): CheckUpEntity {
         // CheckUp data
         checkUpDate = this.header.checkUpDate,
         headerNotes = this.header.notes,
-        islandType = this.islandType.name,
+        islandType = this.islandType,
         islandTypeId = this.islandTypeId,
         status = this.status.name,
         createdAt = this.createdAt,

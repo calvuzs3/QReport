@@ -16,10 +16,8 @@ import net.calvuz.qreport.client.client.domain.model.Client
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import net.calvuz.qreport.client.facility.domain.model.Facility
 import net.calvuz.qreport.client.facility.domain.repository.FacilityRepository
-import net.calvuz.qreport.client.island.data.local.mapper.parseByCode
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandInfo
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import net.calvuz.qreport.client.island.domain.usecase.ObserveActiveIslandTypesUseCase
@@ -225,7 +223,7 @@ class NewCheckUpViewModel @Inject constructor(
 
     private fun prefillFromSelection(client: Client, facility: Facility, island: Island) {
         val types = _uiState.value.islandTypes
-        val master = types.find { it.id == island.islandTypeId } ?: types.find { it.code == island.islandType.code }
+        val master = types.find { it.id == island.islandTypeId } ?: types.find { it.label == island.islandType }
         _uiState.value = _uiState.value.copy(
             clientName = client.companyName,
             site = facility.name,
@@ -264,7 +262,7 @@ class NewCheckUpViewModel @Inject constructor(
             try {
                 val header = createCheckUpHeader(currentState)
                 val islandTypeMaster = currentState.selectedIslandTypeMaster!!
-                val islandType = IslandType.parseByCode(islandTypeMaster.code)
+                val islandType = islandTypeMaster.label
 
                 Timber.d("Creating check-up for client: ${currentState.clientName}, island: $islandType")
 

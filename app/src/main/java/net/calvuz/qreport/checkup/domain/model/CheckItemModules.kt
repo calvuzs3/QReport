@@ -1,7 +1,6 @@
 package net.calvuz.qreport.checkup.domain.model
 
 import net.calvuz.qreport.app.app.domain.model.CriticalityLevel
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.checkup.domain.model.module.ModuleType
 
 /**
@@ -9,13 +8,34 @@ import net.calvuz.qreport.checkup.domain.model.module.ModuleType
  *
  * AGGIORNATO per usare:
  * - ModuleType enum effettivamente definiti
- * - IslandType della famiglia POLY (MOVE, CAST, EBT, TAG_BLE, TAG_FC, TAG_V, SAMPLE)
+ * - Tipi isola della famiglia POLY, identificati per label (es. "POLY Move") invece
+ *   del vecchio enum IslandType — coerente con IslandTypeMaster/IslandTypeIconRegistry
  * - CriticalityLevel corretto
  *
  * Basato sulla struttura esistente ma completamente allineato
  * con gli enum domain corretti per la famiglia POLY.
  */
 object CheckItemModules {
+
+    // ============================================================
+    // LABEL DEI TIPI ISOLA POLY (storiche, seedate anche server-side)
+    // ============================================================
+
+    private const val POLY_MOVE = "POLY Move"
+    private const val POLY_CAST = "POLY Cast"
+    private const val POLY_EBT = "POLY EBT"
+    private const val POLY_TAG_BLE = "POLY Tag BLE"
+    private const val POLY_TAG_FC = "POLY Tag FC"
+    private const val POLY_TAG_V = "POLY Tag V"
+    private const val POLY_SAMPLE = "POLY Sample"
+    private const val POLY_WELD = "POLY Weld"
+    private const val POLY_PAINT = "POLY Paint"
+    private const val OTHER = "Altro"
+
+    private val ALL_POLY_TYPES = listOf(
+        POLY_MOVE, POLY_CAST, POLY_EBT, POLY_TAG_BLE, POLY_TAG_FC,
+        POLY_TAG_V, POLY_SAMPLE, POLY_WELD, POLY_PAINT, OTHER
+    )
 
     // ============================================================
     // MODULI BASE COMUNI (applicabili a tutte le isole POLY)
@@ -29,7 +49,7 @@ object CheckItemModules {
             description = "Controllo integrità barriere fotoelettriche",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 1,
-            islandTypes = IslandType.entries // Applicabile a tutte le isole POLY
+            islandTypes = ALL_POLY_TYPES // Applicabile a tutte le isole POLY
         ),
         CheckItemTemplate(
             id = "SAF_002",
@@ -38,7 +58,7 @@ object CheckItemModules {
             description = "Verifica funzionamento pulsante di emergenza",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 2,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "SAF_003",
@@ -47,7 +67,7 @@ object CheckItemModules {
             description = "Controllo chiusura porte di accesso",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 3,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "SAF_004",
@@ -56,7 +76,7 @@ object CheckItemModules {
             description = "Verifica funzionamento torretta luminosa",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 4,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "SAF_005",
@@ -65,7 +85,7 @@ object CheckItemModules {
             description = "Test allarmi sonori",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 5,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -77,7 +97,7 @@ object CheckItemModules {
             description = "Controllo giochi meccanici assi robot",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 10,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "MEC_002",
@@ -86,7 +106,7 @@ object CheckItemModules {
             description = "Verifica lubrificazione riduttori",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 11,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "MEC_003",
@@ -95,7 +115,7 @@ object CheckItemModules {
             description = "Controllo usura utensili",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 12,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "MEC_004",
@@ -104,7 +124,7 @@ object CheckItemModules {
             description = "Controllo stabilità strutture meccaniche",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 13,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -116,7 +136,7 @@ object CheckItemModules {
             description = "Verifica tensioni di alimentazione",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 20,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "ELE_002",
@@ -125,7 +145,7 @@ object CheckItemModules {
             description = "Controllo integrità cavi di potenza",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 21,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "ELE_003",
@@ -134,7 +154,7 @@ object CheckItemModules {
             description = "Verifica connessioni morsettiere",
             criticality = CriticalityLevel.ROUTINE,
             orderIndex = 22,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "ELE_004",
@@ -143,7 +163,7 @@ object CheckItemModules {
             description = "Test interruttori magnetotermici",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 23,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "ELE_005",
@@ -152,7 +172,7 @@ object CheckItemModules {
             description = "Verifica comunicazione fieldbus",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 24,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -164,7 +184,7 @@ object CheckItemModules {
             description = "Verifica pressione aria compressa (6-8 bar)",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 30,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "PNE_002",
@@ -173,7 +193,7 @@ object CheckItemModules {
             description = "Controllo filtri aria e drenaggio condensa",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 31,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "PNE_003",
@@ -182,7 +202,7 @@ object CheckItemModules {
             description = "Test cilindri pneumatici e attuatori",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 32,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "PNE_004",
@@ -191,7 +211,7 @@ object CheckItemModules {
             description = "Controllo tubazioni pneumatiche e raccordi",
             criticality = CriticalityLevel.ROUTINE,
             orderIndex = 33,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -203,7 +223,7 @@ object CheckItemModules {
             description = "Backup programmi robot",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 40,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "SW_002",
@@ -212,7 +232,7 @@ object CheckItemModules {
             description = "Verifica versioni firmware",
             criticality = CriticalityLevel.ROUTINE,
             orderIndex = 41,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "SW_003",
@@ -221,7 +241,7 @@ object CheckItemModules {
             description = "Controllo parametri robot",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 42,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -237,7 +257,7 @@ object CheckItemModules {
             description = "Controllo stato tubi aria e raccordi tool",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 50,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "RT_002",
@@ -246,7 +266,7 @@ object CheckItemModules {
             description = "Verifica usura chele/gommini pinza",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 51,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "RT_003",
@@ -255,7 +275,7 @@ object CheckItemModules {
             description = "Controllo connessioni elettriche tool",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 52,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -267,7 +287,7 @@ object CheckItemModules {
             description = "Controllo perdite olio riduttori robot",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 60,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "ROB_002",
@@ -276,7 +296,7 @@ object CheckItemModules {
             description = "Controllo guaine e festoni cavi robot",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 61,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "ROB_003",
@@ -285,7 +305,7 @@ object CheckItemModules {
             description = "Controllo ore lavoro robot",
             criticality = CriticalityLevel.ROUTINE,
             orderIndex = 62,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -297,7 +317,7 @@ object CheckItemModules {
             description = "Controllo filtri recupero condensa",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 70,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "PS_002",
@@ -306,7 +326,7 @@ object CheckItemModules {
             description = "Pulizia generale isola e container",
             criticality = CriticalityLevel.ROUTINE,
             orderIndex = 71,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -318,7 +338,7 @@ object CheckItemModules {
             description = "Esecuzione ciclo simulazione",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 80,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         ),
         CheckItemTemplate(
             id = "FT_002",
@@ -327,7 +347,7 @@ object CheckItemModules {
             description = "Controllo comandi manuali da HMI",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 81,
-            islandTypes = IslandType.entries
+            islandTypes = ALL_POLY_TYPES
         )
     )
 
@@ -343,7 +363,7 @@ object CheckItemModules {
             description = "Controllo presenza detriti rulliera",
             criticality = CriticalityLevel.ROUTINE,
             orderIndex = 100,
-            islandTypes = listOf(IslandType.POLY_MOVE) // Specifico per POLY_MOVE
+            islandTypes = listOf(POLY_MOVE) // Specifico per POLY Move
         ),
         CheckItemTemplate(
             id = "CS_002",
@@ -352,7 +372,7 @@ object CheckItemModules {
             description = "Controllo tensione catene trasporto",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 101,
-            islandTypes = listOf(IslandType.POLY_MOVE)
+            islandTypes = listOf(POLY_MOVE)
         )
     )
 
@@ -364,7 +384,7 @@ object CheckItemModules {
             description = "Pulizia lenti sistema visione",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 110,
-            islandTypes = listOf(IslandType.POLY_TAG_V) // Specifico per TAG_V
+            islandTypes = listOf(POLY_TAG_V) // Specifico per Tag V
         ),
         CheckItemTemplate(
             id = "VS_002",
@@ -373,7 +393,7 @@ object CheckItemModules {
             description = "Controllo illuminazione sistema visione",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 111,
-            islandTypes = listOf(IslandType.POLY_TAG_V)
+            islandTypes = listOf(POLY_TAG_V)
         )
     )
 
@@ -385,7 +405,7 @@ object CheckItemModules {
             description = "Controllo integrità lance EBT",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 120,
-            islandTypes = listOf(IslandType.POLY_EBT) // Specifico per EBT
+            islandTypes = listOf(POLY_EBT) // Specifico per EBT
         ),
         CheckItemTemplate(
             id = "LS_002",
@@ -394,7 +414,7 @@ object CheckItemModules {
             description = "Verifica magazzino lance",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 121,
-            islandTypes = listOf(IslandType.POLY_EBT)
+            islandTypes = listOf(POLY_EBT)
         )
     )
 
@@ -406,7 +426,7 @@ object CheckItemModules {
             description = "Pulizia magazzini cartucce",
             criticality = CriticalityLevel.ROUTINE,
             orderIndex = 130,
-            islandTypes = listOf(IslandType.POLY_SAMPLE) // Specifico per SAMPLE
+            islandTypes = listOf(POLY_SAMPLE) // Specifico per Sample
         ),
         CheckItemTemplate(
             id = "CTS_002",
@@ -415,7 +435,7 @@ object CheckItemModules {
             description = "Controllo perdite aria magazzini cartucce",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 131,
-            islandTypes = listOf(IslandType.POLY_SAMPLE)
+            islandTypes = listOf(POLY_SAMPLE)
         )
     )
 
@@ -427,7 +447,7 @@ object CheckItemModules {
             description = "Pulizia generale macchina etichettatura",
             criticality = CriticalityLevel.ROUTINE,
             orderIndex = 140,
-            islandTypes = listOf(IslandType.POLY_TAG_BLE, IslandType.POLY_TAG_FC, IslandType.POLY_TAG_V)
+            islandTypes = listOf(POLY_TAG_BLE, POLY_TAG_FC, POLY_TAG_V)
         ),
         CheckItemTemplate(
             id = "LM_002",
@@ -436,7 +456,7 @@ object CheckItemModules {
             description = "Pulizia lente stampante",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 141,
-            islandTypes = listOf(IslandType.POLY_TAG_BLE, IslandType.POLY_TAG_FC, IslandType.POLY_TAG_V)
+            islandTypes = listOf(POLY_TAG_BLE, POLY_TAG_FC, POLY_TAG_V)
         )
     )
 
@@ -448,7 +468,7 @@ object CheckItemModules {
             description = "Controllo vibratore circolare",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 150,
-            islandTypes = listOf(IslandType.POLY_TAG_BLE) // Specifico per TAG_BLE
+            islandTypes = listOf(POLY_TAG_BLE) // Specifico per Tag BLE
         ),
         CheckItemTemplate(
             id = "VIB_002",
@@ -457,7 +477,7 @@ object CheckItemModules {
             description = "Controllo vibratore lineare",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 151,
-            islandTypes = listOf(IslandType.POLY_TAG_BLE, IslandType.POLY_TAG_V)
+            islandTypes = listOf(POLY_TAG_BLE, POLY_TAG_V)
         )
     )
 
@@ -469,7 +489,7 @@ object CheckItemModules {
             description = "Controllo coordinamento robot multipli",
             criticality = CriticalityLevel.CRITICAL,
             orderIndex = 160,
-            islandTypes = listOf(IslandType.POLY_TAG_V) // TAG_V ha robot duali
+            islandTypes = listOf(POLY_TAG_V) // Tag V ha robot duali
         ),
         CheckItemTemplate(
             id = "DR_002",
@@ -478,7 +498,7 @@ object CheckItemModules {
             description = "Verifica sincronizzazione robot esterno/interno",
             criticality = CriticalityLevel.IMPORTANT,
             orderIndex = 161,
-            islandTypes = listOf(IslandType.POLY_TAG_V)
+            islandTypes = listOf(POLY_TAG_V)
         )
     )
 
@@ -487,9 +507,10 @@ object CheckItemModules {
     // ============================================================
 
     /**
-     * Restituisce tutti i template per un tipo di isola POLY
+     * Restituisce tutti i template per un tipo di isola, identificato per label
+     * (es. "POLY Move", coerente con [net.calvuz.qreport.client.island.domain.model.IslandTypeMaster.label]).
      */
-    fun getTemplatesForIslandType(islandType: IslandType): List<CheckItemTemplate> {
+    fun getTemplatesForIslandType(islandType: String): List<CheckItemTemplate> {
         // Moduli base comuni a tutte le isole POLY
         val baseModules = SAFETY_MODULE + MECHANICAL_MODULE + ELECTRICAL_MODULE +
                 PNEUMATIC_MODULE + SOFTWARE_MODULE + ROBOT_TOOL_MODULE +
@@ -497,16 +518,16 @@ object CheckItemModules {
 
         // Moduli specifici per tipo di isola
         val specificModules = when (islandType) {
-            IslandType.POLY_MOVE -> CONVEYOR_SYSTEMS_MODULE
-            IslandType.POLY_CAST -> emptyList() // Cast può usare solo moduli base
-            IslandType.POLY_EBT -> LANCE_STORAGE_MODULE
-            IslandType.POLY_TAG_BLE -> LABELING_MACHINE_MODULE + VIBRATORS_MODULE
-            IslandType.POLY_TAG_FC -> LABELING_MACHINE_MODULE
-            IslandType.POLY_TAG_V -> VISION_SYSTEM_MODULE + LABELING_MACHINE_MODULE + VIBRATORS_MODULE + DUAL_ROBOT_MODULE
-            IslandType.POLY_SAMPLE -> CARTRIDGE_SYSTEMS_MODULE
-            IslandType.POLY_WELD -> emptyList() // Weld può usare solo moduli base
-            IslandType.POLY_PAINT -> emptyList() // Paint può usare solo moduli base
-            IslandType.OTHER -> emptyList() // Tipologia non classificata, solo moduli base
+            POLY_MOVE -> CONVEYOR_SYSTEMS_MODULE
+            POLY_CAST -> emptyList() // Cast può usare solo moduli base
+            POLY_EBT -> LANCE_STORAGE_MODULE
+            POLY_TAG_BLE -> LABELING_MACHINE_MODULE + VIBRATORS_MODULE
+            POLY_TAG_FC -> LABELING_MACHINE_MODULE
+            POLY_TAG_V -> VISION_SYSTEM_MODULE + LABELING_MACHINE_MODULE + VIBRATORS_MODULE + DUAL_ROBOT_MODULE
+            POLY_SAMPLE -> CARTRIDGE_SYSTEMS_MODULE
+            POLY_WELD -> emptyList() // Weld può usare solo moduli base
+            POLY_PAINT -> emptyList() // Paint può usare solo moduli base
+            else -> emptyList() // Tipologia non classificata (es. "Altro" o custom), solo moduli base
         }
 
         return (baseModules + specificModules)
@@ -518,7 +539,7 @@ object CheckItemModules {
      * Ottieni tutti i template disponibili
      */
     fun getAllTemplates(): List<CheckItemTemplate> {
-        return IslandType.entries.flatMap { islandType ->
+        return ALL_POLY_TYPES.flatMap { islandType ->
             getTemplatesForIslandType(islandType)
         }.distinctBy { it.id }
     }
@@ -528,8 +549,8 @@ object CheckItemModules {
      */
     fun getTemplateStats(): Map<String, Any> = mapOf(
         "totalTemplates" to getAllTemplates().size,
-        "byIslandType" to IslandType.entries.associate { type ->
-            type.name to getTemplatesForIslandType(type).size
+        "byIslandType" to ALL_POLY_TYPES.associateWith { type ->
+            getTemplatesForIslandType(type).size
         },
         "byModule" to getAllTemplates().groupBy { it.moduleType }.mapValues { it.value.size },
         "byCriticality" to getAllTemplates().groupBy { it.criticality }.mapValues { it.value.size }

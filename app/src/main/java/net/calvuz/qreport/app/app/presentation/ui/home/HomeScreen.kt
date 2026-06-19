@@ -205,7 +205,7 @@ private fun HomeHeader(@Suppress("unused") onRefresh: () -> Unit, @Suppress("unu
  *
  * ┌─────────────────────────────────────┐
  * │ [Icon  Title            Apri →    ] │  ← tile: surfaceContainerHigh
- * │  [chip][chip][content]                 │
+ * │  [chip][chip][content]              │
  * │ ─────────────────────────────────── │
  * │  preview row 1                      │
  * └─────────────────────────────────────┘

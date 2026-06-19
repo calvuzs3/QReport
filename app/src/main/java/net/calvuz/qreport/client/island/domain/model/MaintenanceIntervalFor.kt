@@ -1,14 +1,8 @@
 package net.calvuz.qreport.client.island.domain.model
 
-fun maintenanceIntervalFor(type: IslandType): Int = when (type) {
-    IslandType.POLY_MOVE -> 180
-    IslandType.POLY_CAST -> 180
-    IslandType.POLY_EBT -> 180
-    IslandType.POLY_TAG_BLE -> 90
-    IslandType.POLY_TAG_FC -> 180
-    IslandType.POLY_TAG_V -> 180
-    IslandType.POLY_SAMPLE -> 180
-    IslandType.POLY_WELD -> 180
-    IslandType.POLY_PAINT -> 180
-    IslandType.OTHER -> 180
-}
+/**
+ * Fallback maintenance interval (days) when [IslandTypeMaster.maintenanceIntervalDays]
+ * can't be resolved for an island's type — only "POLY Tag BLE" historically used a
+ * shorter interval, every other POLY type defaults to 180 days.
+ */
+fun maintenanceIntervalFor(label: String): Int = if (label == "POLY Tag BLE") 90 else 180

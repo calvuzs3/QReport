@@ -18,7 +18,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.components.QrDatePickerField
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
-import net.calvuz.qreport.client.island.domain.model.IslandType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -172,12 +171,12 @@ private fun IslandBasicInfoSection(
 private fun IslandTypeSelector(
     availableTypes: List<IslandTypeMaster>,
     selectedTypeId: String?,
-    fallbackType: IslandType,
+    fallbackType: String,
     onTypeSelected: (IslandTypeMaster) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selected = availableTypes.find { it.id == selectedTypeId }
-    val selectedLabel = selected?.label ?: stringResource(fallbackType.labelResId)
+    val selectedLabel = selected?.label ?: fallbackType
 
     ExposedDropdownMenuBox(
         expanded = expanded,

@@ -111,7 +111,7 @@ class TextReportGenerator @Inject constructor(
         if (clientInfo.address.isNotBlank()) {
             appendLine("Indirizzo:            ${clientInfo.address}")
         }
-        appendLine("Tipo Isola:           ${context.getString(checkup.islandType.labelResId)}")
+        appendLine("Tipo Isola:           ${checkup.islandType}")
         appendLine("Serial Isola:         ${checkup.header.islandInfo.serialNumber}")
         if (checkup.header.islandInfo.model.isNotBlank()) {
             appendLine("Modello Isola:        ${checkup.header.islandInfo.model}")

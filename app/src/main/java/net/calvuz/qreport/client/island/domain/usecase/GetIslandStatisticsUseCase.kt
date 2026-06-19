@@ -7,7 +7,6 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandOperationalStatus
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import timber.log.Timber
 import javax.inject.Inject
@@ -131,7 +130,7 @@ class GetIslandStatisticsUseCase @Inject constructor(
 data class SingleIslandStatistics(
     val islandId: String,
     val serialNumber: String,
-    val islandType: IslandType,
+    val islandType: String,
     val operationalStats: OperationalStats,
     val maintenanceStats: MaintenanceStats,
     val warrantyStats: WarrantyStats,

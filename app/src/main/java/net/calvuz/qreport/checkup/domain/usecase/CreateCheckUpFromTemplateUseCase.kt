@@ -7,7 +7,6 @@ import net.calvuz.qreport.checkup.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.checkup.domain.model.module.ModuleType
 import net.calvuz.qreport.checkup.domain.repository.CheckUpRepository
 import java.util.UUID
@@ -18,7 +17,7 @@ import javax.inject.Inject
  *
  * AGGIORNATO per:
  * - Usare solo ModuleType definiti in ModuleType.kt
- * - Supportare solo IslandType della famiglia POLY
+ * - Supportare solo i tipi isola della famiglia POLY
  * - Allinearsi con CheckItemModules esistente
  */
 class CreateCheckUpFromTemplateUseCase @Inject constructor(
@@ -26,7 +25,7 @@ class CreateCheckUpFromTemplateUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         header: CheckUpHeader,
-        islandType: IslandType,
+        islandType: String,
         selectedTemplateIds: List<String>
     ): Result<String> {
         return try {

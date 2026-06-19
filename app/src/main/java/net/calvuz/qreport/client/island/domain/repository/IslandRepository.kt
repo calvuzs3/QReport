@@ -4,7 +4,6 @@ import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
 
 interface IslandRepository {
 
@@ -39,7 +38,7 @@ interface IslandRepository {
 
     // ===== SEARCH & FILTER =====
 
-    suspend fun getIslandsByType(islandType: IslandType): Result<List<Island>>
+    suspend fun getIslandsByType(islandType: String): Result<List<Island>>
     suspend fun getIslandBySerialNumber(serialNumber: String): Result<Island?>
     suspend fun searchIslands(query: String): Result<List<Island>>
 
@@ -65,8 +64,8 @@ interface IslandRepository {
 
     suspend fun getActiveIslandsCount(): Result<Int>
     suspend fun getIslandsCountByFacility(facilityId: String): Result<Int>
-    suspend fun getIslandsCountByType(islandType: IslandType): Result<Int>
-    suspend fun getIslandTypeStats(): Result<Map<IslandType, Int>>
+    suspend fun getIslandsCountByType(islandType: String): Result<Int>
+    suspend fun getIslandTypeStats(): Result<Map<String, Int>>
     suspend fun getMaintenanceStats(): Result<Map<String, Int>>
 
     // ===== CLIENT AGGREGATION =====

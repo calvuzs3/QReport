@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 /**
  * Domain model for a user-managed island type master record (the `island_types` table).
  *
- * Distinct from the legacy [IslandType] enum: this is the source of truth for
+ * Distinct from the legacy IslandType enum: this is the source of truth for
  * display (label/icon) and maintenance interval going forward, and supports
  * custom types created from Settings.
  *

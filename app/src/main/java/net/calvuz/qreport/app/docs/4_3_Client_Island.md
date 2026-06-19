@@ -240,8 +240,8 @@ data class IslandEntity(
     val commissioningNumber: String? = null,
 
     // ===== ISLAND TYPE =====
-    @ColumnInfo(name = "island_type")
-    val islandType: String,             // IslandType.name
+    @ColumnInfo(name = "island_type_id")
+    val islandTypeId: String,             // IslandTypeMaster.id
 
     // ===== TECHNICAL DETAILS =====
     @ColumnInfo(name = "serial_number")

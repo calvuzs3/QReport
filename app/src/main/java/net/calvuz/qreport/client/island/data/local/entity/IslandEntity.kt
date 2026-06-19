@@ -52,7 +52,7 @@ data class IslandEntity(
     // ===== ISLAND TYPE =====
 
     @ColumnInfo(name = "island_type")
-    val islandType: String, // IslandType.name (kept for backward compat)
+    val islandType: String, // frozen display label (kept for backward compat)
 
     @ColumnInfo(name = "island_type_id")
     val islandTypeId: String? = null, // FK → island_types.id (nullable during Expand phase)

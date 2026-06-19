@@ -31,7 +31,7 @@ fun IslandBasicInfoCard(island: Island, islandTypes: List<IslandTypeMaster> = em
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
-                IslandTypeIcon(code = typeDisplay.code, label = typeDisplay.label)
+                IslandTypeIcon(label = typeDisplay.label)
             }
 
             HorizontalDivider()

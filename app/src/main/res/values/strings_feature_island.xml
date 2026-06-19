@@ -2,31 +2,6 @@
 <resources>
 
     <!-- ======================================================= -->
-    <!-- IslandType labels and descriptions                       -->
-    <!-- ======================================================= -->
-
-    <string name="island_type_poly_move">POLY Move</string>
-    <string name="island_type_poly_move_desc">Sistema robotizzato per movimentazione automatizzata</string>
-    <string name="island_type_poly_cast">POLY Cast</string>
-    <string name="island_type_poly_cast_desc">Sistema robotizzato per casting e lavorazioni di precisione</string>
-    <string name="island_type_poly_ebt">POLY EBT</string>
-    <string name="island_type_poly_ebt_desc">Sistema robotizzato con tecnologia EBT e gestione lance</string>
-    <string name="island_type_poly_tag_ble">POLY Tag BLE</string>
-    <string name="island_type_poly_tag_ble_desc">Sistema robotizzato per etichettatura con tecnologia BLE</string>
-    <string name="island_type_poly_tag_fc">POLY Tag FC</string>
-    <string name="island_type_poly_tag_fc_desc">Sistema robotizzato per etichettatura FC con QR Code</string>
-    <string name="island_type_poly_tag_v">POLY Tag V</string>
-    <string name="island_type_poly_tag_v_desc">Sistema robotizzato per etichettatura con visione artificiale</string>
-    <string name="island_type_poly_sample">POLY Sample</string>
-    <string name="island_type_poly_sample_desc">Sistema robotizzato per campionamento e analisi</string>
-    <string name="island_type_poly_weld">POLY Weld</string>
-    <string name="island_type_poly_weld_desc">Isola di saldatura</string>
-    <string name="island_type_poly_paint">POLY Paint</string>
-    <string name="island_type_poly_paint_desc">Isola di verniciatura</string>
-    <string name="island_type_other">Altro</string>
-    <string name="island_type_other_desc">Tipologia non classificata</string>
-
-    <!-- ======================================================= -->
     <!-- IslandOperationalStatus labels                           -->
     <!-- ======================================================= -->
 
@@ -254,12 +229,6 @@
     <string name="err_island_detail_maintenance">Errore aggiornamento manutenzione</string>
     <string name="err_island_detail_unit_delete">Errore eliminazione unità</string>
 
-    <!-- Shared actions -->
-<!--    <string name="action_dismiss">Chiudi</string>-->
-<!--    <string name="action_cancel">Annulla</string>-->
-<!--    <string name="action_edit">Modifica</string>-->
-<!--    <string name="action_delete">Elimina</string>-->
-<!--    <string name="action_save">Salva</string>-->
 
     <!-- IslandCard -->
     <string name="island_card_delete_dialog_title">Elimina Isola</string>

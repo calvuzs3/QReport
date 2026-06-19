@@ -7,7 +7,6 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import net.calvuz.qreport.client.island.domain.repository.IslandTypeMasterRepository
 import timber.log.Timber
@@ -131,7 +130,7 @@ class GetIslandsByFacilityUseCase @Inject constructor(
 
     private fun List<Island>.sortedByTypeThenName(typeLabelsById: Map<String, String>): List<Island> =
         sortedWith(
-            compareBy<Island> { typeLabelsById[it.islandTypeId] ?: it.islandType.code }
+            compareBy<Island> { typeLabelsById[it.islandTypeId] ?: it.islandType }
                 .thenBy { it.customName?.lowercase() ?: it.serialNumber.lowercase() }
         )
 }
@@ -140,7 +139,7 @@ data class FacilityOperationalSummary(
     val facilityId: String,
     val totalIslands: Int,
     val activeIslands: Int,
-    val islandsByType: Map<IslandType, Int>,
+    val islandsByType: Map<String, Int>,
     val totalOperatingHours: Int,
     val totalCycles: Long,
     val islandsUnderWarranty: Int,

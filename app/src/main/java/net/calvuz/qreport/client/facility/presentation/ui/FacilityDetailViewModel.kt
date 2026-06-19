@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.usecase.DeleteIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.FacilityOperationalSummary
@@ -317,7 +316,7 @@ class FacilityDetailViewModel @Inject constructor(
     // UTILITY
     // =========================================================================
 
-    fun getIslandsByType(type: IslandType): List<Island> =
+    fun getIslandsByType(type: String): List<Island> =
         _uiState.value.islands.filter { it.islandType == type }
 
     fun getOperationalIslandsCount(): Int =

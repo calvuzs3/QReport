@@ -343,7 +343,7 @@ class PhotoExportManager @Inject constructor(
         val indexFile = File(photoFolder, "INDICE_FOTO.txt")
 
         val indexContent = buildString {
-            appendLine("# INDICE FOTO - ${context.getString(exportData.checkup.islandType.labelResId)}")
+            appendLine("# INDICE FOTO - ${exportData.checkup.islandType}")
             appendLine("# Generato: ${LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))}")
             appendLine("# Cliente: ${exportData.checkup.header.clientInfo.companyName}")
             appendLine("# Tecnico: ${exportData.checkup.header.technicianInfo.name}")

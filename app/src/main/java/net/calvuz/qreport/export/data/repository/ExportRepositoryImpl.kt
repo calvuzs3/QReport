@@ -476,7 +476,7 @@ class ExportRepositoryImpl @Inject constructor(
                 appendLine()
                 appendLine("📅 Generato il: $timestamp")
                 appendLine("🏭 Cliente: ${exportData.checkup.header.clientInfo.companyName}")
-                appendLine("🏝️ Isola: ${context.getString(exportData.checkup.islandType.labelResId)}")
+                appendLine("🏝️ Isola: ${exportData.checkup.islandType}")
                 appendLine("👨‍🔧 Tecnico: ${exportData.checkup.header.technicianInfo.name}")
                 appendLine()
                 appendLine("📁 CONTENUTO PACKAGE:")

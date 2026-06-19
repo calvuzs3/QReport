@@ -3,7 +3,6 @@ package net.calvuz.qreport.checkup.domain.repository
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.checkup.domain.model.CheckItem
 import net.calvuz.qreport.checkup.domain.model.CheckItemStatus
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.checkup.domain.model.module.ModuleProgress
 
 interface CheckItemRepository {
@@ -16,7 +15,7 @@ interface CheckItemRepository {
 
     suspend fun createCheckItem(checkItem: CheckItem)
 
-    suspend fun createCheckItemsFromTemplates(checkUpId: String, islandType: IslandType)
+    suspend fun createCheckItemsFromTemplates(checkUpId: String, islandType: String)
 
     suspend fun updateCheckItem(checkItem: CheckItem)
 

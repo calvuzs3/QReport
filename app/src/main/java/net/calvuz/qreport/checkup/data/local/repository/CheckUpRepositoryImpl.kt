@@ -13,7 +13,6 @@ import net.calvuz.qreport.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.app.app.domain.model.CriticalityLevel
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.checkup.domain.model.module.ModuleProgress
 import net.calvuz.qreport.checkup.domain.model.spare.SparePart
 import net.calvuz.qreport.checkup.data.local.mapper.toDomain
@@ -62,11 +61,11 @@ class CheckUpRepositoryImpl @Inject constructor(
             }
     }
 
-    override fun getCheckUpsByIslandType(islandType: IslandType): Flow<List<CheckUp>> {
+    override fun getCheckUpsByIslandType(islandType: String): Flow<List<CheckUp>> {
         return checkUpDao.getAllCheckUpsFlow()
             .map { entities ->
                 entities
-                    .filter { it.islandType == islandType.name }
+                    .filter { it.islandType == islandType }
                     .map { entity -> entity.toDomain() }
             }
     }

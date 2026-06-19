@@ -5,7 +5,6 @@ import kotlinx.datetime.Clock
 import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.domain.model.CheckItem
 import net.calvuz.qreport.checkup.domain.model.CheckItemStatus
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.checkup.domain.model.module.ModuleProgress
 import net.calvuz.qreport.checkup.domain.repository.CheckItemRepository
 import javax.inject.Inject
@@ -43,7 +42,7 @@ class CheckItemRepositoryImpl @Inject constructor(
 
     override suspend fun createCheckItemsFromTemplates(
         checkUpId: String,
-        islandType: IslandType
+        islandType: String
     ) {
         TODO("Not yet implemented")
     }

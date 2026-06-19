@@ -1,7 +1,6 @@
 package net.calvuz.qreport.client.facility.domain.model
 
 import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import kotlinx.datetime.Instant
 
 /**
@@ -34,7 +33,7 @@ data class IslandStatistics(
     val totalCount: Int = 0,
     val activeCount: Int = 0,
     val inactiveCount: Int = 0,
-    val byType: Map<IslandType, Int> = emptyMap(),
+    val byType: Map<String, Int> = emptyMap(),
     val totalOperatingHours: Int = 0,
     val totalCycleCount: Long = 0L,
     val averageOperatingHours: Double = 0.0,

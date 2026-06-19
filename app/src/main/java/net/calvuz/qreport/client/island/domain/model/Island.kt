@@ -21,7 +21,8 @@ data class Island(
     val customName: String? = null,
 
     // ===== ISLAND TYPE =====
-    val islandType: IslandType,
+    /** Frozen display label of the island type (e.g. "POLY Move") — kept for backward compat, superseded by [islandTypeId]. */
+    val islandType: String,
     /** FK to the island_types master data table — nullable until every island has been re-saved through the new picker. */
     val islandTypeId: String? = null,
 

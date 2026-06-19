@@ -13,7 +13,6 @@ import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandDao
 import net.calvuz.qreport.client.island.data.local.mapper.IslandMapper
 import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.repository.IslandRepository
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
 import javax.inject.Inject
@@ -172,9 +171,9 @@ class IslandRepositoryImpl @Inject constructor(
 
     // ===== SEARCH & FILTER =====
 
-    override suspend fun getIslandsByType(islandType: IslandType): Result<List<Island>> {
+    override suspend fun getIslandsByType(islandType: String): Result<List<Island>> {
         return try {
-            val entities = islandDao.getIslandsByType(islandType.name)
+            val entities = islandDao.getIslandsByType(islandType)
             val islands = islandMapper.toDomainList(entities)
             Result.success(islands)
         } catch (e: Exception) {
@@ -310,25 +309,19 @@ class IslandRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getIslandsCountByType(islandType: IslandType): Result<Int> {
+    override suspend fun getIslandsCountByType(islandType: String): Result<Int> {
         return try {
-            val count = islandDao.getIslandsCountByType(islandType.name)
+            val count = islandDao.getIslandsCountByType(islandType)
             Result.success(count)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    override suspend fun getIslandTypeStats(): Result<Map<IslandType, Int>> {
+    override suspend fun getIslandTypeStats(): Result<Map<String, Int>> {
         return try {
             val stats = islandDao.getIslandTypeStatistics()
-            val islandTypeStats = stats.mapNotNull { stat ->
-                try {
-                    IslandType.valueOf(stat.island_type) to stat.count
-                } catch (_: IllegalArgumentException) {
-                    null // Ignora tipi non validi
-                }
-            }.toMap()
+            val islandTypeStats = stats.associate { stat -> stat.island_type to stat.count }
             Result.success(islandTypeStats)
         } catch (e: Exception) {
             Result.failure(e)

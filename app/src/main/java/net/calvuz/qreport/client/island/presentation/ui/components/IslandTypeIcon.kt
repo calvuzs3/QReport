@@ -11,13 +11,13 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.client.island.presentation.model.IslandTypeIconRegistry
 
 @Composable
-fun IslandTypeIcon(code: String, label: String) {
+fun IslandTypeIcon(label: String) {
     Surface(
         color = MaterialTheme.colorScheme.primaryContainer,
         shape = MaterialTheme.shapes.small
     ) {
         Icon(
-            imageVector = IslandTypeIconRegistry.iconFor(code),
+            imageVector = IslandTypeIconRegistry.iconFor(label),
             contentDescription = label,
             modifier = Modifier
                 .padding(8.dp)

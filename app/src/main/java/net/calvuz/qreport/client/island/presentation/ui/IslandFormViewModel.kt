@@ -10,9 +10,7 @@ import kotlinx.datetime.Instant
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.client.island.data.local.mapper.parseByCode
 import net.calvuz.qreport.client.island.domain.model.Island
-import net.calvuz.qreport.client.island.domain.model.IslandType
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.domain.usecase.CreateIslandUseCase
 import net.calvuz.qreport.client.island.domain.usecase.GetIslandByIdUseCase
@@ -36,7 +34,7 @@ data class FacilityIslandFormUiState(
 
     // ===== FORM FIELDS =====
     val serialNumber: String = "",
-    val islandType: IslandType = IslandType.POLY_MOVE,
+    val islandType: String = "",
     val islandTypeId: String? = null,
     val availableIslandTypes: List<IslandTypeMaster> = emptyList(),
     val modelNumber: String = "",
@@ -171,7 +169,7 @@ class IslandFormViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         islandTypeId = event.type.id,
-                        islandType = IslandType.parseByCode(event.type.code)
+                        islandType = event.type.label
                     )
                 }
             is FacilityIslandFormEvent.ModelChanged ->
