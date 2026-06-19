@@ -1,10 +1,18 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.client.island.presentation.model
 
 import androidx.compose.ui.graphics.vector.ImageVector
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 
 /** Resolved label/icon for an island type, ready to render. */
-data class IslandTypeDisplay(val code: String, val label: String, val icon: ImageVector)
+data class IslandTypeDisplay(
+//    val code: String,
+    val label: String,
+    val icon: ImageVector
+)
+
+/** Default label/icon for an island type, ready to render. */
+const val DEFAULT_ISLAND_TYPE_LABEL = "Category"
 
 /**
  * Resolves the display info for an island type, preferring the live master record
@@ -14,14 +22,11 @@ data class IslandTypeDisplay(val code: String, val label: String, val icon: Imag
  */
 fun resolveIslandTypeDisplay(
     islandTypeId: String?,
-    legacyType: String,
     masters: List<IslandTypeMaster>
 ): IslandTypeDisplay {
-    val master = masters.find { it.id == islandTypeId } ?: masters.find { it.label == legacyType }
-    val code = master?.code ?: legacyType
-    val label = master?.label ?: legacyType
+    val master = masters.find { it.id == islandTypeId } ?: masters.find { it.label == DEFAULT_ISLAND_TYPE_LABEL }
+    val label = master?.label ?: DEFAULT_ISLAND_TYPE_LABEL
     return IslandTypeDisplay(
-        code = code,
         label = label,
         icon = IslandTypeIconRegistry.iconFor(label)
     )

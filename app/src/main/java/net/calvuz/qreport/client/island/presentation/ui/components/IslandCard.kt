@@ -141,7 +141,7 @@ private fun FullIslandCard(
     onDelete: (() -> Unit)?,
     onRestore: (() -> Unit)?
 ) {
-    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes)
+    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId,  islandTypes)
     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         // ── Header ────────────────────────────────────────────────────────────
         Row(
@@ -264,7 +264,7 @@ private fun CompactIslandCard(
     onDelete: (() -> Unit)?,
     onRestore: (() -> Unit)?
 ) {
-    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes)
+    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId,  islandTypes)
     Row(
         modifier = Modifier
             .fillMaxWidth()

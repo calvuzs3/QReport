@@ -306,7 +306,7 @@ private fun CheckUpPreviewRow(checkUp: CheckUp, onClick: () -> Unit) {
 
 @Suppress("ParamsComparedByRef")@Composable
 private fun IslandPreviewRow(island: Island, islandTypes: List<IslandTypeMaster>, onClick: () -> Unit) {
-    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes)
+    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, islandTypes)
     Surface(modifier = Modifier.fillMaxWidth(), onClick = onClick, shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
         Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

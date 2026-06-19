@@ -19,9 +19,9 @@ import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
 import net.calvuz.qreport.client.island.presentation.model.resolveIslandTypeDisplay
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 fun IslandBasicInfoCard(island: Island, islandTypes: List<IslandTypeMaster> = emptyList()) {
-    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes)
+    val typeDisplay = resolveIslandTypeDisplay(island.islandTypeId,  islandTypes)
     Card {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 

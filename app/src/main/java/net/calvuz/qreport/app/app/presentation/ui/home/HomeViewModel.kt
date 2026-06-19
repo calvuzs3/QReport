@@ -1,3 +1,4 @@
+@file:Suppress("HardCodedStringLiteral")
 package net.calvuz.qreport.app.app.presentation.ui.home
 
 import androidx.lifecycle.ViewModel

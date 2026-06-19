@@ -37,7 +37,7 @@ import timber.log.Timber
  * - Rimozione associazione esistente
  * - Visual feedback per ogni step
  */
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 fun AssociationManagementDialog(
     currentAssociations: List<CheckUpIslandAssociation>,
     availableClients: List<Client>,
@@ -127,7 +127,7 @@ fun AssociationManagementDialog(
     }
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 private fun AssociationDialogHeader(
     currentAssociations: List<CheckUpIslandAssociation>,
     onDismiss: () -> Unit,
@@ -187,7 +187,7 @@ private fun AssociationDialogHeader(
     }
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 internal fun ClientSelectionStep(
     clients: List<Client>,
     selectedClientId: String?,
@@ -216,7 +216,7 @@ internal fun ClientSelectionStep(
     }
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 internal fun FacilitySelectionStep(
     facilities: List<Facility>,
     selectedFacilityId: String?,
@@ -243,7 +243,7 @@ internal fun FacilitySelectionStep(
     }
 }
 
-@Composable
+@Suppress("ParamsComparedByRef")@Composable
 internal fun IslandSelectionStep(
     islands: List<Island>,
     islandTypes: List<IslandTypeMaster> = emptyList(),
@@ -262,16 +262,8 @@ internal fun IslandSelectionStep(
         } else {
             islands.forEach { island ->
                 SelectionItem(
-                    title = resolveIslandTypeDisplay(island.islandTypeId, island.islandType, islandTypes).label,
+                    title = resolveIslandTypeDisplay(island.islandTypeId,  islandTypes).label,
                     subtitle = island.serialNumber,
-//                        if (island.model != null) {
-//                            stringResource(
-//                                R.string.checkup_component_association_dialog_model_prefix,
-//                                island.model
-//                            )
-//                        } else {
-//                            stringResource(R.string.checkup_component_association_dialog_model_not_specified)
-//                        },
                     isSelected = false,
                     onClick = { onIslandSelected(island.id) },
                     isClickable = true

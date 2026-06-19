@@ -379,7 +379,7 @@ class IslandListViewModel @Inject constructor(
         return when (sortOrder) {
             IslandSortOrder.SERIAL_NUMBER -> result.sortedBy { it.island.serialNumber.lowercase() }
             IslandSortOrder.TYPE -> result.sortedBy {
-                resolveIslandTypeDisplay(it.island.islandTypeId, it.island.islandType, islandTypes).label
+                resolveIslandTypeDisplay(it.island.islandTypeId,  islandTypes).label
             }
             IslandSortOrder.STATUS -> result.sortedBy { it.island.islandOperationalStatus.ordinal }
             IslandSortOrder.OPERATING_HOURS -> result.sortedByDescending { it.island.operatingHours }
