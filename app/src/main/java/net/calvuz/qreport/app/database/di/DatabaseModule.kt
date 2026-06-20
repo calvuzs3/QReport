@@ -9,11 +9,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import net.calvuz.qreport.app.app.QReportApplication
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
-import net.calvuz.qreport.checkup.data.local.dao.CheckItemDao
-import net.calvuz.qreport.checkup.data.local.dao.CheckUpAssociationDao
-import net.calvuz.qreport.checkup.data.local.dao.CheckUpDao
+import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemDao
+import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpAssociationDao
+import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
-import net.calvuz.qreport.checkup.data.local.dao.SparePartDao
+import net.calvuz.qreport.checkup.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_1_2
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3

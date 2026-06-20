@@ -9,10 +9,10 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
-import net.calvuz.qreport.checkup.domain.model.CheckUp
-import net.calvuz.qreport.checkup.domain.model.CheckUpStatus
-import net.calvuz.qreport.checkup.domain.usecase.CreateCheckUpUseCase
-import net.calvuz.qreport.checkup.domain.usecase.GetCheckUpsUseCase
+import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
+import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
+import net.calvuz.qreport.checkup.checkup.domain.usecase.CreateCheckUpUseCase
+import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpsUseCase
 import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster

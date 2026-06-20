@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
-import net.calvuz.qreport.checkup.presentation.components.ClientFacilityIslandSelectorDialog
+import net.calvuz.qreport.checkup.checkup.presentation.components.ClientFacilityIslandSelectorDialog
 import net.calvuz.qreport.ti.domain.model.WorkLocationType
 
 /**

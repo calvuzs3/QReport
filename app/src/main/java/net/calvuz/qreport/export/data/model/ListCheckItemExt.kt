@@ -1,7 +1,7 @@
 package net.calvuz.qreport.export.data.model
 
-import net.calvuz.qreport.checkup.domain.model.CheckItem
-import net.calvuz.qreport.checkup.domain.model.module.ModuleType
+import net.calvuz.qreport.checkup.items.domain.model.CheckItem
+import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 
 // ============================================================
 // UTILITY FUNCTIONS PER LAVORARE CON I MODELLI REALI

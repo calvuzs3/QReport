@@ -10,7 +10,7 @@ import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.export.domain.reposirory.ExportRepository
-import net.calvuz.qreport.checkup.domain.usecase.GetCheckUpDetailsUseCase
+import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpDetailsUseCase
 import net.calvuz.qreport.export.domain.usecase.ExportCheckUpUseCase
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText

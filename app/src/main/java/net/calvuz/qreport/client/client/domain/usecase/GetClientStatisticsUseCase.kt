@@ -2,7 +2,7 @@ package net.calvuz.qreport.client.client.domain.usecase
 
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.checkup.domain.repository.CheckUpRepository
+import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpRepository
 import net.calvuz.qreport.client.client.domain.repository.ClientRepository
 import net.calvuz.qreport.client.client.presentation.model.ClientStatistics
 import timber.log.Timber

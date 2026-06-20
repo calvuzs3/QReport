@@ -8,11 +8,11 @@ import kotlinx.datetime.Clock
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.export.data.photo.PhotoExportManager
-import net.calvuz.qreport.checkup.domain.model.CheckItem
-import net.calvuz.qreport.checkup.domain.model.CheckUpSingleStatistics
-import net.calvuz.qreport.checkup.domain.model.spare.SparePart
-import net.calvuz.qreport.checkup.presentation.model.CheckItemStatusExt.getDisplayName
-import net.calvuz.qreport.checkup.presentation.model.CheckItemStatusExt.getReportColor
+import net.calvuz.qreport.checkup.items.domain.model.CheckItem
+import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
+import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePart
+import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getDisplayName
+import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getReportColor
 import net.calvuz.qreport.app.util.DateTimeUtils.toFilenameSafeDate
 import net.calvuz.qreport.export.domain.model.ExportErrorCode
 import net.calvuz.qreport.export.domain.reposirory.ExportData
@@ -22,7 +22,7 @@ import net.calvuz.qreport.export.domain.reposirory.PhotoNamingStrategy
 import net.calvuz.qreport.export.domain.reposirory.PhotoQuality
 import net.calvuz.qreport.photo.domain.model.ExportedPhoto
 import net.calvuz.qreport.photo.domain.model.PhotoExportResult
-import net.calvuz.qreport.checkup.presentation.model.CheckUpStatusExt.getDisplayName
+import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpStatusExt.getDisplayName
 import org.apache.poi.xwpf.usermodel.*
 import org.apache.poi.util.Units
 import timber.log.Timber

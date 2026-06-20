@@ -28,9 +28,9 @@ import net.calvuz.qreport.app.app.presentation.ui.theme.onWarningContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.success
 import net.calvuz.qreport.app.app.presentation.ui.theme.successContainer
 import net.calvuz.qreport.app.app.presentation.ui.theme.warningContainer
-import net.calvuz.qreport.checkup.domain.model.CheckUp
-import net.calvuz.qreport.checkup.presentation.components.CheckupStatusChip
-import net.calvuz.qreport.checkup.presentation.model.CheckupPkg
+import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
+import net.calvuz.qreport.checkup.checkup.presentation.components.CheckupStatusChip
+import net.calvuz.qreport.checkup.checkup.presentation.model.CheckupPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster

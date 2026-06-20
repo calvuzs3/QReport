@@ -4,8 +4,8 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.calvuz.qreport.checkup.domain.model.module.ModuleType
-import net.calvuz.qreport.checkup.domain.model.CheckItem
+import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
+import net.calvuz.qreport.checkup.items.domain.model.CheckItem
 import net.calvuz.qreport.photo.domain.repository.PhotoRepository
 import net.calvuz.qreport.export.domain.reposirory.ExportData
 import net.calvuz.qreport.export.domain.reposirory.PhotoNamingStrategy

@@ -17,9 +17,9 @@ import androidx.navigation.navArgument
 import androidx.navigation.NavType
 import net.calvuz.qreport.backup.presentation.ui.BackupScreen
 import net.calvuz.qreport.app.app.presentation.ui.home.HomeScreen
-import net.calvuz.qreport.checkup.presentation.CheckUpListScreen
-import net.calvuz.qreport.checkup.presentation.NewCheckUpScreen
-import net.calvuz.qreport.checkup.presentation.CheckUpDetailScreen
+import net.calvuz.qreport.checkup.checkup.presentation.CheckUpListScreen
+import net.calvuz.qreport.checkup.checkup.presentation.NewCheckUpScreen
+import net.calvuz.qreport.checkup.checkup.presentation.CheckUpDetailScreen
 import net.calvuz.qreport.photo.presentation.ui.CameraScreen
 import net.calvuz.qreport.client.client.presentation.ui.ClientDetailScreen
 import net.calvuz.qreport.photo.presentation.ui.PhotoGalleryScreen
@@ -45,7 +45,7 @@ import androidx.core.net.toUri
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.app.presentation.ui.home.model.HomePkg
 import net.calvuz.qreport.app.error.presentation.UiText
-import net.calvuz.qreport.checkup.presentation.model.CheckupPkg
+import net.calvuz.qreport.checkup.checkup.presentation.model.CheckupPkg
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.contract.presentation.ui.ContractFormScreen
 import net.calvuz.qreport.client.contract.presentation.ui.ContractListScreen

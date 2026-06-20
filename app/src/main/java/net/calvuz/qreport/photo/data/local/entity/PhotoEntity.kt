@@ -7,7 +7,7 @@ import androidx.room.ColumnInfo
 import androidx.room.PrimaryKey
 import androidx.room.ForeignKey
 import kotlinx.datetime.Instant
-import net.calvuz.qreport.checkup.data.local.entity.CheckItemEntity
+import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemEntity
 import net.calvuz.qreport.photo.domain.model.CameraSettings
 import net.calvuz.qreport.photo.domain.model.PhotoLocation
 import net.calvuz.qreport.photo.domain.model.PhotoPerspective

@@ -1,6 +1,6 @@
 package net.calvuz.qreport.photo.domain.model
 
-import net.calvuz.qreport.checkup.domain.model.module.ModuleType
+import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.export.domain.reposirory.PhotoNamingStrategy
 import java.io.File
 import java.time.LocalDateTime
