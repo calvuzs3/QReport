@@ -740,9 +740,7 @@ interface QrError {
     sealed interface Checkup : QrError {
         data class Unknown(val message: String? = null) : Checkup
         data class NotFound(val message: String? = null) : Checkup
-        data class CannotDeleteCompleted(val message: String? = null) : Checkup
-        data class CannotDeleteExported(val message: String? = null) : Checkup
-        data class CannotDeleteArchived(val message: String? = null) : Checkup
+        data class CannotDeleteBlockedStatus(val message: String? = null) : Checkup
         data class Load(val message: String? = null) : Checkup
         data class Reload(val message: String? = null) : Checkup
         data class Refresh(val message: String? = null) : Checkup

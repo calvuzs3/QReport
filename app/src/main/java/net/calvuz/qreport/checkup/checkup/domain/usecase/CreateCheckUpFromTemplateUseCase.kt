@@ -7,7 +7,7 @@ import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.items.domain.repository.CheckItemTemplateMasterRepository
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpHeader
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
+import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatusCodes
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpRepository
 import java.util.UUID
@@ -57,7 +57,7 @@ class CreateCheckUpFromTemplateUseCase @Inject constructor(
                 id = checkUpId,
                 header = header,
                 islandType = islandType,
-                status = CheckUpStatus.DRAFT,
+                status = CheckUpStatusCodes.DRAFT,
                 checkItems = checkItems,
                 createdAt = now,
                 updatedAt = now,

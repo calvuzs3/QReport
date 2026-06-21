@@ -21,6 +21,7 @@ import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpIslandAssociation
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.presentation.model.AssociationTypeExt.getDescription
 import net.calvuz.qreport.checkup.checkup.presentation.model.AssociationTypeExt.getDisplayName
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
 
 /**
  * Header card with CheckUp info and Edit Button
@@ -29,6 +30,7 @@ import net.calvuz.qreport.checkup.checkup.presentation.model.AssociationTypeExt.
 fun CheckUpHeaderCard(
     modifier: Modifier = Modifier,
     checkUp: CheckUp,
+    statusMaster: CheckUpStatusMaster?,
     progress: CheckUpProgress,
     associations: List<CheckUpIslandAssociation> = emptyList(),
     onEditHeader: () -> Unit = {},
@@ -70,7 +72,7 @@ fun CheckUpHeaderCard(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Row(horizontalArrangement = Arrangement.End) {
-                        CheckupStatusChip(status = checkUp.status)
+                        CheckupStatusChip(statusMaster = statusMaster)
                     }
 
                     Row(

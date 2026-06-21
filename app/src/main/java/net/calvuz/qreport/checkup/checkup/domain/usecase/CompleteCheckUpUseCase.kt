@@ -6,7 +6,7 @@ import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
+import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatusCodes
 import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpAssociationRepository
 import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpRepository
 import net.calvuz.qreport.client.island.maintenance.domain.model.MaintenanceLog
@@ -25,7 +25,7 @@ class CompleteCheckUpUseCase @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     suspend operator fun invoke(checkUpId: String): QrResult<Unit, QrError.Checkup> {
-        val statusResult = updateCheckUpStatusUseCase(checkUpId, CheckUpStatus.COMPLETED)
+        val statusResult = updateCheckUpStatusUseCase(checkUpId, CheckUpStatusCodes.COMPLETED)
         if (statusResult is QrResult.Error) return statusResult
 
         val checkUp = checkUpRepository.getCheckUpById(checkUpId)

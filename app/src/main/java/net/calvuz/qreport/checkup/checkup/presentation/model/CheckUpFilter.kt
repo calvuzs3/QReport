@@ -1,33 +1,24 @@
 package net.calvuz.qreport.checkup.checkup.presentation.model
 
-import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import net.calvuz.qreport.R
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
 
-enum class CheckUpFilter {
-    ALL, DRAFT, IN_PROGRESS, COMPLETED, EXPORTED, ARCHIVED
-}
-
-fun CheckUpFilter.getDisplayName(context: Context): String {
-    return when (this) {
-        CheckUpFilter.ALL -> context.getString(R.string.enum_checkup_status_filter_all)
-        CheckUpFilter.DRAFT -> context.getString(R.string.enum_checkup_status_draft)
-        CheckUpFilter.IN_PROGRESS -> context.getString(R.string.enum_checkup_status_in_progress)
-        CheckUpFilter.COMPLETED -> context.getString(R.string.enum_checkup_status_completed)
-        CheckUpFilter.EXPORTED -> context.getString(R.string.enum_checkup_status_exported)
-        CheckUpFilter.ARCHIVED -> context.getString(R.string.enum_checkup_status_archived)
+/**
+ * A checkup list filter targeting one status, or every status when [statusId] is
+ * null. Replaces the old fixed enum: the set of available filters now mirrors
+ * whatever statuses exist in [net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster]
+ * (editable from Settings), built by the ViewModel as `listOf(ALL) + statuses.map { CheckUpFilter(it.id) }`.
+ */
+data class CheckUpFilter(val statusId: String?) {
+    companion object {
+        val ALL = CheckUpFilter(null)
     }
 }
 
 @Composable
-fun CheckUpFilter.getDisplayName(): String {
-    return when (this) {
-        CheckUpFilter.ALL -> stringResource(R.string.enum_checkup_status_filter_all)
-        CheckUpFilter.DRAFT -> stringResource(R.string.enum_checkup_status_draft)
-        CheckUpFilter.IN_PROGRESS -> stringResource(R.string.enum_checkup_status_in_progress)
-        CheckUpFilter.COMPLETED -> stringResource(R.string.enum_checkup_status_completed)
-        CheckUpFilter.EXPORTED -> stringResource(R.string.enum_checkup_status_exported)
-        CheckUpFilter.ARCHIVED -> stringResource(R.string.enum_checkup_status_archived)
-    }
+fun CheckUpFilter.getDisplayName(statusMasters: List<CheckUpStatusMaster>): String {
+    val id = statusId ?: return stringResource(R.string.enum_checkup_status_filter_all)
+    return statusMasters.find { it.id == id }?.label ?: id
 }

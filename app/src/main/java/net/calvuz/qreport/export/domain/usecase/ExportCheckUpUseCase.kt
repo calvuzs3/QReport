@@ -6,10 +6,11 @@ import kotlinx.datetime.Clock
 import net.calvuz.qreport.BuildConfig
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
+import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatusCodes
 import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpRepository
 import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpDetailsUseCase
 import net.calvuz.qreport.checkup.checkup.domain.usecase.UpdateCheckUpStatusUseCase
+import net.calvuz.qreport.checkup.status.domain.repository.CheckUpStatusMasterRepository
 import net.calvuz.qreport.export.domain.reposirory.ExportData
 import net.calvuz.qreport.export.domain.reposirory.ExportFormat
 import net.calvuz.qreport.export.domain.reposirory.ExportOptions
@@ -34,7 +35,8 @@ class ExportCheckUpUseCase @Inject constructor(
     private val checkUpRepository: CheckUpRepository,
     private val exportRepository: ExportRepository,
     private val getCheckUpDetailsUseCase: GetCheckUpDetailsUseCase,
-    private val updateCheckUpStatusUseCase: UpdateCheckUpStatusUseCase
+    private val updateCheckUpStatusUseCase: UpdateCheckUpStatusUseCase,
+    private val statusMasterRepository: CheckUpStatusMasterRepository
 ) {
 
     /**
@@ -58,26 +60,19 @@ class ExportCheckUpUseCase @Inject constructor(
             val checkUp = checkUpRepository.getCheckUpById(checkUpId)
                 ?: return@flow emit(QrResult.Error(QrError.Checkup.NotFound()))
 
-            // Valida status - business rule: solo checkup completati possono essere esportati
+            // Valida status - business rule: solo checkup che possono transire a EXPORTED
+            // (o già esportati, per consentire il ri-export) possono essere esportati.
+            // Il grafo delle transizioni è dati (checkup_status_transitions, editabile da
+            // Settings), non un when hardcoded sui valori di stato.
             if (!BuildConfig.DEBUG) {
-                when (checkUp.status) {
-                    CheckUpStatus.DRAFT, CheckUpStatus.IN_PROGRESS -> {
-                        Timber.Forest.w("Cannot export checkup in status: ${checkUp.status}")
-                        return@flow emit(QrResult.Error(QrError.ValidationError.InvalidOperation( QrError.Export.Validation.CannotExportDraft )))
-                    }
-
-                    CheckUpStatus.COMPLETED -> {
-                        // OK - può essere esportato
-                    }
-
-                    CheckUpStatus.EXPORTED -> {
-                        // OK - può essere ri-esportato
-                        Timber.Forest.d("Re-exporting already exported checkup")
-                    }
-
-                    else -> {
-                        // Altri status futuri
-                    }
+                val canExport = checkUp.status == CheckUpStatusCodes.EXPORTED ||
+                    statusMasterRepository.isTransitionAllowed(checkUp.status, CheckUpStatusCodes.EXPORTED)
+                if (!canExport) {
+                    Timber.Forest.w("Cannot export checkup in status: ${checkUp.status}")
+                    return@flow emit(QrResult.Error(QrError.ValidationError.InvalidOperation(QrError.Export.Validation.CannotExportDraft)))
+                }
+                if (checkUp.status == CheckUpStatusCodes.EXPORTED) {
+                    Timber.Forest.d("Re-exporting already exported checkup")
                 }
             } else {
                 Timber.w("[DEBUG] Skipping status validation")
@@ -131,7 +126,7 @@ class ExportCheckUpUseCase @Inject constructor(
                         Timber.Forest.i("Export completed successfully, updating status to EXPORTED")
 
                         if (!BuildConfig.DEBUG) {
-                            when (updateCheckUpStatusUseCase(checkUpId, CheckUpStatus.EXPORTED)) {
+                            when (updateCheckUpStatusUseCase(checkUpId, CheckUpStatusCodes.EXPORTED)) {
                                 is QrResult.Success -> {
                                     Timber.Forest.d("Status updated to EXPORTED")
                                 }

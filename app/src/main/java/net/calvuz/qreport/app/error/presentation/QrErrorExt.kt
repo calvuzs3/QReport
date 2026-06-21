@@ -538,9 +538,7 @@ fun QrError.Checkup.toUiText(): UiText {
     return when (this) {
         is QrError.Checkup.Unknown -> StringResources(R.string.err_checkup_delete_unknown)
         is QrError.Checkup.NotFound -> StringResources(R.string.err_checkup_not_found)
-        is QrError.Checkup.CannotDeleteCompleted -> StringResources(R.string.err_checkup_delete_cannot_delete_completed)
-        is QrError.Checkup.CannotDeleteExported -> StringResources(R.string.err_checkup_delete_cannot_delete_exported)
-        is QrError.Checkup.CannotDeleteArchived -> StringResources(R.string.err_checkup_delete_cannot_delete_archived)
+        is QrError.Checkup.CannotDeleteBlockedStatus -> StringResources(R.string.err_checkup_delete_blocked_status)
         is QrError.Checkup.Load -> StringResources(R.string.err_checkup_load_checkup)
         is QrError.Checkup.Reload -> StringResources(R.string.err_checkup_reload_checkup)
         is QrError.Checkup.Create -> StringResources(R.string.err_create)

@@ -9,6 +9,7 @@ import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleTypeMaster
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.app.error.presentation.UiText
 
@@ -27,6 +28,7 @@ data class CheckUpDetailUiState(
     val checkUp: CheckUp? = null,
     val checkItems: List<CheckItem> = emptyList(),
     val moduleTypes: List<ModuleTypeMaster> = emptyList(),
+    val statusMasters: List<CheckUpStatusMaster> = emptyList(),
     val progress: CheckUpProgress = CheckUpProgress(), // ? =null
     val statistics: CheckUpSingleStatistics = CheckUpSingleStatistics(), // ? = null
 
@@ -133,6 +135,9 @@ data class CheckUpDetailUiState(
 
     val checkupId: String?
         get() = checkUp?.id
+
+    val statusMaster: CheckUpStatusMaster?
+        get() = statusMasters.find { it.id == checkUp?.status }
 
 
     /**

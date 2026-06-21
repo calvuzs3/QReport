@@ -15,6 +15,9 @@ google-services.json
 handoff.md
 SKILL.md
 
+# Personal/company default data for checkup master tables (not for sharing)
+company-checkup-seed-data.kt
+
 # Built application files
 *.apk
 *.aar

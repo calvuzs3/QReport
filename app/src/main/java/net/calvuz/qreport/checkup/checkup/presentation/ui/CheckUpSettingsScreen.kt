@@ -11,7 +11,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.PriorityHigh
 import androidx.compose.material.icons.filled.ViewModule
 import androidx.compose.runtime.Composable
@@ -36,7 +38,9 @@ fun CheckUpSettingsScreen(
     onNavigateToModuleTypes: () -> Unit,
     onNavigateToCriticalityLevels: () -> Unit,
     onNavigateToCheckItemTemplates: () -> Unit,
-    onNavigateToModuleIslandAssociation: () -> Unit
+    onNavigateToModuleIslandAssociation: () -> Unit,
+    onNavigateToCheckUpStatuses: () -> Unit,
+    onNavigateToCheckUpStatusTransitions: () -> Unit
 ) {
     Column(
         modifier = modifier.fillMaxSize()
@@ -80,6 +84,18 @@ fun CheckUpSettingsScreen(
                 subtitle = stringResource(R.string.checkup_settings_module_island_association_subtitle),
                 icon = Icons.AutoMirrored.Filled.CompareArrows,
                 onClick = onNavigateToModuleIslandAssociation
+            )
+            SettingsItem(
+                title = stringResource(R.string.checkup_settings_statuses_title),
+                subtitle = stringResource(R.string.checkup_settings_statuses_subtitle),
+                icon = Icons.Default.Flag,
+                onClick = onNavigateToCheckUpStatuses
+            )
+            SettingsItem(
+                title = stringResource(R.string.checkup_settings_status_transitions_title),
+                subtitle = stringResource(R.string.checkup_settings_status_transitions_subtitle),
+                icon = Icons.Default.AccountTree,
+                onClick = onNavigateToCheckUpStatusTransitions
             )
         }
     }

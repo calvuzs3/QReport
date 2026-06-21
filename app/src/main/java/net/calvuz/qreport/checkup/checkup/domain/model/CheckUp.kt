@@ -15,7 +15,8 @@ data class CheckUp(
     /** Frozen display label of the island type at creation time (e.g. "POLY Move") — never re-queried from the master. */
     val islandType: String,
     val islandTypeId: String? = null,
-    val status: CheckUpStatus,
+    /** Status code — soft-references [net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster]. */
+    val status: String,
     val checkItems: List<CheckItem> = emptyList(),
     val createdAt: Instant,
     val updatedAt: Instant,

@@ -9,9 +9,9 @@ import net.calvuz.qreport.app.app.domain.AppVersionInfo
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpHeader
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.domain.usecase.ObserveModuleTypesUseCase
+import net.calvuz.qreport.checkup.status.domain.usecase.ObserveActiveCheckUpStatusesUseCase
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.photo.domain.model.PhotoResult
 import net.calvuz.qreport.checkup.checkup.domain.usecase.DeleteCheckUpUseCase
@@ -73,7 +73,8 @@ class CheckUpDetailViewModel @Inject constructor(
     private val getAssociationsForCheckUpUseCase: GetAssociationsForCheckUpUseCase,
     private val removeCheckUpAssociationUseCase: RemoveCheckUpAssociationUseCase,
     private val observeIslandTypesUseCase: ObserveIslandTypesUseCase,
-    private val observeModuleTypesUseCase: ObserveModuleTypesUseCase
+    private val observeModuleTypesUseCase: ObserveModuleTypesUseCase,
+    private val observeActiveCheckUpStatusesUseCase: ObserveActiveCheckUpStatusesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
@@ -98,6 +99,11 @@ class CheckUpDetailViewModel @Inject constructor(
         observeModuleTypesUseCase()
             .catch { e -> Timber.e(e) }
             .onEach { types -> _uiState.update { it.copy(moduleTypes = types) } }
+            .launchIn(viewModelScope)
+
+        observeActiveCheckUpStatusesUseCase()
+            .catch { e -> Timber.e(e) }
+            .onEach { statuses -> _uiState.update { it.copy(statusMasters = statuses) } }
             .launchIn(viewModelScope)
     }
 

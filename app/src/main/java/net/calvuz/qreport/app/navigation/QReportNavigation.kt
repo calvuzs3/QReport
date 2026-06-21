@@ -40,6 +40,8 @@ import net.calvuz.qreport.checkup.modules.presentation.ui.ModuleTypesManagementS
 import net.calvuz.qreport.checkup.modules.presentation.ui.ModuleIslandAssociationScreen
 import net.calvuz.qreport.checkup.checkup.presentation.ui.CheckUpSettingsScreen
 import net.calvuz.qreport.checkup.criticality.presentation.ui.CriticalityLevelsManagementScreen
+import net.calvuz.qreport.checkup.status.presentation.ui.CheckUpStatusesManagementScreen
+import net.calvuz.qreport.checkup.status.presentation.ui.CheckUpStatusTransitionsScreen
 import net.calvuz.qreport.checkup.items.presentation.ui.CheckItemTemplatesManagementScreen
 import net.calvuz.qreport.photo.presentation.ui.PhotoImportPreviewScreen
 import net.calvuz.qreport.settings.presentation.ui.TechnicianSettingsScreen
@@ -130,6 +132,8 @@ object QReportRoutes {
     const val CRITICALITY_LEVELS_MANAGEMENT = "criticality_levels_management"
     const val CHECK_ITEM_TEMPLATES_MANAGEMENT = "check_item_templates_management"
     const val MODULE_ISLAND_ASSOCIATION_MANAGEMENT = "module_island_association_management"
+    const val CHECKUP_STATUSES_MANAGEMENT = "checkup_statuses_management"
+    const val CHECKUP_STATUS_TRANSITIONS_MANAGEMENT = "checkup_status_transitions_management"
 
     // Checkup settings routes
     const val CHECKUP_SETTINGS = "checkup_settings"
@@ -398,6 +402,12 @@ fun QReportNavigation(
                         },
                         onNavigateToModuleIslandAssociation = {
                             navController.navigate(QReportRoutes.MODULE_ISLAND_ASSOCIATION_MANAGEMENT)
+                        },
+                        onNavigateToCheckUpStatuses = {
+                            navController.navigate(QReportRoutes.CHECKUP_STATUSES_MANAGEMENT)
+                        },
+                        onNavigateToCheckUpStatusTransitions = {
+                            navController.navigate(QReportRoutes.CHECKUP_STATUS_TRANSITIONS_MANAGEMENT)
                         }
                     )
                 }
@@ -428,6 +438,18 @@ fun QReportNavigation(
 
                 composable(QReportRoutes.MODULE_ISLAND_ASSOCIATION_MANAGEMENT) {
                     ModuleIslandAssociationScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(QReportRoutes.CHECKUP_STATUSES_MANAGEMENT) {
+                    CheckUpStatusesManagementScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(QReportRoutes.CHECKUP_STATUS_TRANSITIONS_MANAGEMENT) {
+                    CheckUpStatusTransitionsScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }

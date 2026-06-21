@@ -314,6 +314,10 @@
     <string name="checkup_settings_screen_title">Impostazioni checkup</string>
     <string name="checkup_settings_module_island_association_title">Moduli per tipo isola</string>
     <string name="checkup_settings_module_island_association_subtitle">Associa i moduli applicabili a ciascun tipo isola</string>
+    <string name="checkup_settings_statuses_title">Stati checkup</string>
+    <string name="checkup_settings_statuses_subtitle">Gestisci gli stati del workflow checkup</string>
+    <string name="checkup_settings_status_transitions_title">Transizioni di stato</string>
+    <string name="checkup_settings_status_transitions_subtitle">Definisci a quali stati può passare ciascuno stato</string>
 
     <!-- ================================================================= -->
     <!-- ModuleIslandAssociationScreen + ModuleIslandAssociationDialog      -->
@@ -323,7 +327,28 @@
     <string name="module_island_association_dialog_title">Moduli per %1$s</string>
     <string name="module_island_association_no_modules">Nessun modulo associato</string>
 
+    <!-- ================================================================= -->
+    <!-- CheckUpStatusesManagementScreen + CheckUpStatusFormDialog          -->
+    <!-- ================================================================= -->
 
+    <string name="checkup_status_screen_title">Stati checkup</string>
+    <string name="checkup_status_dialog_title_create">Nuovo stato checkup</string>
+    <string name="checkup_status_dialog_title_edit">Modifica stato checkup</string>
+    <string name="checkup_status_field_code">Codice</string>
+    <string name="checkup_status_field_label">Nome</string>
+    <string name="checkup_status_field_color_hex">Colore (hex)</string>
+    <string name="checkup_status_field_icon_emoji">Icona (emoji)</string>
+    <string name="checkup_status_field_sort_order">Ordine</string>
+    <string name="checkup_status_field_blocks_deletion">Impedisce la cancellazione del checkup</string>
+    <string name="checkup_status_field_marks_completion">Segna il checkup come completato</string>
+    <string name="checkup_status_dialog_error">Codice già in uso o dati non validi</string>
 
+    <!-- ================================================================= -->
+    <!-- CheckUpStatusTransitionsScreen + CheckUpStatusTransitionsDialog    -->
+    <!-- ================================================================= -->
+
+    <string name="checkup_status_transitions_screen_title">Transizioni di stato</string>
+    <string name="checkup_status_transitions_dialog_title">Transizioni da %1$s</string>
+    <string name="checkup_status_transitions_no_transitions">Nessuna transizione consentita (stato terminale)</string>
 
 </resources>

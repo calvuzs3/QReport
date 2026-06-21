@@ -6,24 +6,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
-import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpStatusExt.getDisplayName
+import net.calvuz.qreport.app.util.ColorUtils.toComposeColor
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
 
-
+/**
+ * @param statusMaster The resolved master row for the checkup's status code,
+ * looked up by the caller (e.g. `statusMasters.find { it.id == checkup.status }`).
+ * Null if the status was deactivated/removed after the checkup was created.
+ */
 @Composable
 fun CheckupStatusChip(
-    status: CheckUpStatus,
+    statusMaster: CheckUpStatusMaster?,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val (text, containerColor) = when (status) {
-        CheckUpStatus.DRAFT -> status.getDisplayName(context) to MaterialTheme.colorScheme.surfaceVariant
-        CheckUpStatus.IN_PROGRESS -> status.getDisplayName(context) to MaterialTheme.colorScheme.primaryContainer
-        CheckUpStatus.COMPLETED -> status.getDisplayName(context) to MaterialTheme.colorScheme.tertiaryContainer
-        CheckUpStatus.EXPORTED -> status.getDisplayName(context) to MaterialTheme.colorScheme.secondaryContainer
-        CheckUpStatus.ARCHIVED -> status.getDisplayName(context) to MaterialTheme.colorScheme.outline
-    }
+    val text = statusMaster?.label ?: "?"
+    val containerColor = statusMaster?.colorHex?.toComposeColor() ?: MaterialTheme.colorScheme.surfaceVariant
 
     AssistChip(
         onClick = { },

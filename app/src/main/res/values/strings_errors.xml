@@ -297,9 +297,7 @@
     <string name="err_checkup_export">Esportazione fallita</string>
     <string name="err_checkup_delete_unknown">Errore sconosciuto</string>
     <string name="err_checkup_delete_not_found">Checkup non trovato</string>
-    <string name="err_checkup_delete_cannot_delete_completed">Non si possono cancellare check-up completati</string>
-    <string name="err_checkup_delete_cannot_delete_archived">Non si possono cancellare check-up archiviati</string>
-    <string name="err_checkup_delete_cannot_delete_exported">Non si possono cancellare check-up esportati</string>
+    <string name="err_checkup_delete_blocked_status">Non si può cancellare un check-up in questo stato</string>
 
     <string name="err_client_load_client">Caricamento Cliente fallito</string>
     <string name="err_facility_load_facility">Caricamento Stabilimento fallito</string>

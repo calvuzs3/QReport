@@ -21,7 +21,7 @@ import net.calvuz.qreport.export.domain.reposirory.PhotoNamingStrategy
 import net.calvuz.qreport.export.domain.reposirory.PhotoQuality
 import net.calvuz.qreport.photo.domain.model.ExportedPhoto
 import net.calvuz.qreport.photo.domain.model.PhotoExportResult
-import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpStatusExt.getDisplayName
+import net.calvuz.qreport.checkup.status.domain.repository.CheckUpStatusMasterRepository
 import org.apache.poi.xwpf.usermodel.*
 import org.apache.poi.util.Units
 import timber.log.Timber
@@ -46,7 +46,8 @@ import javax.inject.Singleton
 class WordReportGenerator @Inject constructor(
     @ApplicationContext private val context: Context,
     private val photoExportManager: PhotoExportManager,
-    private val exportFileRepository: ExportFileRepository
+    private val exportFileRepository: ExportFileRepository,
+    private val checkUpStatusMasterRepository: CheckUpStatusMasterRepository
 ) {
 
 //    /**
@@ -158,7 +159,7 @@ class WordReportGenerator @Inject constructor(
     /**
      * Crea tabella informazioni checkup
      */
-    private fun createInfoTable(document: XWPFDocument, exportData: ExportData) {
+    private fun createInfoTable(document: XWPFDocument, exportData: ExportData, statusLabel: String) {
         val table = document.createTable(4, 2)
 
         // Header tabella
@@ -171,7 +172,7 @@ class WordReportGenerator @Inject constructor(
         table.getRow(1).getCell(1).setText(exportData.checkup.header.islandInfo.serialNumber)
 
         table.getRow(2).getCell(0).setText("Stato")
-        table.getRow(2).getCell(1).setText(exportData.checkup.status.getDisplayName(context))
+        table.getRow(2).getCell(1).setText(statusLabel)
 
         table.getRow(3).getCell(0).setText("Completamento")
         table.getRow(3).getCell(1).setText("${exportData.statistics.completionPercentage}%")
@@ -452,9 +453,12 @@ class WordReportGenerator @Inject constructor(
             // Create Word document
             val document = XWPFDocument()
 
+            val statusLabel = checkUpStatusMasterRepository.getById(exportData.checkup.status)
+                .getOrNull()?.label ?: exportData.checkup.status
+
             // Add document content
             generateDocumentHeader(document, exportData)
-            createInfoTable(document, exportData)
+            createInfoTable(document, exportData, statusLabel)
             generateExecutiveSummary(document, exportData)
 
             // ✅ Use working directory for temporary photo operations

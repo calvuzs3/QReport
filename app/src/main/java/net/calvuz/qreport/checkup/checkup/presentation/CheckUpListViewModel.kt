@@ -10,13 +10,14 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.checkup.domain.usecase.DeleteCheckUpUseCase
 import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpStatsUseCase
 import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpsUseCase
 import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpFilter
 import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpSortOrder
 import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpWithStats
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
+import net.calvuz.qreport.checkup.status.domain.usecase.ObserveActiveCheckUpStatusesUseCase
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.settings.data.local.AppSettingsDataStore
 import net.calvuz.qreport.settings.domain.model.ListViewMode
@@ -37,7 +38,8 @@ data class CheckUpListUiState(
     val searchQuery: String = "",
     val selectedFilter: CheckUpFilter = CheckUpFilter.ALL,
     val checkUpSortOrder: CheckUpSortOrder = CheckUpSortOrder.RECENT_FIRST,
-    val cardVariant: ListViewMode = ListViewMode.FULL
+    val cardVariant: ListViewMode = ListViewMode.FULL,
+    val statusMasters: List<CheckUpStatusMaster> = emptyList()
 )
 
 @HiltViewModel
@@ -45,7 +47,8 @@ class CheckUpListViewModel @Inject constructor(
     private val getCheckUpsUseCase: GetCheckUpsUseCase,
     private val getCheckUpStatsUseCase: GetCheckUpStatsUseCase,
     private val deleteCheckUpUseCase: DeleteCheckUpUseCase,
-    private val appSettingsRepository: AppSettingsRepository
+    private val appSettingsRepository: AppSettingsRepository,
+    private val observeActiveCheckUpStatusesUseCase: ObserveActiveCheckUpStatusesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpListUiState())
@@ -59,6 +62,7 @@ class CheckUpListViewModel @Inject constructor(
     init {
         Timber.d("CheckUpListViewModel initialized")
         observeCardVariant()
+        observeCheckUpStatuses()
         loadCheckUps()
     }
 
@@ -119,7 +123,8 @@ class CheckUpListViewModel @Inject constructor(
                                 checkUpsWithStats,
                                 currentState.searchQuery,
                                 currentState.selectedFilter,
-                                currentState.checkUpSortOrder
+                                currentState.checkUpSortOrder,
+                                currentState.statusMasters
                             )
 
                             _uiState.value = currentState.copy(
@@ -193,7 +198,8 @@ class CheckUpListViewModel @Inject constructor(
                         checkUpsWithStats,
                         currentState.searchQuery,
                         currentState.selectedFilter,
-                        currentState.checkUpSortOrder
+                        currentState.checkUpSortOrder,
+                        currentState.statusMasters
                     )
 
                     _uiState.value = currentState.copy(
@@ -234,7 +240,8 @@ class CheckUpListViewModel @Inject constructor(
             currentState.checkUps,
             query,
             currentState.selectedFilter,
-            currentState.checkUpSortOrder
+            currentState.checkUpSortOrder,
+            currentState.statusMasters
         )
 
         _uiState.value = currentState.copy(
@@ -249,7 +256,8 @@ class CheckUpListViewModel @Inject constructor(
             currentState.checkUps,
             currentState.searchQuery,
             filter,
-            currentState.checkUpSortOrder
+            currentState.checkUpSortOrder,
+            currentState.statusMasters
         )
 
         _uiState.value = currentState.copy(
@@ -264,7 +272,8 @@ class CheckUpListViewModel @Inject constructor(
             currentState.checkUps,
             currentState.searchQuery,
             currentState.selectedFilter,
-            checkUpSortOrder
+            checkUpSortOrder,
+            currentState.statusMasters
         )
 
         _uiState.value = currentState.copy(
@@ -326,22 +335,41 @@ class CheckUpListViewModel @Inject constructor(
         }
     }
 
+    /** Observes active checkup statuses, for chip rendering, filters and status-based sort. */
+    private fun observeCheckUpStatuses() {
+        viewModelScope.launch {
+            observeActiveCheckUpStatusesUseCase()
+                .catch { e -> Timber.e(e, "Error observing checkup statuses") }
+                .collect { statusMasters ->
+                    val currentState = _uiState.value
+                    val filteredAndSorted = applyFiltersAndSort(
+                        currentState.checkUps,
+                        currentState.searchQuery,
+                        currentState.selectedFilter,
+                        currentState.checkUpSortOrder,
+                        statusMasters
+                    )
+                    _uiState.value = currentState.copy(
+                        statusMasters = statusMasters,
+                        filteredCheckUps = filteredAndSorted
+                    )
+                }
+        }
+    }
+
     private fun applyFiltersAndSort(
         checkUps: List<CheckUpWithStats>,
         searchQuery: String,
         filter: CheckUpFilter,
-        checkUpSortOrder: CheckUpSortOrder
+        checkUpSortOrder: CheckUpSortOrder,
+        statusMasters: List<CheckUpStatusMaster>
     ): List<CheckUpWithStats> {
         var filtered = checkUps
 
         // Apply status filter
-        filtered = when (filter) {
-            CheckUpFilter.ALL -> filtered
-            CheckUpFilter.DRAFT -> filtered.filter { it.checkUp.status == CheckUpStatus.DRAFT }
-            CheckUpFilter.IN_PROGRESS -> filtered.filter { it.checkUp.status == CheckUpStatus.IN_PROGRESS }
-            CheckUpFilter.COMPLETED -> filtered.filter { it.checkUp.status == CheckUpStatus.COMPLETED }
-            CheckUpFilter.EXPORTED -> filtered.filter { it.checkUp.status == CheckUpStatus.EXPORTED }
-            CheckUpFilter.ARCHIVED -> filtered.filter { it.checkUp.status == CheckUpStatus.ARCHIVED }
+        val statusId = filter.statusId
+        if (statusId != null) {
+            filtered = filtered.filter { it.checkUp.status == statusId }
         }
 
         // Apply search query
@@ -363,7 +391,9 @@ class CheckUpListViewModel @Inject constructor(
             CheckUpSortOrder.RECENT_FIRST -> filtered.sortedByDescending { it.checkUp.createdAt }
             CheckUpSortOrder.OLDEST_FIRST -> filtered.sortedBy { it.checkUp.createdAt }
             CheckUpSortOrder.CLIENT_NAME -> filtered.sortedBy { it.checkUp.header.clientInfo.companyName }
-            CheckUpSortOrder.STATUS -> filtered.sortedBy { it.checkUp.status.ordinal }
+            CheckUpSortOrder.STATUS -> filtered.sortedBy { checkUpWithStats ->
+                statusMasters.find { it.id == checkUpWithStats.checkUp.status }?.sortOrder ?: Int.MAX_VALUE
+            }
         }
 
         return filtered

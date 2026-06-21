@@ -10,7 +10,6 @@ import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleProgress
 import net.calvuz.qreport.checkup.data.local.mapper.toDomain
@@ -54,8 +53,8 @@ class CheckUpRepositoryImpl @Inject constructor(
         return checkUpDao.getCheckUpWithDetails(id)?.toDomain()
     }
 
-    override fun getCheckUpsByStatus(status: CheckUpStatus): Flow<List<CheckUp>> {
-        return checkUpDao.getCheckUpsByStatusFlow(status.name)
+    override fun getCheckUpsByStatus(status: String): Flow<List<CheckUp>> {
+        return checkUpDao.getCheckUpsByStatusFlow(status)
             .map { entities ->
                 entities.map { entity -> entity.toDomain() }
             }
@@ -97,17 +96,17 @@ class CheckUpRepositoryImpl @Inject constructor(
         checkUpDao.deleteCheckUpById(id)
     }
 
-    override suspend fun updateCheckUpStatus(id: String, status: CheckUpStatus) {
+    override suspend fun updateCheckUpStatus(id: String, status: String) {
         val now = Clock.System.now()
-        checkUpDao.updateCheckUpStatus(id, status.name, now)
+        checkUpDao.updateCheckUpStatus(id, status, now)
     }
 
-    override suspend fun completeCheckUp(id: String) {
+    override suspend fun completeCheckUp(id: String, status: String) {
         val now = Clock.System.now()
         checkUpDao.completeCheckUp(
             id = id,
             completedAt = now,
-            status = CheckUpStatus.COMPLETED.name,
+            status = status,
             updatedAt = now
         )
     }

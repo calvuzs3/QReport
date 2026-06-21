@@ -11,9 +11,9 @@ import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getDisplayName
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getIcon
-import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpStatusExt.getDisplayName
 import net.calvuz.qreport.app.util.NumberUtils.toItalianPercentage
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
+import net.calvuz.qreport.checkup.status.domain.repository.CheckUpStatusMasterRepository
 import net.calvuz.qreport.export.domain.reposirory.ExportData
 import net.calvuz.qreport.export.domain.reposirory.ExportFormat
 import net.calvuz.qreport.export.domain.reposirory.ExportOptions
@@ -30,7 +30,8 @@ import javax.inject.Singleton
  */
 @Singleton
 class TextReportGenerator @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val checkUpStatusMasterRepository: CheckUpStatusMasterRepository
 ) {
     /**
      * Genera report testuale completo
@@ -47,12 +48,15 @@ class TextReportGenerator @Inject constructor(
         try {
             Timber.d("Generazione report testuale per checkup ${exportData.checkup.id}")
 
+            val statusLabel = checkUpStatusMasterRepository.getById(exportData.checkup.status)
+                .getOrNull()?.label ?: exportData.checkup.status
+
             buildString {
                 // Header principale
                 appendReportHeader()
 
                 // Informazioni generali
-                appendGeneralInfo(exportData)
+                appendGeneralInfo(exportData, statusLabel)
                 appendLine()
 
                 // Riepilogo esecutivo
@@ -89,7 +93,7 @@ class TextReportGenerator @Inject constructor(
     /**
      * Informazioni generali del checkup
      */
-    private fun StringBuilder.appendGeneralInfo(exportData: ExportData) {
+    private fun StringBuilder.appendGeneralInfo(exportData: ExportData, statusLabel: String) {
         val checkup = exportData.checkup
         val clientInfo = exportData.checkup.header.clientInfo // .metadata.clientInfo
 
@@ -139,7 +143,7 @@ class TextReportGenerator @Inject constructor(
             appendLine("Durata Totale:        ${hours}h ${minutes}m")
         }
 
-        appendLine("Stato Checkup:        ${(checkup.status.getDisplayName(context))}")
+        appendLine("Stato Checkup:        $statusLabel")
 
         if (checkup.header.notes.isNotBlank()) {   //} .notes.isNotBlank()) {
             appendLine("Note Generali:        ${checkup.header.notes}")    // .notes}")

@@ -10,9 +10,11 @@ import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
+import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatusCodes
 import net.calvuz.qreport.checkup.checkup.domain.usecase.CreateCheckUpUseCase
 import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpsUseCase
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
+import net.calvuz.qreport.checkup.status.domain.usecase.ObserveActiveCheckUpStatusesUseCase
 import net.calvuz.qreport.client.client.domain.usecase.ObserveClientsUseCase
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
@@ -79,6 +81,7 @@ data class HomeUiState(
     val islandStats: DashboardIslandStatistics = DashboardIslandStatistics(),
     val recentIslands: List<Island> = emptyList(),
     val islandTypes: List<IslandTypeMaster> = emptyList(),
+    val statusMasters: List<CheckUpStatusMaster> = emptyList(),
 
     val error: UiText? = null
 )
@@ -94,6 +97,7 @@ class HomeViewModel @Inject constructor(
     private val observeClientsUseCase: ObserveClientsUseCase,
     private val observeIslandsUseCase: ObserveIslandsUseCase,
     private val observeIslandTypesUseCase: ObserveIslandTypesUseCase,
+    private val observeActiveCheckUpStatusesUseCase: ObserveActiveCheckUpStatusesUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -105,6 +109,7 @@ class HomeViewModel @Inject constructor(
         observeClients()
         observeIslands()
         observeIslandTypes()
+        observeCheckUpStatuses()
     }
 
     // =========================================================================
@@ -171,13 +176,13 @@ class HomeViewModel @Inject constructor(
         getCheckUpsUseCase().map { it.take(5) }.catch { e -> Timber.e(e); emit(emptyList()) }
 
     private fun loadInProgressCheckUps(): Flow<List<CheckUp>> =
-        getCheckUpsUseCase(status = CheckUpStatus.IN_PROGRESS).catch { e -> Timber.e(e); emit(emptyList()) }
+        getCheckUpsUseCase(status = CheckUpStatusCodes.IN_PROGRESS).catch { e -> Timber.e(e); emit(emptyList()) }
 
     private fun loadDraftCheckUps(): Flow<List<CheckUp>> =
-        getCheckUpsUseCase(status = CheckUpStatus.DRAFT).catch { e -> Timber.e(e); emit(emptyList()) }
+        getCheckUpsUseCase(status = CheckUpStatusCodes.DRAFT).catch { e -> Timber.e(e); emit(emptyList()) }
 
     private fun loadCompletedCheckUps(): Flow<List<CheckUp>> =
-        getCheckUpsUseCase(status = CheckUpStatus.COMPLETED).catch { e -> Timber.e(e); emit(emptyList()) }
+        getCheckUpsUseCase(status = CheckUpStatusCodes.COMPLETED).catch { e -> Timber.e(e); emit(emptyList()) }
 
     // =========================================================================
     // CLIENTS
@@ -234,6 +239,14 @@ class HomeViewModel @Inject constructor(
             observeIslandTypesUseCase()
                 .catch { e -> Timber.e(e, "Failed to observe island types") }
                 .collect { types -> _uiState.update { it.copy(islandTypes = types) } }
+        }
+    }
+
+    private fun observeCheckUpStatuses() {
+        viewModelScope.launch {
+            observeActiveCheckUpStatusesUseCase()
+                .catch { e -> Timber.e(e, "Failed to observe checkup statuses") }
+                .collect { statuses -> _uiState.update { it.copy(statusMasters = statuses) } }
         }
     }
 }

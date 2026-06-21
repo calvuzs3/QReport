@@ -4,7 +4,6 @@ import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpWithDetails
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpHeader
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.ClientInfo
 import net.calvuz.qreport.client.island.domain.model.IslandInfo
 import net.calvuz.qreport.settings.domain.model.TechnicianInfo
@@ -46,7 +45,7 @@ fun CheckUpEntity.toDomain(): CheckUp {
         ),
         islandType = this.islandType,
         islandTypeId = this.islandTypeId,
-        status = CheckUpStatus.valueOf(this.status),
+        status = this.status,
         checkItems = emptyList(), // Populated separately when needed
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
@@ -82,7 +81,7 @@ fun CheckUp.toEntity(): CheckUpEntity {
         headerNotes = this.header.notes,
         islandType = this.islandType,
         islandTypeId = this.islandTypeId,
-        status = this.status.name,
+        status = this.status,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
         completedAt = this.completedAt

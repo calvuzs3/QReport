@@ -31,6 +31,7 @@ import net.calvuz.qreport.app.app.presentation.ui.theme.warningContainer
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.presentation.components.CheckupStatusChip
 import net.calvuz.qreport.checkup.checkup.presentation.model.CheckupPkg
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
 import net.calvuz.qreport.client.client.presentation.model.ClientPkg
 import net.calvuz.qreport.client.island.domain.model.Island
 import net.calvuz.qreport.client.island.domain.model.IslandTypeMaster
@@ -96,7 +97,11 @@ fun HomeScreen(
                             PreviewEmptyRow(stringResource(R.string.home_checkup_empty))
                         } else {
                             uiState.recentCheckUps.take(3).forEach { checkUp ->
-                                CheckUpPreviewRow(checkUp = checkUp, onClick = { viewModel.navigateToCheckUp(checkUp.id) })
+                                CheckUpPreviewRow(
+                                    checkUp = checkUp,
+                                    statusMasters = uiState.statusMasters,
+                                    onClick = { viewModel.navigateToCheckUp(checkUp.id) }
+                                )
                             }
                         }
                     }
@@ -292,14 +297,14 @@ private fun PreviewEmptyRow(message: String) {
 }
 
 @Suppress("ParamsComparedByRef")@Composable
-private fun CheckUpPreviewRow(checkUp: CheckUp, onClick: () -> Unit) {
+private fun CheckUpPreviewRow(checkUp: CheckUp, statusMasters: List<CheckUpStatusMaster>, onClick: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), onClick = onClick, shape = MaterialTheme.shapes.small, color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)) {
         Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = checkUp.header.clientInfo.companyName, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(text = checkUp.updatedAt.toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            CheckupStatusChip(status = checkUp.status)
+            CheckupStatusChip(statusMaster = statusMasters.find { it.id == checkUp.status })
         }
     }
 }

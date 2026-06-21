@@ -37,7 +37,7 @@ import androidx.compose.ui.unit.dp
 import net.calvuz.qreport.R
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
 import net.calvuz.qreport.app.app.presentation.components.QReportConfirmDeleteDialog
 import net.calvuz.qreport.app.app.presentation.components.QrListStatItem
 import net.calvuz.qreport.app.app.presentation.components.QrStatusIndicator
@@ -53,6 +53,7 @@ fun CheckupCard(
 
     checkup: CheckUp,
     stats: CheckUpSingleStatistics? = null,
+    statusMaster: CheckUpStatusMaster? = null,
     onClick: () -> Unit,
     showActions: Boolean = true,
     onDelete: (() -> Unit)? = null,
@@ -72,6 +73,7 @@ fun CheckupCard(
             ListViewMode.FULL -> FullCheckupCard(
                 checkup = checkup,
                 stats = stats,
+                statusMaster = statusMaster,
                 showActions = showActions,
                 onDelete = { showDeleteDialog = false },
                 onEdit = onEdit
@@ -79,11 +81,13 @@ fun CheckupCard(
 
             ListViewMode.COMPACT -> CompactCheckupCard(
                 checkup = checkup,
-                stats = stats
+                stats = stats,
+                statusMaster = statusMaster
             )
 
             ListViewMode.MINIMAL -> MinimalCheckupCard(
-                checkup = checkup
+                checkup = checkup,
+                statusMaster = statusMaster
             )
         }
     }
@@ -107,6 +111,7 @@ fun CheckupCard(
 private fun FullCheckupCard(
     checkup: CheckUp,
     stats: CheckUpSingleStatistics?,
+    statusMaster: CheckUpStatusMaster?,
     showActions: Boolean,
     onDelete: (() -> Unit)?,
     onEdit: (() -> Unit)?
@@ -267,7 +272,7 @@ private fun FullCheckupCard(
 //            verticalAlignment = Alignment.CenterVertically
         ) {
             // Left
-            CheckupStatusChip(status = checkup.status)
+            CheckupStatusChip(statusMaster = statusMaster)
 
             // Right
             Text(
@@ -283,7 +288,8 @@ private fun FullCheckupCard(
 @Composable
 private fun CompactCheckupCard(
     checkup: CheckUp,
-    stats: CheckUpSingleStatistics?
+    stats: CheckUpSingleStatistics?,
+    statusMaster: CheckUpStatusMaster?
 ) {
     Row(
         modifier = Modifier.padding(12.dp),
@@ -326,12 +332,12 @@ private fun CompactCheckupCard(
             }
         }
 
-        QrStatusIndicator(isActive = checkup.status == CheckUpStatus.COMPLETED)
+        QrStatusIndicator(isActive = statusMaster?.marksCompletion == true)
     }
 }
 
 @Composable
-private fun MinimalCheckupCard(checkup: CheckUp) {
+private fun MinimalCheckupCard(checkup: CheckUp, statusMaster: CheckUpStatusMaster?) {
     Row(
         modifier = Modifier.padding(8.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -345,7 +351,7 @@ private fun MinimalCheckupCard(checkup: CheckUp) {
             )
         }
 
-        QrStatusIndicator(isActive = checkup.status == CheckUpStatus.COMPLETED)
+        QrStatusIndicator(isActive = statusMaster?.marksCompletion == true)
     }
 }
 

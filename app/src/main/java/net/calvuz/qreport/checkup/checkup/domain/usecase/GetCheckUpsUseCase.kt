@@ -2,18 +2,8 @@ package net.calvuz.qreport.checkup.checkup.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
-import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpRepository
 import javax.inject.Inject
-
-/**
- * Use Cases per gestione check-up
- *
- * AGGIORNATO per usare:
- * - CheckItemModules (invece di CheckItemTemplates)
- * - Strutture dati esistenti (CheckUpSingleStatistics, CheckUpProgress)
- * - CheckUpStatus con EXPORTED, ARCHIVED
- */
 
 // ============================================================
 // GET CHECKUPS USE CASES
@@ -23,7 +13,7 @@ class GetCheckUpsUseCase @Inject constructor(
     private val repository: CheckUpRepository
 ) {
     operator fun invoke(
-        status: CheckUpStatus? = null,
+        status: String? = null,
         islandType: String? = null
     ): Flow<List<CheckUp>> {
         return when {

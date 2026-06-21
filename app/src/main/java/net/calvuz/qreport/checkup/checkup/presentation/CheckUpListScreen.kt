@@ -21,6 +21,7 @@ import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpFilter
 import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpSortOrder
 import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpWithStats
 import net.calvuz.qreport.checkup.checkup.presentation.model.getDisplayName
+import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
 import net.calvuz.qreport.app.error.presentation.asUiText
 import net.calvuz.qreport.app.app.presentation.components.ActiveFiltersChipRow
 import net.calvuz.qreport.app.app.presentation.components.EmptyState
@@ -92,6 +93,7 @@ fun CheckUpListScreen(
                 FilterMenu(
                     expanded = showFilterMenu,
                     selectedFilter = uiState.selectedFilter,
+                    statusMasters = uiState.statusMasters,
                     onFilterSelected = viewModel::updateFilter,
                     onDismiss = { showFilterMenu = false }
                 )
@@ -117,8 +119,8 @@ fun CheckUpListScreen(
         // Filter chips
         if (uiState.selectedFilter != CheckUpFilter.ALL || uiState.checkUpSortOrder != CheckUpSortOrder.RECENT_FIRST) {
             ActiveFiltersChipRow(
-                selectedFilter = uiState.selectedFilter.getDisplayName(),
-                avoidFilter = CheckUpFilter.ALL.getDisplayName(),
+                selectedFilter = uiState.selectedFilter.getDisplayName(uiState.statusMasters),
+                avoidFilter = CheckUpFilter.ALL.getDisplayName(uiState.statusMasters),
                 selectedSort = uiState.checkUpSortOrder.getDisplayName(),
                 avoidSort = CheckUpSortOrder.RECENT_FIRST.getDisplayName(),
                 onClearFilter = { viewModel.updateFilter(CheckUpFilter.ALL) },
@@ -161,7 +163,7 @@ fun CheckUpListScreen(
                             stringResource(R.string.checkup_screen_list_empty_no_results_title) to
                                     stringResource(
                                         R.string.checkup_screen_list_empty_no_results_message,
-                                        uiState.selectedFilter.getDisplayName()
+                                        uiState.selectedFilter.getDisplayName(uiState.statusMasters)
                                     )
                         }
 
@@ -185,6 +187,7 @@ fun CheckUpListScreen(
                 else -> {
                     CheckupListContent(
                         checkups = uiState.filteredCheckUps,
+                        statusMasters = uiState.statusMasters,
                         variant = uiState.cardVariant,
                         onClick = onNavigateToCheckUpDetail,
                         onEdit = onNavigateToEditCheckUp,
@@ -212,6 +215,7 @@ fun CheckUpListScreen(
 @Composable
 private fun CheckupListContent(
     checkups: List<CheckUpWithStats>,
+    statusMasters: List<CheckUpStatusMaster>,
     onClick: (String) -> Unit,
     onEdit: (String) -> Unit,
     onDelete: (String) -> Unit,
@@ -229,6 +233,7 @@ private fun CheckupListContent(
             CheckupCard(
                 checkup = checkupWithStats.checkUp,
                 stats = checkupWithStats.statistics,
+                statusMaster = statusMasters.find { it.id == checkupWithStats.checkUp.status },
                 onClick = { onClick(checkupWithStats.checkUp.id) },
                 onEdit = { onEdit(checkupWithStats.checkUp.id) },
                 //onDelete = { onDelete(checkupWithStats.checkUp.id) },
@@ -270,17 +275,21 @@ private fun SortMenu(
 private fun FilterMenu(
     expanded: Boolean,
     selectedFilter: CheckUpFilter,
+    statusMasters: List<CheckUpStatusMaster>,
     onFilterSelected: (CheckUpFilter) -> Unit,
     onDismiss: () -> Unit
 ) {
+
+    val filters = listOf(CheckUpFilter.ALL) +
+        statusMasters.sortedBy { it.sortOrder }.map { CheckUpFilter(it.id) }
 
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss
     ) {
-        CheckUpFilter.entries.forEach { filter ->
+        filters.forEach { filter ->
             DropdownMenuItem(
-                text = { Text(filter.getDisplayName()) },
+                text = { Text(filter.getDisplayName(statusMasters)) },
                 onClick = {
                     onFilterSelected(filter)
                     onDismiss()

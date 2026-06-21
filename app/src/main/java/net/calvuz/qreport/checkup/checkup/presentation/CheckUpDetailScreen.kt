@@ -218,6 +218,7 @@ fun CheckUpDetailScreen(
                     item {
                         CheckUpHeaderCard(
                             checkUp = uiState.checkUp!!,
+                            statusMaster = uiState.statusMaster,
                             progress = uiState.progress,
                             onEditHeader = viewModel::showEditHeaderDialog,
                             associations = uiState.checkUpAssociations,

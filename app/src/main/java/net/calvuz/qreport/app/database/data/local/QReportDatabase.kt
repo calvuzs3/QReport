@@ -13,6 +13,7 @@ import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpDao
 import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
 import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
+import net.calvuz.qreport.checkup.status.data.local.dao.CheckUpStatusDao
 import net.calvuz.qreport.client.client.data.local.dao.ClientDao
 import net.calvuz.qreport.client.contact.data.local.dao.ContactDao
 import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
@@ -25,6 +26,8 @@ import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpEntity
 import net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeEntity
 import net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeIslandTypeCrossRef
 import net.calvuz.qreport.checkup.criticality.data.local.entity.CriticalityEntity
+import net.calvuz.qreport.checkup.status.data.local.entity.CheckUpStatusEntity
+import net.calvuz.qreport.checkup.status.data.local.entity.CheckUpStatusTransitionCrossRef
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpIslandAssociationEntity
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
@@ -54,6 +57,7 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_4_5
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_5_6
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
 
 /**
  * QReport Room Database
@@ -101,7 +105,9 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
         ModuleTypeEntity::class,
         CriticalityEntity::class,
         CheckItemTemplateEntity::class,
-        ModuleTypeIslandTypeCrossRef::class
+        ModuleTypeIslandTypeCrossRef::class,
+        CheckUpStatusEntity::class,
+        CheckUpStatusTransitionCrossRef::class
     ],
     version = QReportApplication.DATABASE_VERSION,
     exportSchema = true,
@@ -136,6 +142,7 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun moduleTypeDao(): ModuleTypeDao
     abstract fun criticalityDao(): CriticalityDao
     abstract fun checkItemTemplateDao(): CheckItemTemplateDao
+    abstract fun checkUpStatusDao(): CheckUpStatusDao
 
     companion object {
 
@@ -144,6 +151,7 @@ abstract class QReportDatabase : RoomDatabase() {
         val MIGRATION_4_5 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_4_5
         val MIGRATION_5_6 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_5_6
         val MIGRATION_6_7 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
+        val MIGRATION_7_8 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
 
         val CALLBACK = object : Callback() {}
     }
