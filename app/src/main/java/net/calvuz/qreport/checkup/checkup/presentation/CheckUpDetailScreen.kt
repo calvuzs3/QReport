@@ -7,6 +7,7 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,6 +42,7 @@ import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.checkup.checkup.presentation.components.AssociationManagementDialog
 import net.calvuz.qreport.checkup.checkup.presentation.components.CheckUpHeaderCard
 import net.calvuz.qreport.checkup.items.presentation.components.CheckupItemStatusChip
+import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getColor
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getNextStatus
 import net.calvuz.qreport.app.app.presentation.components.ErrorDialog
 import net.calvuz.qreport.photo.presentation.ui.components.PhotoCountBadge
@@ -211,7 +213,7 @@ fun CheckUpDetailScreen(
             uiState.checkUp != null -> {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(16.dp)
                 ) {
                     // Header Card
@@ -319,36 +321,38 @@ private fun ProgressOverviewCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 StatItem(
                     icon = Icons.AutoMirrored.Default.Assignment,
                     value = statistics.totalItems.toString(),
-                    label = stringResource(R.string.checkup_screen_detail_progress_total_label)
+                    label = stringResource(R.string.checkup_screen_detail_progress_total_label),
+                    modifier = Modifier.weight(1f)
                 )
 
                 StatItem(
                     icon = Icons.Default.CheckCircle,
                     value = statistics.completedItems.toString(),
                     label = stringResource(R.string.checkup_screen_detail_progress_completed_label),
-                    color = Color(0xFF4CAF50)
+                    color = Color(0xFF4CAF50),
+                    modifier = Modifier.weight(1f)
                 )
 
                 StatItem(
                     icon = Icons.Default.Error,
                     value = statistics.nokItems.toString(),
                     label = stringResource(R.string.checkup_screen_detail_progress_nok_label),
-                    color = Color(0xFFF44336)
+                    color = Color(0xFFF44336),
+                    modifier = Modifier.weight(1f)
                 )
 
-                if (statistics.criticalIssues > 0) {
-                    StatItem(
-                        icon = Icons.Default.Warning,
-                        value = statistics.criticalIssues.toString(),
-                        label = stringResource(R.string.checkup_screen_detail_progress_critical_label),
-                        color = Color(0xFFFF5722)
-                    )
-                }
+                StatItem(
+                    icon = Icons.Default.Warning,
+                    value = statistics.criticalIssues.toString(),
+                    label = stringResource(R.string.checkup_screen_detail_progress_critical_label),
+                    color = if (statistics.criticalIssues > 0) Color(0xFFFF5722) else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
@@ -370,18 +374,20 @@ private fun StatItem(
             imageVector = icon,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(28.dp)
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = color
         )
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
@@ -402,6 +408,9 @@ private fun ModuleSectionWithPhotos(
     modifier: Modifier = Modifier
 ) {
 
+    val okCount = items.count { it.status == CheckItemStatus.OK }
+    val nokCount = items.count { it.status == CheckItemStatus.NOK }
+
     Card(
         modifier = modifier.fillMaxWidth()
     ) {
@@ -417,11 +426,24 @@ private fun ModuleSectionWithPhotos(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = displayLabel,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = displayLabel,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.checkup_screen_detail_module_summary,
+                            okCount,
+                            items.size
+                        ) + if (nokCount > 0) " • $nokCount NOK" else "",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (nokCount > 0)
+                            MaterialTheme.colorScheme.error
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -480,58 +502,84 @@ private fun CheckItemCardWithPhotos(
 
     Card(
         modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
         ) {
-            // Check Item Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            // Status color stripe - quick visual scan without opening the item
+            Box(
+                modifier = Modifier
+                    .width(4.dp)
+                    .fillMaxHeight()
+                    .background(checkItem.status.getColor())
+            )
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = checkItem.itemCode,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = checkItem.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium
+                // Check Item Header
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = checkItem.itemCode,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (checkItem.criticality == CriticalityLevel.CRITICAL) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = stringResource(R.string.checkup_screen_detail_item_critical),
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                        Text(
+                            text = checkItem.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+
+                    CheckupItemStatusChip(
+                        status = checkItem.status,
+                        onClick = {
+                            val nextStatus = checkItem.status.getNextStatus()
+                            onStatusChange(checkItem.id, nextStatus)
+                        }
                     )
                 }
 
-                CheckupItemStatusChip(
-                    status = checkItem.status,
-                    onClick = {
-                        val nextStatus = checkItem.status.getNextStatus()
-                        onStatusChange(checkItem.id, nextStatus)
-                    }
+                // Photo Section
+                PhotoSection(
+                    photos = photos,
+                    photoCount = photoCount,
+                    onAddPhoto = { onAddPhoto(checkItem.id) },
+                    onViewPhotos = { onViewPhotos(checkItem.id) }
                 )
-            }
 
-            // Photo Section
-            PhotoSection(
-                photos = photos,
-                photoCount = photoCount,
-                onAddPhoto = { onAddPhoto(checkItem.id) },
-                onViewPhotos = { onViewPhotos(checkItem.id) }
-            )
-
-            // Actions Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
                 // Notes button
                 TextButton(
-                    onClick = { showNotesDialog = true }
+                    onClick = { showNotesDialog = true },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Default.Notes,
@@ -542,25 +590,16 @@ private fun CheckItemCardWithPhotos(
                     Text(stringResource(R.string.checkup_screen_detail_item_notes_button))
                 }
 
-                // Criticality indicator
-                if (checkItem.criticality == CriticalityLevel.CRITICAL) {
-                    Icon(
-                        imageVector = Icons.Default.Warning,
-                        contentDescription = stringResource(R.string.checkup_screen_detail_item_critical),
-                        tint = MaterialTheme.colorScheme.error
+                // Notes preview
+                if (checkItem.notes.isNotBlank()) {
+                    Text(
+                        text = checkItem.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
-
-            // Notes preview
-            if (checkItem.notes.isNotBlank()) {
-                Text(
-                    text = checkItem.notes,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
         }
     }
@@ -661,9 +700,8 @@ private fun PhotoSection(
                 )
             }
 
-            // true = view_all action button visible, always
             // View photos button (only if has photos)
-            if ( true or photos.isNotEmpty()) {
+            if (photos.isNotEmpty()) {
                 IconButton(
                     onClick = onViewPhotos,
                     modifier = Modifier.size(32.dp)
@@ -697,8 +735,8 @@ private fun PhotoPreviewRow(
                 model = photo.thumbnailPath ?: photo.filePath,
                 contentDescription = photo.caption.ifBlank { stringResource(R.string.checkup_screen_detail_photo_caption_default) },
                 modifier = Modifier
-                    .size(24.dp)
-                    .clip(RoundedCornerShape(4.dp)),
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
             )
         }

@@ -196,6 +196,7 @@
     <!-- Module Section -->
     <string name="checkup_screen_detail_module_collapse">Comprimi</string>
     <string name="checkup_screen_detail_module_expand">Espandi</string>
+    <string name="checkup_screen_detail_module_summary">%1$d/%2$d OK</string>
 
     <!-- Check Item Card -->
     <string name="checkup_screen_detail_item_notes_button">Note</string>
