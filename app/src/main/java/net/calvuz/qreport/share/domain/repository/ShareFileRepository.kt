@@ -7,7 +7,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.result.domain.QrResult
-import net.calvuz.qreport.export.domain.reposirory.ExportFormat
 import java.io.File
 
 /**
@@ -184,16 +183,6 @@ object QReportMimeTypes {
     const val PHOTO_PNG = "image/png"
     const val PDF = "application/pdf"
     const val UNKNOWN = "*/*"
-
-    /**
-     * Get MIME type for export format
-     */
-    fun forExportFormat(format: ExportFormat): String = when (format) {
-        ExportFormat.WORD -> WORD
-        ExportFormat.TEXT -> TEXT
-        ExportFormat.PHOTO_FOLDER -> ZIP_BACKUP
-        ExportFormat.COMBINED_PACKAGE -> ZIP_BACKUP
-    }
 
     /**
      * Get MIME type by file extension
