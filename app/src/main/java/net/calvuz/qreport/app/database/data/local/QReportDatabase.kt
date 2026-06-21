@@ -8,17 +8,23 @@ import net.calvuz.qreport.app.app.data.converter.AddressConverter
 import net.calvuz.qreport.app.app.data.converter.DatabaseConverters
 import net.calvuz.qreport.app.app.data.converter.PhotoConverter
 import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemDao
+import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemTemplateDao
 import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpDao
+import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
+import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
 import net.calvuz.qreport.client.client.data.local.dao.ClientDao
 import net.calvuz.qreport.client.contact.data.local.dao.ContactDao
 import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
-import net.calvuz.qreport.checkup.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemEntity
+import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemTemplateEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpEntity
+import net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeEntity
+import net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeIslandTypeCrossRef
+import net.calvuz.qreport.checkup.criticality.data.local.entity.CriticalityEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpIslandAssociationEntity
 import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
@@ -26,7 +32,6 @@ import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
-import net.calvuz.qreport.checkup.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import net.calvuz.qreport.client.document.data.local.dao.DocumentDao
@@ -46,6 +51,9 @@ import net.calvuz.qreport.ti.data.local.entity.TiIslandAssociationEntity
 import net.calvuz.qreport.ti.data.local.entity.TiMaintenanceLogAssociationEntity
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_4_5
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_5_6
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
 
 /**
  * QReport Room Database
@@ -67,7 +75,6 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
         CheckUpEntity::class,
         CheckItemEntity::class,
         PhotoEntity::class,
-        SparePartEntity::class,
         // clients
         ClientEntity::class,
         ContactEntity::class,
@@ -89,7 +96,12 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
         // TI-MaintenanceLog association
         TiMaintenanceLogAssociationEntity::class,
         // Island type definitions (server-authoritative, populated via sync)
-        IslandTypeEntity::class
+        IslandTypeEntity::class,
+        // Checklist master data (local-only, no server sync)
+        ModuleTypeEntity::class,
+        CriticalityEntity::class,
+        CheckItemTemplateEntity::class,
+        ModuleTypeIslandTypeCrossRef::class
     ],
     version = QReportApplication.DATABASE_VERSION,
     exportSchema = true,
@@ -106,7 +118,6 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun checkUpDao(): CheckUpDao
     abstract fun checkItemDao(): CheckItemDao
     abstract fun photoDao(): PhotoDao
-    abstract fun sparePartDao(): SparePartDao
     abstract fun clientDao(): ClientDao
     abstract fun contactDao(): ContactDao
     abstract fun facilityDao(): FacilityDao
@@ -122,11 +133,17 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun checkUpMaintenanceLogAssociationDao(): CheckUpMaintenanceLogAssociationDao
     abstract fun syncDao(): SyncDao
     abstract fun islandTypeDao(): IslandTypeDao
+    abstract fun moduleTypeDao(): ModuleTypeDao
+    abstract fun criticalityDao(): CriticalityDao
+    abstract fun checkItemTemplateDao(): CheckItemTemplateDao
 
     companion object {
 
         val MIGRATION_2_3 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
         val MIGRATION_3_4 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
+        val MIGRATION_4_5 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_4_5
+        val MIGRATION_5_6 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_5_6
+        val MIGRATION_6_7 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
 
         val CALLBACK = object : Callback() {}
     }

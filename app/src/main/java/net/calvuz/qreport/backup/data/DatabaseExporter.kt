@@ -14,7 +14,6 @@ import net.calvuz.qreport.backup.domain.model.backup.DatabaseBackup
 import net.calvuz.qreport.backup.domain.model.backup.FacilityBackup
 import net.calvuz.qreport.backup.domain.model.backup.FacilityIslandBackup
 import net.calvuz.qreport.backup.domain.model.backup.PhotoBackup
-import net.calvuz.qreport.backup.domain.model.backup.SparePartBackup
 import net.calvuz.qreport.backup.domain.model.backup.TiAssociationBackup
 import net.calvuz.qreport.backup.domain.model.backup.TiMaintenanceLogAssociationBackup
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
@@ -35,7 +34,6 @@ import net.calvuz.qreport.client.client.data.local.dao.ClientDao
 import net.calvuz.qreport.client.contact.data.local.dao.ContactDao
 import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandDao
-import net.calvuz.qreport.checkup.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpIslandAssociationEntity
@@ -45,7 +43,6 @@ import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.photo.data.local.entity.PhotoEntity
-import net.calvuz.qreport.checkup.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
@@ -74,7 +71,6 @@ class DatabaseExporter @Inject constructor(
     private val checkUpDao: CheckUpDao,
     private val checkItemDao: CheckItemDao,
     private val photoDao: PhotoDao,
-    private val sparePartDao: SparePartDao,
     private val clientDao: ClientDao,
     private val contractDao: ContractDao,
     private val contactDao: ContactDao,
@@ -132,9 +128,6 @@ class DatabaseExporter @Inject constructor(
             val photos = photoDao.getAllForBackup().map { it.toBackup() }
             Timber.v("Exported ${photos.size} photos")
 
-            val spareParts = sparePartDao.getAllForBackup().map { it.toBackup() }
-            Timber.v("Exported ${spareParts.size} spare parts")
-
             val associations = checkUpAssociationDao.getAllForBackup().map { it.toBackup() }
             Timber.v("Exported ${associations.size} checkup associations")
 
@@ -162,7 +155,6 @@ class DatabaseExporter @Inject constructor(
                 checkUps = checkUps,
                 checkItems = checkItems,
                 photos = photos,
-                spareParts = spareParts,
 
                 // Client entities
                 clients = clients,
@@ -197,7 +189,7 @@ class DatabaseExporter @Inject constructor(
             Timber.v("Export completed in ${duration} ms - $totalRecords records")
             Timber.i(buildString {
                 append("Breakdown: CheckUps=${checkUps.size}, CheckItems=${checkItems.size}, ")
-                append("Photos=${photos.size}, SpareParts=${spareParts.size}, ")
+                append("Photos=${photos.size}, ")
                 append("Clients=${clients.size}, ContactsError=${contacts.size}, ")
                 append("ContractsError=${contracts.size}, ")
                 append("FacilityError=${facilities.size}, Islands=${facilityIslands.size}, ")
@@ -224,7 +216,6 @@ class DatabaseExporter @Inject constructor(
                 checkUpDao.count(),
                 checkItemDao.count(),
                 photoDao.count(),
-                sparePartDao.count(),
                 clientDao.count(),
                 contactDao.count(),
                 contractDao.count(),
@@ -384,26 +375,6 @@ fun PhotoEntity.toBackup(): PhotoBackup {
         cameraSettings = cameraSettings
     )
 }
-
-/**
- * Mapping da SparePartEntity a SparePartBackup ✔️
- */
-fun SparePartEntity.toBackup(): SparePartBackup {
-    return SparePartBackup(
-        id = id,
-        checkUpId = checkUpId,
-        partNumber = partNumber,
-        description = description,
-        quantity = quantity,
-        urgency = urgency,
-        category = category,
-        estimatedCost = estimatedCost,
-        notes = notes,
-        supplierInfo = supplierInfo,
-        addedAt = addedAt
-    )
-}
-
 
 /**
  * Mapping da ClientEntity a ClientBackup ✔️

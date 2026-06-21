@@ -10,7 +10,6 @@ import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.export.data.photo.PhotoExportManager
 import net.calvuz.qreport.checkup.items.domain.model.CheckItem
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePart
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getDisplayName
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getReportColor
 import net.calvuz.qreport.app.util.DateTimeUtils.toFilenameSafeDate
@@ -287,31 +286,6 @@ class WordReportGenerator @Inject constructor(
     }
 
     /**
-     * Genera sezione spare parts
-     */
-    private fun generateSparePartsSection(document: XWPFDocument, spareParts: List<SparePart>) {
-        val sparePartsParagraph = document.createParagraph()
-        sparePartsParagraph.createRun().apply {
-            setText("RICAMBI NECESSARI")
-            isBold = true
-            fontSize = 14
-        }
-
-        spareParts.forEach { sparePart ->
-            val partParagraph = document.createParagraph()
-            partParagraph.createRun().apply {
-                setText("• ${sparePart.description} - Quantità: ${sparePart.quantity}")  // .name
-                if (sparePart.notes.isNotBlank()) {
-                    addBreak()
-                    setText("  Note: ${sparePart.notes}")
-                }
-            }
-        }
-
-        document.createParagraph() // Riga vuota
-    }
-
-    /**
      * Genera footer documento
      */
     private fun generateDocumentFooter(document: XWPFDocument, exportData: ExportData) {
@@ -488,11 +462,6 @@ class WordReportGenerator @Inject constructor(
 
             // Generate module details with photos
             generateModuleDetails(document, exportData, photoResult)
-
-            // Add spare parts if any
-            if (exportData.checkup.spareParts.isNotEmpty()) {
-                generateSparePartsSection(document, exportData.checkup.spareParts)
-            }
 
             // Add document footer
             generateDocumentFooter(document, exportData)
@@ -777,43 +746,6 @@ class WordReportGenerator @Inject constructor(
     }
 
     /**
-     * Genera sezione spare parts
-     */
-//    private fun generateSparePartsSection(document: XWPFDocument, spareParts: List<SparePart>) {
-//
-//        createSectionTitle(document, "PARTI DI RICAMBIO RICHIESTE")
-//
-//        val table = document.createTable(spareParts.size + 1, 5).apply {
-//            width = 5000
-//        }
-//
-//        // Header
-//        val headers = listOf("Codice", "Descrizione", "Quantità", "Urgenza", "Note")
-//        val headerRow = table.getRow(0)
-//
-//        headers.forEachIndexed { index, header ->
-//            headerRow.getCell(index).apply {
-//                text = header
-//                color = "1F4E79"
-//                paragraphs[0].runs[0].apply {
-//                    isBold = true
-//                    color = "FFFFFF"
-//                }
-//            }
-//        }
-//
-//        // Dati
-//        spareParts.forEachIndexed { index, part ->
-//            val row = table.getRow(index + 1)
-//            row.getCell(0).text = part.partNumber
-//            row.getCell(1).text = part.description
-//            row.getCell(2).text = part.quantity.toString()
-//            row.getCell(3).text = part.urgency.displayName
-//            row.getCell(4).text = part.notes
-//        }
-//    }
-
-    /**
      * Genera footer con firma digitale
      */
 //    private fun generateDocumentFooter(document: XWPFDocument, exportData: ExportData) {
@@ -955,11 +887,6 @@ class WordReportGenerator @Inject constructor(
 //
 //            // 5. Export and add photos
 //            val photoResult = createPhotosSection(document, exportData, exportDirectory)
-//
-//            // 6. Add spare parts if any
-//            if (exportData.spareParts.isNotEmpty()) {
-//                addSparePartsSection(document, exportData.spareParts)
-//            }
 //
 //            // 7. Add statistics
 //            addStatisticsSection(document, exportData.statistics)

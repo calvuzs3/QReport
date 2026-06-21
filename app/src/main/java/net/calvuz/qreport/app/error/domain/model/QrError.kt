@@ -756,7 +756,6 @@ interface QrError {
         data class UpdateNotes(val message: String? = null) : Checkup
         data class UpdateHeader(val message: String? = null) : Checkup
         data class NotAvailable(val message: String? = null) : Checkup
-        data class SpareAdd(val message: String? = null) : Checkup
         data class Association(val message: String? = null) : Checkup
         data class AssociationRemove(val message: String? = null) : Checkup
         data class Finalize(val message: String? = null) : Checkup

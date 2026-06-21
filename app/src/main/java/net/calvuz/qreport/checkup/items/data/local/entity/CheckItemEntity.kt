@@ -34,10 +34,12 @@ data class CheckItemEntity (
     @PrimaryKey val id: String,
     @ColumnInfo(name = "checkup_id") val checkUpId: String,
     @ColumnInfo(name = "module_type") val moduleType: String,
+    @ColumnInfo(name = "module_type_id") val moduleTypeId: String? = null, // FK → module_types.id (nullable during Expand phase)
     @ColumnInfo(name = "item_code") val itemCode: String,
     @ColumnInfo(name = "description") val description: String,
     @ColumnInfo(name = "status") val status: String,
     @ColumnInfo(name = "criticality") val criticality: String,
+    @ColumnInfo(name = "criticality_id") val criticalityId: String? = null, // FK → criticality_levels.id (nullable during Expand phase)
     @ColumnInfo(name = "notes") val notes: String,
     @ColumnInfo(name = "checked_at") val checkedAt: Instant?,
     @ColumnInfo(name = "order_index") val orderIndex: Int

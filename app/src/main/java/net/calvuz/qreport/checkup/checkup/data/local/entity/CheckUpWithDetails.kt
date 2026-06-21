@@ -13,10 +13,5 @@ data class CheckUpWithDetails(
         parentColumn = "id",
         entityColumn = "checkup_id"
     )
-    val checkItems: List<CheckItemEntity>,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "checkup_id"
-    )
-    val spareParts: List<SparePartEntity>
+    val checkItems: List<CheckItemEntity>
 )

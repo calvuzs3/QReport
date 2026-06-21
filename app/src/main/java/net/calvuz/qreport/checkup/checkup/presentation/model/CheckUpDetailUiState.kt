@@ -8,8 +8,8 @@ import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpIslandAssociation
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
+import net.calvuz.qreport.checkup.modules.domain.model.ModuleTypeMaster
 import net.calvuz.qreport.photo.domain.model.Photo
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePart
 import net.calvuz.qreport.app.error.presentation.UiText
 
 data class CheckUpDetailUiState(
@@ -26,7 +26,7 @@ data class CheckUpDetailUiState(
 
     val checkUp: CheckUp? = null,
     val checkItems: List<CheckItem> = emptyList(),
-    val spareParts: List<SparePart> = emptyList(),
+    val moduleTypes: List<ModuleTypeMaster> = emptyList(),
     val progress: CheckUpProgress = CheckUpProgress(), // ? =null
     val statistics: CheckUpSingleStatistics = CheckUpSingleStatistics(), // ? = null
 
@@ -45,12 +45,10 @@ data class CheckUpDetailUiState(
     val isLoading: Boolean = false,
     val isUpdating: Boolean = false,
     val isExporting: Boolean = false,
-    val isAddingSparePart: Boolean = false,
     val isUpdatingHeader: Boolean = false,
     val expandedModules: Set<String> = emptySet(),
 
     // Dialog states
-    val showAddSparePartDialog: Boolean = false,
     val showEditHeaderDialog: Boolean = false,
     val showExportDialog: Boolean = false,
 
@@ -130,7 +128,7 @@ data class CheckUpDetailUiState(
         get() = checkItems.count { it.criticality == CriticalityLevel.CRITICAL && it.status == CheckItemStatus.NOK }
 
     val hasDialogOpen: Boolean
-        get() = showAddSparePartDialog || showEditHeaderDialog || showExportDialog
+        get() = showEditHeaderDialog || showExportDialog
 
 
     val checkupId: String?

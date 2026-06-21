@@ -15,7 +15,6 @@ data class CheckUpSingleStatistics(
     val importantIssues: Int = 0,
     val modulesCount: Int = 0,
     val photosCount: Int = 0,
-    val sparePartsCount: Int = 0,
 
     /* between 0 and 1 */
     val completionPercentage: Float = 0f

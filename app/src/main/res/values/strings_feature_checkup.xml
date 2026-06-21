@@ -101,6 +101,7 @@
     <string name="checkup_screen_list_title">Check-up</string>
     <string name="checkup_screen_list_action_sort">Ordinamento</string>
     <string name="checkup_screen_list_action_filter">Filtri</string>
+    <string name="checkup_screen_list_action_settings">Impostazioni checkup</string>
 
     <!-- Search -->
     <string name="checkup_screen_list_search_placeholder">Ricerca Check-up</string>
@@ -185,20 +186,6 @@
     <!-- Error State -->
     <string name="checkup_screen_detail_error_retry">Riprova</string>
 
-    <!-- Add Spare Part Dialog -->
-    <string name="checkup_screen_detail_dialog_spare_part_title">Aggiungi Ricambio</string>
-    <string name="checkup_screen_detail_dialog_spare_part_number_label">Numero Parte *</string>
-    <string name="checkup_screen_detail_dialog_spare_part_description_label">Descrizione *</string>
-    <string name="checkup_screen_detail_dialog_spare_part_quantity_label">Quantità *</string>
-    <string name="checkup_screen_detail_dialog_spare_part_urgency_label">Urgenza</string>
-    <string name="checkup_screen_detail_dialog_spare_part_category_label">Categoria</string>
-    <string name="checkup_screen_detail_dialog_spare_part_cost_label">Costo Stimato (€)</string>
-    <string name="checkup_screen_detail_dialog_spare_part_cost_prefix">€\u0020</string>
-    <string name="checkup_screen_detail_dialog_spare_part_notes_label">Note</string>
-    <string name="checkup_screen_detail_dialog_spare_part_supplier_label">Info Fornitore</string>
-    <string name="checkup_screen_detail_dialog_spare_part_action_add">Aggiungi</string>
-    <string name="checkup_screen_detail_dialog_spare_part_action_cancel">Annulla</string>
-
     <!-- Progress Overview -->
     <string name="checkup_screen_detail_progress_title">Panoramica Progresso</string>
     <string name="checkup_screen_detail_progress_total_label">Totali</string>
@@ -228,13 +215,6 @@
     <string name="checkup_screen_detail_photo_caption_default">Foto check item</string>
     <string name="checkup_screen_detail_photo_view_all">Vedi tutto</string>
     <string name="checkup_screen_detail_photo_count_more">+%1$d</string>
-
-    <!-- Spare Parts Section -->
-    <string name="checkup_screen_detail_spare_parts_title">Ricambi Necessari</string>
-    <string name="checkup_screen_detail_spare_parts_add">Aggiungi ricambio</string>
-    <string name="checkup_screen_detail_spare_parts_empty">Nessun ricambio segnalato</string>
-    <string name="checkup_screen_detail_spare_parts_part_number">P/N: %1$s</string>
-    <string name="checkup_screen_detail_spare_parts_quantity">Qtà: %1$d</string>
 
     <!-- ========================================== -->
     <!-- DIALOGS - EditHeaderDialog.kt -->
@@ -285,11 +265,63 @@
     <string name="checkup_dialog_edit_header_action_cancel">Annulla</string>
     <string name="checkup_dialog_edit_header_action_save">Salva</string>
 
+    <!-- ======================================================= -->
+    <!-- ModuleTypesManagementScreen + ModuleTypeFormDialog       -->
+    <!-- ======================================================= -->
 
+    <string name="module_types_screen_title">Moduli checklist</string>
+    <string name="module_type_dialog_title_create">Nuovo modulo</string>
+    <string name="module_type_dialog_title_edit">Modifica modulo</string>
+    <string name="module_type_field_code">Codice</string>
+    <string name="module_type_field_label">Nome</string>
+    <string name="module_type_field_description">Descrizione</string>
+    <string name="module_type_field_sort_order">Ordine</string>
+    <string name="module_type_dialog_error">Codice già in uso o dati non validi</string>
 
+    <!-- ============================================================= -->
+    <!-- CriticalityLevelsManagementScreen + CriticalityLevelFormDialog -->
+    <!-- ============================================================= -->
 
+    <string name="criticality_levels_screen_title">Livelli criticità</string>
+    <string name="criticality_level_dialog_title_create">Nuovo livello criticità</string>
+    <string name="criticality_level_dialog_title_edit">Modifica livello criticità</string>
+    <string name="criticality_level_field_code">Codice</string>
+    <string name="criticality_level_field_label">Nome</string>
+    <string name="criticality_level_field_priority">Priorità</string>
+    <string name="criticality_level_field_color_hex">Colore (hex)</string>
+    <string name="criticality_level_field_icon_emoji">Icona (emoji)</string>
+    <string name="criticality_level_field_sort_order">Ordine</string>
+    <string name="criticality_level_dialog_error">Codice già in uso o dati non validi</string>
 
+    <!-- ================================================================= -->
+    <!-- CheckItemTemplatesManagementScreen + CheckItemTemplateFormDialog   -->
+    <!-- ================================================================= -->
 
+    <string name="check_item_template_screen_title">Template checklist</string>
+    <string name="check_item_template_dialog_title_create">Nuovo template</string>
+    <string name="check_item_template_dialog_title_edit">Modifica template</string>
+    <string name="check_item_template_field_category">Categoria</string>
+    <string name="check_item_template_field_description">Descrizione</string>
+    <string name="check_item_template_field_module_type">Modulo</string>
+    <string name="check_item_template_field_criticality">Criticità</string>
+    <string name="check_item_template_field_order_index">Ordine</string>
+    <string name="check_item_template_dialog_error">Dati non validi</string>
+
+    <!-- ================================================================= -->
+    <!-- CheckUpSettingsScreen.kt                                          -->
+    <!-- ================================================================= -->
+
+    <string name="checkup_settings_screen_title">Impostazioni checkup</string>
+    <string name="checkup_settings_module_island_association_title">Moduli per tipo isola</string>
+    <string name="checkup_settings_module_island_association_subtitle">Associa i moduli applicabili a ciascun tipo isola</string>
+
+    <!-- ================================================================= -->
+    <!-- ModuleIslandAssociationScreen + ModuleIslandAssociationDialog      -->
+    <!-- ================================================================= -->
+
+    <string name="module_island_association_screen_title">Moduli per tipo isola</string>
+    <string name="module_island_association_dialog_title">Moduli per %1$s</string>
+    <string name="module_island_association_no_modules">Nessun modulo associato</string>
 
 
 

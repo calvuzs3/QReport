@@ -26,7 +26,6 @@ data class DatabaseBackup(
     val checkUps: List<CheckUpBackup>,
     val checkItems: List<CheckItemBackup>,
     val photos: List<PhotoBackup>,
-    val spareParts: List<SparePartBackup>,
 
     // ===== CLIENT MANAGEMENT =====
     val clients: List<ClientBackup>,
@@ -61,7 +60,6 @@ data class DatabaseBackup(
         return checkUps.size +
                 checkItems.size +
                 photos.size +
-                spareParts.size +
                 clients.size +
                 contacts.size +
                 contracts.size +
@@ -90,7 +88,6 @@ data class DatabaseBackup(
                 checkUps = emptyList(),
                 checkItems = emptyList(),
                 photos = emptyList(),
-                spareParts = emptyList(),
                 clients = emptyList(),
                 contacts = emptyList(),
                 contracts = emptyList(),

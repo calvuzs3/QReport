@@ -26,6 +26,9 @@ interface IslandTypeDao {
     @Query("SELECT * FROM island_types WHERE code = :code LIMIT 1")
     suspend fun getByCode(code: String): IslandTypeEntity?
 
+    @Query("SELECT * FROM island_types WHERE label = :label LIMIT 1")
+    suspend fun getByLabel(label: String): IslandTypeEntity?
+
     @Query("SELECT * FROM island_types WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): IslandTypeEntity?
 

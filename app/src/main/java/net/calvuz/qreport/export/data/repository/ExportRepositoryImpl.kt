@@ -534,7 +534,6 @@ class ExportRepositoryImpl @Inject constructor(
                         exportData.itemsByModule.values.flatten().flatMap { it.photos }.size
                     }"
                 )
-                appendLine("🔩 Parti di ricambio: ${exportData.checkup.spareParts.size}")
                 appendLine()
                 appendLine("Generato da QReport v1.0")
             }
@@ -764,7 +763,6 @@ class ExportRepositoryImpl @Inject constructor(
                 // Assumiamo che sia una cartella con file count
                 allPhotos.size
             } ?: 0,
-            sparePartsIncluded = exportData.checkup.spareParts.size,
             dataProcessedBytes = result.totalFileSize
         )
     }

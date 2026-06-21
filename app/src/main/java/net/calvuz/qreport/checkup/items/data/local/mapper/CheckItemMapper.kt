@@ -14,11 +14,16 @@ fun CheckItemEntity.toDomain(): CheckItem {
     return CheckItem(
         id = this.id,
         checkUpId = this.checkUpId,
-        moduleType = ModuleType.valueOf(this.moduleType),
+        // find+fallback instead of valueOf(): a module/criticality code not in the
+        // legacy enum must not crash the checkup screen, same convention as
+        // IslandType.Companion.parse().
+        moduleType = ModuleType.entries.find { it.name == this.moduleType } ?: ModuleType.MECHANICAL,
+        moduleTypeId = this.moduleTypeId,
         itemCode = this.itemCode,
         description = this.description,
         status = CheckItemStatus.valueOf(this.status),
-        criticality = CriticalityLevel.valueOf(this.criticality), // AGGIORNATO
+        criticality = CriticalityLevel.entries.find { it.name == this.criticality } ?: CriticalityLevel.ROUTINE,
+        criticalityId = this.criticalityId,
         notes = this.notes,
         photos = emptyList(), // Populated separately when needed
         checkedAt = this.checkedAt,
@@ -31,10 +36,12 @@ fun CheckItem.toEntity(): CheckItemEntity {
         id = this.id,
         checkUpId = this.checkUpId,
         moduleType = this.moduleType.name,
+        moduleTypeId = this.moduleTypeId,
         itemCode = this.itemCode,
         description = this.description,
         status = this.status.name,
         criticality = this.criticality.name, // AGGIORNATO
+        criticalityId = this.criticalityId,
         notes = this.notes,
         checkedAt = this.checkedAt,
         orderIndex = this.orderIndex

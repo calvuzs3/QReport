@@ -555,7 +555,6 @@ fun QrError.Checkup.toUiText(): UiText {
         is QrError.Checkup.UpdateNotes -> StringResources(R.string.err_checkup_update_notes)
         is QrError.Checkup.UpdateHeader -> StringResources(R.string.err_checkup_update_header)
         is QrError.Checkup.NotAvailable -> StringResources(R.string.err_checkup_not_available)
-        is QrError.Checkup.SpareAdd -> StringResources(R.string.err_checkup_spare_add)
         is QrError.Checkup.Association -> StringResources(R.string.err_checkup_association)
         is QrError.Checkup.AssociationRemove -> StringResources(R.string.err_checkup_association_remove)
         is QrError.Checkup.Finalize -> StringResources(R.string.err_checkup_finalize)

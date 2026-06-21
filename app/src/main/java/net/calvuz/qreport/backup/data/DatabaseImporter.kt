@@ -13,7 +13,6 @@ import net.calvuz.qreport.backup.domain.model.backup.FacilityBackup
 import net.calvuz.qreport.backup.domain.model.backup.FacilityIslandBackup
 import net.calvuz.qreport.backup.domain.model.backup.PhotoBackup
 import net.calvuz.qreport.backup.domain.model.enum.RestoreStrategy
-import net.calvuz.qreport.backup.domain.model.backup.SparePartBackup
 import net.calvuz.qreport.backup.domain.model.backup.TiAssociationBackup
 import net.calvuz.qreport.backup.domain.model.backup.TiMaintenanceLogAssociationBackup
 import net.calvuz.qreport.app.database.data.local.QReportDatabase
@@ -34,7 +33,6 @@ import net.calvuz.qreport.client.client.data.local.dao.ClientDao
 import net.calvuz.qreport.client.contact.data.local.dao.ContactDao
 import net.calvuz.qreport.client.facility.data.local.dao.FacilityDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandDao
-import net.calvuz.qreport.checkup.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpIslandAssociationEntity
@@ -43,7 +41,6 @@ import net.calvuz.qreport.client.client.data.local.entity.ClientEntity
 import net.calvuz.qreport.client.contact.data.local.entity.ContactEntity
 import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
-import net.calvuz.qreport.checkup.checkup.data.local.entity.SparePartEntity
 import net.calvuz.qreport.client.contract.data.local.dao.ContractDao
 import net.calvuz.qreport.client.contract.data.local.entity.ContractEntity
 import net.calvuz.qreport.client.unit.data.local.dao.MechanicalUnitDao
@@ -75,7 +72,6 @@ class DatabaseImporter @Inject constructor(
     private val checkUpDao: CheckUpDao,
     private val checkItemDao: CheckItemDao,
     private val photoDao: PhotoDao,
-    private val sparePartDao: SparePartDao,
     private val clientDao: ClientDao,
     private val contactDao: ContactDao,
     private val contractDao: ContractDao,
@@ -186,10 +182,6 @@ class DatabaseImporter @Inject constructor(
             checkItemDao.deleteAll()
             Timber.v("Cleared check_items")
 
-            // 4. Spare parts (dipende da checkups)
-            sparePartDao.deleteAll()
-            Timber.v("Cleared spare_parts")
-
             // 5. CheckUps (dipende da facility_islands via associations)
             checkUpDao.deleteAll()
             Timber.v("Cleared checkups")
@@ -294,12 +286,6 @@ class DatabaseImporter @Inject constructor(
                 Timber.v("Imported ${backup.photos.size} photos")
             }
 
-            // 8. Spare Parts (dipende da checkups)
-            if (backup.spareParts.isNotEmpty()) {
-                sparePartDao.insertAllFromBackup(backup.spareParts.map { it.toEntity() })
-                Timber.v("Imported ${backup.spareParts.size} spare parts")
-            }
-
             // 9. Associations (dipende da checkups + facility_islands)
             if (backup.checkUpAssociations.isNotEmpty()) {
                 checkUpAssociationDao.insertAllFromBackup(backup.checkUpAssociations.map { it.toEntity() })
@@ -364,7 +350,6 @@ class DatabaseImporter @Inject constructor(
                 "checkUps" to checkUpDao.count(),
                 "checkItems" to checkItemDao.count(),
                 "photos" to photoDao.count(),
-                "spareParts" to sparePartDao.count(),
                 "associations" to checkUpAssociationDao.count(),
                 "tiIslandAssociations" to tiAssociationDao.count(),
                 "checkUpMaintenanceLogAssociations" to checkUpMaintenanceLogAssociationDao.count(),
@@ -384,7 +369,6 @@ class DatabaseImporter @Inject constructor(
                 "checkUps" to originalBackup.checkUps.size,
                 "checkItems" to originalBackup.checkItems.size,
                 "photos" to originalBackup.photos.size,
-                "spareParts" to originalBackup.spareParts.size,
                 "associations" to originalBackup.checkUpAssociations.size,
                 "tiIslandAssociations" to originalBackup.tiIslandAssociations.size,
                 "checkUpMaintenanceLogAssociations" to originalBackup.checkUpMaintenanceLogAssociations.size,
@@ -450,7 +434,6 @@ class DatabaseImporter @Inject constructor(
                 "Checkups" to checkUpDao.count(),
                 "Check Items" to checkItemDao.count(),
                 "Photos" to photoDao.count(),
-                "Spare Parts" to sparePartDao.count(),
                 "Associations" to checkUpAssociationDao.count(),
                 "TI Island Associations" to tiAssociationDao.count(),
                 "CheckUp MLog Associations" to checkUpMaintenanceLogAssociationDao.count(),
@@ -558,25 +541,6 @@ fun PhotoBackup.toEntity(): PhotoEntity {
         perspective = perspective,
         exifData = exifData,
         cameraSettings = cameraSettings
-    )
-}
-
-/**
- * Mapping da SparePartBackup a SparePartEntity
- */
-fun SparePartBackup.toEntity(): SparePartEntity {
-    return SparePartEntity(
-        id = id,
-        checkUpId = checkUpId,
-        partNumber = partNumber,
-        description = description,
-        quantity = quantity,
-        urgency = urgency,
-        category = category,
-        estimatedCost = estimatedCost,
-        notes = notes,
-        supplierInfo = supplierInfo,
-        addedAt = addedAt
     )
 }
 

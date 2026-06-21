@@ -13,12 +13,17 @@ import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
-import net.calvuz.qreport.checkup.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.ti.data.local.dao.TechnicalInterventionDao
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_1_2
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_2_3
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_3_4
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_4_5
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_5_6
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
 import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
+import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
+import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
+import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemTemplateDao
 import javax.inject.Singleton
 
 /**
@@ -55,6 +60,9 @@ object DatabaseModule {
                 MIGRATION_1_2,
                 MIGRATION_2_3,
                 MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
             )
             .build()
     }
@@ -75,11 +83,6 @@ object DatabaseModule {
     ): PhotoDao = database.photoDao()
 
     @Provides
-    fun provideSparePartDao(
-        database: QReportDatabase
-    ): SparePartDao = database.sparePartDao()
-
-    @Provides
     fun provideCheckUpAssociationDao(
         database: QReportDatabase
     ): CheckUpAssociationDao = database.checkUpAssociationDao()
@@ -93,5 +96,20 @@ object DatabaseModule {
     fun provideIslandTypeDao(
         database: QReportDatabase
     ): IslandTypeDao = database.islandTypeDao()
+
+    @Provides
+    fun provideModuleTypeDao(
+        database: QReportDatabase
+    ): ModuleTypeDao = database.moduleTypeDao()
+
+    @Provides
+    fun provideCriticalityDao(
+        database: QReportDatabase
+    ): CriticalityDao = database.criticalityDao()
+
+    @Provides
+    fun provideCheckItemTemplateDao(
+        database: QReportDatabase
+    ): CheckItemTemplateDao = database.checkItemTemplateDao()
 
 }

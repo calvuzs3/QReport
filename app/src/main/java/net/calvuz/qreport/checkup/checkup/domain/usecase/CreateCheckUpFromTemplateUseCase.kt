@@ -1,9 +1,10 @@
 package net.calvuz.qreport.checkup.checkup.domain.usecase
 
 import kotlinx.datetime.Clock
+import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
 import net.calvuz.qreport.checkup.items.domain.model.CheckItem
-import net.calvuz.qreport.checkup.items.domain.model.CheckItemModules
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
+import net.calvuz.qreport.checkup.items.domain.repository.CheckItemTemplateMasterRepository
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
@@ -13,15 +14,12 @@ import java.util.UUID
 import javax.inject.Inject
 
 /**
- * Use Case per creare un check-up da template selezionati
- *
- * AGGIORNATO per:
- * - Usare solo ModuleType definiti in ModuleType.kt
- * - Supportare solo i tipi isola della famiglia POLY
- * - Allinearsi con CheckItemModules esistente
+ * Use Case per creare un check-up da una selezione manuale di template
+ * (`check_item_templates` master data, non più dall'object `CheckItemModules`).
  */
 class CreateCheckUpFromTemplateUseCase @Inject constructor(
-    private val repository: CheckUpRepository
+    private val repository: CheckUpRepository,
+    private val templateRepository: CheckItemTemplateMasterRepository
 ) {
     suspend operator fun invoke(
         header: CheckUpHeader,
@@ -32,18 +30,22 @@ class CreateCheckUpFromTemplateUseCase @Inject constructor(
             val checkUpId = UUID.randomUUID().toString()
             val now = Clock.System.now()
 
-            val allTemplates = CheckItemModules.getAllTemplates()
+            val allTemplates = templateRepository.getTemplates().getOrElse {
+                return Result.failure(it)
+            }
             val selectedTemplates = allTemplates.filter { it.id in selectedTemplateIds }
 
             val checkItems = selectedTemplates.mapIndexed { index, template ->
                 CheckItem(
                     id = UUID.randomUUID().toString(),
                     checkUpId = checkUpId,
-                    moduleType = mapStringToModuleType(template.moduleType),
+                    moduleType = ModuleType.entries.find { it.name == template.moduleTypeId } ?: ModuleType.MECHANICAL,
+                    moduleTypeId = template.moduleTypeId,
                     itemCode = template.id,
                     description = template.description,
                     status = CheckItemStatus.PENDING,
-                    criticality = template.criticality,
+                    criticality = CriticalityLevel.entries.find { it.name == template.criticalityId } ?: CriticalityLevel.ROUTINE,
+                    criticalityId = template.criticalityId,
                     notes = "",
                     photos = emptyList(),
                     checkedAt = null,
@@ -57,7 +59,6 @@ class CreateCheckUpFromTemplateUseCase @Inject constructor(
                 islandType = islandType,
                 status = CheckUpStatus.DRAFT,
                 checkItems = checkItems,
-                spareParts = emptyList(),
                 createdAt = now,
                 updatedAt = now,
                 completedAt = null
@@ -68,53 +69,6 @@ class CreateCheckUpFromTemplateUseCase @Inject constructor(
 
         } catch (e: Exception) {
             Result.failure(e)
-        }
-    }
-
-    /**
-     * Mapping da String a ModuleType enum - CORRETTO
-     * Usa solo i ModuleType effettivamente definiti in ModuleType.kt
-     */
-    private fun mapStringToModuleType(moduleTypeString: String): ModuleType {
-        return when (moduleTypeString.lowercase()) {
-            // Moduli base comuni
-            "safety" -> ModuleType.SAFETY
-            "mechanical" -> ModuleType.MECHANICAL
-            "electrical" -> ModuleType.ELECTRICAL
-            "pneumatic" -> ModuleType.PNEUMATIC
-            "software" -> ModuleType.SOFTWARE
-
-            // Moduli specifici robot
-            "robot_tool" -> ModuleType.ROBOT_TOOL
-            "robot" -> ModuleType.ROBOT
-            "plant_systems" -> ModuleType.PLANT_SYSTEMS
-            "functional_tests" -> ModuleType.FUNCTIONAL_TESTS
-
-            // Moduli trasporto
-            "conveyor_systems" -> ModuleType.CONVEYOR_SYSTEMS
-
-            // Moduli visione
-            "vision_system" -> ModuleType.VISION_SYSTEM
-
-            // Moduli storage
-            "lance_storage" -> ModuleType.LANCE_STORAGE
-            "cartridge_systems" -> ModuleType.CARTRIDGE_SYSTEMS
-
-            // Moduli etichettatura
-            "labeling_machine" -> ModuleType.LABELING_MACHINE
-
-            // Moduli vibratori
-            "vibrators" -> ModuleType.VIBRATORS
-
-            // Moduli robot duali
-            "dual_robot" -> ModuleType.DUAL_ROBOT
-
-            // Default per tipi non riconosciuti
-            else -> {
-                // Log o warning per debug
-                println("ModuleType non riconosciuto: $moduleTypeString - usando MECHANICAL come default")
-                ModuleType.MECHANICAL
-            }
         }
     }
 }

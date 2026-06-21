@@ -14,10 +14,12 @@ data class CheckItem(
     val id: String,
     val checkUpId: String,
     val moduleType: ModuleType,
+    val moduleTypeId: String? = null, // FK → module_types.id (nullable during Expand phase)
     val itemCode: String,
     val description: String,
     val status: CheckItemStatus,
     val criticality: CriticalityLevel,
+    val criticalityId: String? = null, // FK → criticality_levels.id (nullable during Expand phase)
     val notes: String = "",
     val photos: List<Photo> = emptyList(),
     val checkedAt: Instant? = null,

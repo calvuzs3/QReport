@@ -18,6 +18,12 @@
     <string name="settings_screen_main_section_master_data">Dati base</string>
     <string name="settings_screen_main_island_types_title">Tipi isola</string>
     <string name="settings_screen_main_island_types_subtitle">Gestisci i tipi di isola disponibili</string>
+    <string name="settings_screen_main_module_types_title">Moduli checklist</string>
+    <string name="settings_screen_main_module_types_subtitle">Gestisci i moduli della checklist</string>
+    <string name="settings_screen_main_criticality_levels_title">Livelli criticità</string>
+    <string name="settings_screen_main_criticality_levels_subtitle">Gestisci i livelli di criticità della checklist</string>
+    <string name="settings_screen_main_check_item_templates_title">Template checklist</string>
+    <string name="settings_screen_main_check_item_templates_subtitle">Gestisci i template della checklist per tipo isola</string>
 
     <!-- ======================================================= -->
     <!-- TechnicianSettingsScreen                                 -->

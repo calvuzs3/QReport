@@ -227,7 +227,6 @@ class ValidateBackupUseCase @Inject constructor(
         totalRecords += database.checkUps.size
         totalRecords += database.checkItems.size
         totalRecords += database.photos.size
-        totalRecords += database.spareParts.size
         totalRecords += database.clients.size
         totalRecords += database.contacts.size
         totalRecords += database.facilities.size

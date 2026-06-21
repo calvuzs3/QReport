@@ -115,18 +115,6 @@ sealed interface ListItemAction {
             override val labelResId = R.string.context_menu_action_email
         }
     }
-
-    sealed interface SparePartAction : ListItemAction {
-        data object ViewHistory : SparePartAction {
-            override val iconVector = Icons.Default.History
-            override val labelResId = R.string.context_menu_action_view_history
-        }
-
-        data object AddStock : SparePartAction {
-            override val iconVector = Icons.Default.Add
-            override val labelResId = R.string.context_menu_action_add_stock
-        }
-    }
 }
 
 /**

@@ -317,7 +317,6 @@ data class ExportData(
      * Checkup principale - contiene già TUTTO:
      * - header (ClientInfo, TechnicianInfo, IslandInfo)
      * - checkItems con Photo
-     * - spareParts
      * - date e status
      */
     val checkup: CheckUp,
@@ -572,11 +571,6 @@ data class ExportStatistics(
      * Numero di foto esportate nella cartella
      */
     val photosExported: Int = 0,
-
-    /**
-     * Numero di parti di ricambio incluse
-     */
-    val sparePartsIncluded: Int = 0,
 
     /**
      * Tempo totale di elaborazione (millisecondi)

@@ -36,6 +36,11 @@ import net.calvuz.qreport.client.island.presentation.ui.IslandFormScreen
 import net.calvuz.qreport.client.island.presentation.ui.IslandDetailScreen
 import net.calvuz.qreport.client.island.presentation.ui.IslandListScreen
 import net.calvuz.qreport.client.island.presentation.ui.IslandTypesManagementScreen
+import net.calvuz.qreport.checkup.modules.presentation.ui.ModuleTypesManagementScreen
+import net.calvuz.qreport.checkup.modules.presentation.ui.ModuleIslandAssociationScreen
+import net.calvuz.qreport.checkup.checkup.presentation.ui.CheckUpSettingsScreen
+import net.calvuz.qreport.checkup.criticality.presentation.ui.CriticalityLevelsManagementScreen
+import net.calvuz.qreport.checkup.items.presentation.ui.CheckItemTemplatesManagementScreen
 import net.calvuz.qreport.photo.presentation.ui.PhotoImportPreviewScreen
 import net.calvuz.qreport.settings.presentation.ui.TechnicianSettingsScreen
 import timber.log.Timber
@@ -121,6 +126,13 @@ object QReportRoutes {
     // Settings routes
     const val TECHNICIAN_SETTINGS = "technician_settings"
     const val ISLAND_TYPES_MANAGEMENT = "island_types_management"
+    const val MODULE_TYPES_MANAGEMENT = "module_types_management"
+    const val CRITICALITY_LEVELS_MANAGEMENT = "criticality_levels_management"
+    const val CHECK_ITEM_TEMPLATES_MANAGEMENT = "check_item_templates_management"
+    const val MODULE_ISLAND_ASSOCIATION_MANAGEMENT = "module_island_association_management"
+
+    // Checkup settings routes
+    const val CHECKUP_SETTINGS = "checkup_settings"
 
     // Sync routes
     const val SYNC_SETTINGS = "sync_settings"
@@ -348,6 +360,9 @@ fun QReportNavigation(
                         },
                         onCreateNewCheckUp = {
                             navController.navigate(QReportRoutes.CHECKUP_CREATE)
+                        },
+                        onNavigateToCheckUpSettings = {
+                            navController.navigate(QReportRoutes.CHECKUP_SETTINGS)
                         }
                     )
                 }
@@ -362,15 +377,57 @@ fun QReportNavigation(
                         },
                         onNavigateToSyncSettings = {
                             navController.navigate(QReportRoutes.SYNC_SETTINGS)
-                        },
+                        }
+                    )
+                }
+
+                composable(QReportRoutes.CHECKUP_SETTINGS) {
+                    CheckUpSettingsScreen(
+                        onNavigateBack = { navController.popBackStack() },
                         onNavigateToIslandTypes = {
                             navController.navigate(QReportRoutes.ISLAND_TYPES_MANAGEMENT)
+                        },
+                        onNavigateToModuleTypes = {
+                            navController.navigate(QReportRoutes.MODULE_TYPES_MANAGEMENT)
+                        },
+                        onNavigateToCriticalityLevels = {
+                            navController.navigate(QReportRoutes.CRITICALITY_LEVELS_MANAGEMENT)
+                        },
+                        onNavigateToCheckItemTemplates = {
+                            navController.navigate(QReportRoutes.CHECK_ITEM_TEMPLATES_MANAGEMENT)
+                        },
+                        onNavigateToModuleIslandAssociation = {
+                            navController.navigate(QReportRoutes.MODULE_ISLAND_ASSOCIATION_MANAGEMENT)
                         }
                     )
                 }
 
                 composable(QReportRoutes.ISLAND_TYPES_MANAGEMENT) {
                     IslandTypesManagementScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(QReportRoutes.MODULE_TYPES_MANAGEMENT) {
+                    ModuleTypesManagementScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(QReportRoutes.CRITICALITY_LEVELS_MANAGEMENT) {
+                    CriticalityLevelsManagementScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(QReportRoutes.CHECK_ITEM_TEMPLATES_MANAGEMENT) {
+                    CheckItemTemplatesManagementScreen(
+                        onNavigateBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(QReportRoutes.MODULE_ISLAND_ASSOCIATION_MANAGEMENT) {
+                    ModuleIslandAssociationScreen(
                         onNavigateBack = { navController.popBackStack() }
                     )
                 }

@@ -48,7 +48,6 @@ fun CheckUpEntity.toDomain(): CheckUp {
         islandTypeId = this.islandTypeId,
         status = CheckUpStatus.valueOf(this.status),
         checkItems = emptyList(), // Populated separately when needed
-        spareParts = emptyList(), // Populated separately when needed
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
         completedAt = this.completedAt
@@ -92,7 +91,6 @@ fun CheckUp.toEntity(): CheckUpEntity {
 
 fun CheckUpWithDetails.toDomain(): CheckUp {
     return checkUp.toDomain().copy(
-        checkItems = checkItems.map { it.toDomain() },
-        spareParts = spareParts.map { it.toDomain() }
+        checkItems = checkItems.map { it.toDomain() }
     )
 }

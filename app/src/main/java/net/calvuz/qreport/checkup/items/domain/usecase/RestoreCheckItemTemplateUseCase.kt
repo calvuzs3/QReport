@@ -1,0 +1,22 @@
+package net.calvuz.qreport.checkup.items.domain.usecase
+
+import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.checkup.items.domain.repository.CheckItemTemplateMasterRepository
+import timber.log.Timber
+import javax.inject.Inject
+
+/** Reactivates a previously deactivated checklist template. */
+class RestoreCheckItemTemplateUseCase @Inject constructor(
+    private val repository: CheckItemTemplateMasterRepository
+) {
+    suspend operator fun invoke(id: String): QrResult<Unit, QrError> {
+        return repository.restoreTemplate(id).fold(
+            onSuccess = { QrResult.Success(Unit) },
+            onFailure = {
+                Timber.e(it, "Failed to restore check item template $id")
+                QrResult.Error(QrError.App.SaveError())
+            }
+        )
+    }
+}

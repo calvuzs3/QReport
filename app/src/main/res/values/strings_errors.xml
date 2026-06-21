@@ -291,7 +291,6 @@
     <string name="err_checkup_update_notes">Aggiornamento Note fallito</string>
     <string name="err_checkup_update_header">Aggiornamento Header fallito</string>
     <string name="err_checkup_not_available">CheckUp non disponibile</string>
-    <string name="err_checkup_spare_add">Aggiunta ricambio fallita</string>
     <string name="err_checkup_association">Associazione fallita</string>
     <string name="err_checkup_association_remove">Rimozione Associazione fallita</string>
     <string name="err_checkup_finalize">Completamento fallito</string>

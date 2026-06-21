@@ -172,14 +172,6 @@ object CommonActionSets {
         ListItemAction.Delete
     )
 
-    val sparePartActions = listOf(
-        ListItemAction.ViewDetails,
-        ListItemAction.Edit,
-        ListItemAction.SparePartAction.ViewHistory,
-        ListItemAction.SparePartAction.AddStock,
-        ListItemAction.Delete
-    )
-
     val islandActions = listOf(
         ListItemAction.ViewDetails,
         ListItemAction.Edit,

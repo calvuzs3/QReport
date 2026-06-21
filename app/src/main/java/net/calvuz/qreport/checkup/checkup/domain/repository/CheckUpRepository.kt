@@ -5,7 +5,6 @@ import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePart
 
 interface CheckUpRepository {
 
@@ -32,11 +31,5 @@ interface CheckUpRepository {
     suspend fun getCheckUpStatistics(id: String): CheckUpSingleStatistics
 
     suspend fun getCheckUpProgress(id: String): CheckUpProgress
-
-    // SPARE PARTS
-    suspend fun addSparePart(sparePart: SparePart): String
-    suspend fun updateSparePart(sparePart: SparePart)
-    suspend fun deleteSparePart(id: String)
-    suspend fun getSparePartsByCheckUp(checkUpId: String): List<SparePart>
 }
 

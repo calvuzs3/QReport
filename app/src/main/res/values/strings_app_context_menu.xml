@@ -35,10 +35,6 @@
     <string name="context_menu_action_call">Chiama</string>
     <string name="context_menu_action_email">Invia email</string>
 
-    <!-- Spare Part Actions -->
-    <string name="context_menu_action_view_history">Visualizza storico</string>
-    <string name="context_menu_action_add_stock">Aggiungi scorta</string>
-
     <!-- ========================================== -->
     <!-- Generic Delete Confirmation Dialog -->
     <!-- ========================================== -->
@@ -86,11 +82,6 @@
     <string name="delete_dialog_contact_message">Sei sicuro di voler eliminare il contatto \'%1$s\'? Le informazioni verranno rimosse definitivamente.</string>
     <string name="delete_dialog_contact_unnamed">questo contatto</string>
 
-    <!-- Spare Part -->
-    <string name="delete_dialog_spare_part_title">Elimina Ricambio</string>
-    <string name="delete_dialog_spare_part_message">Sei sicuro di voler eliminare il ricambio \'%1$s\'? Verrà eliminato anche tutto lo storico delle movimentazioni.</string>
-    <string name="delete_dialog_spare_part_unnamed">questo ricambio</string>
-
     <!-- ========================================== -->
     <!-- Context Menu Accessibility -->
     <!-- ========================================== -->
@@ -121,7 +112,6 @@
     <string name="action_success_checkup_deleted">Check-up eliminato con successo</string>
     <string name="action_success_contract_deleted">Contratto eliminato con successo</string>
     <string name="action_success_contact_deleted">Contatto eliminato con successo</string>
-    <string name="action_success_spare_part_deleted">Ricambio eliminato con successo</string>
 
 
 

@@ -41,6 +41,7 @@ fun CheckUpListScreen(
     onNavigateToCheckUpDetail: (String) -> Unit,
     onNavigateToEditCheckUp: (String) -> Unit,
     onCreateNewCheckUp: () -> Unit,
+    onNavigateToCheckUpSettings: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CheckUpListViewModel = hiltViewModel()
 ) {
@@ -76,6 +77,14 @@ fun CheckUpListScreen(
                     Icon(
                         imageVector = Icons.Default.FilterList,
                         contentDescription = stringResource(R.string.checkup_screen_list_action_filter)
+                    )
+                }
+
+                // Checkup settings (module/criticality/template/island-type master data)
+                IconButton(onClick = onNavigateToCheckUpSettings) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = stringResource(R.string.checkup_screen_list_action_settings)
                     )
                 }
 

@@ -36,10 +36,8 @@ import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
+import net.calvuz.qreport.checkup.modules.presentation.model.resolveModuleTypeLabel
 import net.calvuz.qreport.photo.domain.model.Photo
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePart
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePartUrgency
-import net.calvuz.qreport.checkup.checkup.presentation.components.AddSparePartDialog
 import net.calvuz.qreport.checkup.checkup.presentation.components.AssociationManagementDialog
 import net.calvuz.qreport.checkup.checkup.presentation.components.CheckUpHeaderCard
 import net.calvuz.qreport.checkup.items.presentation.components.CheckupItemStatusChip
@@ -47,7 +45,6 @@ import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.ge
 import net.calvuz.qreport.app.app.presentation.components.ErrorDialog
 import net.calvuz.qreport.photo.presentation.ui.components.PhotoCountBadge
 import net.calvuz.qreport.app.util.DateTimeUtils.toItalianDate
-import net.calvuz.qreport.app.util.NumberUtils.toItalianChange
 import timber.log.Timber
 
 /**
@@ -240,6 +237,11 @@ fun CheckUpDetailScreen(
                         item(key = "module_${moduleType.name}") {
                             ModuleSectionWithPhotos(
                                 moduleType = moduleType,
+                                displayLabel = resolveModuleTypeLabel(
+                                    moduleTypeId = items.firstOrNull()?.moduleTypeId,
+                                    legacy = moduleType,
+                                    masters = uiState.moduleTypes
+                                ),
                                 items = items,
                                 isExpanded = moduleType.name in expandedModules,
                                 onToggleExpansion = { viewModel.toggleModuleExpansion(moduleType) },
@@ -251,14 +253,6 @@ fun CheckUpDetailScreen(
                                 onUpdateNotes = viewModel::updateItemNotes
                             )
                         }
-                    }
-
-                    // Spare Parts Section (always show, even if empty)
-                    item {
-                        SparePartsSection(
-                            spareParts = uiState.spareParts,
-                            onAddSparePart = viewModel::showAddSparePartDialog
-                        )
                     }
                 }
             }
@@ -286,30 +280,6 @@ fun CheckUpDetailScreen(
                 onRemoveAssociation = viewModel::removeAssociation
             )
         }
-    }
-
-    // Add Spare Part Dialog
-    if (uiState.showAddSparePartDialog) {
-        AddSparePartDialog(
-            onDismiss = viewModel::hideAddSparePartDialog,
-            onConfirm = { partNumber, description, quantity, urgency, category, estimatedCost, notes, supplierInfo ->
-                Timber.d("🟦 DIALOG: onConfirm chiamato")
-                Timber.d("🟦 DIALOG: partNumber=$partNumber, description=$description")
-
-                viewModel.addSparePart(
-                    partNumber = partNumber,
-                    description = description,
-                    quantity = quantity,
-                    urgency = urgency,
-                    category = category,
-                    estimatedCost = estimatedCost,
-                    notes = notes,
-                    supplierInfo = supplierInfo
-                )
-                viewModel.hideAddSparePartDialog()
-            },
-            isLoading = uiState.isAddingSparePart
-        )
     }
 
     // Edit Header Dialog
@@ -418,6 +388,7 @@ private fun StatItem(
 @Composable
 private fun ModuleSectionWithPhotos(
     moduleType: ModuleType,
+    displayLabel: String,
     items: List<CheckItem>,
     isExpanded: Boolean,
     onToggleExpansion: () -> Unit,
@@ -446,7 +417,7 @@ private fun ModuleSectionWithPhotos(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = moduleType.displayName,
+                    text = displayLabel,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -752,155 +723,4 @@ private fun PhotoPreviewRow(
             )
         }
     }
-}
-
-@Composable
-private fun SparePartsSection(
-    spareParts: List<SparePart>,
-    onAddSparePart: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.checkup_screen_detail_spare_parts_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                IconButton(onClick = onAddSparePart) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.checkup_screen_detail_spare_parts_add))
-                }
-            }
-
-            if (spareParts.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.checkup_screen_detail_spare_parts_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                spareParts.forEach { sparePart ->
-                    SparePartItem(sparePart = sparePart)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SparePartItem(
-    sparePart: SparePart,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Text(
-                    text = sparePart.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.weight(1f)
-                )
-
-                UrgencyChip(urgency = sparePart.urgency)
-            }
-
-            Text(
-                text = stringResource(R.string.checkup_screen_detail_spare_parts_part_number, sparePart.partNumber),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.checkup_screen_detail_spare_parts_quantity, sparePart.quantity),
-                    style = MaterialTheme.typography.bodySmall
-                )
-
-                Text(
-                    text = sparePart.category.displayName,
-                    style = MaterialTheme.typography.bodySmall
-                )
-
-                sparePart.estimatedCost?.let { cost ->
-                    Text(
-                        text = cost.toFloat().toItalianChange(),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            if (sparePart.notes.isNotBlank()) {
-                Text(
-                    text = sparePart.notes,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun UrgencyChip(
-    urgency: SparePartUrgency,
-    modifier: Modifier = Modifier
-) {
-    val colors = when (urgency) {
-        SparePartUrgency.LOW -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f),
-            labelColor = Color(0xFF2E7D32)
-        )
-        SparePartUrgency.MEDIUM -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFFFF9800).copy(alpha = 0.1f),
-            labelColor = Color(0xFFE65100)
-        )
-        SparePartUrgency.HIGH -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFFF44336).copy(alpha = 0.1f),
-            labelColor = Color(0xFFC62828)
-        )
-        SparePartUrgency.IMMEDIATE -> AssistChipDefaults.assistChipColors(
-            containerColor = Color(0xFF9C27B0).copy(alpha = 0.1f),
-            labelColor = Color(0xFF6A1B9A)
-        )
-    }
-
-    AssistChip(
-        onClick = { },
-        label = {
-            Text(
-                text = urgency.displayName,
-                style = MaterialTheme.typography.labelSmall
-            )
-        },
-        colors = colors,
-        modifier = modifier
-    )
 }

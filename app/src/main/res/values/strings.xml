@@ -21,7 +21,6 @@
     <string name="route_settings_subtitle">Impostazioni applicazione</string>
 
     <string name="route_photos">Foto</string>
-    <string name="route_spare_parts">Ricambi</string>
     <string name="route_export">Export</string>
     <string name="route_backup">Backup</string>
     <string name="route_client_detail">Dettagli Cliente</string>
@@ -52,7 +51,6 @@
     <string name="nav_home">Home</string>
     <string name="nav_checkups">Check-up</string>
     <string name="nav_photos">Foto</string>
-    <string name="nav_spare_parts">Ricambi</string>
     <string name="nav_export">Export</string>
     <string name="nav_settings">Impostazioni</string>
 
@@ -218,7 +216,6 @@
     <!-- Empty states -->
     <string name="empty_checkups">Nessun check-up disponibile</string>
     <string name="empty_photos">Nessuna foto</string>
-    <string name="empty_spare_parts">Nessun ricambio</string>
     <string name="empty_notes">Nessuna nota</string>
 
     <!-- Progress -->
@@ -231,32 +228,6 @@
     <string name="export_format_pdf">Documento PDF</string>
     <string name="export_include_photos">Includi foto nel documento</string>
     <string name="export_filename">Nome file</string>
-
-    <!-- Spare parts -->
-    <string name="spare_part_code">Codice Ricambio</string>
-    <string name="spare_part_name">Nome Ricambio</string>
-    <string name="spare_part_quantity">Quantità</string>
-    <string name="spare_part_price">Prezzo Unitario</string>
-    <string name="spare_part_supplier">Fornitore</string>
-    <string name="spare_part_category">Categoria</string>
-    <string name="spare_part_urgency">Urgenza</string>
-
-    <!-- Spare part categories -->
-    <string name="category_mechanical">Meccanici</string>
-    <string name="category_electrical">Elettrici</string>
-    <string name="category_pneumatic">Pneumatici</string>
-    <string name="category_hydraulic">Idraulici</string>
-    <string name="category_electronic">Elettronici</string>
-    <string name="category_software">Software</string>
-    <string name="category_consumable">Consumabili</string>
-    <string name="category_tool">Utensili</string>
-    <string name="category_other">Altri</string>
-
-    <!-- Urgency levels -->
-    <string name="urgency_low">Bassa</string>
-    <string name="urgency_medium">Media</string>
-    <string name="urgency_high">Alta</string>
-    <string name="urgency_critical">Critica</string>
 
     <!-- Photo captions -->
     <string name="photo_caption_hint">Aggiungi didascalia…</string>

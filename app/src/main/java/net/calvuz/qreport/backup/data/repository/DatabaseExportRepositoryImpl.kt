@@ -79,7 +79,6 @@ class DatabaseExportRepositoryImpl @Inject constructor(
                 checkUps = emptyList(),
                 checkItems = emptyList(),
                 photos = emptyList(),
-                spareParts = emptyList(),
                 clients = emptyList(),
                 contacts = emptyList(),
                 contracts = emptyList(),

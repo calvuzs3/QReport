@@ -4,7 +4,6 @@ import net.calvuz.qreport.checkup.items.domain.model.CheckItem
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePart
 import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpRepository
 import net.calvuz.qreport.checkup.data.local.mapper.toDomain
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
@@ -19,7 +18,6 @@ import javax.inject.Inject
  * Combine:
  * - Check-up data
  * - Check items (with photos)
- * - Spare parts
  * - Stats
  * - Progress
  */
@@ -27,7 +25,6 @@ import javax.inject.Inject
 data class CheckUpDetails(
     val checkUp: CheckUp,
     val checkItems: List<CheckItem>,
-    val spareParts: List<SparePart>,
     val statistics: CheckUpSingleStatistics,
     val progress: CheckUpProgress
 )
@@ -81,7 +78,6 @@ class GetCheckUpDetailsUseCase @Inject constructor(
             val details = CheckUpDetails(
                 checkUp = checkUp.copy(checkItems = checkItemsWithPhotos), // CheckUp with photos
                 checkItems = checkItemsWithPhotos,  // CheckItems with photos
-                spareParts = checkUp.spareParts,
                 statistics = statistics,
                 progress = progress
             )

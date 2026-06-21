@@ -160,7 +160,7 @@ class BackupJsonSerializer @Inject constructor() {
             // Check database if present
             jsonObject["database"]?.jsonObject?.let { database ->
                 val expectedTables = listOf(
-                    "checkUps", "checkItems", "photos", "spareParts",
+                    "checkUps", "checkItems", "photos",
                     "clients", "contacts", "contracts", "facilities", "facilityIslands",
                     "mechanicalUnits", "checkUpAssociations",
                     "tiIslandAssociations", "checkUpMaintenanceLogAssociations", "tiMaintenanceLogAssociations",

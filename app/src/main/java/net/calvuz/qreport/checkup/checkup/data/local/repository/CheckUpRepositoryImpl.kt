@@ -5,7 +5,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpDao
 import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemDao
-import net.calvuz.qreport.checkup.checkup.data.local.dao.SparePartDao
 import net.calvuz.qreport.photo.data.local.dao.PhotoDao
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
@@ -14,7 +13,6 @@ import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleProgress
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePart
 import net.calvuz.qreport.checkup.data.local.mapper.toDomain
 import net.calvuz.qreport.checkup.data.local.mapper.toEntity
 import net.calvuz.qreport.checkup.checkup.data.local.mapper.toDomain
@@ -38,7 +36,6 @@ import javax.inject.Singleton
 class CheckUpRepositoryImpl @Inject constructor(
     private val checkUpDao: CheckUpDao,
     private val checkItemDao: CheckItemDao,
-    private val sparePartDao: SparePartDao,
     private val photoDao: PhotoDao,
 ) : CheckUpRepository {
 
@@ -85,12 +82,6 @@ class CheckUpRepositoryImpl @Inject constructor(
             checkItemDao.insertCheckItems(itemEntities)
         }
 
-        // Insert spare parts se presenti
-        if (checkUp.spareParts.isNotEmpty()) {
-            val sparePartEntities = checkUp.spareParts.map { it.toEntity() }
-            sparePartDao.insertSpareParts(sparePartEntities)
-        }
-
         return checkUp.id
     }
 
@@ -134,9 +125,8 @@ class CheckUpRepositoryImpl @Inject constructor(
         val criticalIssues = checkItemDao.getCriticalIssuesCount(id, CriticalityLevel.CRITICAL.name)
         val importantIssues = checkItemDao.getCriticalIssuesCount(id, CriticalityLevel.IMPORTANT.name)
 
-        // Count photos and spares
+        // Count photos
         val photosCount = getPhotosCountForCheckUp(id)
-        val sparePartsCount = sparePartDao.getSparePartsCount(id)
 
         val completionPercentage = if (totalItems > 0) {
             (completedItems.toFloat() / totalItems) // * 100f - between 0 and 1
@@ -152,7 +142,6 @@ class CheckUpRepositoryImpl @Inject constructor(
             criticalIssues = criticalIssues,
             importantIssues = importantIssues,
             photosCount = photosCount,
-            sparePartsCount = sparePartsCount,
             completionPercentage = completionPercentage
         )
     }
@@ -253,27 +242,5 @@ class CheckUpRepositoryImpl @Inject constructor(
      */
     private fun calculateEstimatedTime(pendingItems: Int): Int? {
         return if (pendingItems > 0) pendingItems * 2 else null // 2 minuti per item
-    }
-
-
-    // SPARE PARTS
-
-    override suspend fun addSparePart(sparePart: SparePart): String {
-        val entity = sparePart.toEntity()
-        sparePartDao.insertSparePart(entity)
-        return sparePart.id
-    }
-
-    override suspend fun updateSparePart(sparePart: SparePart) {
-        val entity = sparePart.toEntity()
-        sparePartDao.updateSparePart(entity)
-    }
-
-    override suspend fun deleteSparePart(id: String) {
-        sparePartDao.deleteSparePartById(id)
-    }
-
-    override suspend fun getSparePartsByCheckUp(checkUpId: String): List<SparePart> {
-        return sparePartDao.getSparePartsByCheckUp(checkUpId).map { it.toDomain() }
     }
 }

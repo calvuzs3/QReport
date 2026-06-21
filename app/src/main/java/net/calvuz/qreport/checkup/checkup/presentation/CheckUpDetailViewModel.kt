@@ -5,16 +5,15 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import net.calvuz.qreport.app.app.domain.AppVersionInfo
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatus
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
+import net.calvuz.qreport.checkup.modules.domain.usecase.ObserveModuleTypesUseCase
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.photo.domain.model.PhotoResult
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePartCategory
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePartUrgency
-import net.calvuz.qreport.checkup.checkup.domain.usecase.AddSparePartUseCase
 import net.calvuz.qreport.checkup.checkup.domain.usecase.DeleteCheckUpUseCase
 import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpDetailsUseCase
 import net.calvuz.qreport.checkup.items.domain.usecase.UpdateCheckItemNotesUseCase
@@ -59,7 +58,6 @@ class CheckUpDetailViewModel @Inject constructor(
     private val completeCheckUpUseCase: CompleteCheckUpUseCase,
     private val updateCheckItemStatusUseCase: UpdateCheckItemStatusUseCase,
     private val updateCheckItemNotesUseCase: UpdateCheckItemNotesUseCase,
-    private val addSparePartUseCase: AddSparePartUseCase,
     private val updateCheckUpHeaderUseCase: UpdateCheckUpHeaderUseCase,
 
     // Photo
@@ -74,7 +72,8 @@ class CheckUpDetailViewModel @Inject constructor(
     private val associateCheckUpToIslandUseCase: AssociateCheckUpToIslandUseCase,
     private val getAssociationsForCheckUpUseCase: GetAssociationsForCheckUpUseCase,
     private val removeCheckUpAssociationUseCase: RemoveCheckUpAssociationUseCase,
-    private val observeIslandTypesUseCase: ObserveIslandTypesUseCase
+    private val observeIslandTypesUseCase: ObserveIslandTypesUseCase,
+    private val observeModuleTypesUseCase: ObserveModuleTypesUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
@@ -94,6 +93,11 @@ class CheckUpDetailViewModel @Inject constructor(
         observeIslandTypesUseCase()
             .catch { e -> Timber.e(e) }
             .onEach { types -> _associationState.update { it.copy(islandTypes = types) } }
+            .launchIn(viewModelScope)
+
+        observeModuleTypesUseCase()
+            .catch { e -> Timber.e(e) }
+            .onEach { types -> _uiState.update { it.copy(moduleTypes = types) } }
             .launchIn(viewModelScope)
     }
 
@@ -132,8 +136,11 @@ class CheckUpDetailViewModel @Inject constructor(
                 showDeleteConfirmation = false
             )
 
+            // Check if Debug build
+            val force = AppVersionInfo.isDebugBuild
+            
             try {
-                when (val result = deleteCheckUpUseCase(checkupId)) {
+                when (val result = deleteCheckUpUseCase(checkupId, force)) {
                     is QrResult.Success -> {
                         Timber.d("Checkup deleted: $checkupId")
                         _uiState.value = _uiState.value.copy(
@@ -143,7 +150,7 @@ class CheckUpDetailViewModel @Inject constructor(
                     }
 
                     is QrResult.Error -> {
-                        Timber.e("Checkup delete failed: $checkupId")
+                        Timber.e("Checkup delete failed: $checkupId \n${result.error}")
                         _uiState.value = _uiState.value.copy(
                             isDeleting = false,
                             deleteError = result.error.asUiText() //.asErrorUiText() // "Errore eliminazione:
@@ -190,7 +197,6 @@ class CheckUpDetailViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(
                             checkUp = result.data.checkUp,
                             checkItems = result.data.checkItems,
-                            spareParts = result.data.spareParts,
                             progress = result.data.progress,
                             statistics = result.data.statistics,
                             isLoading = false,
@@ -302,73 +308,6 @@ class CheckUpDetailViewModel @Inject constructor(
         }
     }
 
-    fun addSparePart(
-        partNumber: String,
-        description: String,
-        quantity: Int,
-        urgency: SparePartUrgency,
-        category: SparePartCategory,
-        estimatedCost: Double? = null,
-        notes: String = "",
-        supplierInfo: String = ""
-    ) {
-        viewModelScope.launch {
-            Timber.d("🔵 ViewModel.addSparePart: INIZIO")
-            Timber.d("🔵 ViewModel.addSparePart: partNumber=$partNumber")
-            Timber.d("🔵 ViewModel.addSparePart: checkUpId=${_uiState.value.checkUp?.id}")
-
-            val checkUpId = _uiState.value.checkUp?.id
-            if (checkUpId == null) {
-                _uiState.value = _uiState.value.copy(
-                    error = QrError.Checkup.NotAvailable().asUiText() //"Check-up non disponibile"
-                )
-                return@launch
-            }
-
-            _uiState.value = _uiState.value.copy(isAddingSparePart = true)
-
-            try {
-                Timber.d("Adding spare part to check-up: $checkUpId")
-
-                addSparePartUseCase(
-                    checkUpId = checkUpId,
-                    partNumber = partNumber,
-                    description = description,
-                    quantity = quantity,
-                    urgency = urgency,
-                    category = category,
-                    estimatedCost = estimatedCost,
-                    notes = notes,
-                    supplierInfo = supplierInfo
-                ).fold(
-                    onSuccess = { sparePartId ->
-                        Timber.d("Spare part added successfully: $sparePartId")
-                        // Ricarica i dati per includere il nuovo spare part
-                        reloadCheckUpData(checkUpId)
-                    },
-                    onFailure = { e ->
-                        Timber.e(e, "Failed to add spare part")
-                        _uiState.value = _uiState.value.copy(
-                            isAddingSparePart = false,
-                            error =
-                                //"Errore aggiunta ricambio: ${error.message}"
-                                QrError.Checkup.SpareAdd().asUiText()
-                        )
-                    }
-                )
-
-            } catch (e: Exception) {
-                Timber.e(e, "Exception adding spare part")
-                _uiState.value = _uiState.value.copy(
-                    isAddingSparePart = false,
-                    error =
-                        // "Errore imprevisto: ${e.message}"
-                        QrError.Checkup.Unknown().asUiText()
-                )
-            }
-        }
-    }
-
     fun completeCheckUp() {
         viewModelScope.launch {
             try {
@@ -408,14 +347,6 @@ class CheckUpDetailViewModel @Inject constructor(
 
     fun dismissError() {
         _uiState.value = _uiState.value.copy(error = null)
-    }
-
-    fun showAddSparePartDialog() {
-        _uiState.value = _uiState.value.copy(showAddSparePartDialog = true)
-    }
-
-    fun hideAddSparePartDialog() {
-        _uiState.value = _uiState.value.copy(showAddSparePartDialog = false)
     }
 
     /**
@@ -751,11 +682,9 @@ class CheckUpDetailViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         checkUp = result.data.checkUp,
                         checkItems = result.data.checkItems,
-                        spareParts = result.data.spareParts,
                         progress = result.data.progress,
                         statistics = result.data.statistics,
                         isUpdating = false,
-                        isAddingSparePart = false,
                         isUpdatingHeader = false
                     )
                     // Photos REFRESH
@@ -766,42 +695,15 @@ class CheckUpDetailViewModel @Inject constructor(
                     Timber.e("Failed to reload check-up data")
                     _uiState.value = _uiState.value.copy(
                         isUpdating = false,
-                        isAddingSparePart = false,
                         isUpdatingHeader = false,
                         error = QrError.Checkup.Reload().asUiText() // "Errore ricaricamento dati: ${error.message}"
                     )
                 }
             }
-//            getCheckUpDetailsUseCase(checkUpId).fold(
-//                onSuccess = { checkUpDetails ->
-//                    _uiState.value = _uiState.value.copy(
-//                        checkUp = checkUpDetails.checkUp,
-//                        checkItems = checkUpDetails.checkItems,
-//                        spareParts = checkUpDetails.spareParts,
-//                        progress = checkUpDetails.progress,
-//                        statistics = checkUpDetails.statistics,
-//                        isUpdating = false,
-//                        isAddingSparePart = false,
-//                        isUpdatingHeader = false
-//                    )
-//                    // Photos REFRESH
-//                    loadPhotosForCheckUp()
-//                },
-//                onFailure = { e ->
-//                    Timber.e(e, "Failed to reload check-up data")
-//                    _uiState.value = _uiState.value.copy(
-//                        isUpdating = false,
-//                        isAddingSparePart = false,
-//                        isUpdatingHeader = false,
-//                        error = UiText.ErrStringResource(QrError.Checkup.ERR_RELOAD, e.message) // "Errore ricaricamento dati: ${error.message}"
-//                    )
-//                }
-//            )
         } catch (e: Exception) {
             Timber.e(e, "Exception reloading check-up data")
             _uiState.value = _uiState.value.copy(
                 isUpdating = false,
-                isAddingSparePart = false,
                 isUpdatingHeader = false,
                 error = QrError.Checkup.Unknown().asUiText() // "Errore imprevisto: ${e.message}"
             )

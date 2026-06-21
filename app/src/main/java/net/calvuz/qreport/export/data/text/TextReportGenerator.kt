@@ -9,8 +9,6 @@ import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
 import net.calvuz.qreport.photo.domain.model.Photo
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePart
-import net.calvuz.qreport.checkup.checkup.domain.model.spare.SparePartUrgency
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getDisplayName
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getIcon
 import net.calvuz.qreport.checkup.checkup.presentation.model.CheckUpStatusExt.getDisplayName
@@ -63,12 +61,6 @@ class TextReportGenerator @Inject constructor(
 
                 // Dettaglio controlli per sezione
                 appendSectionsDetail(exportData, options)
-
-                // Parti di ricambio
-                if (exportData.checkup.spareParts.isNotEmpty()) {
-                    appendSpareParts(exportData.checkup.spareParts)
-                    appendLine()
-                }
 
                 // Conclusioni e raccomandazioni
                 appendConclusions(exportData)
@@ -345,76 +337,6 @@ private fun StringBuilder.appendItemRecommendations(item: CheckItem) {
     if (recommendations.isNotEmpty()) {
         appendLine("    Azione:     $recommendations")
     }
-}
-
-/**
- * Sezione parti di ricambio
- */
-private fun StringBuilder.appendSpareParts(spareParts: List<SparePart>) {
-    appendLine("=".times(80))
-    appendLine(centerText("PARTI DI RICAMBIO", 80))
-    appendLine("=".times(80))
-    appendLine()
-
-    if (spareParts.isEmpty()) {
-        appendLine("Nessuna parte di ricambio richiesta.")
-        return
-    }
-
-    appendLine("RICAMBI CONSIGLIATI")
-    appendLine("-".times(18))
-    appendLine()
-
-    // Raggruppa per urgenza
-    val partsByUrgency = spareParts.groupBy { it.urgency }
-
-    // Critici prima
-    partsByUrgency[SparePartUrgency.IMMEDIATE]?.let { criticalParts ->
-        if (criticalParts.isNotEmpty()) {
-            appendLine("🔴 RICAMBI CRITICI (Sostituire immediatamente):")
-            criticalParts.forEach { part ->
-                appendSparePartDetail(part)
-            }
-            appendLine()
-        }
-    }
-
-    // Importanti
-    partsByUrgency[SparePartUrgency.HIGH]?.let { importantParts ->
-        if (importantParts.isNotEmpty()) {
-            appendLine("🟡 RICAMBI IMPORTANTI (Sostituire entro 30 giorni):")
-            importantParts.forEach { part ->
-                appendSparePartDetail(part)
-            }
-            appendLine()
-        }
-    }
-
-    // Routine
-    partsByUrgency[SparePartUrgency.MEDIUM]?.let { routineParts ->
-        if (routineParts.isNotEmpty()) {
-            appendLine("🟢 RICAMBI ROUTINE (Sostituire alla prossima manutenzione):")
-            routineParts.forEach { part ->
-                appendSparePartDetail(part)
-            }
-            appendLine()
-        }
-    }
-}
-
-/**
- * Dettaglio singola parte di ricambio
- */
-private fun StringBuilder.appendSparePartDetail(part: SparePart) {
-    appendLine("  [${part.partNumber}] ${part.description}")
-    appendLine("    Quantità:     ${part.quantity}")
-    if (part.estimatedCost != null) {
-        appendLine("    Costo Stimato: €${String.format("%.2f", part.estimatedCost)}")
-    }
-    if (part.notes.isNotBlank()) {
-        appendLine("    Note:         ${part.notes}")
-    }
-    appendLine()
 }
 
 /**

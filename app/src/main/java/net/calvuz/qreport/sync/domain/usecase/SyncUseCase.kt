@@ -128,9 +128,9 @@ class SyncUseCase @Inject constructor(
     }
 
     private suspend fun applyRemoteChanges(payload: SyncPayloadDto) {
-        if (payload.islandTypes.isNotEmpty()) islandTypeDao.upsertAll(payload.islandTypes.map {
-            syncMapper.islandTypeToEntity(it)
-        })
+        if (payload.islandTypes.isNotEmpty()) {
+            islandTypeDao.upsertAll(payload.islandTypes.map { syncMapper.islandTypeToEntity(it) })
+        }
         if (payload.clients.isNotEmpty()) syncDao.upsertClients(payload.clients.map {
             syncMapper.clientToEntity(
                 it
