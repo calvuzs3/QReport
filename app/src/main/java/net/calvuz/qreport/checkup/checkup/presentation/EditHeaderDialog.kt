@@ -101,7 +101,9 @@ fun EditHeaderDialog(
         Surface(
             modifier = modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .navigationBarsPadding()
+                .imePadding(),
             shape = MaterialTheme.shapes.large,
             color = MaterialTheme.colorScheme.surface
         ) {
