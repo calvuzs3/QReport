@@ -63,6 +63,7 @@ fun PhotoPreviewDialog(
             modifier = modifier
                 .fillMaxSize()
                 .background(Color.Black)
+                .imePadding()
         ) {
             // Photo Pager
             HorizontalPager(
@@ -85,6 +86,7 @@ fun PhotoPreviewDialog(
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .fillMaxWidth()
+                    .statusBarsPadding()
             )
 
             // Bottom Controls
@@ -98,6 +100,7 @@ fun PhotoPreviewDialog(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
+                    .navigationBarsPadding()
             )
 
             // Page Indicator

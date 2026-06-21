@@ -1196,7 +1196,51 @@ fun AdaptiveCheckupGrid(
 }
 ```
 
-### 9.3 Orientation Handling
+### 9.3 Window Insets & Edge-to-Edge
+
+> **Regola obbligatoria**: ogni nuova schermata o dialog deve essere verificata contro la barra di navigazione di sistema (gesture nav) e la tastiera (IME). QReport è edge-to-edge: il contenuto può disegnare sotto le system bar se non gestito esplicitamente.
+
+Due pattern coprono la quasi totalità dei casi nell'app:
+
+#### A. Liste con FAB
+
+Uno `Scaffold` con `floatingActionButton` riserva spazio solo per `topBar`/`bottomBar`, **non** per il FAB: il contenuto scrollabile può finire sotto al bottone, nascondendo l'ultimo elemento. Aggiungere sempre un `bottom` extra al `contentPadding` della lista, pari ad altezza FAB (56dp) + margini:
+
+```kotlin
+LazyColumn(
+    modifier = Modifier.fillMaxSize().padding(scaffoldPadding),
+    // 88dp = 56dp FAB + margini, non i soli 16dp di padding standard
+    contentPadding = PaddingValues(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 88.dp),
+    verticalArrangement = Arrangement.spacedBy(8.dp)
+) { /* ... */ }
+```
+
+Riferimento reale: `CheckUpListScreen.kt`, `ModuleTypesManagementScreen.kt`, `CriticalityLevelsManagementScreen.kt`, `CheckUpStatusesManagementScreen.kt`, `CheckItemTemplatesManagementScreen.kt`.
+
+#### B. Form full-screen e Dialog (`Dialog(usePlatformDefaultWidth = false)`)
+
+I `Dialog` Compose vivono in una finestra separata e **non** erediscono automaticamente gli insets dello schermo principale. Se il dialog contiene un form con azioni in fondo (es. Annulla/Salva), applicare `navigationBarsPadding()` + `imePadding()` al container principale, altrimenti la action bar finisce sotto la barra di sistema sui device a gesture nav e sotto la tastiera quando è aperta:
+
+```kotlin
+Surface(
+    modifier = modifier
+        .fillMaxSize()
+        .padding(16.dp)
+        .navigationBarsPadding()
+        .imePadding(),
+    shape = MaterialTheme.shapes.large
+) { /* contenuto + action row in fondo */ }
+```
+
+Riferimento reale: `EditHeaderDialog.kt`. Stesso principio per screen "piene" senza `Scaffold` (es. `NewCheckUpScreen.kt`, che applica `navigationBarsPadding().imePadding()` sulla `Column` radice).
+
+#### Checklist rapida per ogni nuova UI
+
+- [ ] Lista con FAB → `contentPadding` bottom ≥ 88dp (non i 16dp standard)
+- [ ] Dialog/form full-screen con azioni in fondo → `navigationBarsPadding()` + `imePadding()`
+- [ ] Schermata con `OutlinedTextField` vicino al fondo → verificare che l'apertura tastiera non copra il campo o il bottone di submit
+
+### 9.4 Orientation Handling
 
 ```kotlin
 @Composable

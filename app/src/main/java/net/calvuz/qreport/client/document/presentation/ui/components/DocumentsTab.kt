@@ -180,7 +180,8 @@ fun DocumentsTab(
 
                 else -> {
                     LazyColumn(
-                        contentPadding     = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        // Extra bottom padding so the FAB doesn't cover the last item
+                        contentPadding     = PaddingValues(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 88.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(

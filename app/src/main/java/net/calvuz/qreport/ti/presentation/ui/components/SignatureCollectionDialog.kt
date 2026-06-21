@@ -55,7 +55,8 @@ fun SignatureCollectionDialog(
             Surface(
                 modifier = modifier
                     .fillMaxSize()
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .navigationBarsPadding(),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp
