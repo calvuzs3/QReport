@@ -153,6 +153,13 @@ abstract class QReportDatabase : RoomDatabase() {
         val MIGRATION_6_7 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
         val MIGRATION_7_8 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
 
-        val CALLBACK = object : Callback() {}
+        // On a fresh install Room creates all tables directly at DATABASE_VERSION and
+        // calls onCreate — no Migration runs, so that's where base master data must be seeded.
+        val CALLBACK = object : Callback() {
+            override fun onCreate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+                super.onCreate(db)
+                net.calvuz.qreport.app.database.data.local.migrations.BaseMasterDataSeeder.seedAll(db)
+            }
+        }
     }
 }
