@@ -4,17 +4,16 @@ import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleTypeMaster
 
 /**
- * Resolves the label to display for a checklist module: prefers the live
- * [ModuleTypeMaster] (editable from Settings) over the frozen [ModuleType] enum,
- * same Expand-phase precedence as
- * [net.calvuz.qreport.client.island.presentation.model.resolveIslandTypeDisplay].
+ * Resolves the display label for a module given its key (= moduleTypeId when present,
+ * otherwise moduleType.name). Lookup order: master by ID → master by code → enum
+ * displayName → raw key (handles custom types from sync with no enum counterpart).
  */
 fun resolveModuleTypeLabel(
-    moduleTypeId: String?,
-    legacy: ModuleType,
+    moduleKey: String,
     masters: List<ModuleTypeMaster>
 ): String {
-    val byId = moduleTypeId?.let { id -> masters.find { it.id == id } }
-    val byCode = byId ?: masters.find { it.code == legacy.name }
-    return byCode?.label ?: legacy.displayName
+    val byId = masters.find { it.id == moduleKey }
+    val byCode = byId ?: masters.find { it.code == moduleKey }
+    val enumFallback = ModuleType.entries.find { it.name == moduleKey }?.displayName
+    return byCode?.label ?: enumFallback ?: moduleKey
 }

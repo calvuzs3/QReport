@@ -218,10 +218,11 @@ class WordReportGenerator @Inject constructor(
             fontSize = 14
         }
 
-        exportData.itemsByModule.forEach { (moduleType, items) ->
+        exportData.itemsByModule.forEach { (moduleTypeId, items) ->
+            val moduleLabel = exportData.moduleMasters.find { it.id == moduleTypeId }?.label ?: moduleTypeId
             val moduleParagraph = document.createParagraph()
             moduleParagraph.createRun().apply {
-                setText("Modulo ${moduleType.displayName}")
+                setText("Modulo $moduleLabel")
                 isBold = true
             }
 

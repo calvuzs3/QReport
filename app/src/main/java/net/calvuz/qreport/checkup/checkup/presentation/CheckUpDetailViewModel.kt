@@ -9,7 +9,6 @@ import net.calvuz.qreport.app.app.domain.AppVersionInfo
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpHeader
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.domain.usecase.ObserveModuleTypesUseCase
 import net.calvuz.qreport.checkup.status.domain.usecase.ObserveActiveCheckUpStatusesUseCase
 import net.calvuz.qreport.photo.domain.model.Photo
@@ -716,19 +715,13 @@ class CheckUpDetailViewModel @Inject constructor(
         }
     }
 
-    // Module expansion/collapsing toggle
-    fun toggleModuleExpansion(moduleType: ModuleType) {
-        val moduleKey = moduleType.name
+    fun toggleModuleExpansion(moduleKey: String) {
         val current = _expandedModules.value
-        _expandedModules.value = if (moduleKey in current) {
-            current - moduleKey  // Collapse module
-        } else {
-            current + moduleKey  // Expand module
-        }
+        _expandedModules.value = if (moduleKey in current) current - moduleKey else current + moduleKey
     }
 
-    fun isModuleExpanded(moduleType: ModuleType): Boolean {
-        return moduleType.name in _expandedModules.value
+    fun isModuleExpanded(moduleKey: String): Boolean {
+        return moduleKey in _expandedModules.value
     }
 
     /**

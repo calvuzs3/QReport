@@ -4,8 +4,8 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.items.domain.model.CheckItem
+import net.calvuz.qreport.checkup.modules.domain.model.ModuleTypeMaster
 import net.calvuz.qreport.photo.domain.repository.PhotoRepository
 import net.calvuz.qreport.export.domain.reposirory.ExportData
 import net.calvuz.qreport.export.domain.reposirory.PhotoNamingStrategy
@@ -67,7 +67,7 @@ class PhotoExportManager @Inject constructor(
             val photoFolder = (targetDirectory)
 
             // 2. Raccoglie tutte le foto da esportare usando domain models
-            val allPhotosToExport = collectPhotosFromModules(exportData.itemsByModule)
+            val allPhotosToExport = collectPhotosFromModules(exportData.itemsByModule, exportData.moduleMasters)
             Timber.d("Foto da esportare: ${allPhotosToExport.size}")
 
             if (allPhotosToExport.isEmpty()) {
@@ -133,13 +133,17 @@ class PhotoExportManager @Inject constructor(
      * Raccoglie tutte le foto dai moduli con metadati di contesto
      * USA SOLO DOMAIN MODELS
      */
-    private fun collectPhotosFromModules(itemsByModule: Map<ModuleType, List<CheckItem>>): List<PhotoContext> {
+    private fun collectPhotosFromModules(
+        itemsByModule: Map<String, List<CheckItem>>,
+        moduleMasters: List<ModuleTypeMaster>
+    ): List<PhotoContext> {
         val photos = mutableListOf<PhotoContext>()
 
-        itemsByModule.entries.forEachIndexed { moduleIndex, (moduleType, checkItems) ->
+        itemsByModule.entries.forEachIndexed { moduleIndex, (moduleTypeId, checkItems) ->
+            val moduleLabel = moduleMasters.find { it.id == moduleTypeId }?.label ?: moduleTypeId
             val moduleInfo = PhotoModuleInfo(
-                moduleType = moduleType,
-                moduleDisplayName = moduleType.displayName,
+                moduleTypeId = moduleTypeId,
+                moduleDisplayName = moduleLabel,
                 moduleIndex = moduleIndex,
                 modulePrefix = String.format("%02d", moduleIndex + 1)
             )
@@ -353,9 +357,9 @@ class PhotoExportManager @Inject constructor(
             appendLine()
 
             // Raggruppa per modulo usando DOMAIN MODEL
-            val photosByModule = exportedPhotos.groupBy { it.moduleInfo.moduleType }
+            val photosByModule = exportedPhotos.groupBy { it.moduleInfo.moduleTypeId }
 
-            photosByModule.forEach { (moduleType, modulePhotos) ->
+            photosByModule.forEach { (_, modulePhotos) ->
                 val moduleInfo = modulePhotos.first().moduleInfo
                 appendLine("MODULO ${moduleInfo.moduleIndex + 1}: ${moduleInfo.moduleDisplayName}")
                 appendLine("-".repeat(50))

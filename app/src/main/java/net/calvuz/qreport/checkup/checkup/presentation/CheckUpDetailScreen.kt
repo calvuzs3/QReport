@@ -36,7 +36,6 @@ import net.calvuz.qreport.checkup.items.domain.model.CheckItem
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.presentation.model.resolveModuleTypeLabel
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.checkup.checkup.presentation.components.AssociationManagementDialog
@@ -236,18 +235,16 @@ fun CheckUpDetailScreen(
                     }
 
                     // Check Items by Module
-                    uiState.checkItemsByModule.forEach { (moduleType, items) ->
-                        item(key = "module_${moduleType.name}") {
+                    uiState.checkItemsByModule.forEach { (moduleKey, items) ->
+                        item(key = "module_$moduleKey") {
                             ModuleSectionWithPhotos(
-                                moduleType = moduleType,
                                 displayLabel = resolveModuleTypeLabel(
-                                    moduleTypeId = items.firstOrNull()?.moduleTypeId,
-                                    legacy = moduleType,
+                                    moduleKey = moduleKey,
                                     masters = uiState.moduleTypes
                                 ),
                                 items = items,
-                                isExpanded = moduleType.name in expandedModules,
-                                onToggleExpansion = { viewModel.toggleModuleExpansion(moduleType) },
+                                isExpanded = moduleKey in expandedModules,
+                                onToggleExpansion = { viewModel.toggleModuleExpansion(moduleKey) },
                                 photosByItem = uiState.photosByCheckItem,
                                 photoCountsByItem = uiState.photoCountsByCheckItem,
                                 onItemStatusChange = viewModel::updateItemStatus,
@@ -394,7 +391,6 @@ private fun StatItem(
 
 @Composable
 private fun ModuleSectionWithPhotos(
-    moduleType: ModuleType,
     displayLabel: String,
     items: List<CheckItem>,
     isExpanded: Boolean,

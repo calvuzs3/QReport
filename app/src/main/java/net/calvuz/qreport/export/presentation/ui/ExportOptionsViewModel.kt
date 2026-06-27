@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import net.calvuz.qreport.R
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.checkup.modules.domain.repository.ModuleTypeMasterRepository
 import net.calvuz.qreport.export.domain.reposirory.ExportRepository
 import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpDetailsUseCase
 import net.calvuz.qreport.export.domain.usecase.ExportCheckUpUseCase
@@ -81,7 +82,8 @@ class ExportOptionsViewModel @Inject constructor(
     private val getCheckUpDetailsUseCase: GetCheckUpDetailsUseCase,
     private val exportFileRepository: ExportFileRepository,
     private val openFileUseCase: OpenFileUseCase,
-    private val shareFileUseCase: ShareFileUseCase
+    private val shareFileUseCase: ShareFileUseCase,
+    private val moduleTypeMasterRepository: ModuleTypeMasterRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ExportOptionsUiState())
@@ -386,9 +388,11 @@ class ExportOptionsViewModel @Inject constructor(
                     photoMaxWidth = getPhotoWidthForPhotoQuality(state.photoQuality)
                 )
 
+                val moduleMasters = moduleTypeMasterRepository.getModuleTypes().getOrElse { emptyList() }
                 val exportData = ExportData(
                     checkup = checkUpDetails.checkUp,
-                    itemsByModule = checkUpDetails.checkItems.groupBy { it.moduleType },
+                    itemsByModule = checkUpDetails.checkItems.groupBy { it.moduleTypeId },
+                    moduleMasters = moduleMasters,
                     statistics = checkUpDetails.statistics,
                     progress = checkUpDetails.progress,
                     exportMetadata = ExportTechnicalMetadata(

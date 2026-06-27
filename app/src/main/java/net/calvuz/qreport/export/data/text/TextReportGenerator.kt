@@ -12,7 +12,7 @@ import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getDisplayName
 import net.calvuz.qreport.checkup.items.presentation.model.CheckItemStatusExt.getIcon
 import net.calvuz.qreport.app.util.NumberUtils.toItalianPercentage
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
+import net.calvuz.qreport.checkup.modules.domain.model.ModuleTypeMaster
 import net.calvuz.qreport.checkup.status.domain.repository.CheckUpStatusMasterRepository
 import net.calvuz.qreport.export.domain.reposirory.ExportData
 import net.calvuz.qreport.export.domain.reposirory.ExportFormat
@@ -194,25 +194,23 @@ class TextReportGenerator @Inject constructor(
         appendLine("=".repeat(80))
         appendLine()
 
-        exportData.itemsByModule.toList().forEachIndexed { index, (moduleType, checkItems) ->
-            appendModuleDetail(moduleType, checkItems, index + 1, options)
+        exportData.itemsByModule.toList().forEachIndexed { index, (moduleTypeId, checkItems) ->
+            appendModuleDetail(moduleTypeId, checkItems, index + 1, options, exportData.moduleMasters)
             appendLine()
         }
     }
 
-    /**
-     * Dettaglio di un singolo modulo
-     */
     private fun StringBuilder.appendModuleDetail(
-        moduleType: ModuleType,
+        moduleTypeId: String,
         checkItems: List<CheckItem>,
         moduleIndex: Int,
-        options: ExportOptions
+        options: ExportOptions,
+        moduleMasters: List<ModuleTypeMaster>
     ) {
         val moduleStats = calculateSectionStats(checkItems)
+        val moduleLabel = moduleMasters.find { it.id == moduleTypeId }?.label ?: moduleTypeId
 
-        // Header modulo
-        val moduleTitle = "MODULO $moduleIndex: ${moduleType.displayName.uppercase()}"
+        val moduleTitle = "MODULO $moduleIndex: ${moduleLabel.uppercase()}"
         appendLine(moduleTitle)
         appendLine("-".repeat(moduleTitle.length))
 
@@ -414,7 +412,7 @@ private fun generatePhotoFileName(
     // Implementazione semplificata - in produzione usare PhotoExportManager
     return when (namingStrategy) {
         PhotoNamingStrategy.STRUCTURED ->
-            "${String.format("%02d", sectionIndex)}_${item.moduleType.name}_foto${photoIndex + 1}.jpg"
+            "${String.format("%02d", sectionIndex)}_${item.moduleTypeId}_foto${photoIndex + 1}.jpg"
         PhotoNamingStrategy.SEQUENTIAL ->
             "foto_${String.format("%03d", photoIndex + 1)}.jpg"
         PhotoNamingStrategy.TIMESTAMP ->
@@ -468,7 +466,7 @@ private fun padLeft(text: String, width: Int): String {
 
 // === EXTENSION FUNCTIONS per Statistics ===
 
-private fun calculateCheckupStats(itemsByModule: Map<ModuleType, List<CheckItem>>): CheckupStatistics {
+private fun calculateCheckupStats(itemsByModule: Map<String, List<CheckItem>>): CheckupStatistics {
     val allItems = itemsByModule.values.flatten()
     val totalPhotos = allItems.sumOf { it.photos.size }
 
