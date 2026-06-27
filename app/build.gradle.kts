@@ -25,7 +25,7 @@ android {
 
         // Version
         versionCode = 7
-        versionName = "1.3.13"
+        versionName = "1.4.1"
 
         // ✅ AGGIORNATO test runner per Hilt
         testInstrumentationRunner = "net.calvuz.qreport.CustomTestRunner"
