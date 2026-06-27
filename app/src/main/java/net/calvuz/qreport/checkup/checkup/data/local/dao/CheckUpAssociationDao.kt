@@ -133,6 +133,19 @@ interface CheckUpAssociationDao {
     suspend fun getRecentAssociationsForClient(clientId: String, limit: Int = 20): List<CheckUpIslandAssociationEntity>
 
     // ============================================================
+    // SYNC METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM checkup_island_associations WHERE updated_at > COALESCE(synced_at, 0) ORDER BY updated_at ASC")
+    suspend fun getPendingSync(): List<CheckUpIslandAssociationEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(associations: List<CheckUpIslandAssociationEntity>)
+
+    @Query("UPDATE checkup_island_associations SET synced_at = :now WHERE id IN (:ids)")
+    suspend fun markSynced(ids: List<String>, now: Long)
+
+    // ============================================================
     // BACKUP METHODS
     // ============================================================
 

@@ -52,7 +52,10 @@ data class SyncPayloadDto(
     val moduleTypes: List<ModuleTypeDto> = emptyList(),
     val criticalityLevels: List<CriticalityLevelDto> = emptyList(),
     val checkupStatuses: List<CheckUpStatusDto> = emptyList(),
-    val checkItemTemplates: List<CheckItemTemplateDto> = emptyList()
+    val checkItemTemplates: List<CheckItemTemplateDto> = emptyList(),
+    // checkup records
+    val checkups: List<CheckUpRecordDto> = emptyList(),
+    val checkupIslandAssociations: List<CheckUpIslandAssociationDto> = emptyList()
 )
 
 @Serializable
@@ -286,4 +289,48 @@ data class IslandDocumentDto(
     val syncedAt: Long? = null,
     val isActive: Boolean = true,
     val isDeleted: Boolean = false
+)
+
+@Serializable
+data class CheckUpRecordDto(
+    val id: String,
+    val clientCompanyName: String,
+    val clientContactPerson: String = "",
+    val clientSite: String = "",
+    val clientAddress: String = "",
+    val clientPhone: String = "",
+    val clientEmail: String = "",
+    val islandSerialNumber: String = "",
+    val islandModel: String = "",
+    val islandInstallationDate: String = "",
+    val islandLastMaintenanceDate: String = "",
+    val islandOperatingHours: Int = 0,
+    val islandCycleCount: Long = 0,
+    val technicianName: String = "",
+    val technicianCompany: String = "",
+    val technicianCertification: String = "",
+    val technicianPhone: String = "",
+    val technicianEmail: String = "",
+    val checkupDate: Long,
+    val headerNotes: String = "",
+    val islandType: String = "",
+    val islandTypeId: String? = null,
+    val status: String = "DRAFT",
+    val createdAt: Long,
+    val updatedAt: Long,
+    val completedAt: Long? = null,
+    val syncedAt: Long? = null,
+    val isDeleted: Boolean = false
+)
+
+@Serializable
+data class CheckUpIslandAssociationDto(
+    val id: String,
+    val checkupId: String,
+    val islandId: String,
+    val associationType: String,
+    val notes: String? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val syncedAt: Long? = null
 )

@@ -48,6 +48,8 @@ data class CheckUpEntity(
     @ColumnInfo(name = "status") val status: String,
     @ColumnInfo(name = "created_at") val createdAt: Instant,
     @ColumnInfo(name = "updated_at") val updatedAt: Instant,
-    @ColumnInfo(name = "completed_at") val completedAt: Instant?
+    @ColumnInfo(name = "completed_at") val completedAt: Instant?,
+    @ColumnInfo(name = "synced_at") val syncedAt: Long? = null,
+    @ColumnInfo(name = "is_deleted") val isDeleted: Boolean = false
 )
 

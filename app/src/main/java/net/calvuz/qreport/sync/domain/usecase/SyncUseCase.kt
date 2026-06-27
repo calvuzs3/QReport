@@ -3,6 +3,8 @@ package net.calvuz.qreport.sync.domain.usecase
 import kotlinx.coroutines.flow.first
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpAssociationDao
+import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpDao
 import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
 import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemTemplateDao
 import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
@@ -36,6 +38,8 @@ class SyncUseCase @Inject constructor(
     private val criticalityDao: CriticalityDao,
     private val checkUpStatusDao: CheckUpStatusDao,
     private val checkItemTemplateDao: CheckItemTemplateDao,
+    private val checkUpDao: CheckUpDao,
+    private val checkUpAssociationDao: CheckUpAssociationDao,
     private val syncSettingsDataStore: SyncSettingsDataStore,
     private val tokenStorage: TokenStorage,
     private val syncMapper: SyncMapper
@@ -137,7 +141,9 @@ class SyncUseCase @Inject constructor(
             moduleTypes = if (isAdmin) moduleTypeDao.getPendingSync().map { syncMapper.moduleTypeToDto(it) } else emptyList(),
             criticalityLevels = if (isAdmin) criticalityDao.getPendingSync().map { syncMapper.criticalityLevelToDto(it) } else emptyList(),
             checkupStatuses = if (isAdmin) checkUpStatusDao.getPendingSync().map { syncMapper.checkUpStatusToDto(it) } else emptyList(),
-            checkItemTemplates = if (isAdmin) checkItemTemplateDao.getPendingSync().map { syncMapper.checkItemTemplateToDto(it) } else emptyList()
+            checkItemTemplates = if (isAdmin) checkItemTemplateDao.getPendingSync().map { syncMapper.checkItemTemplateToDto(it) } else emptyList(),
+            checkups = checkUpDao.getPendingSync().map { syncMapper.checkUpToDto(it) },
+            checkupIslandAssociations = checkUpAssociationDao.getPendingSync().map { syncMapper.checkUpIslandAssociationToDto(it) }
         )
     }
 
@@ -190,6 +196,12 @@ class SyncUseCase @Inject constructor(
         if (payload.checkItemTemplates.isNotEmpty()) checkItemTemplateDao.upsertAll(payload.checkItemTemplates.map {
             syncMapper.checkItemTemplateToEntity(it)
         })
+        if (payload.checkups.isNotEmpty()) checkUpDao.upsertAll(payload.checkups.map {
+            syncMapper.checkUpToEntity(it)
+        })
+        if (payload.checkupIslandAssociations.isNotEmpty()) checkUpAssociationDao.upsertAll(payload.checkupIslandAssociations.map {
+            syncMapper.checkUpIslandAssociationToEntity(it)
+        })
 
         Timber.d("SyncUseCase: applied remote changes to local DB")
     }
@@ -219,6 +231,10 @@ class SyncUseCase @Inject constructor(
             ?.let { checkUpStatusDao.markSynced(it, now) }
         payload.checkItemTemplates.map { it.id }.takeIf { it.isNotEmpty() }
             ?.let { checkItemTemplateDao.markSynced(it, now) }
+        payload.checkups.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { checkUpDao.markSynced(it, now) }
+        payload.checkupIslandAssociations.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { checkUpAssociationDao.markSynced(it, now) }
     }
 
     private fun countPulled(payload: SyncPayloadDto): Int =
@@ -226,5 +242,6 @@ class SyncUseCase @Inject constructor(
         payload.contracts.size + payload.facilities.size + payload.facilityIslands.size +
         payload.mechanicalUnits.size + payload.maintenanceLogs.size +
         payload.moduleTypes.size + payload.criticalityLevels.size +
-        payload.checkupStatuses.size + payload.checkItemTemplates.size
+        payload.checkupStatuses.size + payload.checkItemTemplates.size +
+        payload.checkups.size + payload.checkupIslandAssociations.size
 }

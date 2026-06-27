@@ -29,7 +29,7 @@ class QReportApplication : Application() {
 
     companion object {
         const val DATABASE_NAME = "qreport_database"
-        const val DATABASE_VERSION = 9
+        const val DATABASE_VERSION = 10
     }
 
     override fun onCreate() {

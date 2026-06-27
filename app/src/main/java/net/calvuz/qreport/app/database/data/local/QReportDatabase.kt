@@ -59,6 +59,7 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_5_6
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_8_9
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_9_10
 
 /**
  * QReport Room Database
@@ -154,6 +155,7 @@ abstract class QReportDatabase : RoomDatabase() {
         val MIGRATION_6_7 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
         val MIGRATION_7_8 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
         val MIGRATION_8_9 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_8_9
+        val MIGRATION_9_10 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_9_10
 
         val CALLBACK = object : Callback() {}
     }
