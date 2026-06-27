@@ -3,6 +3,10 @@ package net.calvuz.qreport.sync.domain.usecase
 import kotlinx.coroutines.flow.first
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
+import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemTemplateDao
+import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
+import net.calvuz.qreport.checkup.status.data.local.dao.CheckUpStatusDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import net.calvuz.qreport.sync.data.local.SyncSettingsDataStore
 import net.calvuz.qreport.sync.data.local.TokenStorage
@@ -28,6 +32,10 @@ class SyncUseCase @Inject constructor(
     private val remoteDataSource: RemoteDataSource,
     private val syncDao: SyncDao,
     private val islandTypeDao: IslandTypeDao,
+    private val moduleTypeDao: ModuleTypeDao,
+    private val criticalityDao: CriticalityDao,
+    private val checkUpStatusDao: CheckUpStatusDao,
+    private val checkItemTemplateDao: CheckItemTemplateDao,
     private val syncSettingsDataStore: SyncSettingsDataStore,
     private val tokenStorage: TokenStorage,
     private val syncMapper: SyncMapper
@@ -111,6 +119,7 @@ class SyncUseCase @Inject constructor(
     // ===== PRIVATE HELPERS =====
 
     private suspend fun buildPushPayload(deviceId: String, now: Long): SyncPayloadDto {
+        val isAdmin = tokenStorage.canPushMasterData()
         return SyncPayloadDto(
             deviceId = deviceId,
             syncTimestamp = now,
@@ -124,7 +133,12 @@ class SyncUseCase @Inject constructor(
             mechanicalUnits = syncDao.getMechanicalUnitsPendingSync()
                 .map { syncMapper.mechanicalUnitToDto(it) },
             maintenanceLogs = syncDao.getMaintenanceLogsPendingSync()
-                .map { syncMapper.maintenanceLogToDto(it) })
+                .map { syncMapper.maintenanceLogToDto(it) },
+            moduleTypes = if (isAdmin) moduleTypeDao.getPendingSync().map { syncMapper.moduleTypeToDto(it) } else emptyList(),
+            criticalityLevels = if (isAdmin) criticalityDao.getPendingSync().map { syncMapper.criticalityLevelToDto(it) } else emptyList(),
+            checkupStatuses = if (isAdmin) checkUpStatusDao.getPendingSync().map { syncMapper.checkUpStatusToDto(it) } else emptyList(),
+            checkItemTemplates = if (isAdmin) checkItemTemplateDao.getPendingSync().map { syncMapper.checkItemTemplateToDto(it) } else emptyList()
+        )
     }
 
     private suspend fun applyRemoteChanges(payload: SyncPayloadDto) {
@@ -162,9 +176,19 @@ class SyncUseCase @Inject constructor(
             )
         })
         if (payload.maintenanceLogs.isNotEmpty()) syncDao.upsertMaintenanceLogs(payload.maintenanceLogs.map {
-            syncMapper.maintenanceLogToEntity(
-                it
-            )
+            syncMapper.maintenanceLogToEntity(it)
+        })
+        if (payload.moduleTypes.isNotEmpty()) moduleTypeDao.upsertAll(payload.moduleTypes.map {
+            syncMapper.moduleTypeToEntity(it)
+        })
+        if (payload.criticalityLevels.isNotEmpty()) criticalityDao.upsertAll(payload.criticalityLevels.map {
+            syncMapper.criticalityLevelToEntity(it)
+        })
+        if (payload.checkupStatuses.isNotEmpty()) checkUpStatusDao.upsertAll(payload.checkupStatuses.map {
+            syncMapper.checkUpStatusToEntity(it)
+        })
+        if (payload.checkItemTemplates.isNotEmpty()) checkItemTemplateDao.upsertAll(payload.checkItemTemplates.map {
+            syncMapper.checkItemTemplateToEntity(it)
         })
 
         Timber.d("SyncUseCase: applied remote changes to local DB")
@@ -187,8 +211,20 @@ class SyncUseCase @Inject constructor(
             ?.let { syncDao.markMechanicalUnitsSynced(it, now) }
         payload.maintenanceLogs.map { it.id }.takeIf { it.isNotEmpty() }
             ?.let { syncDao.markMaintenanceLogsSynced(it, now) }
+        payload.moduleTypes.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { moduleTypeDao.markSynced(it, now) }
+        payload.criticalityLevels.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { criticalityDao.markSynced(it, now) }
+        payload.checkupStatuses.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { checkUpStatusDao.markSynced(it, now) }
+        payload.checkItemTemplates.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { checkItemTemplateDao.markSynced(it, now) }
     }
 
     private fun countPulled(payload: SyncPayloadDto): Int =
-        payload.islandTypes.size + payload.clients.size + payload.contacts.size + payload.contracts.size + payload.facilities.size + payload.facilityIslands.size + payload.mechanicalUnits.size + payload.maintenanceLogs.size
+        payload.islandTypes.size + payload.clients.size + payload.contacts.size +
+        payload.contracts.size + payload.facilities.size + payload.facilityIslands.size +
+        payload.mechanicalUnits.size + payload.maintenanceLogs.size +
+        payload.moduleTypes.size + payload.criticalityLevels.size +
+        payload.checkupStatuses.size + payload.checkItemTemplates.size
 }

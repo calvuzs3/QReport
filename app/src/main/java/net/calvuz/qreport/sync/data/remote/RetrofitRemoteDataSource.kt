@@ -2,6 +2,7 @@ package net.calvuz.qreport.sync.data.remote
 
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.sync.data.local.TokenStorage
 import net.calvuz.qreport.sync.data.remote.dto.LoginRequest
 import net.calvuz.qreport.sync.data.remote.dto.SyncPayloadDto
 import net.calvuz.qreport.sync.data.remote.dto.SyncResponseDto
@@ -13,7 +14,8 @@ import javax.inject.Singleton
 
 @Singleton
 class RetrofitRemoteDataSource @Inject constructor(
-    private val api: QReportApi
+    private val api: QReportApi,
+    private val tokenStorage: TokenStorage
 ) : RemoteDataSource {
 
     override suspend fun login(
@@ -25,9 +27,11 @@ class RetrofitRemoteDataSource @Inject constructor(
             val response = api.login(LoginRequest(username, password))
 
             if (response.isSuccessful) {
-                val token = response.body()?.token
+                val body = response.body()
+                val token = body?.token
                 if (token != null) {
-                    Timber.d("RemoteDataSource: login successful")
+                    tokenStorage.saveRole(body.role)
+                    Timber.d("RemoteDataSource: login successful, role=${body.role}")
                     QrResult.Success(token)
                 } else {
                     Timber.e("RemoteDataSource: login response body is null")

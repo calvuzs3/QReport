@@ -21,6 +21,7 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_4_5
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_5_6
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_8_9
 import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
 import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
@@ -66,6 +67,7 @@ object DatabaseModule {
                 MIGRATION_5_6,
                 MIGRATION_6_7,
                 MIGRATION_7_8,
+                MIGRATION_8_9,
             )
             .build()
     }

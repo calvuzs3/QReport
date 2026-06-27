@@ -13,7 +13,8 @@ data class LoginRequest(
 
 @Serializable
 data class LoginResponse(
-    val token: String
+    val token: String,
+    val role: String = "TECHNICIAN"
 )
 
 // ===== SYNC =====
@@ -46,7 +47,12 @@ data class SyncPayloadDto(
     val facilityIslands: List<FacilityIslandDto> = emptyList(),
     val mechanicalUnits: List<MechanicalUnitDto> = emptyList(),
     val maintenanceLogs: List<MaintenanceLogDto> = emptyList(),
-    val documents: List<DocumentDto> = emptyList()
+    val documents: List<DocumentDto> = emptyList(),
+    // checkup master data
+    val moduleTypes: List<ModuleTypeDto> = emptyList(),
+    val criticalityLevels: List<CriticalityLevelDto> = emptyList(),
+    val checkupStatuses: List<CheckUpStatusDto> = emptyList(),
+    val checkItemTemplates: List<CheckItemTemplateDto> = emptyList()
 )
 
 @Serializable
@@ -192,6 +198,71 @@ data class MaintenanceLogDto(
     val updatedAt: Long,
     val syncedAt: Long? = null,
     val isActive: Boolean = true,
+    val isDeleted: Boolean = false
+)
+
+// ===== CHECKUP MASTER DTOs =====
+
+@Serializable
+data class ModuleTypeDto(
+    val id: String,
+    val code: String,
+    val label: String,
+    val description: String? = null,
+    val iconName: String? = null,
+    val sortOrder: Int = 0,
+    val isActive: Boolean = true,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val syncedAt: Long? = null,
+    val isDeleted: Boolean = false
+)
+
+@Serializable
+data class CriticalityLevelDto(
+    val id: String,
+    val code: String,
+    val label: String,
+    val priority: Int,
+    val colorHex: String,
+    val iconEmoji: String? = null,
+    val sortOrder: Int = 0,
+    val isActive: Boolean = true,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val syncedAt: Long? = null,
+    val isDeleted: Boolean = false
+)
+
+@Serializable
+data class CheckUpStatusDto(
+    val id: String,
+    val code: String,
+    val label: String,
+    val colorHex: String,
+    val iconEmoji: String? = null,
+    val sortOrder: Int = 0,
+    val isActive: Boolean = true,
+    val blocksDeletion: Boolean = false,
+    val marksCompletion: Boolean = false,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val syncedAt: Long? = null,
+    val isDeleted: Boolean = false
+)
+
+@Serializable
+data class CheckItemTemplateDto(
+    val id: String,
+    val moduleTypeId: String,
+    val category: String,
+    val description: String,
+    val criticalityId: String,
+    val orderIndex: Int,
+    val isActive: Boolean = true,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val syncedAt: Long? = null,
     val isDeleted: Boolean = false
 )
 

@@ -43,4 +43,19 @@ interface CheckItemTemplateDao {
 
     @Query("UPDATE check_item_templates SET is_active = 1, updated_at = :ts WHERE id = :id")
     suspend fun restore(id: String, ts: Long)
+
+    // ===== SYNC =====
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(templates: List<CheckItemTemplateEntity>)
+
+    @Query("""
+        SELECT * FROM check_item_templates
+        WHERE updated_at > COALESCE(synced_at, 0)
+        ORDER BY updated_at ASC
+    """)
+    suspend fun getPendingSync(): List<CheckItemTemplateEntity>
+
+    @Query("UPDATE check_item_templates SET synced_at = :now WHERE id IN (:ids)")
+    suspend fun markSynced(ids: List<String>, now: Long)
 }

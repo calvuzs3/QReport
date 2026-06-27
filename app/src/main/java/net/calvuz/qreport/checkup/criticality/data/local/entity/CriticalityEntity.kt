@@ -5,11 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/**
- * Master data row for a checklist criticality level (e.g. "Critico", "Routine").
- * Local-only: no synced_at/is_deleted, this table never syncs with the server
- * (see [net.calvuz.qreport.checkup.criticality.domain.model.CriticalityMaster]).
- */
+/** Master data row for a checklist criticality level (e.g. "Critico", "Routine"). */
 @Entity(
     tableName = "criticality_levels",
     indices = [
@@ -48,5 +44,11 @@ data class CriticalityEntity(
     val createdAt: Long,
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long
+    val updatedAt: Long,
+
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null,
+
+    @ColumnInfo(name = "is_deleted")
+    val isDeleted: Boolean = false
 )

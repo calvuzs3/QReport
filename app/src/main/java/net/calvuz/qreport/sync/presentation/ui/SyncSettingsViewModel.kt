@@ -73,7 +73,8 @@ class SyncSettingsViewModel @Inject constructor(
             try {
                 _uiState.value = _uiState.value.copy(
                     isLoading = true,
-                    isLoggedIn = tokenStorage.isLoggedIn()
+                    isLoggedIn = tokenStorage.isLoggedIn(),
+                    canPushMasterData = tokenStorage.canPushMasterData()
                 )
                 val result = syncRepository.getSyncStatus()
                 if (result.isSuccess) {
@@ -201,7 +202,8 @@ class SyncSettingsViewModel @Inject constructor(
                         is QrError.NetworkError.Unauthorized -> {
                             // Token expired — force re-login
                             tokenStorage.clearToken()
-                            _uiState.value = _uiState.value.copy(isLoggedIn = false)
+                            tokenStorage.clearRole()
+                            _uiState.value = _uiState.value.copy(isLoggedIn = false, canPushMasterData = false)
                             UiText.StringResource(R.string.sync_error_session_expired)
                         }
                         is QrError.NetworkError.NoConnection -> UiText.StringResource(R.string.error_no_connection)
@@ -232,7 +234,8 @@ class SyncSettingsViewModel @Inject constructor(
 
     fun logout() {
         tokenStorage.clearToken()
-        _uiState.value = _uiState.value.copy(isLoggedIn = false, syncResult = null)
+        tokenStorage.clearRole()
+        _uiState.value = _uiState.value.copy(isLoggedIn = false, canPushMasterData = false, syncResult = null)
     }
 
     fun clearMessages() {
@@ -293,6 +296,7 @@ data class SyncSettingsUiState(
     val isLoading: Boolean = false,
     val isSyncing: Boolean = false,
     val isLoggedIn: Boolean = false,
+    val canPushMasterData: Boolean = false,
     val syncStatus: SyncStatus? = null,
     val syncResult: SyncResult? = null,
     val error: UiText? = null,
