@@ -198,7 +198,7 @@ class SyncSettingsViewModel @Inject constructor(
                     loadSyncStatus() // Refresh pending count
                 }
                 is QrResult.Error -> {
-                    val message = when (result.error) {
+                    val message = when (val err = result.error) {
                         is QrError.NetworkError.Unauthorized -> {
                             // Token expired — force re-login
                             tokenStorage.clearToken()
@@ -206,6 +206,12 @@ class SyncSettingsViewModel @Inject constructor(
                             _uiState.value = _uiState.value.copy(isLoggedIn = false, canPushMasterData = false)
                             UiText.StringResource(R.string.sync_error_session_expired)
                         }
+                        is QrError.NetworkError.ServerVersionIncompatible ->
+                            UiText.StringResources(
+                                R.string.sync_error_server_version_incompatible,
+                                err.serverVersion,
+                                err.minVersion
+                            )
                         is QrError.NetworkError.NoConnection -> UiText.StringResource(R.string.error_no_connection)
                         is QrError.NetworkError.SyncDisabled -> UiText.StringResource(R.string.sync_error_sync_disabled)
                         is QrError.NetworkError.ServerError -> UiText.StringResource(R.string.error_server)
@@ -272,12 +278,19 @@ class SyncSettingsViewModel @Inject constructor(
                 loadSyncStatus()
             }
             is QrResult.Error -> {
-                val message = when (result.error) {
+                val message = when (val err = result.error) {
                     is QrError.NetworkError.Unauthorized -> {
                         tokenStorage.clearToken()
-                        _uiState.value = _uiState.value.copy(isLoggedIn = false)
+                        tokenStorage.clearRole()
+                        _uiState.value = _uiState.value.copy(isLoggedIn = false, canPushMasterData = false)
                         UiText.StringResource(R.string.sync_error_session_expired)
                     }
+                    is QrError.NetworkError.ServerVersionIncompatible ->
+                        UiText.StringResources(
+                            R.string.sync_error_server_version_incompatible,
+                            err.serverVersion,
+                            err.minVersion
+                        )
                     is QrError.NetworkError.NoConnection -> UiText.StringResource(R.string.error_no_connection)
                     is QrError.NetworkError.SyncDisabled -> UiText.StringResource(R.string.sync_error_sync_disabled)
                     is QrError.NetworkError.ServerError -> UiText.StringResource(R.string.error_server)

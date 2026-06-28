@@ -39,5 +39,6 @@
     <string name="sync_error_session_expired">Sessione scaduta, effettua nuovamente il login</string>
     <string name="sync_error_sync_disabled">Sincronizzazione disabilitata</string>
     <string name="sync_error_generic">Errore sincronizzazione</string>
+    <string name="sync_error_server_version_incompatible">Server v%1$s non compatibile (richiesta v%2$s o superiore)</string>
 
 </resources>

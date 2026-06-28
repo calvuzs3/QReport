@@ -18,6 +18,28 @@ class RetrofitRemoteDataSource @Inject constructor(
     private val tokenStorage: TokenStorage
 ) : RemoteDataSource {
 
+    override suspend fun getServerVersion(): QrResult<String, QrError> {
+        return try {
+            val response = api.getVersion()
+            if (response.isSuccessful) {
+                val version = response.body()?.version
+                if (version != null) {
+                    Timber.d("RemoteDataSource: server version=$version")
+                    QrResult.Success(version)
+                } else {
+                    QrResult.Error(QrError.NetworkError.ParseError("Missing version in response"))
+                }
+            } else {
+                QrResult.Error(QrError.NetworkError.ServerError(response.code()))
+            }
+        } catch (e: IOException) {
+            QrResult.Error(QrError.NetworkError.NoConnection())
+        } catch (e: Exception) {
+            Timber.e(e, "RemoteDataSource: unexpected error fetching server version")
+            QrResult.Error(QrError.SystemError.UnknownError(e))
+        }
+    }
+
     override suspend fun login(
         username: String,
         password: String

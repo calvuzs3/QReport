@@ -1,7 +1,16 @@
 package net.calvuz.qreport.sync.data.remote.dto
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import net.calvuz.qreport.client.document.sync.remote.DocumentDto
+
+// ===== VERSION =====
+
+@Serializable
+data class ServerVersionDto(
+    val name: String,
+    val version: String
+)
 
 // ===== AUTH =====
 
@@ -294,43 +303,43 @@ data class IslandDocumentDto(
 @Serializable
 data class CheckUpRecordDto(
     val id: String,
-    val clientCompanyName: String,
-    val clientContactPerson: String = "",
-    val clientSite: String = "",
-    val clientAddress: String = "",
-    val clientPhone: String = "",
-    val clientEmail: String = "",
-    val islandSerialNumber: String = "",
-    val islandModel: String = "",
-    val islandInstallationDate: String = "",
-    val islandLastMaintenanceDate: String = "",
-    val islandOperatingHours: Int = 0,
-    val islandCycleCount: Long = 0,
-    val technicianName: String = "",
-    val technicianCompany: String = "",
-    val technicianCertification: String = "",
-    val technicianPhone: String = "",
-    val technicianEmail: String = "",
-    val checkupDate: Long,
-    val headerNotes: String = "",
-    val islandType: String = "",
-    val islandTypeId: String? = null,
+    @SerialName("client_company_name")          val clientCompanyName: String,
+    @SerialName("client_contact_person")        val clientContactPerson: String = "",
+    @SerialName("client_site")                  val clientSite: String = "",
+    @SerialName("client_address")               val clientAddress: String = "",
+    @SerialName("client_phone")                 val clientPhone: String = "",
+    @SerialName("client_email")                 val clientEmail: String = "",
+    @SerialName("island_serial_number")         val islandSerialNumber: String = "",
+    @SerialName("island_model")                 val islandModel: String = "",
+    @SerialName("island_installation_date")     val islandInstallationDate: String = "",
+    @SerialName("island_last_maintenance_date") val islandLastMaintenanceDate: String = "",
+    @SerialName("island_operating_hours")       val islandOperatingHours: Int = 0,
+    @SerialName("island_cycle_count")           val islandCycleCount: Long = 0,
+    @SerialName("technician_name")              val technicianName: String = "",
+    @SerialName("technician_company")           val technicianCompany: String = "",
+    @SerialName("technician_certification")     val technicianCertification: String = "",
+    @SerialName("technician_phone")             val technicianPhone: String = "",
+    @SerialName("technician_email")             val technicianEmail: String = "",
+    @SerialName("checkup_date")                 val checkupDate: Long,
+    @SerialName("header_notes")                 val headerNotes: String = "",
+    @SerialName("island_type")                  val islandType: String = "",
+    @SerialName("island_type_id")               val islandTypeId: String? = null,
     val status: String = "DRAFT",
-    val createdAt: Long,
-    val updatedAt: Long,
-    val completedAt: Long? = null,
-    val syncedAt: Long? = null,
-    val isDeleted: Boolean = false
+    @SerialName("created_at")                   val createdAt: Long,
+    @SerialName("updated_at")                   val updatedAt: Long,
+    @SerialName("completed_at")                 val completedAt: Long? = null,
+    @SerialName("synced_at")                    val syncedAt: Long? = null,
+    @SerialName("is_deleted")                   val isDeleted: Boolean = false
 )
 
 @Serializable
 data class CheckUpIslandAssociationDto(
     val id: String,
-    val checkupId: String,
-    val islandId: String,
-    val associationType: String,
+    @SerialName("checkup_id")        val checkupId: String,
+    @SerialName("island_id")         val islandId: String,
+    @SerialName("association_type")  val associationType: String,
     val notes: String? = null,
-    val createdAt: Long,
-    val updatedAt: Long,
-    val syncedAt: Long? = null
+    @SerialName("created_at")        val createdAt: Long,
+    @SerialName("updated_at")        val updatedAt: Long,
+    @SerialName("synced_at")         val syncedAt: Long? = null
 )

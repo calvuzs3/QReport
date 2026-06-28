@@ -30,6 +30,19 @@ import javax.inject.Inject
  * 5. Mark pushed records as synced
  * 6. Save sync timestamp
  */
+private const val MIN_SERVER_VERSION = "1.4.0"
+
+private fun isVersionCompatible(serverVersion: String): Boolean {
+    val server = serverVersion.split(".").map { it.toIntOrNull() ?: 0 }
+    val min = MIN_SERVER_VERSION.split(".").map { it.toIntOrNull() ?: 0 }
+    for (i in 0..2) {
+        val s = server.getOrElse(i) { 0 }
+        val m = min.getOrElse(i) { 0 }
+        if (s != m) return s > m
+    }
+    return true
+}
+
 class SyncUseCase @Inject constructor(
     private val remoteDataSource: RemoteDataSource,
     private val syncDao: SyncDao,
@@ -48,6 +61,27 @@ class SyncUseCase @Inject constructor(
     @Suppress("HardCodedStringLiteral")
     suspend operator fun invoke(): QrResult<SyncResult, QrError> {
         return try {
+
+            // 0. Check server version compatibility
+            when (val versionResult = remoteDataSource.getServerVersion()) {
+                is QrResult.Error -> {
+                    Timber.e("SyncUseCase: cannot reach server or parse version: ${versionResult.error}")
+                    return QrResult.Error(versionResult.error)
+                }
+                is QrResult.Success -> {
+                    val serverVersion = versionResult.data
+                    if (!isVersionCompatible(serverVersion)) {
+                        Timber.e("SyncUseCase: server version $serverVersion < required $MIN_SERVER_VERSION")
+                        return QrResult.Error(
+                            QrError.NetworkError.ServerVersionIncompatible(
+                                serverVersion = serverVersion,
+                                minVersion = MIN_SERVER_VERSION
+                            )
+                        )
+                    }
+                    Timber.d("SyncUseCase: server version $serverVersion OK (min=$MIN_SERVER_VERSION)")
+                }
+            }
 
             // 1. Check sync mode
             val mode = syncSettingsDataStore.getSyncMode().first()
@@ -79,8 +113,13 @@ class SyncUseCase @Inject constructor(
                 append("${payload.clients.size} clients, ")
                 append("${payload.contacts.size} contacts, ${payload.contracts.size} contracts, ")
                 append("${payload.facilities.size} facilities, ")
-                append("${payload.facilityIslands.size} islands, ${payload.mechanicalUnits.size} units")
-                append("${payload.maintenanceLogs.size} logs")
+                append("${payload.facilityIslands.size} islands, ${payload.mechanicalUnits.size} units, ")
+                append("${payload.maintenanceLogs.size} logs | ")
+                append("master data: ${payload.moduleTypes.size} modules, ")
+                append("${payload.criticalityLevels.size} criticalities, ")
+                append("${payload.checkupStatuses.size} statuses, ")
+                append("${payload.checkItemTemplates.size} templates | ")
+                append("checkups: ${payload.checkups.size}, assoc: ${payload.checkupIslandAssociations.size}")
             })
 
             // 4. Push — server responds with pull payload in the same round-trip
@@ -124,6 +163,7 @@ class SyncUseCase @Inject constructor(
 
     private suspend fun buildPushPayload(deviceId: String, now: Long): SyncPayloadDto {
         val isAdmin = tokenStorage.canPushMasterData()
+        Timber.d("SyncUseCase: role=${tokenStorage.getRole()}, isAdmin=$isAdmin")
         return SyncPayloadDto(
             deviceId = deviceId,
             syncTimestamp = now,
