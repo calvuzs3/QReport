@@ -24,8 +24,8 @@ android {
         targetSdk = 35
 
         // Version
-        versionCode = 10
-        versionName = "1.4.6"
+        versionCode = 11
+        versionName = "1.4.7"
 
         // ✅ AGGIORNATO test runner per Hilt
         testInstrumentationRunner = "net.calvuz.qreport.CustomTestRunner"

@@ -31,10 +31,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import net.calvuz.qreport.R
+import net.calvuz.qreport.checkup.spareparts.presentation.ui.components.SparePartsSection
+import net.calvuz.qreport.sync.qstore.ArticleContract
+import net.calvuz.qreport.sync.qstore.QStoreAvailability
 import net.calvuz.qreport.checkup.items.domain.model.CheckItem
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
@@ -113,6 +121,49 @@ fun CheckUpDetailScreen(
     LaunchedEffect(uiState.photoCountsByCheckItem) {
         // Questo trigger quando cambiano i conteggi foto
         // Utile per refresh automatico
+    }
+
+    // QStore picker launcher
+    var showQStoreNotFoundDialog by remember { mutableStateOf(false) }
+
+    val pickArticlesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uuids = result.data
+                ?.getStringArrayListExtra(ArticleContract.PickerExtras.SELECTED_UUIDS)
+            if (!uuids.isNullOrEmpty()) {
+                viewModel.onArticlesSelected(uuids)
+            }
+        }
+    }
+
+    fun launchQStorePicker() {
+        val preselectedUuids = uiState.spareParts.map { it.articleUuid }
+        val intent = Intent(ArticleContract.ACTION_PICK).apply {
+            setPackage("net.calvuz.qstore")
+            putStringArrayListExtra(
+                ArticleContract.PickerExtras.PRESELECTED_UUIDS,
+                ArrayList(preselectedUuids)
+            )
+        }
+        try {
+            pickArticlesLauncher.launch(intent)
+        } catch (e: ActivityNotFoundException) {
+            Timber.w("QStore not installed")
+            showQStoreNotFoundDialog = true
+        }
+    }
+
+    if (showQStoreNotFoundDialog) {
+        AlertDialog(
+            onDismissRequest = { showQStoreNotFoundDialog = false },
+            title = { Text("QuickStore non trovata") },
+            text = { Text("Installa l'app QuickStore per selezionare i ricambi.") },
+            confirmButton = {
+                TextButton(onClick = { showQStoreNotFoundDialog = false }) { Text("OK") }
+            }
+        )
     }
 
     Column(
@@ -240,6 +291,16 @@ fun CheckUpDetailScreen(
                     item {
                         ProgressOverviewCard(
                             statistics = uiState.statistics
+                        )
+                    }
+
+                    // Spare Parts
+                    item {
+                        SparePartsSection(
+                            spareParts = uiState.spareParts,
+                            onAddClick = { launchQStorePicker() },
+                            onRemove = viewModel::removeSparePart,
+                            onQuantityChange = viewModel::updateSparePartQuantity
                         )
                     }
 

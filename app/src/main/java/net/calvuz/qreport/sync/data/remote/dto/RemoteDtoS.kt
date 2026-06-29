@@ -62,15 +62,23 @@ data class SyncPayloadDto(
     val criticalityLevels: List<CriticalityLevelDto> = emptyList(),
     val checkupStatuses: List<CheckUpStatusDto> = emptyList(),
     val checkItemTemplates: List<CheckItemTemplateDto> = emptyList(),
+    val moduleTypeIslandTypeLinks: List<ModuleTypeIslandTypeLinkDto> = emptyList(),
     // checkup records
     val checkups: List<CheckUpRecordDto> = emptyList(),
-    val checkupIslandAssociations: List<CheckUpIslandAssociationDto> = emptyList()
+    val checkupIslandAssociations: List<CheckUpIslandAssociationDto> = emptyList(),
+    val checkupItems: List<CheckItemDto> = emptyList()
 )
 
 @Serializable
 data class SyncResponseDto(
     val acceptedIds: List<String>,
     val pulledPayload: SyncPayloadDto
+)
+
+@Serializable
+data class ModuleTypeIslandTypeLinkDto(
+    val islandTypeId: String,
+    val moduleTypeId: String
 )
 
 // ===== ENTITY DTOs — mirror of server SyncDto.kt =====
@@ -330,6 +338,22 @@ data class CheckUpRecordDto(
     @SerialName("completed_at")                 val completedAt: Long? = null,
     @SerialName("synced_at")                    val syncedAt: Long? = null,
     @SerialName("is_deleted")                   val isDeleted: Boolean = false
+)
+
+@Serializable
+data class CheckItemDto(
+    val id: String,
+    @SerialName("checkup_id")      val checkupId: String,
+    @SerialName("module_type")     val moduleType: String,
+    @SerialName("module_type_id")  val moduleTypeId: String? = null,
+    @SerialName("item_code")       val itemCode: String,
+    val description: String,
+    val status: String,
+    val criticality: String,
+    @SerialName("criticality_id")  val criticalityId: String? = null,
+    val notes: String = "",
+    @SerialName("checked_at")      val checkedAt: Long? = null,
+    @SerialName("order_index")     val orderIndex: Int = 0
 )
 
 @Serializable

@@ -5,6 +5,7 @@ import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpAssociationDao
 import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpDao
+import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemDao
 import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
 import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemTemplateDao
 import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
@@ -53,6 +54,7 @@ class SyncUseCase @Inject constructor(
     private val checkItemTemplateDao: CheckItemTemplateDao,
     private val checkUpDao: CheckUpDao,
     private val checkUpAssociationDao: CheckUpAssociationDao,
+    private val checkItemDao: CheckItemDao,
     private val syncSettingsDataStore: SyncSettingsDataStore,
     private val tokenStorage: TokenStorage,
     private val syncMapper: SyncMapper
@@ -164,6 +166,8 @@ class SyncUseCase @Inject constructor(
     private suspend fun buildPushPayload(deviceId: String, now: Long): SyncPayloadDto {
         val isAdmin = tokenStorage.canPushMasterData()
         Timber.d("SyncUseCase: role=${tokenStorage.getRole()}, isAdmin=$isAdmin")
+        val pendingCheckups = checkUpDao.getPendingSync()
+        val pendingCheckupIds = pendingCheckups.map { it.id }
         return SyncPayloadDto(
             deviceId = deviceId,
             syncTimestamp = now,
@@ -182,8 +186,12 @@ class SyncUseCase @Inject constructor(
             criticalityLevels = if (isAdmin) criticalityDao.getPendingSync().map { syncMapper.criticalityLevelToDto(it) } else emptyList(),
             checkupStatuses = if (isAdmin) checkUpStatusDao.getPendingSync().map { syncMapper.checkUpStatusToDto(it) } else emptyList(),
             checkItemTemplates = if (isAdmin) checkItemTemplateDao.getPendingSync().map { syncMapper.checkItemTemplateToDto(it) } else emptyList(),
-            checkups = checkUpDao.getPendingSync().map { syncMapper.checkUpToDto(it) },
-            checkupIslandAssociations = checkUpAssociationDao.getPendingSync().map { syncMapper.checkUpIslandAssociationToDto(it) }
+            moduleTypeIslandTypeLinks = if (isAdmin) moduleTypeDao.getAllModuleIslandLinksOnce().map { syncMapper.moduleIslandLinkToDto(it) } else emptyList(),
+            checkups = pendingCheckups.map { syncMapper.checkUpToDto(it) },
+            checkupIslandAssociations = checkUpAssociationDao.getPendingSync().map { syncMapper.checkUpIslandAssociationToDto(it) },
+            checkupItems = if (pendingCheckupIds.isNotEmpty())
+                checkItemDao.getCheckItemsByCheckUpIds(pendingCheckupIds).map { syncMapper.checkItemToDto(it) }
+            else emptyList()
         )
     }
 
@@ -236,12 +244,24 @@ class SyncUseCase @Inject constructor(
         if (payload.checkItemTemplates.isNotEmpty()) checkItemTemplateDao.upsertAll(payload.checkItemTemplates.map {
             syncMapper.checkItemTemplateToEntity(it)
         })
+        if (payload.moduleTypeIslandTypeLinks.isNotEmpty()) {
+            moduleTypeDao.deleteAllModuleIslandLinks()
+            moduleTypeDao.insertModuleIslandLinks(payload.moduleTypeIslandTypeLinks.map {
+                syncMapper.moduleIslandLinkToEntity(it)
+            })
+        }
         if (payload.checkups.isNotEmpty()) checkUpDao.upsertAll(payload.checkups.map {
             syncMapper.checkUpToEntity(it)
         })
         if (payload.checkupIslandAssociations.isNotEmpty()) checkUpAssociationDao.upsertAll(payload.checkupIslandAssociations.map {
             syncMapper.checkUpIslandAssociationToEntity(it)
         })
+        if (payload.checkupItems.isNotEmpty()) {
+            payload.checkupItems.groupBy { it.checkupId }.forEach { (checkupId, items) ->
+                checkItemDao.deleteCheckItemsByCheckUpId(checkupId)
+                checkItemDao.insertCheckItems(items.map { syncMapper.checkItemToEntity(it) })
+            }
+        }
 
         Timber.d("SyncUseCase: applied remote changes to local DB")
     }
@@ -283,5 +303,7 @@ class SyncUseCase @Inject constructor(
         payload.mechanicalUnits.size + payload.maintenanceLogs.size +
         payload.moduleTypes.size + payload.criticalityLevels.size +
         payload.checkupStatuses.size + payload.checkItemTemplates.size +
-        payload.checkups.size + payload.checkupIslandAssociations.size
+        payload.moduleTypeIslandTypeLinks.size +
+        payload.checkups.size + payload.checkupIslandAssociations.size +
+        payload.checkupItems.size
 }

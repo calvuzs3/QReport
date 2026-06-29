@@ -57,6 +57,12 @@ interface ModuleTypeDao {
 
     // ===== SYNC =====
 
+    @Query("SELECT * FROM module_type_island_types")
+    suspend fun getAllModuleIslandLinksOnce(): List<ModuleTypeIslandTypeCrossRef>
+
+    @Query("DELETE FROM module_type_island_types")
+    suspend fun deleteAllModuleIslandLinks()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(types: List<ModuleTypeEntity>)
 

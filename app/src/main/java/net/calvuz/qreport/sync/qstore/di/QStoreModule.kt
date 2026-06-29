@@ -1,0 +1,21 @@
+package net.calvuz.qreport.sync.qstore.di
+
+import android.content.Context
+import dagger.Module
+import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import net.calvuz.qreport.sync.qstore.QStoreArticleReader
+import javax.inject.Singleton
+
+@Module
+@InstallIn(SingletonComponent::class)
+object QStoreModule {
+
+    @Provides
+    @Singleton
+    fun provideQStoreArticleReader(
+        @ApplicationContext context: Context
+    ): QStoreArticleReader = QStoreArticleReader(context.contentResolver)
+}

@@ -17,6 +17,8 @@ import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpEntity
 import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpIslandAssociationEntity
 import net.calvuz.qreport.sync.data.remote.dto.CheckItemTemplateDto
+import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemEntity
+import net.calvuz.qreport.sync.data.remote.dto.CheckItemDto
 import net.calvuz.qreport.sync.data.remote.dto.CheckUpIslandAssociationDto
 import net.calvuz.qreport.sync.data.remote.dto.CheckUpRecordDto
 import net.calvuz.qreport.sync.data.remote.dto.CheckUpStatusDto
@@ -425,6 +427,18 @@ class SyncMapper @Inject constructor() {
         isDeleted = dto.isDeleted
     )
 
+    fun moduleIslandLinkToDto(entity: net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeIslandTypeCrossRef) =
+        net.calvuz.qreport.sync.data.remote.dto.ModuleTypeIslandTypeLinkDto(
+            islandTypeId = entity.islandTypeId,
+            moduleTypeId = entity.moduleTypeId
+        )
+
+    fun moduleIslandLinkToEntity(dto: net.calvuz.qreport.sync.data.remote.dto.ModuleTypeIslandTypeLinkDto) =
+        net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeIslandTypeCrossRef(
+            islandTypeId = dto.islandTypeId,
+            moduleTypeId = dto.moduleTypeId
+        )
+
     fun criticalityLevelToDto(entity: CriticalityEntity) = CriticalityLevelDto(
         id = entity.id,
         code = entity.code,
@@ -597,5 +611,35 @@ class SyncMapper @Inject constructor() {
         updatedAt = dto.updatedAt,
         syncedAt = dto.syncedAt,
         isDeleted = dto.isDeleted
+    )
+
+    fun checkItemToDto(entity: CheckItemEntity) = CheckItemDto(
+        id = entity.id,
+        checkupId = entity.checkUpId,
+        moduleType = entity.moduleType,
+        moduleTypeId = entity.moduleTypeId,
+        itemCode = entity.itemCode,
+        description = entity.description,
+        status = entity.status,
+        criticality = entity.criticality,
+        criticalityId = entity.criticalityId,
+        notes = entity.notes,
+        checkedAt = entity.checkedAt?.toEpochMilliseconds(),
+        orderIndex = entity.orderIndex
+    )
+
+    fun checkItemToEntity(dto: CheckItemDto) = CheckItemEntity(
+        id = dto.id,
+        checkUpId = dto.checkupId,
+        moduleType = dto.moduleType,
+        moduleTypeId = dto.moduleTypeId,
+        itemCode = dto.itemCode,
+        description = dto.description,
+        status = dto.status,
+        criticality = dto.criticality,
+        criticalityId = dto.criticalityId,
+        notes = dto.notes,
+        checkedAt = dto.checkedAt?.let { Instant.fromEpochMilliseconds(it) },
+        orderIndex = dto.orderIndex
     )
 }

@@ -60,6 +60,10 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_8_9
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_9_10
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_10_11
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_11_12
+import net.calvuz.qreport.checkup.spareparts.data.local.dao.CheckUpSparePartDao
+import net.calvuz.qreport.checkup.spareparts.data.local.entity.CheckUpSparePartEntity
 
 /**
  * QReport Room Database
@@ -109,7 +113,9 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_9_10
         CheckItemTemplateEntity::class,
         ModuleTypeIslandTypeCrossRef::class,
         CheckUpStatusEntity::class,
-        CheckUpStatusTransitionCrossRef::class
+        CheckUpStatusTransitionCrossRef::class,
+        // Spare parts selected during checkup (via QStore ContentProvider)
+        CheckUpSparePartEntity::class
     ],
     version = QReportApplication.DATABASE_VERSION,
     exportSchema = true,
@@ -145,6 +151,7 @@ abstract class QReportDatabase : RoomDatabase() {
     abstract fun criticalityDao(): CriticalityDao
     abstract fun checkItemTemplateDao(): CheckItemTemplateDao
     abstract fun checkUpStatusDao(): CheckUpStatusDao
+    abstract fun checkUpSparePartDao(): CheckUpSparePartDao
 
     companion object {
 
@@ -156,6 +163,8 @@ abstract class QReportDatabase : RoomDatabase() {
         val MIGRATION_7_8 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
         val MIGRATION_8_9 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_8_9
         val MIGRATION_9_10 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_9_10
+        val MIGRATION_10_11 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_10_11
+        val MIGRATION_11_12 = net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_11_12
 
         val CALLBACK = object : Callback() {}
     }

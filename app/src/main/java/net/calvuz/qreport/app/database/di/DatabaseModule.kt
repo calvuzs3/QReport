@@ -23,6 +23,9 @@ import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_6_7
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_7_8
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_8_9
 import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_9_10
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_10_11
+import net.calvuz.qreport.app.database.data.local.migrations.MIGRATION_11_12
+import net.calvuz.qreport.checkup.spareparts.data.local.dao.CheckUpSparePartDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
 import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
@@ -70,6 +73,8 @@ object DatabaseModule {
                 MIGRATION_7_8,
                 MIGRATION_8_9,
                 MIGRATION_9_10,
+                MIGRATION_10_11,
+                MIGRATION_11_12,
             )
             .build()
     }
@@ -123,5 +128,10 @@ object DatabaseModule {
     fun provideCheckUpStatusDao(
         database: QReportDatabase
     ): CheckUpStatusDao = database.checkUpStatusDao()
+
+    @Provides
+    fun provideCheckUpSparePartDao(
+        database: QReportDatabase
+    ): CheckUpSparePartDao = database.checkUpSparePartDao()
 
 }

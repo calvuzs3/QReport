@@ -9,6 +9,7 @@ import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleTypeMaster
 import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
+import net.calvuz.qreport.checkup.spareparts.domain.model.CheckUpSparePart
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.app.error.presentation.UiText
 
@@ -52,6 +53,10 @@ data class CheckUpDetailUiState(
     // Dialog states
     val showEditHeaderDialog: Boolean = false,
     val showExportDialog: Boolean = false,
+
+    // Spare parts
+    val spareParts: List<CheckUpSparePart> = emptyList(),
+    val sparePartsError: UiText? = null,
 
 // ============================================================
     // ERROR HANDLING
