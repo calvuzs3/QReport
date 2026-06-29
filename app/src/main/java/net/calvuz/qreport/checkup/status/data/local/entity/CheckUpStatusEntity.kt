@@ -5,11 +5,7 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 
-/**
- * Master data row for a checkup workflow status. Local-only: no synced_at/is_deleted,
- * this table never syncs with the server (see
- * [net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster]).
- */
+/** Master data row for a checkup workflow status. */
 @Entity(
     tableName = "checkup_statuses",
     indices = [
@@ -51,5 +47,11 @@ data class CheckUpStatusEntity(
     val createdAt: Long,
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long
+    val updatedAt: Long,
+
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null,
+
+    @ColumnInfo(name = "is_deleted")
+    val isDeleted: Boolean = false
 )

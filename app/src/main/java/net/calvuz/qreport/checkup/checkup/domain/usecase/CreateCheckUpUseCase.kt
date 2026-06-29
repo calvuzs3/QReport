@@ -8,7 +8,6 @@ import net.calvuz.qreport.checkup.items.domain.repository.CheckItemTemplateMaste
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpHeader
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatusCodes
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.domain.repository.ModuleTypeMasterRepository
 import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpRepository
 import timber.log.Timber
@@ -85,7 +84,6 @@ class CreateCheckUpUseCase @Inject constructor(
                 checkUpId = checkUpId,
                 // code == enum name by seed convention (Migration4to5) — find+fallback
                 // so a custom module/criticality created from Settings never crashes.
-                moduleType = ModuleType.entries.find { it.name == template.moduleTypeId } ?: ModuleType.MECHANICAL,
                 moduleTypeId = template.moduleTypeId,
                 itemCode = template.id,
                 description = template.description,

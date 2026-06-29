@@ -37,5 +37,6 @@ data class CheckUpIslandAssociationEntity(
     @ColumnInfo(name = "association_type") val associationType: String, // AssociationType.name
     @ColumnInfo(name = "notes") val notes: String?,
     @ColumnInfo(name = "created_at") val createdAt: Long,
-    @ColumnInfo(name = "updated_at") val updatedAt: Long
+    @ColumnInfo(name = "updated_at") val updatedAt: Long,
+    @ColumnInfo(name = "synced_at") val syncedAt: Long? = null
 )

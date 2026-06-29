@@ -73,7 +73,8 @@ class SyncSettingsViewModel @Inject constructor(
             try {
                 _uiState.value = _uiState.value.copy(
                     isLoading = true,
-                    isLoggedIn = tokenStorage.isLoggedIn()
+                    isLoggedIn = tokenStorage.isLoggedIn(),
+                    canPushMasterData = tokenStorage.canPushMasterData()
                 )
                 val result = syncRepository.getSyncStatus()
                 if (result.isSuccess) {
@@ -197,13 +198,20 @@ class SyncSettingsViewModel @Inject constructor(
                     loadSyncStatus() // Refresh pending count
                 }
                 is QrResult.Error -> {
-                    val message = when (result.error) {
+                    val message = when (val err = result.error) {
                         is QrError.NetworkError.Unauthorized -> {
                             // Token expired — force re-login
                             tokenStorage.clearToken()
-                            _uiState.value = _uiState.value.copy(isLoggedIn = false)
+                            tokenStorage.clearRole()
+                            _uiState.value = _uiState.value.copy(isLoggedIn = false, canPushMasterData = false)
                             UiText.StringResource(R.string.sync_error_session_expired)
                         }
+                        is QrError.NetworkError.ServerVersionIncompatible ->
+                            UiText.StringResources(
+                                R.string.sync_error_server_version_incompatible,
+                                err.serverVersion,
+                                err.minVersion
+                            )
                         is QrError.NetworkError.NoConnection -> UiText.StringResource(R.string.error_no_connection)
                         is QrError.NetworkError.SyncDisabled -> UiText.StringResource(R.string.sync_error_sync_disabled)
                         is QrError.NetworkError.ServerError -> UiText.StringResource(R.string.error_server)
@@ -232,7 +240,8 @@ class SyncSettingsViewModel @Inject constructor(
 
     fun logout() {
         tokenStorage.clearToken()
-        _uiState.value = _uiState.value.copy(isLoggedIn = false, syncResult = null)
+        tokenStorage.clearRole()
+        _uiState.value = _uiState.value.copy(isLoggedIn = false, canPushMasterData = false, syncResult = null)
     }
 
     fun clearMessages() {
@@ -269,12 +278,19 @@ class SyncSettingsViewModel @Inject constructor(
                 loadSyncStatus()
             }
             is QrResult.Error -> {
-                val message = when (result.error) {
+                val message = when (val err = result.error) {
                     is QrError.NetworkError.Unauthorized -> {
                         tokenStorage.clearToken()
-                        _uiState.value = _uiState.value.copy(isLoggedIn = false)
+                        tokenStorage.clearRole()
+                        _uiState.value = _uiState.value.copy(isLoggedIn = false, canPushMasterData = false)
                         UiText.StringResource(R.string.sync_error_session_expired)
                     }
+                    is QrError.NetworkError.ServerVersionIncompatible ->
+                        UiText.StringResources(
+                            R.string.sync_error_server_version_incompatible,
+                            err.serverVersion,
+                            err.minVersion
+                        )
                     is QrError.NetworkError.NoConnection -> UiText.StringResource(R.string.error_no_connection)
                     is QrError.NetworkError.SyncDisabled -> UiText.StringResource(R.string.sync_error_sync_disabled)
                     is QrError.NetworkError.ServerError -> UiText.StringResource(R.string.error_server)
@@ -293,6 +309,7 @@ data class SyncSettingsUiState(
     val isLoading: Boolean = false,
     val isSyncing: Boolean = false,
     val isLoggedIn: Boolean = false,
+    val canPushMasterData: Boolean = false,
     val syncStatus: SyncStatus? = null,
     val syncResult: SyncResult? = null,
     val error: UiText? = null,

@@ -4,28 +4,21 @@ import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
 import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemEntity
 import net.calvuz.qreport.checkup.items.domain.model.CheckItem
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
-
-// ===============================
-// CheckItem Mappers
-// ===============================
 
 fun CheckItemEntity.toDomain(): CheckItem {
     return CheckItem(
         id = this.id,
         checkUpId = this.checkUpId,
-        // find+fallback instead of valueOf(): a module/criticality code not in the
-        // legacy enum must not crash the checkup screen, same convention as
-        // IslandType.Companion.parse().
-        moduleType = ModuleType.entries.find { it.name == this.moduleType } ?: ModuleType.MECHANICAL,
-        moduleTypeId = this.moduleTypeId,
+        // module_type_id is canonical; fall back to legacy module_type column for rows
+        // written before the ModuleTypeMaster migration (their enum name == master id).
+        moduleTypeId = this.moduleTypeId ?: this.moduleType,
         itemCode = this.itemCode,
         description = this.description,
         status = CheckItemStatus.valueOf(this.status),
         criticality = CriticalityLevel.entries.find { it.name == this.criticality } ?: CriticalityLevel.ROUTINE,
         criticalityId = this.criticalityId,
         notes = this.notes,
-        photos = emptyList(), // Populated separately when needed
+        photos = emptyList(),
         checkedAt = this.checkedAt,
         orderIndex = this.orderIndex
     )
@@ -35,12 +28,12 @@ fun CheckItem.toEntity(): CheckItemEntity {
     return CheckItemEntity(
         id = this.id,
         checkUpId = this.checkUpId,
-        moduleType = this.moduleType.name,
+        moduleType = this.moduleTypeId,   // keep legacy column in sync for old readers
         moduleTypeId = this.moduleTypeId,
         itemCode = this.itemCode,
         description = this.description,
         status = this.status.name,
-        criticality = this.criticality.name, // AGGIORNATO
+        criticality = this.criticality.name,
         criticalityId = this.criticalityId,
         notes = this.notes,
         checkedAt = this.checkedAt,

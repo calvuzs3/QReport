@@ -120,6 +120,13 @@ interface CheckItemDao {
     suspend fun getPhotoCountsByCheckUp(checkUpId: String): List<CheckItemPhotoCount>
 
     // ============================================================
+    // SYNC METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM check_items WHERE checkup_id IN (:checkupIds)")
+    suspend fun getCheckItemsByCheckUpIds(checkupIds: List<String>): List<CheckItemEntity>
+
+    // ============================================================
     // BACKUP METHODS
     // ============================================================
 

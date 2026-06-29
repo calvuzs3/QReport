@@ -3,6 +3,13 @@ package net.calvuz.qreport.sync.domain.usecase
 import kotlinx.coroutines.flow.first
 import net.calvuz.qreport.app.error.domain.model.QrError
 import net.calvuz.qreport.app.result.domain.QrResult
+import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpAssociationDao
+import net.calvuz.qreport.checkup.checkup.data.local.dao.CheckUpDao
+import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemDao
+import net.calvuz.qreport.checkup.criticality.data.local.dao.CriticalityDao
+import net.calvuz.qreport.checkup.items.data.local.dao.CheckItemTemplateDao
+import net.calvuz.qreport.checkup.modules.data.local.dao.ModuleTypeDao
+import net.calvuz.qreport.checkup.status.data.local.dao.CheckUpStatusDao
 import net.calvuz.qreport.client.island.data.local.dao.IslandTypeDao
 import net.calvuz.qreport.sync.data.local.SyncSettingsDataStore
 import net.calvuz.qreport.sync.data.local.TokenStorage
@@ -24,10 +31,30 @@ import javax.inject.Inject
  * 5. Mark pushed records as synced
  * 6. Save sync timestamp
  */
+private const val MIN_SERVER_VERSION = "1.4.0"
+
+private fun isVersionCompatible(serverVersion: String): Boolean {
+    val server = serverVersion.split(".").map { it.toIntOrNull() ?: 0 }
+    val min = MIN_SERVER_VERSION.split(".").map { it.toIntOrNull() ?: 0 }
+    for (i in 0..2) {
+        val s = server.getOrElse(i) { 0 }
+        val m = min.getOrElse(i) { 0 }
+        if (s != m) return s > m
+    }
+    return true
+}
+
 class SyncUseCase @Inject constructor(
     private val remoteDataSource: RemoteDataSource,
     private val syncDao: SyncDao,
     private val islandTypeDao: IslandTypeDao,
+    private val moduleTypeDao: ModuleTypeDao,
+    private val criticalityDao: CriticalityDao,
+    private val checkUpStatusDao: CheckUpStatusDao,
+    private val checkItemTemplateDao: CheckItemTemplateDao,
+    private val checkUpDao: CheckUpDao,
+    private val checkUpAssociationDao: CheckUpAssociationDao,
+    private val checkItemDao: CheckItemDao,
     private val syncSettingsDataStore: SyncSettingsDataStore,
     private val tokenStorage: TokenStorage,
     private val syncMapper: SyncMapper
@@ -36,6 +63,27 @@ class SyncUseCase @Inject constructor(
     @Suppress("HardCodedStringLiteral")
     suspend operator fun invoke(): QrResult<SyncResult, QrError> {
         return try {
+
+            // 0. Check server version compatibility
+            when (val versionResult = remoteDataSource.getServerVersion()) {
+                is QrResult.Error -> {
+                    Timber.e("SyncUseCase: cannot reach server or parse version: ${versionResult.error}")
+                    return QrResult.Error(versionResult.error)
+                }
+                is QrResult.Success -> {
+                    val serverVersion = versionResult.data
+                    if (!isVersionCompatible(serverVersion)) {
+                        Timber.e("SyncUseCase: server version $serverVersion < required $MIN_SERVER_VERSION")
+                        return QrResult.Error(
+                            QrError.NetworkError.ServerVersionIncompatible(
+                                serverVersion = serverVersion,
+                                minVersion = MIN_SERVER_VERSION
+                            )
+                        )
+                    }
+                    Timber.d("SyncUseCase: server version $serverVersion OK (min=$MIN_SERVER_VERSION)")
+                }
+            }
 
             // 1. Check sync mode
             val mode = syncSettingsDataStore.getSyncMode().first()
@@ -67,8 +115,13 @@ class SyncUseCase @Inject constructor(
                 append("${payload.clients.size} clients, ")
                 append("${payload.contacts.size} contacts, ${payload.contracts.size} contracts, ")
                 append("${payload.facilities.size} facilities, ")
-                append("${payload.facilityIslands.size} islands, ${payload.mechanicalUnits.size} units")
-                append("${payload.maintenanceLogs.size} logs")
+                append("${payload.facilityIslands.size} islands, ${payload.mechanicalUnits.size} units, ")
+                append("${payload.maintenanceLogs.size} logs | ")
+                append("master data: ${payload.moduleTypes.size} modules, ")
+                append("${payload.criticalityLevels.size} criticalities, ")
+                append("${payload.checkupStatuses.size} statuses, ")
+                append("${payload.checkItemTemplates.size} templates | ")
+                append("checkups: ${payload.checkups.size}, assoc: ${payload.checkupIslandAssociations.size}")
             })
 
             // 4. Push — server responds with pull payload in the same round-trip
@@ -111,6 +164,10 @@ class SyncUseCase @Inject constructor(
     // ===== PRIVATE HELPERS =====
 
     private suspend fun buildPushPayload(deviceId: String, now: Long): SyncPayloadDto {
+        val isAdmin = tokenStorage.canPushMasterData()
+        Timber.d("SyncUseCase: role=${tokenStorage.getRole()}, isAdmin=$isAdmin")
+        val pendingCheckups = checkUpDao.getPendingSync()
+        val pendingCheckupIds = pendingCheckups.map { it.id }
         return SyncPayloadDto(
             deviceId = deviceId,
             syncTimestamp = now,
@@ -124,7 +181,18 @@ class SyncUseCase @Inject constructor(
             mechanicalUnits = syncDao.getMechanicalUnitsPendingSync()
                 .map { syncMapper.mechanicalUnitToDto(it) },
             maintenanceLogs = syncDao.getMaintenanceLogsPendingSync()
-                .map { syncMapper.maintenanceLogToDto(it) })
+                .map { syncMapper.maintenanceLogToDto(it) },
+            moduleTypes = if (isAdmin) moduleTypeDao.getPendingSync().map { syncMapper.moduleTypeToDto(it) } else emptyList(),
+            criticalityLevels = if (isAdmin) criticalityDao.getPendingSync().map { syncMapper.criticalityLevelToDto(it) } else emptyList(),
+            checkupStatuses = if (isAdmin) checkUpStatusDao.getPendingSync().map { syncMapper.checkUpStatusToDto(it) } else emptyList(),
+            checkItemTemplates = if (isAdmin) checkItemTemplateDao.getPendingSync().map { syncMapper.checkItemTemplateToDto(it) } else emptyList(),
+            moduleTypeIslandTypeLinks = if (isAdmin) moduleTypeDao.getAllModuleIslandLinksOnce().map { syncMapper.moduleIslandLinkToDto(it) } else emptyList(),
+            checkups = pendingCheckups.map { syncMapper.checkUpToDto(it) },
+            checkupIslandAssociations = checkUpAssociationDao.getPendingSync().map { syncMapper.checkUpIslandAssociationToDto(it) },
+            checkupItems = if (pendingCheckupIds.isNotEmpty())
+                checkItemDao.getCheckItemsByCheckUpIds(pendingCheckupIds).map { syncMapper.checkItemToDto(it) }
+            else emptyList()
+        )
     }
 
     private suspend fun applyRemoteChanges(payload: SyncPayloadDto) {
@@ -162,10 +230,38 @@ class SyncUseCase @Inject constructor(
             )
         })
         if (payload.maintenanceLogs.isNotEmpty()) syncDao.upsertMaintenanceLogs(payload.maintenanceLogs.map {
-            syncMapper.maintenanceLogToEntity(
-                it
-            )
+            syncMapper.maintenanceLogToEntity(it)
         })
+        if (payload.moduleTypes.isNotEmpty()) moduleTypeDao.upsertAll(payload.moduleTypes.map {
+            syncMapper.moduleTypeToEntity(it)
+        })
+        if (payload.criticalityLevels.isNotEmpty()) criticalityDao.upsertAll(payload.criticalityLevels.map {
+            syncMapper.criticalityLevelToEntity(it)
+        })
+        if (payload.checkupStatuses.isNotEmpty()) checkUpStatusDao.upsertAll(payload.checkupStatuses.map {
+            syncMapper.checkUpStatusToEntity(it)
+        })
+        if (payload.checkItemTemplates.isNotEmpty()) checkItemTemplateDao.upsertAll(payload.checkItemTemplates.map {
+            syncMapper.checkItemTemplateToEntity(it)
+        })
+        if (payload.moduleTypeIslandTypeLinks.isNotEmpty()) {
+            moduleTypeDao.deleteAllModuleIslandLinks()
+            moduleTypeDao.insertModuleIslandLinks(payload.moduleTypeIslandTypeLinks.map {
+                syncMapper.moduleIslandLinkToEntity(it)
+            })
+        }
+        if (payload.checkups.isNotEmpty()) checkUpDao.upsertAll(payload.checkups.map {
+            syncMapper.checkUpToEntity(it)
+        })
+        if (payload.checkupIslandAssociations.isNotEmpty()) checkUpAssociationDao.upsertAll(payload.checkupIslandAssociations.map {
+            syncMapper.checkUpIslandAssociationToEntity(it)
+        })
+        if (payload.checkupItems.isNotEmpty()) {
+            payload.checkupItems.groupBy { it.checkupId }.forEach { (checkupId, items) ->
+                checkItemDao.deleteCheckItemsByCheckUpId(checkupId)
+                checkItemDao.insertCheckItems(items.map { syncMapper.checkItemToEntity(it) })
+            }
+        }
 
         Timber.d("SyncUseCase: applied remote changes to local DB")
     }
@@ -187,8 +283,27 @@ class SyncUseCase @Inject constructor(
             ?.let { syncDao.markMechanicalUnitsSynced(it, now) }
         payload.maintenanceLogs.map { it.id }.takeIf { it.isNotEmpty() }
             ?.let { syncDao.markMaintenanceLogsSynced(it, now) }
+        payload.moduleTypes.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { moduleTypeDao.markSynced(it, now) }
+        payload.criticalityLevels.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { criticalityDao.markSynced(it, now) }
+        payload.checkupStatuses.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { checkUpStatusDao.markSynced(it, now) }
+        payload.checkItemTemplates.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { checkItemTemplateDao.markSynced(it, now) }
+        payload.checkups.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { checkUpDao.markSynced(it, now) }
+        payload.checkupIslandAssociations.map { it.id }.takeIf { it.isNotEmpty() }
+            ?.let { checkUpAssociationDao.markSynced(it, now) }
     }
 
     private fun countPulled(payload: SyncPayloadDto): Int =
-        payload.islandTypes.size + payload.clients.size + payload.contacts.size + payload.contracts.size + payload.facilities.size + payload.facilityIslands.size + payload.mechanicalUnits.size + payload.maintenanceLogs.size
+        payload.islandTypes.size + payload.clients.size + payload.contacts.size +
+        payload.contracts.size + payload.facilities.size + payload.facilityIslands.size +
+        payload.mechanicalUnits.size + payload.maintenanceLogs.size +
+        payload.moduleTypes.size + payload.criticalityLevels.size +
+        payload.checkupStatuses.size + payload.checkItemTemplates.size +
+        payload.moduleTypeIslandTypeLinks.size +
+        payload.checkups.size + payload.checkupIslandAssociations.size +
+        payload.checkupItems.size
 }

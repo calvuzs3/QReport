@@ -10,6 +10,7 @@ import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpStatusCodes
 import net.calvuz.qreport.checkup.checkup.domain.repository.CheckUpRepository
 import net.calvuz.qreport.checkup.checkup.domain.usecase.GetCheckUpDetailsUseCase
 import net.calvuz.qreport.checkup.checkup.domain.usecase.UpdateCheckUpStatusUseCase
+import net.calvuz.qreport.checkup.modules.domain.repository.ModuleTypeMasterRepository
 import net.calvuz.qreport.checkup.status.domain.repository.CheckUpStatusMasterRepository
 import net.calvuz.qreport.export.domain.reposirory.ExportData
 import net.calvuz.qreport.export.domain.reposirory.ExportFormat
@@ -36,7 +37,8 @@ class ExportCheckUpUseCase @Inject constructor(
     private val exportRepository: ExportRepository,
     private val getCheckUpDetailsUseCase: GetCheckUpDetailsUseCase,
     private val updateCheckUpStatusUseCase: UpdateCheckUpStatusUseCase,
-    private val statusMasterRepository: CheckUpStatusMasterRepository
+    private val statusMasterRepository: CheckUpStatusMasterRepository,
+    private val moduleTypeMasterRepository: ModuleTypeMasterRepository
 ) {
 
     /**
@@ -97,9 +99,11 @@ class ExportCheckUpUseCase @Inject constructor(
             }
 
             // Prepara dati per export usando modelli domain
+            val moduleMasters = moduleTypeMasterRepository.getModuleTypes().getOrElse { emptyList() }
             val exportData = ExportData(
                 checkup = checkUpDetails.checkUp,
-                itemsByModule = checkUpDetails.checkItems.groupBy { it.moduleType },
+                itemsByModule = checkUpDetails.checkItems.groupBy { it.moduleTypeId },
+                moduleMasters = moduleMasters,
                 statistics = checkUpDetails.statistics,
                 progress = checkUpDetails.progress,
                 exportMetadata = ExportTechnicalMetadata(

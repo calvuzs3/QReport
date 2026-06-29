@@ -365,6 +365,10 @@ interface QrError {
         data class Timeout(val message: String? = null) : NetworkError
         data class SyncDisabled(val message: String? = null) : NetworkError
         data class ParseError(val message: String? = null) : NetworkError
+        data class ServerVersionIncompatible(
+            val serverVersion: String,
+            val minVersion: String
+        ) : NetworkError
     }
 
     sealed interface FileError : QrError {

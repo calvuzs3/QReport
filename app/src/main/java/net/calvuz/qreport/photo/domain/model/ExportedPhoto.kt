@@ -1,6 +1,5 @@
 package net.calvuz.qreport.photo.domain.model
 
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.export.domain.reposirory.PhotoNamingStrategy
 import java.io.File
 import java.time.LocalDateTime
@@ -96,7 +95,7 @@ data class ExportedPhoto(
  * NUOVA: Sostituisce PhotoSectionInfo per allineamento con architettura modules
  */
 data class PhotoModuleInfo(
-    val moduleType: ModuleType,
+    val moduleTypeId: String,
     val moduleDisplayName: String,
     val moduleIndex: Int,
     val modulePrefix: String // es. "01", "02", etc.
@@ -203,8 +202,8 @@ sealed class PhotoExportResult {
         /**
          * Raggruppa foto per modulo (AGGIORNATO)
          */
-        val photosByModule: Map<ModuleType, List<ExportedPhoto>>
-            get() = exportedPhotos.groupBy { it.moduleInfo.moduleType }
+        val photosByModule: Map<String, List<ExportedPhoto>>
+            get() = exportedPhotos.groupBy { it.moduleInfo.moduleTypeId }
 
         /**
          * Raggruppa foto per check item

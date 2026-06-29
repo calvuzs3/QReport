@@ -50,5 +50,11 @@ data class CheckItemTemplateEntity(
     val createdAt: Long,
 
     @ColumnInfo(name = "updated_at")
-    val updatedAt: Long
+    val updatedAt: Long,
+
+    @ColumnInfo(name = "synced_at")
+    val syncedAt: Long? = null,
+
+    @ColumnInfo(name = "is_deleted")
+    val isDeleted: Boolean = false
 )

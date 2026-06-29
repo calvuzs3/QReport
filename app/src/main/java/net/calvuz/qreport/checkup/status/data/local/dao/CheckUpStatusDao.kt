@@ -53,4 +53,19 @@ interface CheckUpStatusDao {
         deleteTransitionsFrom(fromId)
         insertTransitions(toIds.map { CheckUpStatusTransitionCrossRef(fromId, it) })
     }
+
+    // ===== SYNC =====
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(statuses: List<CheckUpStatusEntity>)
+
+    @Query("""
+        SELECT * FROM checkup_statuses
+        WHERE updated_at > COALESCE(synced_at, 0)
+        ORDER BY updated_at ASC
+    """)
+    suspend fun getPendingSync(): List<CheckUpStatusEntity>
+
+    @Query("UPDATE checkup_statuses SET synced_at = :now WHERE id IN (:ids)")
+    suspend fun markSynced(ids: List<String>, now: Long)
 }

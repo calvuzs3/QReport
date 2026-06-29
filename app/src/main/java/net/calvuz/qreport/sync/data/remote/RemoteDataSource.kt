@@ -10,6 +10,7 @@ import net.calvuz.qreport.sync.data.remote.dto.SyncResponseDto
  * Implemented by [RetrofitRemoteDataSource].
  */
 interface RemoteDataSource {
+    suspend fun getServerVersion(): QrResult<String, QrError>
     suspend fun login(username: String, password: String): QrResult<String, QrError>
     suspend fun push(token: String, payload: SyncPayloadDto, since: Long): QrResult<SyncResponseDto, QrError>
     suspend fun pull(token: String, since: Long): QrResult<SyncPayloadDto, QrError>

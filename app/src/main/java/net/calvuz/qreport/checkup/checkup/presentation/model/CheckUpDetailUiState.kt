@@ -7,9 +7,9 @@ import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpIslandAssociation
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.domain.model.ModuleTypeMaster
 import net.calvuz.qreport.checkup.status.domain.model.CheckUpStatusMaster
+import net.calvuz.qreport.checkup.spareparts.domain.model.CheckUpSparePart
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.app.error.presentation.UiText
 
@@ -54,6 +54,10 @@ data class CheckUpDetailUiState(
     val showEditHeaderDialog: Boolean = false,
     val showExportDialog: Boolean = false,
 
+    // Spare parts
+    val spareParts: List<CheckUpSparePart> = emptyList(),
+    val sparePartsError: UiText? = null,
+
 // ============================================================
     // ERROR HANDLING
     // ============================================================
@@ -61,8 +65,8 @@ data class CheckUpDetailUiState(
     val exportError: String? = null
 
 ) {
-    val checkItemsByModule: Map<ModuleType, List<CheckItem>>
-        get() = checkItems.groupBy { it.moduleType }
+    val checkItemsByModule: Map<String, List<CheckItem>>
+        get() = checkItems.groupBy { it.moduleTypeId }
 
     // ============================================================
     // COMPUTED PROPERTIES

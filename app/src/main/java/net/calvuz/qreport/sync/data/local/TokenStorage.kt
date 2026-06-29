@@ -61,7 +61,22 @@ class TokenStorage @Inject constructor(
 
     fun isLoggedIn(): Boolean = getToken() != null
 
+    fun saveRole(role: String) {
+        prefs.edit().putString(KEY_ROLE, role).apply()
+    }
+
+    fun getRole(): String = prefs.getString(KEY_ROLE, ROLE_TECHNICIAN) ?: ROLE_TECHNICIAN
+
+    fun clearRole() {
+        prefs.edit().remove(KEY_ROLE).apply()
+    }
+
+    fun canPushMasterData(): Boolean = getRole() == ROLE_ADMIN
+
     companion object {
         private const val KEY_TOKEN = "jwt_token"
+        private const val KEY_ROLE = "user_role"
+        const val ROLE_ADMIN = "ADMIN"
+        const val ROLE_TECHNICIAN = "TECHNICIAN"
     }
 }

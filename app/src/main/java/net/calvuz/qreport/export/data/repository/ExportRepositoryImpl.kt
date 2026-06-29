@@ -515,8 +515,9 @@ class ExportRepositoryImpl @Inject constructor(
 
                     if (photosByModule.isNotEmpty()) {
                         appendLine("   Foto per modulo:")
-                        photosByModule.forEach { (moduleType, count) ->
-                            appendLine("     - ${moduleType.displayName}: $count foto")
+                        photosByModule.forEach { (moduleTypeId, count) ->
+                            val label = exportData.moduleMasters.find { it.id == moduleTypeId }?.label ?: moduleTypeId
+                            appendLine("     - $label: $count foto")
                         }
                     }
                 } else {
@@ -567,12 +568,12 @@ class ExportRepositoryImpl @Inject constructor(
         }
 
         exportData.itemsByModule.forEach { module ->
-            if (module.key.displayName.isBlank()) { // .title.isBlank()) {
+            if (module.key.isBlank()) {
                 errors.add("Sezione senza titolo trovata")
             }
 
-            if (module.value.isEmpty()) { // section.items.isEmpty()) {
-                errors.add("Sezione '${module.key.displayName}' senza check items")
+            if (module.value.isEmpty()) {
+                errors.add("Sezione '${module.key}' senza check items")
             }
         }
 

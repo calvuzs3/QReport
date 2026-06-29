@@ -55,6 +55,22 @@ interface CheckUpDao {
     fun searchCheckUps(query: String): Flow<List<CheckUpEntity>>
 
     // ============================================================
+    // SYNC METHODS
+    // ============================================================
+
+    @Query("SELECT * FROM checkups WHERE updated_at > COALESCE(synced_at, 0) AND is_deleted = 0 ORDER BY updated_at ASC")
+    suspend fun getPendingSync(): List<CheckUpEntity>
+
+    @Query("SELECT * FROM checkups WHERE is_deleted = 1 AND synced_at IS NOT NULL ORDER BY updated_at ASC")
+    suspend fun getDeletedPendingSync(): List<CheckUpEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(checkUps: List<CheckUpEntity>)
+
+    @Query("UPDATE checkups SET synced_at = :now WHERE id IN (:ids)")
+    suspend fun markSynced(ids: List<String>, now: Long)
+
+    // ============================================================
     // BACKUP METHODS
     // ============================================================
 

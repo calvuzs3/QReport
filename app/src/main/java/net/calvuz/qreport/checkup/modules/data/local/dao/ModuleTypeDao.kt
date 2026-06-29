@@ -54,4 +54,25 @@ interface ModuleTypeDao {
         deleteModuleIslandLinksForIslandType(islandTypeId)
         insertModuleIslandLinks(moduleTypeIds.map { ModuleTypeIslandTypeCrossRef(islandTypeId, it) })
     }
+
+    // ===== SYNC =====
+
+    @Query("SELECT * FROM module_type_island_types")
+    suspend fun getAllModuleIslandLinksOnce(): List<ModuleTypeIslandTypeCrossRef>
+
+    @Query("DELETE FROM module_type_island_types")
+    suspend fun deleteAllModuleIslandLinks()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(types: List<ModuleTypeEntity>)
+
+    @Query("""
+        SELECT * FROM module_types
+        WHERE updated_at > COALESCE(synced_at, 0)
+        ORDER BY updated_at ASC
+    """)
+    suspend fun getPendingSync(): List<ModuleTypeEntity>
+
+    @Query("UPDATE module_types SET synced_at = :now WHERE id IN (:ids)")
+    suspend fun markSynced(ids: List<String>, now: Long)
 }

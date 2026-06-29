@@ -7,7 +7,7 @@ import net.calvuz.qreport.checkup.items.domain.model.CheckItem
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUp
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpProgress
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
+import net.calvuz.qreport.checkup.modules.domain.model.ModuleTypeMaster
 import net.calvuz.qreport.export.domain.model.ExportErrorCode
 import java.time.LocalDateTime
 import kotlin.text.format
@@ -325,7 +325,8 @@ data class ExportData(
      * Items raggruppati per modulo (basato sui modelli reali)
      * Sostituisce le "sections" artificiali
      */
-    val itemsByModule: Map<ModuleType, List<CheckItem>>,
+    val itemsByModule: Map<String, List<CheckItem>>,
+    val moduleMasters: List<ModuleTypeMaster> = emptyList(),
 
     /**
      * Statistiche del checkup (modello reale esistente)

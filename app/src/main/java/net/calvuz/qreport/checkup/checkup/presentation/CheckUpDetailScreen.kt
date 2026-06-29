@@ -10,6 +10,9 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -28,15 +31,22 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import net.calvuz.qreport.R
+import net.calvuz.qreport.checkup.spareparts.presentation.ui.components.SparePartsSection
+import net.calvuz.qreport.sync.qstore.ArticleContract
+import net.calvuz.qreport.sync.qstore.QStoreAvailability
 import net.calvuz.qreport.checkup.items.domain.model.CheckItem
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpSingleStatistics
 import net.calvuz.qreport.checkup.criticality.domain.model.CriticalityLevel
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.presentation.model.resolveModuleTypeLabel
 import net.calvuz.qreport.photo.domain.model.Photo
 import net.calvuz.qreport.checkup.checkup.presentation.components.AssociationManagementDialog
@@ -111,6 +121,49 @@ fun CheckUpDetailScreen(
     LaunchedEffect(uiState.photoCountsByCheckItem) {
         // Questo trigger quando cambiano i conteggi foto
         // Utile per refresh automatico
+    }
+
+    // QStore picker launcher
+    var showQStoreNotFoundDialog by remember { mutableStateOf(false) }
+
+    val pickArticlesLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uuids = result.data
+                ?.getStringArrayListExtra(ArticleContract.PickerExtras.SELECTED_UUIDS)
+            if (!uuids.isNullOrEmpty()) {
+                viewModel.onArticlesSelected(uuids)
+            }
+        }
+    }
+
+    fun launchQStorePicker() {
+        val preselectedUuids = uiState.spareParts.map { it.articleUuid }
+        val intent = Intent(ArticleContract.ACTION_PICK).apply {
+            setPackage("net.calvuz.qstore")
+            putStringArrayListExtra(
+                ArticleContract.PickerExtras.PRESELECTED_UUIDS,
+                ArrayList(preselectedUuids)
+            )
+        }
+        try {
+            pickArticlesLauncher.launch(intent)
+        } catch (e: ActivityNotFoundException) {
+            Timber.w("QStore not installed")
+            showQStoreNotFoundDialog = true
+        }
+    }
+
+    if (showQStoreNotFoundDialog) {
+        AlertDialog(
+            onDismissRequest = { showQStoreNotFoundDialog = false },
+            title = { Text("QuickStore non trovata") },
+            text = { Text("Installa l'app QuickStore per selezionare i ricambi.") },
+            confirmButton = {
+                TextButton(onClick = { showQStoreNotFoundDialog = false }) { Text("OK") }
+            }
+        )
     }
 
     Column(
@@ -214,7 +267,13 @@ fun CheckUpDetailScreen(
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(16.dp)
+                    contentPadding = PaddingValues(
+                        start = 16.dp,
+                        top = 16.dp,
+                        end = 16.dp,
+                        bottom = 16.dp + WindowInsets.navigationBars.asPaddingValues()
+                            .calculateBottomPadding()
+                    )
                 ) {
                     // Header Card
                     item {
@@ -235,19 +294,27 @@ fun CheckUpDetailScreen(
                         )
                     }
 
+                    // Spare Parts
+                    item {
+                        SparePartsSection(
+                            spareParts = uiState.spareParts,
+                            onAddClick = { launchQStorePicker() },
+                            onRemove = viewModel::removeSparePart,
+                            onQuantityChange = viewModel::updateSparePartQuantity
+                        )
+                    }
+
                     // Check Items by Module
-                    uiState.checkItemsByModule.forEach { (moduleType, items) ->
-                        item(key = "module_${moduleType.name}") {
+                    uiState.checkItemsByModule.forEach { (moduleKey, items) ->
+                        item(key = "module_$moduleKey") {
                             ModuleSectionWithPhotos(
-                                moduleType = moduleType,
                                 displayLabel = resolveModuleTypeLabel(
-                                    moduleTypeId = items.firstOrNull()?.moduleTypeId,
-                                    legacy = moduleType,
+                                    moduleKey = moduleKey,
                                     masters = uiState.moduleTypes
                                 ),
                                 items = items,
-                                isExpanded = moduleType.name in expandedModules,
-                                onToggleExpansion = { viewModel.toggleModuleExpansion(moduleType) },
+                                isExpanded = moduleKey in expandedModules,
+                                onToggleExpansion = { viewModel.toggleModuleExpansion(moduleKey) },
                                 photosByItem = uiState.photosByCheckItem,
                                 photoCountsByItem = uiState.photoCountsByCheckItem,
                                 onItemStatusChange = viewModel::updateItemStatus,
@@ -394,7 +461,6 @@ private fun StatItem(
 
 @Composable
 private fun ModuleSectionWithPhotos(
-    moduleType: ModuleType,
     displayLabel: String,
     items: List<CheckItem>,
     isExpanded: Boolean,

@@ -9,7 +9,6 @@ import net.calvuz.qreport.app.app.domain.AppVersionInfo
 import net.calvuz.qreport.app.result.domain.QrResult
 import net.calvuz.qreport.checkup.items.domain.model.CheckItemStatus
 import net.calvuz.qreport.checkup.checkup.domain.model.CheckUpHeader
-import net.calvuz.qreport.checkup.modules.domain.model.ModuleType
 import net.calvuz.qreport.checkup.modules.domain.usecase.ObserveModuleTypesUseCase
 import net.calvuz.qreport.checkup.status.domain.usecase.ObserveActiveCheckUpStatusesUseCase
 import net.calvuz.qreport.photo.domain.model.Photo
@@ -34,7 +33,13 @@ import net.calvuz.qreport.photo.domain.usecase.CapturePhotoUseCase
 import net.calvuz.qreport.photo.domain.usecase.DeletePhotoUseCase
 import net.calvuz.qreport.photo.domain.usecase.GetCheckItemPhotosUseCase
 import net.calvuz.qreport.app.error.domain.model.QrError
+import net.calvuz.qreport.app.error.presentation.UiText
 import net.calvuz.qreport.app.error.presentation.asUiText
+import net.calvuz.qreport.checkup.spareparts.domain.usecase.AddSparePartsUseCase
+import net.calvuz.qreport.checkup.spareparts.domain.usecase.ObserveSparePartsUseCase
+import net.calvuz.qreport.checkup.spareparts.domain.usecase.RemoveSparePartUseCase
+import net.calvuz.qreport.checkup.spareparts.domain.usecase.UpdateSparePartQuantityUseCase
+import net.calvuz.qreport.sync.qstore.QStoreArticleReader
 import timber.log.Timber
 import javax.inject.Inject
 
@@ -74,7 +79,14 @@ class CheckUpDetailViewModel @Inject constructor(
     private val removeCheckUpAssociationUseCase: RemoveCheckUpAssociationUseCase,
     private val observeIslandTypesUseCase: ObserveIslandTypesUseCase,
     private val observeModuleTypesUseCase: ObserveModuleTypesUseCase,
-    private val observeActiveCheckUpStatusesUseCase: ObserveActiveCheckUpStatusesUseCase
+    private val observeActiveCheckUpStatusesUseCase: ObserveActiveCheckUpStatusesUseCase,
+
+    // Spare parts
+    private val observeSparePartsUseCase: ObserveSparePartsUseCase,
+    private val addSparePartsUseCase: AddSparePartsUseCase,
+    private val removeSparePartUseCase: RemoveSparePartUseCase,
+    private val updateSparePartQuantityUseCase: UpdateSparePartQuantityUseCase,
+    private val qStoreArticleReader: QStoreArticleReader
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(CheckUpDetailUiState())
@@ -214,6 +226,12 @@ class CheckUpDetailViewModel @Inject constructor(
 
                         //Load associations
                         loadCurrentAssociations()
+
+                        // Observe spare parts
+                        observeSparePartsUseCase(checkUpId)
+                            .catch { e -> Timber.e(e, "Error observing spare parts") }
+                            .onEach { parts -> _uiState.update { it.copy(spareParts = parts) } }
+                            .launchIn(viewModelScope)
                     }
 
                     is QrResult.Error -> {
@@ -716,19 +734,13 @@ class CheckUpDetailViewModel @Inject constructor(
         }
     }
 
-    // Module expansion/collapsing toggle
-    fun toggleModuleExpansion(moduleType: ModuleType) {
-        val moduleKey = moduleType.name
+    fun toggleModuleExpansion(moduleKey: String) {
         val current = _expandedModules.value
-        _expandedModules.value = if (moduleKey in current) {
-            current - moduleKey  // Collapse module
-        } else {
-            current + moduleKey  // Expand module
-        }
+        _expandedModules.value = if (moduleKey in current) current - moduleKey else current + moduleKey
     }
 
-    fun isModuleExpanded(moduleType: ModuleType): Boolean {
-        return moduleType.name in _expandedModules.value
+    fun isModuleExpanded(moduleKey: String): Boolean {
+        return moduleKey in _expandedModules.value
     }
 
     /**
@@ -864,6 +876,50 @@ class CheckUpDetailViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    // ============================================================
+    // SPARE PARTS
+    // ============================================================
+
+    fun onArticlesSelected(uuids: List<String>) {
+        val checkupId = _uiState.value.checkupId ?: return
+        viewModelScope.launch {
+            val articles = qStoreArticleReader.fetchByUuids(uuids)
+            if (articles.isEmpty()) {
+                _uiState.value = _uiState.value.copy(
+                    sparePartsError = UiText.DynStr("Nessun articolo recuperato da QuickStore")
+                )
+                return@launch
+            }
+            val existingUuids = _uiState.value.spareParts.map { it.articleUuid }.toSet()
+            addSparePartsUseCase(checkupId, articles, existingUuids).onFailure { e ->
+                Timber.e(e, "Error adding spare parts")
+                _uiState.value = _uiState.value.copy(
+                    sparePartsError = UiText.DynStr("Errore aggiunta ricambi")
+                )
+            }
+        }
+    }
+
+    fun removeSparePart(id: String) {
+        viewModelScope.launch {
+            removeSparePartUseCase(id).onFailure { e ->
+                Timber.e(e, "Error removing spare part $id")
+            }
+        }
+    }
+
+    fun updateSparePartQuantity(id: String, quantity: Double?) {
+        viewModelScope.launch {
+            updateSparePartQuantityUseCase(id, quantity).onFailure { e ->
+                Timber.e(e, "Error updating spare part quantity $id")
+            }
+        }
+    }
+
+    fun clearSparePartsError() {
+        _uiState.value = _uiState.value.copy(sparePartsError = null)
     }
 
 }

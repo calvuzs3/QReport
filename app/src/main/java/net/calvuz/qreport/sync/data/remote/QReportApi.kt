@@ -2,6 +2,7 @@ package net.calvuz.qreport.sync.data.remote
 
 import net.calvuz.qreport.sync.data.remote.dto.LoginRequest
 import net.calvuz.qreport.sync.data.remote.dto.LoginResponse
+import net.calvuz.qreport.sync.data.remote.dto.ServerVersionDto
 import net.calvuz.qreport.sync.data.remote.dto.SyncPayloadDto
 import net.calvuz.qreport.sync.data.remote.dto.SyncResponseDto
 import retrofit2.Response
@@ -12,6 +13,9 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 interface QReportApi {
+
+    @GET("api/version")
+    suspend fun getVersion(): Response<ServerVersionDto>
 
     @POST("auth/login")
     suspend fun login(

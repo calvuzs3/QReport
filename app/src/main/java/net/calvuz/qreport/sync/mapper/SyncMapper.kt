@@ -9,16 +9,31 @@ import net.calvuz.qreport.client.facility.data.local.entity.FacilityEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandEntity
 import net.calvuz.qreport.client.island.maintenance.data.local.entity.MaintenanceLogEntity
 import net.calvuz.qreport.client.unit.data.local.entity.MechanicalUnitEntity
+import net.calvuz.qreport.checkup.criticality.data.local.entity.CriticalityEntity
+import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemTemplateEntity
+import net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeEntity
+import net.calvuz.qreport.checkup.status.data.local.entity.CheckUpStatusEntity
 import net.calvuz.qreport.client.island.data.local.entity.IslandTypeEntity
+import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpEntity
+import net.calvuz.qreport.checkup.checkup.data.local.entity.CheckUpIslandAssociationEntity
+import net.calvuz.qreport.sync.data.remote.dto.CheckItemTemplateDto
+import net.calvuz.qreport.checkup.items.data.local.entity.CheckItemEntity
+import net.calvuz.qreport.sync.data.remote.dto.CheckItemDto
+import net.calvuz.qreport.sync.data.remote.dto.CheckUpIslandAssociationDto
+import net.calvuz.qreport.sync.data.remote.dto.CheckUpRecordDto
+import net.calvuz.qreport.sync.data.remote.dto.CheckUpStatusDto
+import kotlinx.datetime.Instant
 import net.calvuz.qreport.sync.data.remote.dto.ClientDto
 import net.calvuz.qreport.sync.data.remote.dto.ContactDto
 import net.calvuz.qreport.sync.data.remote.dto.ContractDto
+import net.calvuz.qreport.sync.data.remote.dto.CriticalityLevelDto
 import net.calvuz.qreport.sync.data.remote.dto.FacilityDto
 import net.calvuz.qreport.sync.data.remote.dto.FacilityIslandDto
 import net.calvuz.qreport.sync.data.remote.dto.IslandDocumentDto
 import net.calvuz.qreport.sync.data.remote.dto.IslandTypeDto
 import net.calvuz.qreport.sync.data.remote.dto.MaintenanceLogDto
 import net.calvuz.qreport.sync.data.remote.dto.MechanicalUnitDto
+import net.calvuz.qreport.sync.data.remote.dto.ModuleTypeDto
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -380,5 +395,251 @@ class SyncMapper @Inject constructor() {
         syncedAt = dto.syncedAt,
         isActive = dto.isActive,
         isDeleted = dto.isDeleted
+    )
+
+    // ===== CHECKUP MASTER DATA =====
+
+    fun moduleTypeToDto(entity: ModuleTypeEntity) = ModuleTypeDto(
+        id = entity.id,
+        code = entity.code,
+        label = entity.label,
+        description = entity.description,
+        iconName = entity.iconName,
+        sortOrder = entity.sortOrder,
+        isActive = entity.isActive,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        syncedAt = entity.syncedAt,
+        isDeleted = entity.isDeleted
+    )
+
+    fun moduleTypeToEntity(dto: ModuleTypeDto) = ModuleTypeEntity(
+        id = dto.id,
+        code = dto.code,
+        label = dto.label,
+        description = dto.description,
+        iconName = dto.iconName,
+        sortOrder = dto.sortOrder,
+        isActive = dto.isActive,
+        createdAt = dto.createdAt,
+        updatedAt = dto.updatedAt,
+        syncedAt = dto.syncedAt,
+        isDeleted = dto.isDeleted
+    )
+
+    fun moduleIslandLinkToDto(entity: net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeIslandTypeCrossRef) =
+        net.calvuz.qreport.sync.data.remote.dto.ModuleTypeIslandTypeLinkDto(
+            islandTypeId = entity.islandTypeId,
+            moduleTypeId = entity.moduleTypeId
+        )
+
+    fun moduleIslandLinkToEntity(dto: net.calvuz.qreport.sync.data.remote.dto.ModuleTypeIslandTypeLinkDto) =
+        net.calvuz.qreport.checkup.modules.data.local.entity.ModuleTypeIslandTypeCrossRef(
+            islandTypeId = dto.islandTypeId,
+            moduleTypeId = dto.moduleTypeId
+        )
+
+    fun criticalityLevelToDto(entity: CriticalityEntity) = CriticalityLevelDto(
+        id = entity.id,
+        code = entity.code,
+        label = entity.label,
+        priority = entity.priority,
+        colorHex = entity.colorHex,
+        iconEmoji = entity.iconEmoji,
+        sortOrder = entity.sortOrder,
+        isActive = entity.isActive,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        syncedAt = entity.syncedAt,
+        isDeleted = entity.isDeleted
+    )
+
+    fun criticalityLevelToEntity(dto: CriticalityLevelDto) = CriticalityEntity(
+        id = dto.id,
+        code = dto.code,
+        label = dto.label,
+        priority = dto.priority,
+        colorHex = dto.colorHex,
+        iconEmoji = dto.iconEmoji,
+        sortOrder = dto.sortOrder,
+        isActive = dto.isActive,
+        createdAt = dto.createdAt,
+        updatedAt = dto.updatedAt,
+        syncedAt = dto.syncedAt,
+        isDeleted = dto.isDeleted
+    )
+
+    fun checkUpStatusToDto(entity: CheckUpStatusEntity) = CheckUpStatusDto(
+        id = entity.id,
+        code = entity.code,
+        label = entity.label,
+        colorHex = entity.colorHex,
+        iconEmoji = entity.iconEmoji,
+        sortOrder = entity.sortOrder,
+        isActive = entity.isActive,
+        blocksDeletion = entity.blocksDeletion,
+        marksCompletion = entity.marksCompletion,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        syncedAt = entity.syncedAt,
+        isDeleted = entity.isDeleted
+    )
+
+    fun checkUpStatusToEntity(dto: CheckUpStatusDto) = CheckUpStatusEntity(
+        id = dto.id,
+        code = dto.code,
+        label = dto.label,
+        colorHex = dto.colorHex,
+        iconEmoji = dto.iconEmoji,
+        sortOrder = dto.sortOrder,
+        isActive = dto.isActive,
+        blocksDeletion = dto.blocksDeletion,
+        marksCompletion = dto.marksCompletion,
+        createdAt = dto.createdAt,
+        updatedAt = dto.updatedAt,
+        syncedAt = dto.syncedAt,
+        isDeleted = dto.isDeleted
+    )
+
+    fun checkItemTemplateToDto(entity: CheckItemTemplateEntity) = CheckItemTemplateDto(
+        id = entity.id,
+        moduleTypeId = entity.moduleTypeId,
+        category = entity.category,
+        description = entity.description,
+        criticalityId = entity.criticalityId,
+        orderIndex = entity.orderIndex,
+        isActive = entity.isActive,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        syncedAt = entity.syncedAt,
+        isDeleted = entity.isDeleted
+    )
+
+    fun checkUpToDto(entity: CheckUpEntity) = CheckUpRecordDto(
+        id = entity.id,
+        clientCompanyName = entity.clientCompanyName,
+        clientContactPerson = entity.clientContactPerson,
+        clientSite = entity.clientSite,
+        clientAddress = entity.clientAddress,
+        clientPhone = entity.clientPhone,
+        clientEmail = entity.clientEmail,
+        islandSerialNumber = entity.islandSerialNumber,
+        islandModel = entity.islandModel,
+        islandInstallationDate = entity.islandInstallationDate,
+        islandLastMaintenanceDate = entity.islandLastMaintenanceDate,
+        islandOperatingHours = entity.islandOperatingHours,
+        islandCycleCount = entity.islandCycleCount,
+        technicianName = entity.technicianName,
+        technicianCompany = entity.technicianCompany,
+        technicianCertification = entity.technicianCertification,
+        technicianPhone = entity.technicianPhone,
+        technicianEmail = entity.technicianEmail,
+        checkupDate = entity.checkUpDate.toEpochMilliseconds(),
+        headerNotes = entity.headerNotes,
+        islandType = entity.islandType,
+        islandTypeId = entity.islandTypeId,
+        status = entity.status,
+        createdAt = entity.createdAt.toEpochMilliseconds(),
+        updatedAt = entity.updatedAt.toEpochMilliseconds(),
+        completedAt = entity.completedAt?.toEpochMilliseconds(),
+        syncedAt = entity.syncedAt,
+        isDeleted = entity.isDeleted
+    )
+
+    fun checkUpToEntity(dto: CheckUpRecordDto) = CheckUpEntity(
+        id = dto.id,
+        clientCompanyName = dto.clientCompanyName,
+        clientContactPerson = dto.clientContactPerson,
+        clientSite = dto.clientSite,
+        clientAddress = dto.clientAddress,
+        clientPhone = dto.clientPhone,
+        clientEmail = dto.clientEmail,
+        islandSerialNumber = dto.islandSerialNumber,
+        islandModel = dto.islandModel,
+        islandInstallationDate = dto.islandInstallationDate,
+        islandLastMaintenanceDate = dto.islandLastMaintenanceDate,
+        islandOperatingHours = dto.islandOperatingHours,
+        islandCycleCount = dto.islandCycleCount,
+        technicianName = dto.technicianName,
+        technicianCompany = dto.technicianCompany,
+        technicianCertification = dto.technicianCertification,
+        technicianPhone = dto.technicianPhone,
+        technicianEmail = dto.technicianEmail,
+        checkUpDate = Instant.fromEpochMilliseconds(dto.checkupDate),
+        headerNotes = dto.headerNotes,
+        islandType = dto.islandType,
+        islandTypeId = dto.islandTypeId,
+        status = dto.status,
+        createdAt = Instant.fromEpochMilliseconds(dto.createdAt),
+        updatedAt = Instant.fromEpochMilliseconds(dto.updatedAt),
+        completedAt = dto.completedAt?.let { Instant.fromEpochMilliseconds(it) },
+        syncedAt = dto.syncedAt,
+        isDeleted = dto.isDeleted
+    )
+
+    fun checkUpIslandAssociationToDto(entity: CheckUpIslandAssociationEntity) = CheckUpIslandAssociationDto(
+        id = entity.id,
+        checkupId = entity.checkupId,
+        islandId = entity.islandId,
+        associationType = entity.associationType,
+        notes = entity.notes,
+        createdAt = entity.createdAt,
+        updatedAt = entity.updatedAt,
+        syncedAt = entity.syncedAt
+    )
+
+    fun checkUpIslandAssociationToEntity(dto: CheckUpIslandAssociationDto) = CheckUpIslandAssociationEntity(
+        id = dto.id,
+        checkupId = dto.checkupId,
+        islandId = dto.islandId,
+        associationType = dto.associationType,
+        notes = dto.notes,
+        createdAt = dto.createdAt,
+        updatedAt = dto.updatedAt,
+        syncedAt = dto.syncedAt
+    )
+
+    fun checkItemTemplateToEntity(dto: CheckItemTemplateDto) = CheckItemTemplateEntity(
+        id = dto.id,
+        moduleTypeId = dto.moduleTypeId,
+        category = dto.category,
+        description = dto.description,
+        criticalityId = dto.criticalityId,
+        orderIndex = dto.orderIndex,
+        isActive = dto.isActive,
+        createdAt = dto.createdAt,
+        updatedAt = dto.updatedAt,
+        syncedAt = dto.syncedAt,
+        isDeleted = dto.isDeleted
+    )
+
+    fun checkItemToDto(entity: CheckItemEntity) = CheckItemDto(
+        id = entity.id,
+        checkupId = entity.checkUpId,
+        moduleType = entity.moduleType,
+        moduleTypeId = entity.moduleTypeId,
+        itemCode = entity.itemCode,
+        description = entity.description,
+        status = entity.status,
+        criticality = entity.criticality,
+        criticalityId = entity.criticalityId,
+        notes = entity.notes,
+        checkedAt = entity.checkedAt?.toEpochMilliseconds(),
+        orderIndex = entity.orderIndex
+    )
+
+    fun checkItemToEntity(dto: CheckItemDto) = CheckItemEntity(
+        id = dto.id,
+        checkUpId = dto.checkupId,
+        moduleType = dto.moduleType,
+        moduleTypeId = dto.moduleTypeId,
+        itemCode = dto.itemCode,
+        description = dto.description,
+        status = dto.status,
+        criticality = dto.criticality,
+        criticalityId = dto.criticalityId,
+        notes = dto.notes,
+        checkedAt = dto.checkedAt?.let { Instant.fromEpochMilliseconds(it) },
+        orderIndex = dto.orderIndex
     )
 }
